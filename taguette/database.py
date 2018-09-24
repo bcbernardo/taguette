@@ -154,17 +154,21 @@ class Command(Base):
         )
 
     @classmethod
-    def highlight_add(cls, user_login, document, highlight, tags):
+    def highlight_add(cls, user_login, document, highlight, tags,
+                      replace=False):
         assert isinstance(highlight.id, int)
+        payload = {'type': 'highlight_add',
+                   'id': highlight.id,
+                   'start_offset': highlight.start_offset,
+                   'end_offset': highlight.end_offset,
+                   'tags': tags}
+        if replace:
+            payload['replace'] = True
         return cls(
             user_login=user_login,
             project_id=document.project_id,
             document=document,
-            payload={'type': 'highlight_add',
-                     'id': highlight.id,
-                     'start_offset': highlight.start_offset,
-                     'end_offset': highlight.end_offset,
-                     'tags': tags},
+            payload=payload,
         )
 
     @classmethod
@@ -250,6 +254,15 @@ class HighlightTag(Base):
                                         ondelete='CASCADE'),
                     primary_key=True)
     tag = relationship('Tag')
+
+
+Tag.highlights_count = column_property(
+    select(
+        [functions.count(HighlightTag.highlight_id)],
+    ).where(
+        HighlightTag.tag_id == Tag.id,
+    ).correlate_except(HighlightTag)
+)
 
 
 def connect():
