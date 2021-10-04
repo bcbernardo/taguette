@@ -614,54 +614,87 @@ function basename(filename) {
   return filename;
 }
 
+// doane multifile upload
 document.getElementById('document-add-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  console.log("Uploading document...");
+  console.log("Uploading documents...");
 
-  var form_data = new FormData();
-  var name = document.getElementById('document-add-name').value;
-  if(!name) {
-    name = basename(document.getElementById('document-add-file').value);
-    name = name.substring(0, 50);
-  }
-  form_data.append('name', name);
-  form_data.append('description',
-                   document.getElementById('document-add-description').value);
-  form_data.append('file',
-                   document.getElementById('document-add-file').files[0]);
-  form_data.append('text_direction',
-                   document.getElementById('document-add-form').elements['document-add-direction'].value);
-  form_data.append('_xsrf', getCookie('_xsrf'));
-
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'json';
-  xhr.open('POST', '/api/project/' + project_id + '/document/new');
+  var form_data;
+  
+	var xhr_counter = 0;
+	
+	$(document_add_modal).modal('hide');
+	
   showSpinner();
-  xhr.onload = function() {
-    if(xhr.status == 200) {
-      $(document_add_modal).modal('hide');
-      document.getElementById('document-add-form').reset();
-      console.log("Document upload complete");
-    } else {
-      console.error("Document upload failed: status", xhr.status);
-      var error = null;
-      try {
-        error = xhr.response.error;
-      } catch(e) {
-      }
-      if(!error) {
-        error = "Status " + xhr.status;
-      }
-      alert(gettext("Error uploading file!") + "\n\n" + error);
-    }
-    hideSpinner();
-  };
-  xhr.onerror = function(e) {
-    console.log("Document upload failed:", e);
-    alert(gettext("Error uploading file!"));
-    hideSpinner();
+	
+  for (let i = 0, numFiles = document.getElementById('document-add-file').files.length; i < numFiles; i++) {
+	  
+		var suffix = "_" + i.toString().padStart(5, "0");
+	  var name = document.getElementById('document-add-name').value + suffix;
+	  
+	  if(!name || name == suffix) {
+	    name = basename(document.getElementById('document-add-file').files[i].name);
+	    name = name.substring(0, 50);
+	  }
+	  	  
+	  form_data = new FormData();
+	  
+	  form_data.append('name', name);
+	  form_data.append('description',
+	                   document.getElementById('document-add-description').value);
+	  form_data.append('file',
+	                   document.getElementById('document-add-file').files[i]);
+	  form_data.append('text_direction',
+	                   document.getElementById('document-add-form').elements['document-add-direction'].value);
+	  form_data.append('_xsrf', getCookie('_xsrf'));
+
+	  var xhr = new XMLHttpRequest();
+	  
+		xhr.name = name;
+	  xhr.responseType = 'json';
+	  xhr.open('POST', '/api/project/' + project_id + '/document/new');
+	  	  
+	  xhr.onload = function() {			
+	    if(this.status == 200) {
+	      console.log(this.name + " upload complete");
+	    } else {
+	      console.error(this.name + " upload failed: status", this.status);
+	      var error = null;
+	      try {
+	        error = this.response.error;
+	      } catch(e) {
+	      }
+	      if(!error) {
+	        error = "Status " + this.status;
+	      }
+	      alert(gettext("Error uploading file: " + this.name) + "\n\n" + error);
+	    }
+			
+			xhr_counter -= 1;
+			
+			if (xhr_counter == 0) {
+				hideSpinner();
+ 
+		 	  document.getElementById('document-add-form').reset();
+			}		
+	  };
+		
+	  xhr.onerror = function(e) {
+			xhr_counter -= 1;
+			
+			if (xhr_counter == 0) {
+				hideSpinner();
+ 
+		 	  document.getElementById('document-add-form').reset();
+			}		
+			
+	    console.log(this.name + " upload failed:", e);
+	    alert(gettext("Error uploading file: " + this.name));
+	  }
+	  
+		xhr_counter += 1;
+	  xhr.send(form_data);
   }
-  xhr.send(form_data);
 });
 
 

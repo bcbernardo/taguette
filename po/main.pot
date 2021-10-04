@@ -210,7 +210,7 @@ msgid "Delete project"
 msgstr ""
 
 #: taguette/templates/project.html:72 taguette/templates/project.html:172
-msgid "Add a document"
+msgid "Add documents"
 msgstr ""
 
 #: taguette/templates/project.html:76 taguette/templates/project.html:90

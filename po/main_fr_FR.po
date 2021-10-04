@@ -226,8 +226,8 @@ msgid "Delete project"
 msgstr "Supprimer projet"
 
 #: taguette/templates/project.html:72 taguette/templates/project.html:172
-msgid "Add a document"
-msgstr "Ajouter un document"
+msgid "Add documents"
+msgstr "Ajouter des documents"
 
 #: taguette/templates/project.html:76 taguette/templates/project.html:90
 #: taguette/templates/project.html:243
