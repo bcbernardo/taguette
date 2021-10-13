@@ -6,12 +6,12 @@ sqlite3:
   stage: test
   image: python:3.8
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -m readme_renderer README.rst >/dev/null
-    - python -Wd -m coverage run --branch --source=taguette tests.py
+    - python -Wd -m coverage run --branch --source=taguette tests.py -v
     - coverage html
     - coverage report | tail -n 1 | grep -o '\([0-9]\+\(\.[0-9]\+\)\?%\)$'
     - flake8 --ignore=W503,W504 tests.py taguette
@@ -26,11 +26,11 @@ sqlite3_redis:
   services:
     - redis:latest
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_REDIS=redis://redis:6379 python -Wd tests.py
+    - TAGUETTE_TEST_REDIS=redis://redis:6379 python -Wd tests.py -v
 
 frontend_firefox:
   stage: test
@@ -40,34 +40,34 @@ frontend_firefox:
     - curl -Lo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.29.1/geckodriver-v0.29.1-linux64.tar.gz
     - tar -zxf /tmp/geckodriver.tar.gz -C /usr/local/bin geckodriver
     - chmod +x /usr/local/bin/geckodriver
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python tests.py TestSeleniumMultiuser
+    - TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python tests.py -v TestSeleniumMultiuser
 
 frontend_chromium:
   stage: test
   image: python:3.8
   script:
     - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yy xvfb chromium-driver
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=chromium xvfb-run python tests.py TestSeleniumMultiuser
+    - TAGUETTE_TEST_WEBDRIVER=chromium xvfb-run python tests.py -v TestSeleniumMultiuser
 
 sqlite3_latest:
   stage: test
   image: python:3.9
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - rm poetry.lock
     - sed -i 's/^python = ".*$/python = "^3.9"/' pyproject.toml
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 postgres:
   stage: test
@@ -79,12 +79,12 @@ postgres:
     POSTGRES_PASSWORD: taguette
     TAGUETTE_TEST_DB: postgresql://taguette:taguette@postgres/taguette
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - pip install psycopg2-binary
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 mariadb:
   stage: test
@@ -98,53 +98,53 @@ mariadb:
     MYSQL_PASSWORD: taguette
     TAGUETTE_TEST_DB: mysql+pymysql://taguette:taguette@mariadb/taguette
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - pip install pymysql cryptography
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 sqlite3_pypy:
   stage: test
   image: pypy:3.7
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - pypy3 -m venv /tmp/venv
     - . /tmp/venv/bin/activate
     - pypy3 -m pip install -U pip
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 sqlite3_py3.7:
   stage: test
   image: python:3.7
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 sqlite3_py3.9:
   stage: test
   image: python:3.9
   script:
-    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.8
+    - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python - --version 1.1.11
     - $HOME/.poetry/bin/poetry config virtualenvs.create false
     - $HOME/.poetry/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py
+    - python -Wd tests.py -v
 
 sqlite3_py3.10:
   stage: test
-  image: python:3.10-rc
+  image: python:3.10
   script:
-    - pip install poetry==1.1.8
+    - pip install poetry==1.1.11
     - poetry config virtualenvs.create false
     - poetry config experimental.new-installer false
     - poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py
+    - python -Wd tests.py -v

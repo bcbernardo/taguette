@@ -183,6 +183,9 @@ class Privileges(enum.Enum):
     can_delete_tag = can_update_tag
     can_merge_tags = can_update_tag
 
+    def can_import_codebook(self):
+        return self == Privileges.ADMIN
+
     def can_add_highlight(self):
         return self in (Privileges.ADMIN, Privileges.MANAGE_DOCS,
                         Privileges.TAG)
@@ -319,6 +322,7 @@ class Command(Base):
         payload_fields=['document_name', 'description', 'text_direction'],
     )
     def document_add(cls, user_login, document):
+        assert isinstance(document.id, int)
         return cls(
             user_login=user_login,
             project=document.project,
@@ -336,6 +340,7 @@ class Command(Base):
     )
     def document_delete(cls, user_login, document):
         assert isinstance(document, Document)
+        assert isinstance(document.id, int)
         return cls(
             user_login=user_login,
             project_id=document.project_id,
@@ -385,6 +390,7 @@ class Command(Base):
     )
     def tag_add(cls, user_login, tag):
         assert isinstance(tag, Tag)
+        assert isinstance(tag.id, int)
         return cls(
             user_login=user_login,
             project_id=tag.project_id,

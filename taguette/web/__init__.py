@@ -82,6 +82,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
                     name='import_project'),
             URLSpec('/project/([0-9]+)/delete', views.ProjectDelete,
                     name='delete_project'),
+            URLSpec('/project/([0-9]+)/import_codebook', views.ImportCodebook,
+                    name='import_codebook'),
 
             # Project view
             URLSpec('/project/([0-9]+)', views.Project, name='project'),
@@ -118,8 +120,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
             URLSpec('/api/project/([0-9]+)', api.ProjectMeta),
             URLSpec('/api/project/([0-9]+)/document/new', api.DocumentAdd),
             URLSpec('/api/project/([0-9]+)/document/([0-9]+)',
-                    api.DocumentUpdate),
-            URLSpec('/api/project/([0-9]+)/document/([0-9]+)/content',
+                    api.Document),
+            URLSpec('/api/project/([0-9]+)/document/([0-9]+)/contents',
                     api.DocumentContents),
             URLSpec('/api/project/([0-9]+)/document/([0-9]+)/highlight/new',
                     api.HighlightAdd),
