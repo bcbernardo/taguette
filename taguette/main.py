@@ -8,6 +8,7 @@ import os
 import pkg_resources
 import prometheus_client
 import re
+from sqlalchemy.orm import undefer
 import subprocess
 import sys
 import tornado.ioloop
@@ -16,7 +17,8 @@ import webbrowser
 
 import taguette
 from . import __version__
-from .database import migrate
+from . import database
+from . import indexer
 from .web import make_app
 
 
@@ -48,6 +50,45 @@ def prepare_db(database):
     return db_url
 
 
+def index(args):
+    if args.full_text_search_index is None:
+        logger.critical("--full-text-search-index unspecified")
+        sys.exit(1)
+    db_url = prepare_db(args.database)
+    DBSession = database.connect(db_url)
+    index = indexer.get_indexer(args.full_text_search_index)
+    db = DBSession()
+
+    total = db.query(database.Document).count()
+
+    async def reindex():
+        projects = (
+            db.query(database.Project.id)
+            .all()
+        )
+        for project_id in projects:
+            await index.add_project(project_id)
+
+        documents = (
+            db.query(database.Document)
+            .options(undefer(database.Document.contents))
+            .all()
+        )
+        for i, doc in enumerate(documents):
+            if i % 100 == 0:
+                logger.info("Indexing documents, %d/%d", i, total)
+            await index.add_document(
+                doc.project_id,
+                doc.id,
+                doc.name,
+                doc.description,
+                doc.contents,
+            )
+        logger.info("Indexed all %d documents", total)
+
+    asyncio.get_event_loop().run_until_complete(reindex())
+
+
 def default_config(output):
     if output is None:
         out = sys.stdout
@@ -77,6 +118,13 @@ DATABASE = "sqlite:////non/existent/taguette/database.sqlite3"
 # Redis instance for live collaboration
 # This is not required if using a single server, collaboration will still work
 #REDIS_SERVER = 'redis://localhost:6379'
+
+# Full text search index path
+# If you want to use full text search, set this to the path where the index
+# will be created
+# TypeSense needs to be available for this to work
+FULL_TEXT_SEARCH_INDEX = None
+#FULL_TEXT_SEARCH_INDEX = '/tmp/taguette_index
 
 # Address to send system emails from
 EMAIL = "Misconfigured Taguette Server <taguette@example.com>"
@@ -137,9 +185,11 @@ DEFAULT_CONFIG = {
     'HTML_OUT_SIZE_LIMIT': 2000000,  # 2 MB
 }
 
-REQUIRED_CONFIG = ['NAME', 'PORT', 'SECRET_KEY', 'DATABASE', 'TOS_FILE',
-                   'X_HEADERS', 'EMAIL', 'MAIL_SERVER', 'COOKIES_PROMPT',
-                   'OPF_OUT_SIZE_LIMIT', 'HTML_OUT_SIZE_LIMIT']
+REQUIRED_CONFIG = [
+    'NAME', 'PORT', 'SECRET_KEY', 'DATABASE', 'FULL_TEXT_SEARCH_INDEX',
+    'TOS_FILE', 'X_HEADERS', 'EMAIL', 'MAIL_SERVER', 'COOKIES_PROMPT',
+    'OPF_OUT_SIZE_LIMIT', 'HTML_OUT_SIZE_LIMIT',
+]
 
 
 def main():
@@ -209,6 +259,8 @@ def main():
                                "'postgresql://me:pw@localhost/mydb' "
                                "(default: %(default)r)") %
                         dict(default=default_db_show))
+    parser.add_argument('--full-text-search-index', action='store',
+                        help=_("Full text search index path"))
     parser.add_argument('--set-umask', action='store', dest='umask',
                         default="077",
                         help=_("Set the file creation mask (umask) on systems "
@@ -230,7 +282,17 @@ def main():
     parser_migrate.add_argument('revision', action='store', default='head',
                                 nargs=argparse.OPTIONAL)
     parser_migrate.set_defaults(
-        func=lambda args: migrate(prepare_db(args.database), args.revision))
+        func=lambda args: database.migrate(
+            prepare_db(args.database),
+            args.revision,
+        ),
+    )
+
+    parser_index = subparsers.add_parser(
+        'index',
+        help=_('Re-create the full text search index'),
+    )
+    parser_index.set_defaults(func=index)
 
     parser_config = subparsers.add_parser(
         'default-config',
@@ -303,6 +365,7 @@ def main():
             SQLITE3_IMPORT_ENABLED=True,
             PORT=int(args.port),
             DATABASE=prepare_db(args.database),
+            FULL_TEXT_SEARCH_INDEX=args.full_text_search_index,
             TOS_FILE=None,
             SECRET_KEY=secret,
             COOKIES_PROMPT=False,
