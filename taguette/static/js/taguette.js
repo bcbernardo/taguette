@@ -518,6 +518,7 @@ project_description_input.addEventListener('blur', projectMetadataChanged);
 
 var current_document = null;
 var current_tag = null;
+var current_page = null;
 var documents_list = document.getElementById('documents-list');
 
 function linkDocument(elem, doc_id) {
@@ -887,12 +888,14 @@ function updateTagsList() {
   console.log("Tags list updated");
 
   // Re-set all highlights, to update titles
-  var hl_entries = Object.entries(highlights);
-  for(var i = 0; i < hl_entries.length; ++i) {
-    setHighlight(hl_entries[i][1]);
-  }
+  if(current_document !== null) {
+    var hl_entries = Object.entries(highlights);
+    for(var i = 0; i < hl_entries.length; ++i) {
+      setHighlight(hl_entries[i][1]);
+    }
 
-  console.log("Highlights updated");
+    console.log("Highlights updated");
+  }
 }
 
 updateTagsList();
@@ -1079,15 +1082,24 @@ document.getElementById('tag-merge-form').addEventListener('submit', function(e)
 // Add or replace a highlight
 function setHighlight(highlight) {
   var id = '' + highlight.id;
+  var content = undefined;
   if(highlights[id]) {
+    content = highlights[id].content;
     removeHighlight(id);
   }
   highlights[id] = highlight;
+  if(highlight.content === undefined) {
+    highlight.content = content;
+  }
+  if(current_tag !== null) {
+    showTagView();
+    return;
+  }
   var tag_names = highlight.tags.map(function(id) { return tags[id].path; });
   sortByKey(tag_names, function(path) { return path; });
   tag_names = tag_names.join(", ");
   try {
-    highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
+    highlightSelection([highlight.start_offset, highlight.end_offset], id, function() { editHighlight(id); }, tag_names);
     console.log("Highlight set:", highlight);
   } catch(error) {
     console.error(
@@ -1168,16 +1180,17 @@ function createHighlight(selection) {
   document.getElementById('highlight-add-id').value = '';
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
+  document.getElementById('highlight-add-document').value = current_document;
   document.getElementById('highlight-add-form').reset();
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
 }
 
-function editHighlight() {
+function editHighlight(id) {
   document.getElementById('highlight-add-form').reset();
-  var id = this.getAttribute('data-highlight-id');
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
+  document.getElementById('highlight-add-document').value = highlights[id].document_id;
   var hl_tags = highlights['' + id].tags;
   for(var i = 0; i < hl_tags.length; ++i) {
     document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
@@ -1193,6 +1206,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     parseInt(document.getElementById('highlight-add-start').value),
     parseInt(document.getElementById('highlight-add-end').value)
   ];
+  var document_id = parseInt(document.getElementById('highlight-add-document').value);
   var hl_tags = [];
   var entries = Object.entries(tags);
   for(var i = 0; i < entries.length; ++i) {
@@ -1205,7 +1219,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
   if(highlight_id) {
     console.log("Posting update for highlight " + highlight_id);
     req = postJSON(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id,
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/' + highlight_id,
       {start_offset: selection[0],
        end_offset: selection[1],
        tags: hl_tags}
@@ -1213,7 +1227,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
   } else {
     console.log("Posting new highlight");
     req = postJSON(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/new',
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/new',
       {start_offset: selection[0],
        end_offset: selection[1],
        tags: hl_tags}
@@ -1235,11 +1249,12 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
 // Delete highlight button
 document.getElementById('highlight-delete').addEventListener('click', function() {
   var highlight_id = document.getElementById('highlight-add-id').value;
+  var document_id = document.getElementById('highlight-add-document').value;
   if(highlight_id) {
     highlight_id = parseInt(highlight_id);
     console.log("Posting highlight " + highlight_id + " deletion");
     deleteURL(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/' + highlight_id
     )
     .then(function() {
       $(highlight_add_modal).modal('hide');
@@ -1478,6 +1493,7 @@ function loadDocument(document_id) {
     }
     document.getElementById('document-link-' + current_document).classList.add('document-link-current');
     current_tag = null;
+    current_page = null;
     var tag_links = document.getElementsByClassName('tag-current');
     for(var i = tag_links.length - 1; i >= 0; --i) {
       tag_links[i].classList.remove('tag-current');
@@ -1526,54 +1542,18 @@ function loadTag(tag_path, page) {
     console.log("Loaded highlights for tag", tag_path || "''");
     document_contents.style.direction = 'ltr';
     current_tag = tag_path;
+    current_page = page;
     current_document = null;
     var document_links = document.getElementsByClassName('document-link-current');
     for(var i = document_links.length - 1; i >= 0; --i) {
       document_links[i].classList.remove('document-link-current');
     }
-    // No need to clear the 'tag-current', we are calling updateTagsList() below
-    document_contents.innerHTML = '';
     highlights = {};
     for(var i = 0; i < result.highlights.length; ++i) {
       var hl = result.highlights[i];
-      var content = document.createElement('div');
-      if(hl.text_direction === 'RIGHT_TO_LEFT') {
-        content.style.direction = 'rtl';
-      } else {
-        content.style.direction = 'ltr';
-      }
-      content.innerHTML = result.highlights[i].content;
-      var elem = document.createElement('div');
-      elem.className = 'highlight-entry';
-      elem.setAttribute('id', 'highlight-entry-' + hl.id);
-      elem.appendChild(content);
-      elem.appendChild(document.createTextNode(' '));
-
-      var doclink = document.createElement('a');
-      doclink.className = 'badge badge-light';
-      doclink.textContent = documents['' + hl.document_id].name;
-      linkDocument(doclink, hl.document_id);
-      elem.appendChild(doclink);
-      elem.appendChild(document.createTextNode(' '));
-
-      var tag_names = hl.tags.map(function(tag) { return tags['' + tag].path; });
-      tag_names.sort();
-      for(var j = 0; j < tag_names.length; ++j) {
-        if(j > 0) {
-          elem.appendChild(document.createTextNode(' '));
-        }
-        var taglink = document.createElement('a');
-        taglink.className = 'badge badge-dark';
-        taglink.textContent = tag_names[j];
-        linkTag(taglink, taglink.textContent);
-        elem.appendChild(taglink);
-      }
-
-      document_contents.appendChild(elem);
+      highlights[hl.id] = hl;
     }
-    if(result.highlights.length == 0) {
-      document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
-    }
+    showTagView();
 
     // Pagination controls
     function makePageLink(page_nb, label, current, enabled) {
@@ -1637,8 +1617,6 @@ function loadTag(tag_path, page) {
       document_contents.appendChild(pagination);
     }
 
-    updateTagsList();
-
     // Update export button
     export_button.style.display = '';
     var items = export_button.getElementsByClassName('dropdown-item');
@@ -1663,6 +1641,70 @@ function loadTag(tag_path, page) {
     alert(gettext("Error loading tag highlights!") + "\n\n" + error);
   })
   .then(hideSpinner);
+}
+
+function showTagView() {
+  // No need to clear the 'tag-current', we are calling updateTagsList() below
+  document_contents.innerHTML = '';
+
+  var hl_entries = Object.entries(highlights);
+  for(var i = 0; i < hl_entries.length; ++i) {
+    var hl = hl_entries[i][1];
+
+    // If any highlight is missing 'content', reload the list
+    if(hl.content === undefined) {
+      loadTag(current_tag, current_page);
+    }
+
+    var content = document.createElement('div');
+    if(hl.text_direction === 'RIGHT_TO_LEFT') {
+      content.style.direction = 'rtl';
+    } else {
+      content.style.direction = 'ltr';
+    }
+    content.innerHTML = hl.content;
+
+    var elem = document.createElement('div');
+    elem.className = 'highlight-entry';
+    elem.setAttribute('id', 'highlight-entry-' + hl.id);
+    elem.appendChild(content);
+    elem.appendChild(document.createTextNode(' '));
+
+    var editButton = document.createElement('a');
+    editButton.className = 'badge badge-secondary';
+    editButton.textContent = 'edit';
+    editButton.setAttribute('href', 'javascript:editHighlight(' + hl.id + ');');
+    elem.appendChild(editButton);
+    elem.appendChild(document.createTextNode(' '));
+
+    var doclink = document.createElement('a');
+    doclink.className = 'badge badge-light';
+    console.info(hl, documents);
+    doclink.textContent = documents['' + hl.document_id].name;
+    linkDocument(doclink, hl.document_id);
+    elem.appendChild(doclink);
+    elem.appendChild(document.createTextNode(' '));
+
+    var tag_names = hl.tags.map(function(tag) { return tags['' + tag].path; });
+    tag_names.sort();
+    for(var j = 0; j < tag_names.length; ++j) {
+      if(j > 0) {
+        elem.appendChild(document.createTextNode(' '));
+      }
+      var taglink = document.createElement('a');
+      taglink.className = 'badge badge-dark';
+      taglink.textContent = tag_names[j];
+      linkTag(taglink, taglink.textContent);
+      elem.appendChild(taglink);
+    }
+
+    document_contents.appendChild(elem);
+  }
+  if(hl_entries.length == 0) {
+    document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
+  }
+
+  updateTagsList()
 }
 
 // Load the document if the URL includes one
@@ -1779,7 +1821,8 @@ function longPollForEvents() {
           id: event.highlight_id,
           start_offset: event.start_offset,
           end_offset: event.end_offset,
-          tags: event.tags
+          tags: event.tags,
+          document_id: event.document_id,
         });
       } else if(event.type === 'highlight_delete') {
         removeHighlight(event.highlight_id);
