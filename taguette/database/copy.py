@@ -2,7 +2,7 @@ import logging
 import opentelemetry.trace
 
 from .models import Project, Privileges, ProjectMember, TextDirection, \
-    Document, Command, Highlight, Tag, highlight_tags
+    Document, Command, Highlight, Tag, highlight_tags, User
 from .. import convert
 from ..utils import DefaultMap
 from .. import validate
@@ -48,15 +48,36 @@ def copy_project(
     new_project_id, = insert(Project.__table__, project).inserted_primary_key
     mapping_project = {project_id: new_project_id}
 
-    # Add member
-    insert(
-        ProjectMember.__table__,
-        dict(
-            project_id=new_project_id,
-            user_login=user_login,
-            privileges=Privileges.ADMIN,
-        ),
-    )
+    # Copy all users and memberships that are part of the project
+    members = src_db.execute(
+            ProjectMember.__table__
+            .select()
+            .where(ProjectMember.project_id == project_id)
+            ).all()
+    for member in members:
+        existing_user = dest_db.execute(
+                User.__table__
+                .select().
+                where(User.login == member.user_login)
+                ).one_or_none()
+        if existing_user is None:
+            new_user = src_db.execute(
+                    User.__table__
+                    .select()
+                    .where(User.login == member.user_login)
+                    ).one()
+            insert(User.__table__, dict(new_user))
+
+        insert(
+                ProjectMember.__table__,
+                dict(
+                    project_id=new_project_id,
+                    user_login=member.user_login,
+                    privileges=member.privileges
+                    ),
+                )
+
+    mapping_user = {member['user_login']: member['user_login'] for member in members}
 
     # Copy documents
     mapping_document = copy(
@@ -178,11 +199,11 @@ def copy_project(
 
         return dict(cmd.items(), payload=payload)
 
+
     copy(
         Command.__table__, 'id',
         dict(
-            # Map all users to the importing user
-            user_login=DefaultMap(lambda key: user_login, {}),
+            user_login=mapping_user,
             project_id=mapping_project,
             # Map None to None and unknown keys (deleted documents) to negative
             document_id=DefaultMap(
