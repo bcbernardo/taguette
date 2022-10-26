@@ -50,34 +50,29 @@ def copy_project(
 
     # Copy all users and memberships that are part of the project
     members = src_db.execute(
-            ProjectMember.__table__
-            .select()
-            .where(ProjectMember.project_id == project_id)
-            ).all()
+        ProjectMember.__table__
+        .select()
+        .where(ProjectMember.project_id == project_id)).all()
     for member in members:
         existing_user = dest_db.execute(
-                User.__table__
-                .select().
-                where(User.login == member.user_login)
-                ).one_or_none()
+            User.__table__
+            .select().
+            where(User.login == member.user_login)).one_or_none()
         if existing_user is None:
             new_user = src_db.execute(
-                    User.__table__
-                    .select()
-                    .where(User.login == member.user_login)
-                    ).one()
+                User.__table__
+                .select()
+                .where(User.login == member.user_login)).one()
             insert(User.__table__, dict(new_user))
 
-        insert(
-                ProjectMember.__table__,
-                dict(
-                    project_id=new_project_id,
-                    user_login=member.user_login,
-                    privileges=member.privileges
-                    ),
-                )
+        insert(ProjectMember.__table__,
+               dict(
+                   project_id=new_project_id,
+                   user_login=member.user_login,
+                   privileges=member.privileges
+               ))
 
-    mapping_user = {member['user_login']: member['user_login'] for member in members}
+    mapping_user = {m['user_login']: m['user_login'] for m in members}
 
     # Copy documents
     mapping_document = copy(
@@ -198,7 +193,6 @@ def copy_project(
                 payload[field] = field_transformers[field](value)
 
         return dict(cmd.items(), payload=payload)
-
 
     copy(
         Command.__table__, 'id',
