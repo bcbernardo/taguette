@@ -5,15 +5,22 @@ import json
 import logging
 import math
 import os
+import csv
 import prometheus_client
+import tempfile
+from streaming_form_data import StreamingFormDataParser
+from streaming_form_data.targets import FileTarget, ValueTarget
+from time import time
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
 from tornado.concurrent import Future
 import tornado.log
-from tornado.web import MissingArgumentError, HTTPError
+from tornado.web import MissingArgumentError, HTTPError, stream_request_body
 from urllib.parse import unquote
+
+from taguette.database.models import TextDirection
 
 from .. import exact_version
 from .. import convert
@@ -103,29 +110,55 @@ class ProjectMeta(BaseHandler):
             logger.info("Error validating ProjectMeta: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
 
-
+@stream_request_body
 class DocumentAdd(BaseHandler):
+    def prepare(self):
+        # Set max body size of 1 GB
+        logger.info(self.request)
+        self.request.connection.set_max_body_size(1024 * 1024 * 1024)
+        
+        name = f'uploaded-file-tornado-{int(time())}'
+
+        self.document_name = ValueTarget()
+        self.filename = ValueTarget()
+        self.description = ValueTarget()
+        self.direction = ValueTarget()
+        self.file_ = FileTarget(os.path.join(tempfile.gettempdir(), name))
+
+        self._parser = StreamingFormDataParser(headers=self.request.headers)
+
+        self._parser.register('name', self.document_name)
+        self._parser.register('file', self.file_)
+        self._parser.register('filename', self.filename)
+        self._parser.register('direction', self.direction)
+        self._parser.register('description', self.description)
+
+    def data_received(self, chunk: bytes):
+        logger.info(self.request)
+        self._parser.data_received(chunk)
+
     @api_auth
     @PROM_REQUESTS.async_('document_add')
     async def post(self, project_id):
+        logger.info(self.request)
         project, privileges = self.get_project(project_id)
         if not privileges.can_add_document():
             return await self.send_error_json(403, self.gettext(
                 "Unauthorized",
             ))
         try:
-            name = self.get_body_argument('name')
+            name: str = self.document_name.value.decode('utf-8')
             validate.document_name(name)
-            description = self.get_body_argument('description')
+            description: str = self.description.value.decode('utf-8')
             validate.description(description)
-            try:
-                file = self.request.files['file'][0]
-            except (KeyError, IndexError):
-                raise MissingArgumentError('file')
-            content_type = file.content_type
-            filename = validate.fix_filename(unquote(file.filename))
-            direction = self.get_body_argument('text_direction',
-                                               'LEFT_TO_RIGHT')
+            filename: str = validate.fix_filename(unquote(self.filename.value))
+            direction_b: bytes = self.direction.value
+            
+            if direction_b != b'':
+                direction = direction_b.decode('utf-8')
+            else:
+                direction = 'LEFT_TO_RIGHT'
+            
             try:
                 direction = database.TextDirection[direction]
             except KeyError:
@@ -137,38 +170,73 @@ class DocumentAdd(BaseHandler):
             # Close DB connection to not overflow the connection pool
             self.close_db_connection()
 
-            try:
-                body = await convert.to_html_chunks(
-                    file.body, content_type, filename,
-                    self.application.config,
-                )
-            except convert.ConversionError as err:
-                return await self.send_error_json(400, str(err))
-            else:
-                doc = database.Document(
-                    name=name,
-                    description=description,
-                    filename=filename,
-                    project=project,
-                    text_direction=direction,
-                    contents=body,
-                )
-                self.db.add(doc)
-                self.db.flush()  # Need to flush to get doc.id
-                cmd = database.Command.document_add(
-                    self.current_user,
-                    doc,
-                )
-                self.db.add(cmd)
-                logger.info("Document added to project %r: %r %r (%d bytes)",
-                            project.id, doc.id, doc.name, len(doc.contents))
-                self.db.commit()
-                self.db.refresh(cmd)
-                self.application.notify_project(project.id, cmd)
-                return await self.send_json({'created': doc.id})
+            # If the file is a CSV verify that it has the columns
+            # name, content, and then possibly description then 
+            # create each document as a document with the name 
+            # "{filename}{name}" and the contents from content
+
+            ## 
+            content_type = os.path.splitext(filename)[-1].lower()
+            with open(self.file_.filename, 'r') as body:
+                if content_type == '.csv':
+                        documents = csv.DictReader(body)
+
+                        if not documents.fieldnames:
+                            return await self.send_error_json(
+                                400,
+                                self.gettext('Your provided CSV did not have a header line')
+                            )
+
+                        not_found = [self.gettext(expected) for expected in ['name', 'body'] if expected not in documents.fieldnames ]
+                        
+                        file_basename = name
+                        if len(not_found) > 0:
+                            return await self.send_error_json(400, self.gettext('Your provided CSV did not have the following expected columns: ') + ', '.join(not_found))
+
+                        results = []
+                        for line in documents:
+                            body = line['body']
+                            name = f'{file_basename} - {line["name"]}'
+                            description = line['description'] if 'description' in line else ''
+
+                            results.append(await self.__save_document(body, 'txt', f'{name}.txt', project, direction, name, description))
+
+                        if len(results) == 0:
+                            return await self.send_error_json(
+                                400,
+                                self.gettext('Your provided CSV did not have any documents to upload')
+                            )
+                        
+                        return await self.send_json({'created': results[0]['created']})
+                else:
+                    return await self.send_json(await self.__save_document(body.read(), content_type, filename, project, direction, name, description))
+
         except validate.InvalidFormat as e:
             logger.info("Error validating DocumentAdd: %r", e)
             return await self.send_error_json(400, self.gettext(e.message))
+
+    async def __save_document(self, body: str, content_type: str, filename: str, project, direction: TextDirection, name: str, description: str):
+            doc = database.Document(
+                name=name,
+                description=description,
+                filename=filename,
+                project=project,
+                text_direction=direction,
+                contents=body,
+            )
+            self.db.add(doc)
+            self.db.flush()  # Need to flush to get doc.id
+            cmd = database.Command.document_add(
+                self.current_user,
+                doc,
+            )
+            self.db.add(cmd)
+            logger.info("Document added to project %r: %r %r (%d bytes)",
+                        project.id, doc.id, doc.name, len(doc.contents))
+            self.db.commit()
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
+            return {'created': doc.id}
 
 
 class Document(BaseHandler):
