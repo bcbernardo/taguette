@@ -1634,7 +1634,7 @@ function loadTag(tag_path, page) {
       elem.appendChild(document.createTextNode(' '));
 
       var editHighlightLink = document.createElement('a');
-      editHighlightLink.textContent = 'edit highlights';
+      editHighlightLink.textContent = 'edit tags';
       editHighlightLink.setAttribute('data-highlight-id', '' + hl.id);
       editHighlightLink.setAttribute('data-document-id', '' + hl.document_id);
       editHighlightLink.className = 'badge badge-info';
