@@ -182,6 +182,9 @@ class Register(BaseHandler):
                 validate.user_email(email)
             if password1 != password2:
                 raise validate.InvalidFormat(_f("Passwords do not match"))
+            user = database.User(login=login)
+            await user.set_password(password1)
+            # Hashing password takes a while, do duplicate checks after
             if self.db.query(database.User).get(login) is not None:
                 raise validate.InvalidFormat(_f("User name is taken"))
             if (
@@ -192,8 +195,6 @@ class Register(BaseHandler):
             ):
                 raise validate.InvalidFormat(_f("Email address is already "
                                                 "used"))
-            user = database.User(login=login)
-            await user.set_password(password1)
             if email:
                 user.email = email
             if (
@@ -204,7 +205,14 @@ class Register(BaseHandler):
                     "Terms of Service must be accepted",
                 ))
             self.db.add(user)
-            self.db.commit()
+            try:
+                self.db.commit()
+            except IntegrityError:
+                # Shouldn't happen because of the checks above, but technically
+                # possible
+                raise validate.InvalidFormat(_f(
+                    "User name or email address is taken"
+                ))
             logger.info("User registered: %r", login)
             self.set_secure_cookie('user', login)
             return self.redirect(self.reverse_url('index'))
@@ -257,10 +265,6 @@ class Account(BaseHandler):
             language = self.get_body_argument('language', None)
             password1 = self.get_body_argument('password1', None)
             password2 = self.get_body_argument('password2', None)
-            if email is not None:
-                if email:
-                    validate.user_email(email)
-                user.email = email or None
             if password1 or password2:
                 validate.user_password(password1)
                 if password1 != password2:
@@ -269,7 +273,27 @@ class Account(BaseHandler):
             if language not in tornado.locale.get_supported_locales():
                 language = None
             user.language = language
-            self.db.commit()
+            # Hashing password takes a while, do duplicate check after
+            if email is not None:
+                if email:
+                    validate.user_email(email)
+                    if (
+                        self.db.query(database.User)
+                            .filter(database.User.email == email)
+                            .filter(database.User.login != user.login)
+                            .count() > 0
+                    ):
+                        raise validate.InvalidFormat(_f(
+                            "Email address is already used"
+                        ))
+                user.email = email or None
+            try:
+                self.db.commit()
+            except IntegrityError:
+                # Shouldn't happen because of the check above, but technically
+                # possible
+                raise validate.InvalidFormat(_f("Email address is already "
+                                                "used"))
             return self.redirect(self.reverse_url('account'))
         except validate.InvalidFormat as e:
             logger.info("Error validating Account: %r", e)
