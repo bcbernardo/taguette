@@ -8,7 +8,7 @@
 {% block contents %}
 <div class="row">
   <!-- Left panel -->
-  <div class="col-md-3">
+  <div class="col-md-auto col-sm-12 menu-row show">
     <div class="sticky-top">
       <!-- Tab selector -->
       <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -111,19 +111,26 @@
   </div>
 
   <!-- Right panel -->
-  <div class="col-md-9">
-
+  <div class="col">
     <div id="document-view" class="document-view">
-      <div id="export-button" class="dropdown" style="display: none;">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {% trans %}Export this view{% endtrans %}
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdown-export">
-          <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+      <div id="command-bar">
+        <div>
+          <a id="menu-toggle" data-toggle="collapse" href="#" data-target=".menu-row" role="button" aria-expanded="true">
+            <i class="fa fa-angle-double-left fa-lg"></i>
+            <i class="fa fa-angle-double-right fa-lg"></i>
+          </a>
+        </div>
+        <div id="export-button" class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {% trans %}Export this view{% endtrans %}
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdown-export">
+            <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+          </div>
         </div>
       </div>
 
