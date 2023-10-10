@@ -122,7 +122,7 @@ class DocumentAdd(BaseHandler):
         self.document_name = ValueTarget()
         self.filename = ValueTarget()
         self.description = ValueTarget()
-        self.direction = ValueTarget()
+        self.text_direction = ValueTarget()
         self.file_ = FileTarget(os.path.join(tempfile.gettempdir(), name))
 
         self._parser = StreamingFormDataParser(headers=self.request.headers)
@@ -130,7 +130,7 @@ class DocumentAdd(BaseHandler):
         self._parser.register('name', self.document_name)
         self._parser.register('file', self.file_)
         self._parser.register('filename', self.filename)
-        self._parser.register('direction', self.direction)
+        self._parser.register('text_direction', self.text_direction)
         self._parser.register('description', self.description)
 
     def data_received(self, chunk: bytes):
@@ -152,8 +152,8 @@ class DocumentAdd(BaseHandler):
             description: str = self.description.value.decode('utf-8')
             validate.description(description)
             filename: str = validate.fix_filename(unquote(self.filename.value))
-            direction_b: bytes = self.direction.value
-            
+            direction_b: bytes = self.text_direction.value
+
             if direction_b != b'':
                 direction = direction_b.decode('utf-8')
             else:
