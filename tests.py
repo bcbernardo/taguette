@@ -2418,9 +2418,10 @@ class SeleniumTest(MyHTTPTestCase):
     def tearDown(self):
         super(SeleniumTest, self).tearDown()
 
-        if self.logs:
+        logs = self.get_logs()
+        if logs:
             raise ValueError("Error in browser console: %s"
-                             % self.logs[0]['message'])
+                             % logs[0]['message'])
 
         self.driver.quit()
 
@@ -2857,6 +2858,18 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
         await self.s_click_button('Save & Close')
 
+        # Check highlighted document
+        self.assertEqual(
+            self.driver.find_element(By.ID, 'document-contents')
+            .get_attribute('innerHTML'),
+            (
+                '<div id="doc-offset-0"><a class="highlight highlight-1" '
+                + 'data-highlight-id="1" title="interesting">diff</a>erent con'
+                + '<a class="highlight highlight-2" data-highlight-id="2" '
+                + 'title="interesting, people">tent</a></div>'
+            ),
+        )
+
         # Edit highlight 1 in document 1
         hl, = self.driver.find_elements(By.CLASS_NAME, 'highlight-1')
         await self.s_click(hl)
@@ -2877,14 +2890,11 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Finish editing highlight 1 in document 1
         self.assertEqual(
             self.get_highlight_add_tags(),
-            # TODO: 3 should be selected, issue #135
-            {1: True, 2: False, 3: False},
+            # 3 was created while this modal was opened, it should be selected
+            {1: True, 2: False, 3: True},
         )
         await self.s_click(
             self.driver.find_element(By.ID, 'highlight-add-tags-1')
-        )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-3')
         )
         self.assertEqual(
             self.get_highlight_add_tags(),

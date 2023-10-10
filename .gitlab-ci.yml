@@ -46,16 +46,18 @@ frontend_firefox:
     - scripts/update_translations.sh
     - TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python tests.py -v TestSeleniumMultiuser
 
-frontend_chromium:
+frontend_chromium_redis:
   stage: test
   image: python:3.10
+  services:
+    - redis:latest
   script:
     - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yy xvfb chromium-driver
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=chromium xvfb-run python tests.py -v TestSeleniumMultiuser
+    - TAGUETTE_TEST_WEBDRIVER=chromium TAGUETTE_TEST_REDIS=redis://redis:6379 xvfb-run python tests.py -v TestSeleniumMultiuser
 
 frontend_chromium_subdir:
   stage: test
@@ -137,16 +139,6 @@ sqlite3_pypy:
     - pypy3 -m venv /tmp/venv
     - . /tmp/venv/bin/activate
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
-    - $HOME/.local/bin/poetry install --no-interaction
-    - scripts/update_translations.sh
-    - python -Wd tests.py -v
-
-sqlite3_py3.7:
-  stage: test
-  image: python:3.7
-  script:
-    - curl -sSL https://install.python-poetry.org | python3 -
-    - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -Wd tests.py -v

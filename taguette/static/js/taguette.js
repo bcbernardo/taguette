@@ -32,12 +32,16 @@ if(!Object.entries) {
   };
 }
 
-function sortByKey(array, key) {
+function sortByKey(array, key, reverse) {
+  var orderByX = 1;
+  if(reverse){
+    orderByX = -1
+  }
   array.sort(function(a, b) {
     if(key(a) < key(b)) {
-      return -1;
+      return -1 * orderByX;
     } else if(key(a) > key(b)) {
-      return 1;
+      return 1 * orderByX;
     } else {
       return 0;
     }
@@ -79,6 +83,8 @@ function nextElement(node) {
   }
   return node;
 }
+
+var onlyWhitespace = new RegExp('^[\r\n\t]*$');
 
 function getScrollPos() {
   var doc = document.scrollingElement || document.documentElement, body = document.body;
@@ -441,7 +447,9 @@ function highlightSelection(saved, id, clickedCallback, title) {
   var node = start;
   while(node != end) {
     var next = nextElement(node);
-    if(node.nodeType == 3 && node.textContent) { // TEXT_NODE
+    if(node.nodeType == 3 // TEXT_NODE
+     && node.textContent
+     && !node.textContent.match(onlyWhitespace)) {
       var span = document.createElement('a');
       span.className = 'highlight highlight-' + id;
       span.setAttribute('data-highlight-id', '' + id);
@@ -524,6 +532,7 @@ project_description_input.addEventListener('blur', projectMetadataChanged);
 
 var current_document = null;
 var current_tag = null;
+var last_added_tag = null;
 var documents_list = document.getElementById('documents-list');
 
 function linkDocument(elem, doc_id) {
@@ -556,6 +565,9 @@ function updateDocumentsList() {
     var elem = document.createElement('li');
     elem.setAttribute('id', 'document-link-' + doc.id);
     elem.className = 'list-group-item document-link';
+    if(doc.id === current_document) {
+      elem.classList.add('document-link-current');
+    }
     elem.innerHTML =
       '<div class="d-flex justify-content-between align-items-center">' +
       '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' +
@@ -748,8 +760,29 @@ document.getElementById('document-change-delete').addEventListener('click', func
  * Tags list
  */
 
+var tags_sorter = document.getElementById('tag-sortby');
+var sortTags = ['path', 'asc'];
 var tags_list = document.getElementById('tags-list');
 var tags_modal_list = document.getElementById('highlight-add-tags');
+
+function sortTagsBy(field, dir) {
+  sortTags = [field, dir];
+  var options = document.getElementById('tag-sortby-menu').querySelectorAll('a.dropdown-item');
+  var optionSorts = [
+    ['path', 'asc'],
+    ['path', 'desc'],
+    ['count', 'asc'],
+    ['count', 'desc'],
+  ];
+  for(var i = 0; i < optionSorts.length; ++i) {
+    if(optionSorts[i][0] === field && optionSorts[i][1] === dir) {
+      options[i].classList.add('active');
+    } else {
+      options[i].classList.remove('active');
+    }
+  }
+  updateTagsList();
+}
 
 function linkTag(elem, tag_path) {
   var url = base_path + '/project/' + project_id + '/highlights/' + encodeURIComponent(tag_path);
@@ -771,6 +804,11 @@ function addTag(tag) {
   }
   tags[tag.id] = tag;
   updateTagsList();
+
+  // This is the last tag we created, check it
+  if(tag.id == last_added_tag){
+    document.getElementById('highlight-add-tags-' + tag.id).checked = true;
+  }
 }
 
 function removeTag(tag_id) {
@@ -806,7 +844,8 @@ function mergeTags(tag_src, tag_dest) {
 
 function updateTagsList() {
   var entries = Object.entries(tags);
-  sortByKey(entries, function(e) { return e[1].path; });
+  var isReverse = sortTags[1] == 'desc';
+  sortByKey(entries, function(e) { return e[1][sortTags[0]]; }, isReverse);
 
   // The list in the left panel
 
@@ -851,7 +890,19 @@ function updateTagsList() {
   }
 
   // The list in the highlight modal
+  updateModalTagsList();
 
+  // Re-set all highlights, to update titles
+  var hl_entries = Object.entries(highlights);
+  for(var i = 0; i < hl_entries.length; ++i) {
+    setHighlight(hl_entries[i][1]);
+  }
+
+  console.log("Highlights updated");
+}
+
+function updateModalTagsList() {
+  var entries = Object.entries(tags);
   // Save previous checked statuses
   var checked_tags = [];
   for(var i = 0; i < entries.length; ++i) {
@@ -871,6 +922,25 @@ function updateTagsList() {
     }
     tags_modal_list.removeChild(first);
   }
+
+  // Apply search
+  var searchFor = document.getElementById('highlight-search').value;
+  if(searchFor.length > 0) {
+    entries.forEach(function(e) {
+      if(e[1].path.indexOf(searchFor) > -1) {
+        e[1].searchGroup = '0';
+      } else {
+        e[1].searchGroup = '1';
+      }
+    });
+  } else {
+    entries.forEach(function(e) {
+      delete e[1].searchGroup;
+    });
+  }
+
+  sortByKey(entries, function(e) { return e[1].searchGroup + e[1].path; });
+
   // Fill up the list again
   // TODO: Show this as a tree
   var tree = {};
@@ -878,10 +948,18 @@ function updateTagsList() {
   for(var i = 0; i < entries.length; ++i) {
     var tag = entries[i][1];
     var elem = document.createElement('li');
-    elem.className = 'tag-name form-check';
+    var searchHitClass = '';
+    if(searchFor.length > 0) {
+      if(tag.searchGroup == '0') {
+        searchHitClass = 'font-weight-bold';
+      } else {
+        searchHitClass = 'text-muted';
+      }
+    }
+    elem.className = 'tag-name form-check ' + searchHitClass;
     elem.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
-      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label">' + escapeHtml(tag.path) + '</label>';
+      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' + escapeHtml(tag.path) + '</label>';
     tags_modal_list.insertBefore(elem, before);
   }
   if(entries.length == 0) {
@@ -896,14 +974,35 @@ function updateTagsList() {
   }
 
   console.log("Tags list updated");
+}
 
-  // Re-set all highlights, to update titles
-  var hl_entries = Object.entries(highlights);
-  for(var i = 0; i < hl_entries.length; ++i) {
-    setHighlight(hl_entries[i][1]);
+var highlightSearch = document.getElementById('highlight-search');
+highlightSearch.addEventListener('input', function(e) {
+  updateModalTagsList();
+});
+highlightSearch.addEventListener('keypress', function(e) {
+  if(e.key === 'Enter') {
+    // If search is empty, don't prevent form submission, otherwise...
+    if(highlightSearch.value.length > 0) {
+      // Prevent submission
+      e.preventDefault();
+
+      // Toggle the first match
+      var checkbox = document.getElementById('highlight-add-tags').querySelector('.form-check.font-weight-bold input');
+      if(checkbox) {
+        checkbox.checked = !checkbox.checked;
+
+        // Reset the search
+        highlightSearch.value = '';
+        updateModalTagsList();
+      }
+    }
   }
+});
 
-  console.log("Highlights updated");
+function highlightModalReset() {
+  document.getElementById('highlight-add-form').reset();
+  updateModalTagsList();
 }
 
 updateTagsList();
@@ -977,8 +1076,16 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     );
   }
   showSpinner();
-  req.then(function() {
+  req.then(function(reply) {
     console.log("Tag posted");
+
+    // Check this tag in the list, or remember to check it once it appears
+    var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
+    if(tag_checkbox) {
+      tag_checkbox.checked = true;
+    }
+    last_added_tag = reply.id;
+
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
   })
@@ -1150,17 +1257,13 @@ backlight_checkbox.addEventListener('change', function() {
 
 var highlight_add_modal = document.getElementById('highlight-add-modal');
 
-var _onlyWhitespace = new RegExp('^[\r\n\t]*$');
-
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
   current_selection = describeSelection();
   var hlinfo = document.getElementById('hlinfo');
   if(current_selection !== null) {
     var current_range = window.getSelection().getRangeAt(0);
-    console.log(current_range.toString(), !!current_range.toString().match(_onlyWhitespace));
-    console.log(current_range.startOffset, ' ', current_range.endOffset);
-    if(current_range.toString().match(_onlyWhitespace)) {
+    if(current_range.toString().match(onlyWhitespace)) {
       hlinfo.style.display = 'none';
     } else if(current_range.endOffset > 0) {
       var last_char_range = document.createRange();
@@ -1185,8 +1288,9 @@ function createHighlight(selection) {
   document.getElementById('highlight-add-id').value = '';
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
-  document.getElementById('highlight-add-form').reset();
+  highlightModalReset();
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
+  document.getElementById('highlight-search').focus();
 }
 
 // TRANSLATORS: Key used to create a new highlight
@@ -1199,7 +1303,7 @@ document.addEventListener('keyup', function(e) {
 });
 
 function editHighlight() {
-  document.getElementById('highlight-add-form').reset();
+  highlightModalReset();
   var id = this.getAttribute('data-highlight-id');
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
@@ -1209,6 +1313,7 @@ function editHighlight() {
     document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
   }
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
+  document.getElementById('highlight-search').focus();
 }
 
 // Save highlight button
@@ -1249,7 +1354,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
   req.then(function() {
     console.log("Highlight posted");
     $(highlight_add_modal).modal('hide');
-    document.getElementById('highlight-add-form').reset();
+    highlightModalReset();
   })
   .catch(function(error) {
     console.error("Failed to create highlight:", error);
@@ -1269,7 +1374,7 @@ document.getElementById('highlight-delete').addEventListener('click', function()
     )
     .then(function() {
       $(highlight_add_modal).modal('hide');
-      document.getElementById('highlight-add-form').reset();
+      highlightModalReset();
     })
     .catch(function(error) {
       console.error("Failed to delete highlight:", error);
@@ -1498,11 +1603,17 @@ function loadDocument(document_id) {
       document_contents.style.direction = 'ltr';
     }
     current_document = document_id;
+
+    // Update current document highlight in left panel
     var document_links = document.getElementsByClassName('document-link-current');
     for(var i = document_links.length - 1; i >= 0; --i) {
       document_links[i].classList.remove('document-link-current');
     }
-    document.getElementById('document-link-' + current_document).classList.add('document-link-current');
+    var document_link = document.getElementById('document-link-' + current_document);
+    if(document_link) {
+      document_link.classList.add('document-link-current');
+    }
+
     current_tag = null;
     var tag_links = document.getElementsByClassName('tag-current');
     for(var i = tag_links.length - 1; i >= 0; --i) {

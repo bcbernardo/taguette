@@ -1,8 +1,15 @@
 Changelog
 =========
 
-1.4.0 (???)
------------
+1.4.1 (2023-02-04)
+------------------
+
+Bugfixes:
+* Fix highlighting in tables
+* Fix error adding documents in some situations due to a race condition (seems to only happen when using Redis)
+
+1.4.0 (2022-12-16)
+------------------
 
 Bugfixes:
 * Fix some validation on project import, filename mangling on document import
@@ -11,6 +18,7 @@ Bugfixes:
 * Fix the resource usage when using Redis, and avoid dropping events in specific conditions
 * Fix the database warnings shown at startup
 * Fix language setting sometimes being out of sync between devices
+* Don't allow the creation of blank highlights (empty content, for example selecting a newline character)
 
 Enhancements:
 * Add Swedish translation
@@ -25,6 +33,7 @@ Enhancements:
 * Add a script `register_user.py` to register a user even if registration is disabled
 * Allow more HTML tags in imported documents, like tables
 * Add a 'disabled' flag to users and a script to delete all user data (only keeping the 'login' in the database to prevent re-use)
+* Automatically select the new tag when creating a tag from the add/update highlight modal
 
 1.3.0 (2022-05-02)
 ------------------
