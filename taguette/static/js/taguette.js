@@ -883,11 +883,19 @@ function highlightModalReset() {
     initTagsHighlightTreeview(true);
 }
 
-function updateTagCount(id, delta) {
-    var tag = tags['' + id];
-    tag.count += delta;
-    var elem = document.getElementById('tag-' + id + '-count');
-    elem.textContent = tag.count;
+function updateTagCount(tagsId) {
+
+    for (const key in tagsId) {
+            const tagId = parseInt(key);
+            const value = parseInt(tagsId[key]);
+            const tagToUpdate = tags.find(item => item.id === tagId);
+
+            if (tagToUpdate) {
+                tagToUpdate.count = parseInt(tagToUpdate.count) + value;
+            }
+    }
+
+    initTagsTreeview();
 }
 
 var tag_add_modal = document.getElementById('tag-add-modal');
@@ -1843,10 +1851,7 @@ function longPollForEvents() {
                 }
 
                 if ('tag_count_changes' in event) {
-                    var entries = Object.entries(event.tag_count_changes);
-                    for (var i = 0; i < entries.length; ++i) {
-                        updateTagCount(entries[i][0], entries[i][1]);
-                    }
+                    updateTagCount(event.tag_count_changes)
                 }
                 last_event = event.id;
             }
