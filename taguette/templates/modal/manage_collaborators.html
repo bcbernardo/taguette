@@ -1,0 +1,41 @@
+<!-- Manage collaborators modal -->
+<div class="modal" id="members-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans %}Manage Collaborators{% endtrans %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <h5>{% trans "modal window title" %}Add Collaborators{% endtrans %}</h5>
+                    <form id="members-add">
+                        <fieldset id="members-add-fields">
+                            <div class="row">
+                                <div class="col-md-4 form-group">
+                                    <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <select id="member-add-privileges" class="form-control">
+                                        <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
+                                        <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
+                                        <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
+                                        <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                    <h5>{% trans %}Current Collaborators{% endtrans %}</h5>
+                    <form id="members-current">
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+            </div>
+        </div>
+    </div>
+</div>

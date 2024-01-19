@@ -16,467 +16,6 @@
 
 
 /*
- * Utilities
- */
-
-if (!Object.entries) {
-    Object.entries = function (obj) {
-        var ownProps = Object.keys(obj),
-            i = ownProps.length,
-            resArray = new Array(i); // preallocate the Array
-        while (i--) {
-            resArray[i] = [ownProps[i], obj[ownProps[i]]];
-        }
-
-        return resArray;
-    };
-}
-
-function sortByKey(array, key, reverse) {
-    var orderByX = 1;
-    if (reverse) {
-        orderByX = -1
-    }
-    array.sort(function (a, b) {
-        if (key(a) < key(b)) {
-            return -1 * orderByX;
-        } else if (key(a) > key(b)) {
-            return 1 * orderByX;
-        } else {
-            return 0;
-        }
-    });
-}
-
-function encodeGetParams(params) {
-    return Object.entries(params)
-        .filter(function (kv) {
-            return kv[1] !== undefined;
-        })
-        .map(function (kv) {
-            return kv.map(encodeURIComponent).join("=");
-        })
-        .join("&");
-}
-
-// Don't use RegExp literals https://github.com/python-babel/babel/issues/640
-var _escapeA = new RegExp('&', 'g'),
-    _escapeL = new RegExp('<', 'g'),
-    _escapeG = new RegExp('>', 'g'),
-    _escapeQ = new RegExp('"', 'g'),
-    _escapeP = new RegExp("'", 'g');
-
-function escapeHtml(s) {
-    return s
-        .replace(_escapeA, "&amp;")
-        .replace(_escapeL, "&lt;")
-        .replace(_escapeG, "&gt;")
-        .replace(_escapeQ, "&quot;")
-        .replace(_escapeP, "&#039;");
-}
-
-function nextElement(node) {
-    while (node && !node.nextSibling) {
-        node = node.parentNode;
-    }
-    if (!node) {
-        return null;
-    }
-    node = node.nextSibling;
-    while (node.firstChild) {
-        node = node.firstChild;
-    }
-    return node;
-}
-
-var onlyWhitespace = new RegExp('^[\r\n\t]*$');
-
-function getScrollPos() {
-    var doc = document.scrollingElement || document.documentElement, body = document.body;
-    var x = (doc && doc.scrollLeft || body && body.scrollLeft || 0) - (doc.clientLeft || 0);
-    var y = (doc && doc.scrollTop || body && body.scrollTop || 0) - (doc.clientTop || 0);
-    return {x: x, y: y};
-}
-
-function getCookie(name) {
-    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
-    return r ? r[1] : undefined;
-}
-
-function ApiError(response, message) {
-    if (!message) {
-        message = "Status " + response.status;
-    }
-    this.status = response.status;
-    this.message = message;
-}
-
-ApiError.prototype.toString = function () {
-    return this.message;
-};
-
-function getJSON(url = '', args) {
-    if (args) {
-        args = '?' + encodeGetParams(args);
-    } else {
-        args = '';
-    }
-    return fetch(
-        base_path + url + args,
-        {
-            credentials: 'same-origin',
-            mode: 'same-origin',
-            redirect: 'error'
-        }
-    ).then(function (response) {
-        if (response.status != 200) {
-            return response.json()
-                .then(
-                    function (json) {
-                        if ("error" in json) {
-                            throw new ApiError(response, json.error);
-                        } else {
-                            throw new ApiError(response);
-                        }
-                    },
-                    function () {
-                        throw new ApiError(response);
-                    }
-                );
-        }
-        return response.json().catch(function () {
-            throw new ApiError(response, "Invalid JSON");
-        });
-    });
-}
-
-function deleteURL(url = '', args) {
-    if (args) {
-        args = encodeGetParams(args);
-    } else {
-        args = '';
-    }
-    var xsrf = getCookie('_xsrf');
-    return fetch(
-        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
-        {
-            credentials: 'same-origin',
-            mode: 'same-origin',
-            cache: 'no-cache',
-            redirect: 'error',
-            method: 'DELETE'
-        }
-    ).then(function (response) {
-        if (response.status != 204) {
-            throw new ApiError(response);
-        }
-    });
-}
-
-function postJSON(url = '', data = {}, args) {
-    if (args) {
-        args = encodeGetParams(args);
-    } else {
-        args = '';
-    }
-    var xsrf = getCookie('_xsrf');
-    return fetch(
-        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
-        {
-            credentials: 'same-origin',
-            mode: 'same-origin',
-            cache: 'no-cache',
-            redirect: 'error',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify(data)
-        }
-    ).then(function (response) {
-        if (response.status != 200) {
-            return response.json()
-                .then(
-                    function (json) {
-                        if ("error" in json) {
-                            throw new ApiError(response, json.error);
-                        } else {
-                            throw new ApiError(response);
-                        }
-                    },
-                    function () {
-                        throw new ApiError(response);
-                    }
-                );
-        }
-        return response.json().catch(function () {
-            throw new ApiError(response, "Invalid JSON");
-        });
-    });
-}
-
-function patchJSON(url = '', data = {}, args) {
-    if (args) {
-        args = encodeGetParams(args);
-    } else {
-        args = '';
-    }
-    var xsrf = getCookie('_xsrf');
-    return fetch(
-        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
-        {
-            credentials: 'same-origin',
-            mode: 'same-origin',
-            cache: 'no-cache',
-            redirect: 'error',
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify(data)
-        }
-    ).then(function (response) {
-        if (response.status != 204) {
-            return response.json()
-                .then(
-                    function (json) {
-                        if ("error" in json) {
-                            throw new ApiError(response, json.error);
-                        } else {
-                            throw new ApiError(response);
-                        }
-                    },
-                    function () {
-                        throw new ApiError(response);
-                    }
-                );
-        } else {
-            return null;
-        }
-    });
-}
-
-// Returns the byte length of a string encoded in UTF-8
-// https://stackoverflow.com/q/5515869/711380
-if (window.TextEncoder) {
-    function lengthUTF8(s) {
-        return (new TextEncoder('utf-8').encode(s)).length;
-    }
-} else {
-    function lengthUTF8(s) {
-        var l = s.length;
-        for (var i = s.length - 1; i >= 0; --i) {
-            var code = s.charCodeAt(i);
-            if (code > 0x7f && code <= 0x7ff) ++l;
-            else if (code > 0x7ff && code <= 0xffff) l += 2;
-            if (code >= 0xDC00 && code <= 0xDFFF) i--; // trailing surrogate
-        }
-        return l;
-    }
-}
-
-// Escape a string for use in a regexp
-// https://stackoverflow.com/a/6969486/711380
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-}
-
-window.addEventListener('load', function () {
-    // https://css-tricks.com/snippets/jquery/draggable-without-jquery-ui/
-    (function ($) {
-        $.fn.drags = function (opt) {
-            opt = $.extend({handle: "", cursor: "move"}, opt);
-            if (opt.handle === "") {
-                var $el = this;
-            } else {
-                var $el = this.find(opt.handle);
-            }
-
-            return $el.css('cursor', opt.cursor).on("mousedown", function (e) {
-                if (opt.handle === "") {
-                    var $drag = $(this).addClass('draggable');
-                } else {
-                    var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
-                }
-                var z_idx = $drag.css('z-index'),
-                    drg_h = $drag.outerHeight(),
-                    drg_w = $drag.outerWidth(),
-                    pos_y = $drag.offset().top + drg_h - e.pageY,
-                    pos_x = $drag.offset().left + drg_w - e.pageX;
-                $drag.css('z-index', 1000).parents().on("mousemove", function (e) {
-                    $('.draggable').offset({
-                        top: e.pageY + pos_y - drg_h,
-                        left: e.pageX + pos_x - drg_w
-                    }).on("mouseup", function () {
-                        $(this).removeClass('draggable').css('z-index', z_idx);
-                    });
-                });
-                e.preventDefault(); // disable selection
-            }).on("mouseup", function () {
-                if (opt.handle === "") {
-                    $(this).removeClass('draggable');
-                } else {
-                    $(this).removeClass('active-handle').parent().removeClass('draggable');
-                }
-            });
-        }
-    })(jQuery);
-});
-
-function showSpinner() {
-    let $spinner_modal = $('#spinner-modal')
-    if (typeof $spinner_modal.modal !== 'undefined') {
-        $spinner_modal.modal('show');
-    }
-}
-
-function hideSpinner() {
-    $('#spinner-modal').modal('hide');
-}
-
-
-/*
- * Selection stuff
- */
-
-var chunk_offsets = [];
-
-// Get the document offset from a position
-function describePos(node, offset) {
-    // Convert current offset from character to bytes
-    offset = lengthUTF8(node.textContent.substring(0, offset));
-    while (!node.id) {
-        if (node.previousSibling) {
-            node = node.previousSibling;
-            offset += lengthUTF8(node.textContent);
-        } else {
-            node = node.parentNode;
-        }
-    }
-    if (node.id.substring(0, 11) != 'doc-offset-') {
-        return null;
-    }
-    return parseInt(node.id.substring(11)) + offset;
-}
-
-// Find a position from the document offset
-function locatePos(pos) {
-    // Find the right chunk
-    var chunk_start = 0;
-    for (var i = 0; i < chunk_offsets.length; ++i) {
-        if (chunk_offsets[i] > pos) {
-            break;
-        }
-        chunk_start = chunk_offsets[i];
-    }
-
-    var offset = pos - chunk_start;
-    var node = document.getElementById('doc-offset-' + chunk_start);
-    while (node.firstChild) {
-        node = node.firstChild;
-    }
-    while (offset > 0) {
-        if (lengthUTF8(node.textContent) >= offset) {
-            break;
-        } else {
-            offset -= lengthUTF8(node.textContent);
-            node = nextElement(node);
-        }
-    }
-    return [node, offset]
-}
-
-var current_selection = null;
-
-// Describe the selection e.g. [14, 56]
-function describeSelection() {
-    var sel = window.getSelection();
-    if (sel.rangeCount != 0) {
-        var range = sel.getRangeAt(0);
-        if (!range.collapsed) {
-            var start = describePos(range.startContainer, range.startOffset);
-            var end = describePos(range.endContainer, range.endOffset);
-            if (start !== null && end !== null) {
-                return [start, end];
-            }
-        }
-    }
-    return null;
-}
-
-// Restore a described selection
-function restoreSelection(saved) {
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    if (saved !== null) {
-        var range = document.createRange();
-        var start = locatePos(saved[0]);
-        var end = locatePos(saved[1]);
-        range.setStart(start[0], start[1]);
-        range.setEnd(end[0], end[1]);
-        sel.addRange(range);
-    }
-}
-
-function splitAtPos(pos, after) {
-    var node = pos[0], idx = pos[1];
-    if (idx === 0) {
-        // Leftmost index: return current node
-        return node;
-    } else if (idx >= lengthUTF8(node.textContent)) {
-        // Rightmost index: return next node
-        return nextElement(node);
-    } else {
-        // Find the character index from the byte index
-        var idx_char = 0;
-        while (idx > 0) {
-            var code = node.textContent.charCodeAt(idx_char);
-            if (code <= 0x7f) idx -= 1;
-            else if (code <= 0x7ff) idx -= 2;
-            else if (code <= 0xffff) idx -= 3;
-            else idx -= 4;
-            idx_char += 1;
-        }
-        if (idx_char >= node.textContent.length) {
-            console.error("Error computing character position!");
-            idx_char = node.textContent.length - 1;
-        }
-        // Split, return right node
-        return node.splitText(idx_char);
-    }
-}
-
-// Highlight a described selection
-function highlightSelection(saved, id, clickedCallback, title) {
-    console.log("Highlighting", saved);
-    if (saved === null) {
-        return;
-    }
-    var start = locatePos(saved[0]);
-    start = splitAtPos(start, false);
-    var end = locatePos(saved[1]);
-    end = splitAtPos(end, true);
-
-    var node = start;
-    while (node != end) {
-        var next = nextElement(node);
-        if (node.nodeType == 3 // TEXT_NODE
-            && node.textContent
-            && !node.textContent.match(onlyWhitespace)) {
-            var span = document.createElement('a');
-            span.className = 'highlight highlight-' + id;
-            span.setAttribute('data-highlight-id', '' + id);
-            span.setAttribute('title', title);
-            span.addEventListener('click', clickedCallback);
-            node.parentNode.insertBefore(span, node);
-            span.appendChild(node);
-        }
-        node = next;
-    }
-}
-
-
-/*
  * Project metadata
  */
 
@@ -809,94 +348,12 @@ function linkTag(elem, tag_path) {
 
 linkTag(document.getElementById('load-all-tags'), '');
 
-function addTag(tag) {
-    if (tag.parent) {
-        // If the parent tag is found, add the new tag to its children
-        const parentTag = tags.find(item => item.id === tag.parent);
-        parentTag.children = parentTag.children || [];
-        parentTag.children.push(Object.assign({'count': 0, 'children': []}, tag));
-
-    } else {
-        // If the tag has no parent, add it directly to the tags
-        tag = Object.assign({'count': 0, 'children': []}, tag);
-        tags.push(tag);
-    }
-    updateTagsList();
-}
-
-function removeTag(tag_id) {
-    // Remove from list of tags
-    delete tags['' + tag_id];
-    // Remove from all highlights
-    var hl_entries = Object.entries(highlights);
-    for (var i = 0; i < hl_entries.length; ++i) {
-        var hl = hl_entries[i][1];
-        hl.tags = hl.tags.filter(function (v) {
-            return v != tag_id;
-        });
-    }
-    updateTagsList();
-}
-
-function mergeTags(tag_src, tag_dest) {
-    for (var id in highlights) {
-        var hl_tags = highlights[id].tags;
-
-        if (hl_tags.includes(tag_src)) {
-            // Remove src tag
-            var idx = hl_tags.indexOf(tag_src);
-            hl_tags.splice(idx, 1);
-
-            if (!hl_tags.includes(tag_dest)) {
-                // Add new tag
-                hl_tags.push(tag_dest);
-            }
-        }
-    }
-    delete tags['' + tag_src];
-    updateTagsList();
-}
-
-function updateTagsList() {
-    var entries = Object.entries(tags);
-    var isReverse = sortTags[1] == 'desc';
-    sortByKey(entries, function (e) {
-        return e[1][sortTags[0]];
-    }, isReverse);
-
-    // update all tags treeview
-    initTagsTreeview(false);
-    initTagsHighlightTreeview(false);
-
-    // Re-set all highlights, to update titles
-    var hl_entries = Object.entries(highlights);
-    for (var i = 0; i < hl_entries.length; ++i) {
-        setHighlight(hl_entries[i][1]);
-    }
-
-    console.log("Highlights updated");
-}
-
-
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
-    initTagsHighlightTreeview(true);
+    initTagsHighlightTreeview(false);
 }
 
-function updateTagCount(tagsId) {
 
-    for (const key in tagsId) {
-            const tagId = parseInt(key);
-            const value = parseInt(tagsId[key]);
-            const tagToUpdate = tags.find(item => item.id === tagId);
-
-            if (tagToUpdate) {
-                tagToUpdate.count = parseInt(tagToUpdate.count) + value;
-            }
-    }
-
-    initTagsTreeview();
-}
 
 var tag_add_modal = document.getElementById('tag-add-modal');
 
@@ -916,9 +373,20 @@ function createTag() {
 }
 
 function editTag(tag_id) {
-    const tag = tags.find((tag) => tag.id === tag_id)
+    if(tag_id === undefined && selected_tag_id === 0) {
+        alert('Select un tag');
+        return;
+    }
+    if(selected_tag_id > 0) {
+        tag_id = selected_tag_id
+    }
+    const tag = findTag(tag_id);
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '' + tag_id;
+    if(tag.parent) {
+        document.getElementById('tag-add-parent-id').value = tag.parent;
+        document.getElementById('dropdownMenuButtonTag').innerText = findTag(tag.parent).path;
+    }
     document.getElementById('tag-add-path').value = tag.path;
     document.getElementById('tag-add-description').value = tag.description;
     document.getElementById('tag-add-label-new').style.display = 'none';
@@ -933,7 +401,7 @@ function editTag(tag_id) {
 document.getElementById('tag-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    var tag_id = document.getElementById('tag-add-id').value;
+    let tag_id = document.getElementById('tag-add-id').value;
     if (tag_id) {
         tag_id = parseInt(tag_id);
     } else {
@@ -944,14 +412,16 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
         alert(gettext("Invalid tag name"));
         return;
     }
+
     var tag_parent_id = document.getElementById('tag-add-parent-id').value;
     if (tag_parent_id !== '') {
         tag_parent_id = parseInt(tag_parent_id);
     } else {
         tag_parent_id = null;
     }
+
     var req;
-    if (tag_id !== null) {
+    if (tag_id) {
         console.log("Posting update for tag " + tag_id);
         req = postJSON(
             '/api/project/' + project_id + '/tag/' + tag_id,
@@ -991,8 +461,9 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 // Delete tag button
 document.getElementById('tag-add-delete').addEventListener('click', function (e) {
     var tag_id = document.getElementById('tag-add-id').value;
+    const tag = findTag(tag_id)
     if (tag_id) {
-        if (!window.confirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tags[tag_id].path}))) {
+        if (!window.confirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tag.path}))) {
             e.preventDefault();
             return;
         }
@@ -1016,36 +487,17 @@ document.getElementById('tag-add-delete').addEventListener('click', function (e)
 document.getElementById('tag-add-merge').addEventListener('click', function (e) {
     e.preventDefault();
 
-    var tag_id = document.getElementById('tag-add-id').value;
+    let tag_id = document.getElementById('tag-add-id').value;
     if (!tag_id)
         return;
     tag_id = parseInt(tag_id);
+    const tag = findTag(tag_id)
 
     document.getElementById('tag-merge-form').reset();
 
     // Set source tag
     document.getElementById('tag-merge-src-id').value = '' + tag_id;
-    document.getElementById('tag-merge-src-name').value = tags['' + tag_id].path;
-
-    // Empty target tag <select>
-    var target = document.getElementById('tag-merge-dest');
-    target.innerHTML = '';
-
-    // Fill target tag <select>
-    var entries = Object.entries(tags);
-    sortByKey(entries, function (e) {
-        return e[1].path;
-    });
-    for (var i = 0; i < entries.length; ++i) {
-        if (entries[i][0] == '' + tag_id) {
-            // Can't merge into itself
-            continue;
-        }
-        var option = document.createElement('option');
-        option.setAttribute('value', entries[i][0]);
-        option.innerText = entries[i][1].path;
-        target.appendChild(option);
-    }
+    document.getElementById('tag-merge-src-name').value = tag.path;
 
     $(document.getElementById('tag-merge-modal')).modal('show');
 });
@@ -1054,19 +506,22 @@ document.getElementById('tag-add-merge').addEventListener('click', function (e) 
 document.getElementById('tag-merge-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    var tag_src = document.getElementById('tag-merge-src-id').value;
+    let tag_src = document.getElementById('tag-merge-src-id').value;
     if (!tag_src)
         return;
     tag_src = parseInt(tag_src);
 
-    var tag_dest = document.getElementById('tag-merge-dest').value;
+    let tag_dest = document.getElementById('tag-merge-dest').value;
     if (!tag_dest)
         return;
     tag_dest = parseInt(tag_dest);
 
-    console.log(
-        "Merging tag " + tag_src + " (" + tags['' + tag_src].path +
-        ") into tag " + tag_dest + " (" + tags['' + tag_dest].path + ")");
+    // Todo : add good text
+    if(tag_src === tag_dest) {
+        alert('Merge not possible')
+        return
+    }
+
     showSpinner();
     postJSON(
         '/api/project/' + project_id + '/tag/merge',
@@ -1083,57 +538,6 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
         .then(hideSpinner);
 });
 
-
-/*
- * Highlights
- */
-
-// Add or replace a highlight
-function setHighlight(highlight) {
-    var id = '' + highlight.id;
-    if (highlights[id]) {
-        removeHighlight(id);
-    }
-    highlights[id] = highlight;
-    var tag_names = highlight.tags.map(function (id) {
-        return tags.find((tag) => tag.id === id).path;
-    });
-    sortByKey(tag_names, function (path) {
-        return path;
-    });
-    tag_names = tag_names.join(", ");
-    try {
-        highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
-        console.log("Highlight set:", highlight);
-    } catch (error) {
-        console.error(
-            "Error setting highlight ", highlight.id, " ", [highlight.start_offset, highlight.end_offset],
-            ":", error,
-        );
-    }
-}
-
-// Remove a highlight
-function removeHighlight(id) {
-    id = '' + id;
-    if (!highlights[id]) {
-        return;
-    }
-
-    delete highlights[id];
-    console.log("Highlight removed:", id);
-
-    // Loop over highlight-<id> elements
-    var elements = document.getElementsByClassName('highlight-' + id);
-    for (var i = 0; i < elements.length; ++i) {
-        // Move children up and delete this element
-        var node = elements[i];
-        while (node.firstChild) {
-            node.parentNode.insertBefore(node.firstChild, node);
-        }
-        node.parentNode.removeChild(node);
-    }
-}
 
 // Backlight
 var backlight_checkbox = document.getElementById('backlight');
@@ -1203,15 +607,15 @@ document.addEventListener('keyup', function (e) {
 
 function editHighlight() {
     highlightModalReset();
-    var id = this.getAttribute('data-highlight-id');
+    const id = this.getAttribute('data-highlight-id');
     document.getElementById('highlight-add-id').value = id;
     document.getElementById('highlight-add-start').value = highlights[id].start_offset;
     document.getElementById('highlight-add-end').value = highlights[id].end_offset;
-    var hl_tags = highlights['' + id].tags;
-    var allNodes = $('#treeview-tags-highlight').treeview('getEnabled');
-    for (var i = 0; i < hl_tags.length; ++i) {
+    const hl_tags = highlights['' + id].tags;
+    const allNodes = treeview_tags_highlight.treeview('getEnabled');
+    for (let i = 0; i < hl_tags.length; ++i) {
         const node = allNodes.find((node) => node.id === hl_tags[i]);
-        $('#treeview-tags-highlight').treeview('selectNode', node.nodeId);
+        treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
     document.getElementById('highlight-search').focus();
@@ -1226,7 +630,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
         parseInt(document.getElementById('highlight-add-end').value)
     ];
     var hl_tags = [];
-    var selectedTags = $('#treeview-tags-highlight').treeview('getSelected');
+    var selectedTags = treeview_tags_highlight.treeview('getSelected');
     hl_tags = selectedTags.map((tag) => tag.id);
     var req;
     if (highlight_id) {
@@ -1602,7 +1006,7 @@ function loadTag(tag_path, page) {
                 elem.appendChild(document.createTextNode(' '));
 
                 var tag_names = hl.tags.map(function (tag) {
-                    return tags.find((item) => item.id === tag).path;
+                    return findTag(tag).path;
                 });
                 tag_names.sort();
                 for (var j = 0; j < tag_names.length; ++j) {
@@ -1778,101 +1182,3 @@ window.addEventListener('blur', function () {
     // We lost focus, start timer
     windowLastActive = new Date();
 });
-
-var lastPoll = null;
-var polling = true;
-
-function maybeResumePolling() {
-    if (!polling) {
-        longPollForEvents();
-    }
-}
-
-function longPollForEvents() {
-    // If we've been inactive for 10min, pause polling for now
-    if (windowLastActive !== null && (new Date() - windowLastActive > 600000)) {
-        console.log("Browser window inactive, stop polling");
-        polling = false;
-        return;
-    }
-
-    polling = true;
-    lastPoll = Date.now();
-    getJSON(
-        '/api/project/' + project_id + '/events',
-        {version: version, from: last_event}
-    )
-        .then(function (result) {
-            if (result.reload) {
-                console.log("Server sent signal to reload");
-                window.location.reload();
-                return;
-            }
-            for (var i = 0; i < result.events.length; ++i) {
-                var event = result.events[i];
-                if (event.type === 'project_meta') {
-                    setProjectMetadata({
-                        project_name: event.project_name,
-                        description: event.description
-                    });
-                } else if (event.type === 'document_add') {
-                    addDocument({
-                        id: event.document_id,
-                        name: event.document_name,
-                        description: event.description,
-                        text_direction: event.text_direction
-                    });
-                } else if (event.type === 'document_delete') {
-                    removeDocument(event.document_id);
-                } else if (event.type === 'highlight_add') {
-                    setHighlight({
-                        id: event.highlight_id,
-                        start_offset: event.start_offset,
-                        end_offset: event.end_offset,
-                        tags: event.tags
-                    });
-                } else if (event.type === 'highlight_delete') {
-                    removeHighlight(event.highlight_id);
-                } else if (event.type === 'tag_add') {
-                    addTag({
-                        id: event.tag_id,
-                        path: event.tag_path,
-                        description: event.description,
-                        parent: event.tag_parent
-                    });
-                } else if (event.type === 'tag_delete') {
-                    removeTag(event.tag_id);
-                } else if (event.type === 'tag_merge') {
-                    mergeTags(event.src_tag_id, event.dest_tag_id);
-                } else if (event.type === 'member_add') {
-                    addMember(event.member, event.privileges);
-                } else if (event.type === 'member_remove') {
-                    removeMember(event.member);
-                }
-
-                if ('tag_count_changes' in event) {
-                    updateTagCount(event.tag_count_changes)
-                }
-                last_event = event.id;
-            }
-
-            // Re-open connection
-            setTimeout(longPollForEvents, 1);
-        }, function (error) {
-            console.error("Polling failed:", error);
-            if (error instanceof ApiError && error.status == 403) {
-                alert(gettext("It appears that you have been logged out."));
-                window.location = '/';
-            } else if (error instanceof ApiError && error.status == 404) {
-                alert(gettext("You can no longer access this project."));
-                window.location = '/';
-            } else {
-                setTimeout(longPollForEvents, Math.max(1, 5000 + lastPoll - Date.now()));
-            }
-        })
-        .catch(function (error) {
-            console.error("Polling function error:", error);
-        });
-}
-
-longPollForEvents();
