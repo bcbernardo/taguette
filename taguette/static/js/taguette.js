@@ -354,7 +354,6 @@ function highlightModalReset() {
 }
 
 
-
 var tag_add_modal = document.getElementById('tag-add-modal');
 
 $(tag_add_modal).on('shown.bs.modal', function () {
@@ -373,17 +372,17 @@ function createTag() {
 }
 
 function editTag(tag_id) {
-    if(tag_id === undefined && selected_tag_id === 0) {
+    if (tag_id === undefined && selected_tag_id === 0) {
         alert('Select un tag');
         return;
     }
-    if(selected_tag_id > 0) {
+    if (selected_tag_id > 0) {
         tag_id = selected_tag_id
     }
     const tag = findTag(tag_id);
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '' + tag_id;
-    if(tag.parent) {
+    if (tag.parent) {
         document.getElementById('tag-add-parent-id').value = tag.parent;
         document.getElementById('dropdownMenuButtonTag').innerText = findTag(tag.parent).path;
     }
@@ -517,7 +516,7 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     tag_dest = parseInt(tag_dest);
 
     // Todo : add good text
-    if(tag_src === tag_dest) {
+    if (tag_src === tag_dest) {
         alert('Merge not possible')
         return
     }
@@ -593,7 +592,7 @@ function createHighlight(selection) {
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    document.getElementById('highlight-search').focus();
+    // document.getElementById('highlight-search').focus();
 }
 
 // TRANSLATORS: Key used to create a new highlight
@@ -618,7 +617,7 @@ function editHighlight() {
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    document.getElementById('highlight-search').focus();
+    // document.getElementById('highlight-search').focus();
 }
 
 // Save highlight button
@@ -1181,4 +1180,35 @@ window.addEventListener('mousemove', function () {
 window.addEventListener('blur', function () {
     // We lost focus, start timer
     windowLastActive = new Date();
+});
+
+
+/*
+ * Attach input change for tag search event
+ */
+const TAG_NOT_FOUND_MESSAGE = "No tag found";
+
+document.getElementById('input-search-tags').addEventListener('input', function () {
+    const alert_tag_treeview = $('#alert-tag-treeview');
+    const filterText = $('#input-search-tags').val().toLowerCase();
+    alert_tag_treeview.addClass('d-none')
+    const filteredTags = handleSearch(filterText);
+    initTagsTreeview(false, filteredTags);
+    if (filteredTags.length === 0) {
+        alert_tag_treeview.removeClass('d-none')
+        alert_tag_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
+    }
+});
+
+
+document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
+    const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
+    const filterText = $('#input-search-tags-highlight').val().toLowerCase();
+    alert_tag_highlight_treeview.addClass('d-none')
+    const filteredTags = handleSearch(filterText);
+    initTagsHighlightTreeview(false, filteredTags);
+    if (filteredTags.length === 0) {
+        alert_tag_highlight_treeview.removeClass('d-none')
+        alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
+    }
 });

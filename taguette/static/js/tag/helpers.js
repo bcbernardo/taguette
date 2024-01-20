@@ -209,3 +209,23 @@ function sortTagsByKey(array, key, reverse) {
         }
     });
 }
+
+function handleSearch(filterText) {
+
+    return tags.filter(item => {
+
+        if (item.path.toLowerCase().includes(filterText)) {
+            return true;
+        }
+
+        // Check in children too
+        if (item.children && item.children.length > 0) {
+            const filteredChildren = item.children.filter(child => child.path.toLowerCase().includes(filterText));
+            if (filteredChildren.length > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+}
