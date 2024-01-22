@@ -360,14 +360,18 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 
-function createTag() {
+function createTag(from) {
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
+    document.getElementById('tag-add-path').value = '';
     document.getElementById('tag-add-label-new').style.display = '';
     document.getElementById('tag-add-label-change').style.display = 'none';
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
+    if(from === 2) {
+        document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value
+    }
     $(tag_add_modal).modal('show');
 }
 
@@ -447,6 +451,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 
         $(tag_add_modal).modal('hide');
         document.getElementById('tag-add-form').reset();
+        document.getElementById('input-search-tags-highlight').value = '';
         document.getElementById('dropdownMenuButtonTag').innerText = 'None';
 
     })
@@ -1203,12 +1208,15 @@ document.getElementById('input-search-tags').addEventListener('input', function 
 
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
     const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
+    const container_tag_highlight = $('#container-create-tag-highlight');
     const filterText = $('#input-search-tags-highlight').val().toLowerCase();
     alert_tag_highlight_treeview.addClass('d-none')
+    container_tag_highlight.addClass('d-none')
     const filteredTags = handleSearch(filterText);
     initTagsHighlightTreeview(false, filteredTags);
     if (filteredTags.length === 0) {
         alert_tag_highlight_treeview.removeClass('d-none')
+        container_tag_highlight.removeClass('d-none')
         alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
