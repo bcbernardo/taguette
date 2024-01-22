@@ -7,7 +7,7 @@
     <meta name="Description" content="Free and open source qualitative research tool">
     <link rel="stylesheet" href="{{ static_url('css/custom.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/fa-all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('css/lib/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap.min.css') }}">
     {% block styles %}
     {% endblock %}
     <title>{% block title %}Taguette{% endblock %}</title>
@@ -77,8 +77,8 @@
       </footer>
     </div>
 
-    <script src="{{ static_url('js/lib/jquery-3.7.1.js') }}"></script>
-    <script src="{{ static_url('js/lib/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ static_url('js/vendor/jquery-3.7.1.js') }}"></script>
+    <script src="{{ static_url('js/vendor/bootstrap.bundle.min.js') }}"></script>
 
     {% block morejs %}
     {% endblock %}

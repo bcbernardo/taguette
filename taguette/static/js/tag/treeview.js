@@ -78,10 +78,11 @@ function addEditButton() {
             class: 'btn btn-primary btn-sm ms-2',
             text: 'Edit',
             click: function (event) {
-                const allNodes = treeview_tags.treeview('getEnabled');
-                const node = allNodes.find(item => item.nodeId === parseInt($(element).data("nodeid")))
+                // const allNodes = treeview_tags.treeview('getEnabled');
+                // const node = allNodes.find(item => item.nodeId === parseInt($(element).data("nodeid")))
+                const tag_id = getTagId('treeview-tags', $(element).data("nodeid"))
                 event.stopPropagation(); // Prevent event propagation
-                editTag(node.id);
+                editTag(tag_id);
             }
         });
 

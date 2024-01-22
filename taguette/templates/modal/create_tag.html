@@ -41,10 +41,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-info" data-bs-dismiss="modal" id="tag-add-merge">{% trans "button
+                <button type="button" class="btn btn-info" data-bs-dismiss="modal" id="tag-add-merge" data-test-id="show-merge-tag-modal-button">{% trans "button
                     in tag change modal window" %}Merge...{% endtrans %}
                 </button>
-                <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
+                <button type="submit" class="btn btn-primary"  data-test-id="save-tag-button">{% trans %}Save & Close{% endtrans %}</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="tag-add-cancel">{% trans
                     %}Cancel{% endtrans %}
                 </button>

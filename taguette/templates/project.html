@@ -2,8 +2,8 @@
 {% set active_page = "project" %}
 
 {% block styles %}
-  <link rel="stylesheet" href="{{ static_url('css/lib/hierarchy-select.min.css') }}">
-  <link rel="stylesheet" href="{{ static_url('css/lib/bootstrap-treeview.min.css') }}">
+  <link rel="stylesheet" href="{{ static_url('css/vendor/hierarchy-select.min.css') }}">
+  <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap-treeview.min.css') }}">
 {% endblock %}
 
 {% block title %}{{ project.name }} | Taguette{% endblock %}
@@ -18,13 +18,13 @@
       <!-- Tab selector -->
       <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
-          <a class="nav-link" id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
+          <a class="nav-link" id="project-tab" data-test-id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link active" id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Documents{% endtrans %}</a>
+          <a class="nav-link active" id="documents-tab" data-test-id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Documents{% endtrans %}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="tags-tab" data-bs-toggle="tab" href="#tags" role="tab" aria-controls="tags" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Highlights{% endtrans %}</a>
+          <a class="nav-link" id="tags-tab" data-test-id="tags-tab" data-bs-toggle="tab" href="#tags" role="tab" aria-controls="tags" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Highlights{% endtrans %}</a>
         </li>
       </ul>
 
@@ -52,7 +52,7 @@
           <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
 
           <div class="dropdown mb-3">
-            <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-test-id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               {% trans %}Export codebook{% endtrans %}
             </button>
             <ul class="dropdown-menu" aria-labelledby="dropdown-codebook">
@@ -78,7 +78,7 @@
         <div class="tab-pane fade show active" id="documents" role="tabpanel" aria-labelledby="documents-tab">
           <div class="row">
             <div class="col-md-12">
-              <a class="btn btn-sm btn-primary float-end mb-3" href="javascript:createDocument()">{% trans %}Add a document{% endtrans %}</a>
+              <a class="btn btn-sm btn-primary float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link">{% trans %}Add a document{% endtrans %}</a>
             </div>
           </div>
           <ul class="list-group list-group-flush" id="documents-list">
@@ -91,9 +91,9 @@
         <div class="tab-pane fade" id="tags" role="tabpanel" aria-labelledby="tags-tab">
           <div class="row">
             <div class="col-md-12 mb-3 d-flex justify-content-end">
-                <a id="edit-tag-btn" class="btn btn-sm btn-primary float-end ms-2 d-none" href="javascript:editTag()">{% trans %}Edit a tag{% endtrans %}</a>
-                <a class="btn btn-sm btn-primary ms-2" href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a>
-                <a id="load-all-tags" class="btn btn-sm btn-primary float-end ms-2" href="/project/{{ project.id }}/highlights/">{% trans %}See all highlights{% endtrans %}</a>
+                <a id="edit-tag-btn" class="btn btn-sm btn-primary float-end ms-2 d-none" data-test-id="edit-tag-link" href="javascript:editTag()">{% trans %}Edit a tag{% endtrans %}</a>
+                <a class="btn btn-sm btn-primary ms-2" href="javascript:createTag()" data-test-id="create-tag-link">{% trans %}Create a tag{% endtrans %}</a>
+                <a id="load-all-tags" class="btn btn-sm btn-primary float-end ms-2" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
                 <div class="dropdown ms-2">
                     <button class="btn btn-sm btn-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-sort"></i>
@@ -125,7 +125,7 @@
 
     <div id="document-view" class="document-view">
       <div id="export-button" class="dropdown" style="display: none;">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-test-id="dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           {% trans %}Export this view{% endtrans %}
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdown-export">
@@ -179,7 +179,7 @@
   let members = {{ members }};
   let highlights = {};
   let last_event = {{ last_event }};
-  let selected_tag_id = 0
+  let selected_tag_id = 0;
 </script>
 
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
@@ -197,13 +197,13 @@
 <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
 
 <!-- libraries -->
-<script type="text/javascript" src="{{ static_url('js/lib/hierarchy-select.min.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/lib/bootstrap-treeview.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/hierarchy-select.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/bootstrap-treeview.min.js') }}"></script>
 
 <!-- tag -->
+<script type="text/javascript" src="{{ static_url('js/tag/helpers.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/tag/hierarchy-select.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/tag/treeview.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/tag/helpers.js') }}"></script>
 
 <!-- highlight -->
 <script type="text/javascript" src="{{ static_url('js/highlight.js') }}"></script>
