@@ -7,12 +7,12 @@ from taguette import convert, database, extract, import_codebook, main, \
 
 class MyHTTPTestCase(AsyncHTTPTestCase):
     xsrf = None
-    
+
     def setUp(self):
         web.Application.check_messages = lambda s: s.messages_event.set()
         validate.filename.windows = True  # escape device names
         super(MyHTTPTestCase, self).setUp()
-        
+
         # Tornado's http client doesn't support cookies, use aiohttp instead
         @self.io_loop.run_sync
         async def async_init():
@@ -21,22 +21,22 @@ class MyHTTPTestCase(AsyncHTTPTestCase):
                 cookie_jar=aiohttp.cookiejar.CookieJar(unsafe=True),
             )
             await self.http_client.__aenter__()
-    
+
     def tearDown(self):
         self.io_loop.run_sync(
             lambda: self.http_client.close(),
             timeout=3,
         )
-    
+
     def _fetch(self, url, method='GET', **kwargs):
         # Copied from tornado.testing.AsyncHTTPTestCase.fetch()
         if not url.lower().startswith(('http://', 'https://')):
             url = self.get_url(url)
         return getattr(self.http_client, method.lower())(url, **kwargs)
-    
+
     def aget(self, url, headers=None):
         return self._fetch(url, headers=headers, allow_redirects=False)
-    
+
     def apost(self, url, **kwargs):
         cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
         if '_xsrf' in cookies:
@@ -60,7 +60,7 @@ class MyHTTPTestCase(AsyncHTTPTestCase):
                 )
             kwargs['data'] = data
         return self._fetch(url, method='POST', allow_redirects=False, **kwargs)
-    
+
     def adelete(self, url):
         cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
         if '_xsrf' in cookies:
