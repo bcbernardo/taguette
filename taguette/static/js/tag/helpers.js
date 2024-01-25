@@ -184,6 +184,7 @@ function updateTagsList() {
     initMergeTagHierarchySelect();
     // Todo : make it method
     edit_tag_button.addClass('d-none');
+    hideSearchErrorMessage();
 }
 
 function sortTagsByKey(array, key, reverse) {

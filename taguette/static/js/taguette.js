@@ -350,6 +350,7 @@ linkTag(document.getElementById('load-all-tags'), '');
 
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
+    hideSearchErrorMessage();
     initTagsHighlightTreeview(false);
 }
 
@@ -1205,18 +1206,25 @@ document.getElementById('input-search-tags').addEventListener('input', function 
     }
 });
 
-
+const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
+const container_tag_highlight = $('#container-create-tag-highlight');
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
-    const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
-    const container_tag_highlight = $('#container-create-tag-highlight');
     const filterText = $('#input-search-tags-highlight').val().toLowerCase();
-    alert_tag_highlight_treeview.addClass('d-none')
-    container_tag_highlight.addClass('d-none')
+    hideSearchErrorMessage();
     const filteredTags = handleSearch(filterText);
     initTagsHighlightTreeview(false, filteredTags);
     if (filteredTags.length === 0) {
-        alert_tag_highlight_treeview.removeClass('d-none')
-        container_tag_highlight.removeClass('d-none')
+        showSearchErrorMessage();
         alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
+
+function showSearchErrorMessage() {
+    alert_tag_highlight_treeview.removeClass('d-none');
+    container_tag_highlight.removeClass('d-none');
+}
+
+function hideSearchErrorMessage() {
+    alert_tag_highlight_treeview.addClass('d-none');
+    container_tag_highlight.addClass('d-none');
+}
