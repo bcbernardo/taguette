@@ -57,11 +57,17 @@ function initTagsTreeview(collapse = true, filterTags = null) {
         edit_tag_button.addClass('d-none');
     });
 
-    addEditButton()
+    addEditButton();
+    addDragDrop();
+}
+
+function getTagIdFromTreeviewNode(treeview, node_id) {
+    const allNodes = $(`#${treeview}`).treeview('getEnabled');
+    const node = allNodes.find(item => item.nodeId === parseInt(node_id))
+    return node.id;
 }
 
 function addEditButton() {
-    console.log("add edit")
     $(".node-treeview-tags").each(function (index, element) {
         const secondDiv = $(element).find("div:eq(1)");
 
@@ -78,15 +84,31 @@ function addEditButton() {
             class: 'btn btn-primary btn-sm ms-2',
             text: 'Edit',
             click: function (event) {
-                // const allNodes = treeview_tags.treeview('getEnabled');
-                // const node = allNodes.find(item => item.nodeId === parseInt($(element).data("nodeid")))
-                const tag_id = getTagId('treeview-tags', $(element).data("nodeid"))
+                const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
                 event.stopPropagation(); // Prevent event propagation
                 editTag(tag_id);
             }
         });
 
         secondDiv.append(editButton);
+    });
+}
+
+function addDragDrop() {
+
+    $(".node-treeview-tags").each(function (index, element) {
+
+        $(element).on('dragover', function (event) {
+            event.preventDefault();
+        });
+
+        $(element).on('drop', function (event) {
+            event.preventDefault();
+
+            const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+
+            saveHighlightDragDrop(tag_id)
+        });
     });
 }
 

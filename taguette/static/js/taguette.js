@@ -598,7 +598,6 @@ function createHighlight(selection) {
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    // document.getElementById('highlight-search').focus();
 }
 
 // TRANSLATORS: Key used to create a new highlight
@@ -623,53 +622,31 @@ function editHighlight() {
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    // document.getElementById('highlight-search').focus();
 }
 
 // Save highlight button
 document.getElementById('highlight-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var highlight_id = document.getElementById('highlight-add-id').value;
-    var selection = [
+    const highlight_id = document.getElementById('highlight-add-id').value;
+    const selection = [
         parseInt(document.getElementById('highlight-add-start').value),
         parseInt(document.getElementById('highlight-add-end').value)
     ];
-    var hl_tags = [];
-    var selectedTags = treeview_tags_highlight.treeview('getSelected');
-    hl_tags = selectedTags.map((tag) => tag.id);
-    var req;
-    if (highlight_id) {
-        console.log("Posting update for highlight " + highlight_id);
-        req = postJSON(
-            '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id,
-            {
-                start_offset: selection[0],
-                end_offset: selection[1],
-                tags: hl_tags
-            }
-        );
-    } else {
-        console.log("Posting new highlight");
-        req = postJSON(
-            '/api/project/' + project_id + '/document/' + current_document + '/highlight/new',
-            {
-                start_offset: selection[0],
-                end_offset: selection[1],
-                tags: hl_tags
-            }
-        );
+
+    const selectedTags = treeview_tags_highlight.treeview('getSelected');
+
+    const hl_tags = selectedTags.map((tag) => tag.id);
+
+    if(hl_tags.length === 0) return;
+
+    const highlight = {
+        id : highlight_id,
+        selection,
+        tags: hl_tags
     }
-    showSpinner();
-    req.then(function () {
-        console.log("Highlight posted");
-        $(highlight_add_modal).modal('hide');
-        highlightModalReset();
-    })
-        .catch(function (error) {
-            console.error("Failed to create highlight:", error);
-            alert(gettext("Couldn't create highlight!") + "\n\n" + error);
-        })
-        .then(hideSpinner);
+
+    //call submit
+    submitHighLightCreation(highlight);
 });
 
 // Delete highlight button

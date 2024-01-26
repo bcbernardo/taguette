@@ -230,9 +230,3 @@ function handleSearch(filterText) {
         return false;
     });
 }
-
-function getTagId(treeview, node_id) {
-    const allNodes = $(`#${treeview}`).treeview('getEnabled');
-    const node = allNodes.find(item => item.nodeId === parseInt(node_id))
-    return node.id;
-}

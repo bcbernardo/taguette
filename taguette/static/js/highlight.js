@@ -63,9 +63,9 @@ function highlightSelection(saved, id, clickedCallback, title) {
     end = splitAtPos(end, true);
 
     var node = start;
-    while (node != end) {
+    while (node !== end) {
         var next = nextElement(node);
-        if (node.nodeType == 3 // TEXT_NODE
+        if (node.nodeType === 3 // TEXT_NODE
             && node.textContent
             && !node.textContent.match(onlyWhitespace)) {
             var span = document.createElement('a');
@@ -78,4 +78,61 @@ function highlightSelection(saved, id, clickedCallback, title) {
         }
         node = next;
     }
+}
+
+// Save highlight drag drop
+
+function saveHighlightDragDrop(tag_id) {
+
+    const selection = current_selection;
+
+    const hl_tags = [tag_id];
+
+    const highlight = {
+        selection,
+        tags: hl_tags
+    }
+
+    //call submit
+    submitHighLightCreation(highlight);
+
+}
+
+function submitHighLightCreation(highlight) {
+
+    let request;
+    const { id, selection, tags} = highlight;
+
+    if (highlight.id) {
+        console.log("Posting update for highlight " + id);
+        request = postJSON(
+            '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + id,
+            {
+                start_offset: selection[0],
+                end_offset: selection[1],
+                tags: tags
+            }
+        );
+    } else {
+        console.log("Posting new highlight");
+        request = postJSON(
+            '/api/project/' + project_id + '/document/' + current_document + '/highlight/new',
+            {
+                start_offset: selection[0],
+                end_offset: selection[1],
+                tags: tags
+            }
+        );
+    }
+    showSpinner();
+    request.then(function () {
+        console.log("Highlight posted");
+        $(highlight_add_modal).modal('hide');
+        highlightModalReset();
+    })
+        .catch(function (error) {
+            console.error("Failed to create highlight:", error);
+            alert(gettext("Couldn't create highlight!") + "\n\n" + error);
+        })
+        .then(hideSpinner);
 }
