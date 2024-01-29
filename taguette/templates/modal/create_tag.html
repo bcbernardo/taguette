@@ -1,5 +1,5 @@
 <!-- Add/change tag modal -->
-<div class="modal" id="tag-add-modal" tabindex="-1" role="dialog">
+<div class="modal fade" id="tag-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <form id="tag-add-form" class="modal-content">
             <div class="modal-header">
@@ -45,7 +45,7 @@
                     in tag change modal window" %}Merge...{% endtrans %}
                 </button>
                 <button type="submit" class="btn btn-primary"  data-test-id="save-tag-button">{% trans %}Save & Close{% endtrans %}</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="tag-add-cancel">{% trans
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-test-id="tag-add-cancel" id="tag-add-cancel">{% trans
                     %}Cancel{% endtrans %}
                 </button>
                 <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="tag-add-delete">{% trans

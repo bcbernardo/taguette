@@ -136,10 +136,9 @@
           <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
         </div>
       </div>
-
-      <div id="document-contents" style="direction: ltr;">
-        <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
-      </div>
+        <div id="document-contents" style="direction: ltr;">
+            <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
+        </div>
     </div>
 
   </div>
@@ -168,6 +167,12 @@
 
 <!-- Spinner modal -->
 {% include 'partials/spinner.html' %}
+
+<!-- Alert modal -->
+{% include 'partials/alert.html' %}
+
+<!-- Confirm modal -->
+{% include 'partials/confirm.html' %}
 
 <!-- Initial state -->
 <script type="text/javascript">
@@ -223,6 +228,7 @@
         initMergeTagHierarchySelect();
 
     });
+
 </script>
 
 {% endblock %}

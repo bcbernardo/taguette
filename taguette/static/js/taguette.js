@@ -19,15 +19,14 @@
  * Project metadata
  */
 
-var project_name_input = document.getElementById('project-name');
-var project_name = project_name_input.value;
+const project_name_input = document.getElementById('project-name');
+let project_name = project_name_input.value;
 
-var project_description_input = document.getElementById('project-description');
-var project_description = project_description_input.value;
+const project_description_input = document.getElementById('project-description');
+let project_description = project_description_input.value;
 
 function setProjectMetadata(metadata, form = true) {
-    if (project_name == metadata.project_name
-        && project_description == metadata.description) {
+    if (project_name === metadata.project_name && project_description === metadata.description) {
         return;
     }
     // Update globals
@@ -39,31 +38,26 @@ function setProjectMetadata(metadata, form = true) {
         project_description_input.value = project_description;
     }
     // Update elements
-    var elems = document.getElementsByClassName('project-name');
-    for (var i = 0; i < elems.length; ++i) {
+    const elems = document.getElementsByClassName('project-name');
+    for (let i = 0; i < elems.length; ++i) {
         elems[i].textContent = project_name;
     }
-    console.log("Project metadata updated");
+    log("Project metadata updated");
 }
 
 function projectMetadataChanged() {
-    if (project_name_input.value != project_name
-        || project_description_input.value != project_description) {
-        console.log("Posting project metadata update");
-        var meta = {
-            name: project_name_input.value,
-            description: project_description_input.value
+    if (project_name_input.value !== project_name || project_description_input.value !== project_description) {
+        log("Posting project metadata update");
+        const meta = {
+            name: project_name_input.value, description: project_description_input.value
         };
-        postJSON(
-            '/api/project/' + project_id,
-            meta
-        )
+        postJSON(`/api/project/${project_id}`, meta)
             .then(function () {
                 setProjectMetadata(meta, false);
             })
             .catch(function (error) {
-                console.error("Failed to update project metadata:", error);
-                alert(gettext("Couldn't update project metadata!") + "\n\n" + error);
+                log("Failed to update project metadata:", 'error', {error});
+                showAlert(`${gettext("Couldn't update project metadata!")} \n \n ${error}`, 'error');
                 project_name_input.value = project_name;
                 project_description_input.value = project_description;
             });
@@ -82,13 +76,13 @@ project_description_input.addEventListener('blur', projectMetadataChanged);
  * Documents list
  */
 
-var current_document = null;
-var current_tag = null;
-var last_added_tag = null;
-var documents_list = document.getElementById('documents-list');
+let current_document = null;
+let current_tag = null;
+let last_added_tag = null;
+const documents_list = document.getElementById('documents-list');
 
 function linkDocument(elem, doc_id) {
-    var url = base_path + '/project/' + project_id + '/document/' + doc_id;
+    const url = `${base_path}/project/${project_id}/document/${doc_id}`;
     elem.setAttribute('href', url);
     elem.addEventListener('click', function (e) {
         e.preventDefault();
@@ -100,44 +94,39 @@ function linkDocument(elem, doc_id) {
 function updateDocumentsList() {
     // Empty the list
     while (documents_list.firstChild) {
-        var first = documents_list.firstChild;
-        if (first.classList
-            && first.classList.contains('special-item-button')) {
+        const first = documents_list.firstChild;
+        if (first.classList && first.classList.contains('special-item-button')) {
             break;
         }
         documents_list.removeChild(first);
     }
 
     // Fill up the list again
-    var before = documents_list.firstChild;
-    var entries = Object.entries(documents);
+    const before = documents_list.firstChild;
+    const entries = Object.entries(documents);
     sortByKey(entries, function (e) {
         return e[1].name;
     });
-    for (var i = 0; i < entries.length; ++i) {
-        var doc = entries[i][1];
-        var elem = document.createElement('li');
+    for (let i = 0; i < entries.length; ++i) {
+        let doc = entries[i][1];
+        let elem = document.createElement('li');
         elem.setAttribute('id', 'document-link-' + doc.id);
         elem.className = 'list-group-item document-link';
         if (doc.id === current_document) {
             elem.classList.add('document-link-current');
         }
-        elem.innerHTML =
-            '<div class="d-flex justify-content-between align-items-center">' +
-            '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' +
-            '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' +
-            '</div>';
+        elem.innerHTML = '<div class="d-flex justify-content-between align-items-center">' + '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' + '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' + '</div>';
         documents_list.insertBefore(elem, before);
-        var links = elem.getElementsByTagName('a');
+        const links = elem.getElementsByTagName('a');
         linkDocument(links[0], doc.id);
     }
-    if (entries.length == 0) {
-        var elem = document.createElement('div');
+    if (entries.length === 0) {
+        let elem = document.createElement('div');
         elem.className = 'list-group-item disabled';
         elem.textContent = gettext("There are no documents in this project yet.");
         documents_list.insertBefore(elem, before);
     }
-    console.log("Documents list updated");
+    log("Documents list updated");
 }
 
 updateDocumentsList();
@@ -158,7 +147,7 @@ function addDocument(document) {
 function removeDocument(document_id) {
     delete documents['' + document_id];
     updateDocumentsList();
-    if (current_document == document_id) {
+    if (current_document === document_id) {
         window.history.pushState({}, "Project", base_path + '/project/' + project_id);
         loadDocument(null);
     }
@@ -169,7 +158,7 @@ function removeDocument(document_id) {
  * Add document
  */
 
-var document_add_modal = document.getElementById('document-add-modal');
+const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
@@ -178,7 +167,7 @@ function createDocument() {
 
 function basename(filename) {
     if (filename) {
-        var idx = Math.max(filename.lastIndexOf('/'), filename.lastIndexOf('\\'));
+        const idx = Math.max(filename.lastIndexOf('/'), filename.lastIndexOf('\\'));
         if (idx > -1) {
             filename = filename.substring(idx + 1);
         }
@@ -188,38 +177,36 @@ function basename(filename) {
 
 document.getElementById('document-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    console.log("Uploading document...");
+    log("Uploading document...");
 
-    var form_data = new FormData();
-    var name = document.getElementById('document-add-name').value;
+    let form_data = new FormData();
+    let name = document.getElementById('document-add-name').value;
     if (!name) {
         name = basename(document.getElementById('document-add-file').value);
         name = name.substring(0, 50);
     }
     form_data.append('name', name);
-    form_data.append('description',
-        document.getElementById('document-add-description').value);
-    form_data.append('file',
-        document.getElementById('document-add-file').files[0]);
-    form_data.append('text_direction',
-        document.getElementById('document-add-form').elements['document-add-direction'].value);
+    form_data.append('description', document.getElementById('document-add-description').value);
+    form_data.append('file', document.getElementById('document-add-file').files[0]);
+    form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
     form_data.append('_xsrf', getCookie('_xsrf'));
 
-    var xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     xhr.responseType = 'json';
     xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
     showSpinner();
     xhr.onload = function () {
-        if (xhr.status == 200) {
+        if (xhr.status === 200) {
             $(document_add_modal).modal('hide');
             document.getElementById('document-add-form').reset();
-            console.log("Document upload complete");
-            var doc_id = xhr.response.created;
-            var url = base_path + '/project/' + project_id + '/document/' + doc_id;
+            log("Document upload complete");
+            let doc_id = xhr.response.created;
+            const url = `${base_path}/project/${project_id}/document/${doc_id}`;
             window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
             loadDocument(doc_id);
         } else {
-            console.error("Document upload failed: status", xhr.status);
+            const context = xhr.status;
+            log("Document upload failed: status", 'error', {context})
             var error = null;
             try {
                 error = xhr.response.error;
@@ -228,13 +215,13 @@ document.getElementById('document-add-form').addEventListener('submit', function
             if (!error) {
                 error = "Status " + xhr.status;
             }
-            alert(gettext("Error uploading file!") + "\n\n" + error);
+            showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error})
         }
         hideSpinner();
     };
     xhr.onerror = function (e) {
-        console.log("Document upload failed:", e);
-        alert(gettext("Error uploading file!"));
+        log("Document upload failed:", 'error', {e});
+        showAlert(gettext("Error uploading file!"));
         hideSpinner();
     }
     xhr.send(form_data);
@@ -245,7 +232,7 @@ document.getElementById('document-add-form').addEventListener('submit', function
  * Change document
  */
 
-var document_change_modal = document.getElementById('document-change-modal');
+const document_change_modal = document.getElementById('document-change-modal');
 
 function editDocument(doc_id) {
     document.getElementById('document-change-form').reset();
@@ -258,32 +245,29 @@ function editDocument(doc_id) {
 
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    console.log("Changing document...");
+    log("Changing document...");
 
-    var update = {
+    let update = {
         name: document.getElementById('document-change-name').value,
         description: document.getElementById('document-change-description').value,
         text_direction: document.getElementById('document-change-form').elements['document-change-direction'].value
     };
-    if (!update.name || update.name.length == 0) {
-        alert(gettext("Document name cannot be empty"));
+    if (!update.name || update.name.length === 0) {
+        showAlert(gettext("Document name cannot be empty"));
         return;
     }
 
-    var doc_id = document.getElementById('document-change-id').value;
+    const doc_id = document.getElementById('document-change-id').value;
     showSpinner();
-    postJSON(
-        '/api/project/' + project_id + '/document/' + doc_id,
-        update
-    )
+    postJSON(`/api/project/${project_id}/document/${doc_id}`, update)
         .then(function () {
-            console.log("Document update posted");
+            log("Document update posted");
             $(document_change_modal).modal('hide');
             document.getElementById('document-change-form').reset();
         })
         .catch(function (error) {
-            console.error("Failed to update document:", error);
-            alert(gettext("Couldn't update document!") + "\n\n" + error);
+            log("Document upload failed:", 'error', {error});
+            showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 });
@@ -291,21 +275,21 @@ document.getElementById('document-change-form').addEventListener('submit', funct
 document.getElementById('document-change-delete').addEventListener('click', function (e) {
     e.preventDefault();
 
-    var doc_id = document.getElementById('document-change-id').value;
-    if (!window.confirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}))) {
-        return;
-    }
-    console.log("Deleting document " + doc_id + "...");
-    deleteURL('/api/project/' + project_id + '/document/' + doc_id)
-        .then(function () {
-            console.log("Document deletion posted");
-            $(document_change_modal).modal('hide');
-            document.getElementById('document-change-form').reset();
-        })
-        .catch(function (error) {
-            console.error("Failed to delete document:", error);
-            alert(gettext("Couldn't delete document!") + "\n\n" + error);
-        });
+    const doc_id = document.getElementById('document-change-id').value;
+
+    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}), function () {
+        log(`document ${doc_id} ...`);
+        deleteURL(`/api/project/${project_id}/document/${doc_id}`)
+            .then(function () {
+                log("Document deletion posted");
+                $(document_change_modal).modal('hide');
+                document.getElementById('document-change-form').reset();
+            })
+            .catch(function (error) {
+                log("Failed to delete document", 'error', {error});
+                showAlert(`${gettext("Couldn't delete document!!")} \n \n`, 'error', {error})
+            });
+    });
 });
 
 
@@ -313,20 +297,13 @@ document.getElementById('document-change-delete').addEventListener('click', func
  * Tags list
  */
 
-var tags_sorter = document.getElementById('tag-sortby');
-var sortTags = ['path', 'asc'];
-var tags_list = document.getElementById('tags-list');
+let sortTags = ['path', 'asc'];
 
 function sortTagsBy(field, dir) {
     sortTags = [field, dir];
-    var options = document.getElementById('tag-sortby-menu').querySelectorAll('a.dropdown-item');
-    var optionSorts = [
-        ['path', 'asc'],
-        ['path', 'desc'],
-        ['count', 'asc'],
-        ['count', 'desc'],
-    ];
-    for (var i = 0; i < optionSorts.length; ++i) {
+    let options = document.getElementById('tag-sortby-menu').querySelectorAll('a.dropdown-item');
+    let optionSorts = [['path', 'asc'], ['path', 'desc'], ['count', 'asc'], ['count', 'desc'],];
+    for (let i = 0; i < optionSorts.length; ++i) {
         if (optionSorts[i][0] === field && optionSorts[i][1] === dir) {
             options[i].classList.add('active');
         } else {
@@ -337,7 +314,7 @@ function sortTagsBy(field, dir) {
 }
 
 function linkTag(elem, tag_path) {
-    var url = base_path + '/project/' + project_id + '/highlights/' + encodeURIComponent(tag_path);
+    const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(tag_path)}`;
     elem.setAttribute('href', url);
     elem.addEventListener('click', function (e) {
         e.preventDefault();
@@ -355,7 +332,7 @@ function highlightModalReset() {
 }
 
 
-var tag_add_modal = document.getElementById('tag-add-modal');
+const tag_add_modal = document.getElementById('tag-add-modal');
 
 $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
@@ -370,7 +347,7 @@ function createTag(from) {
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
-    if(from === 2) {
+    if (from === 2) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value
     }
     $(tag_add_modal).modal('show');
@@ -378,7 +355,7 @@ function createTag(from) {
 
 function editTag(tag_id) {
     if (tag_id === undefined && selected_tag_id === 0) {
-        alert('Select un tag');
+        showAlert('Select un tag')
         return;
     }
     if (selected_tag_id > 0) {
@@ -411,42 +388,34 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
     } else {
         tag_id = null;
     }
-    var tag_path = document.getElementById('tag-add-path').value;
+    let tag_path = document.getElementById('tag-add-path').value;
     if (!tag_path) {
-        alert(gettext("Invalid tag name"));
+        showAlert(gettext("Invalid tag name"));
         return;
     }
 
-    var tag_parent_id = document.getElementById('tag-add-parent-id').value;
+    let tag_parent_id = document.getElementById('tag-add-parent-id').value;
     if (tag_parent_id !== '') {
         tag_parent_id = parseInt(tag_parent_id);
     } else {
         tag_parent_id = null;
     }
 
-    var req;
+    let req;
     if (tag_id) {
-        console.log("Posting update for tag " + tag_id);
-        req = postJSON(
-            '/api/project/' + project_id + '/tag/' + tag_id,
-            {
-                path: tag_path,
-                description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
-            }
-        );
+        log(`Posting update for tag ${tag_id}`);
+        req = postJSON(`/api/project/${project_id}/tag/${tag_id}`, {
+            path: tag_path, description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
+        });
     } else {
-        console.log("Posting new tag");
-        req = postJSON(
-            '/api/project/' + project_id + '/tag/new',
-            {
-                path: tag_path,
-                description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
-            }
-        );
+        log("Posting new tag");
+        req = postJSON('/api/project/' + project_id + '/tag/new', {
+            path: tag_path, description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
+        });
     }
     showSpinner();
     req.then(function (reply) {
-        console.log("Tag posted");
+        log("Tag posted");
 
         last_added_tag = reply.id;
 
@@ -457,34 +426,30 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 
     })
         .catch(function (error) {
-            console.error("Failed to create tag:", error);
-            alert(gettext("Couldn't create tag!") + "\n\n" + error);
+            log("Failed to create tag", 'error', {error});
+            showAlert(`${gettext("Couldn't create tag!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 });
 
 // Delete tag button
 document.getElementById('tag-add-delete').addEventListener('click', function (e) {
-    var tag_id = document.getElementById('tag-add-id').value;
+    let tag_id = document.getElementById('tag-add-id').value;
     const tag = findTag(tag_id)
     if (tag_id) {
-        if (!window.confirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tag.path}))) {
-            e.preventDefault();
-            return;
-        }
-        tag_id = parseInt(tag_id);
-        console.log("Posting tag " + tag_id + " deletion");
-        deleteURL(
-            '/api/project/' + project_id + '/tag/' + tag_id
-        )
-            .then(function () {
-                $(tag_add_modal).modal('hide');
-                document.getElementById('tag-add-form').reset();
-            })
-            .catch(function (error) {
-                console.error("Failed to delete tag:", error);
-                alert(gettext("Couldn't delete tag!") + "\n\n" + error);
-            });
+        showConfirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tag.path}), function () {
+            tag_id = parseInt(tag_id);
+            log(`Posting tag ${tag_id} deletion`);
+            deleteURL(`/api/project/${project_id}/tag/${tag_id}`)
+                .then(function () {
+                    $(tag_add_modal).modal('hide');
+                    document.getElementById('tag-add-form').reset();
+                })
+                .catch(function (error) {
+                    log("Failed to delete tag", 'error', {error});
+                    showAlert(`${gettext("Couldn't delete tag!")} \n \n`, 'error', {error})
+                });
+        });
     }
 });
 
@@ -493,8 +458,7 @@ document.getElementById('tag-add-merge').addEventListener('click', function (e) 
     e.preventDefault();
 
     let tag_id = document.getElementById('tag-add-id').value;
-    if (!tag_id)
-        return;
+    if (!tag_id) return;
     tag_id = parseInt(tag_id);
     const tag = findTag(tag_id)
 
@@ -512,49 +476,39 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     e.preventDefault();
 
     let tag_src = document.getElementById('tag-merge-src-id').value;
-    if (!tag_src)
-        return;
+    if (!tag_src) return;
     tag_src = parseInt(tag_src);
 
     let tag_dest = document.getElementById('tag-merge-dest').value;
-    if (!tag_dest)
-        return;
+    if (!tag_dest) return;
     tag_dest = parseInt(tag_dest);
 
     // Todo : add good text
     if (tag_src === tag_dest) {
-        alert('Merge not possible')
+        showAlert('Merge not possible')
         return
     }
 
     showSpinner();
-    postJSON(
-        '/api/project/' + project_id + '/tag/merge',
-        {src: tag_src, dest: tag_dest}
-    )
+    postJSON(`/api/project/${project_id}/tag/merge`, {src: tag_src, dest: tag_dest})
         .then(function () {
-            console.log("Tag merge posted");
+            log("Tag merge posted");
             $(document.getElementById('tag-merge-modal')).modal('hide');
         })
         .catch(function (error) {
-            console.error("Failed to merge tags:", error);
-            alert(gettext("Couldn't merge tags!") + "\n\n" + error);
+            log("Failed to merge tags", 'error', {error});
+            showAlert(`${gettext("Couldn't merge tags!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 });
 
 
 // Backlight
-var backlight_checkbox = document.getElementById('backlight');
+const backlight_checkbox = document.getElementById('backlight');
 backlight_checkbox.addEventListener('change', function () {
-    var classes = document.getElementById('document-view').classList;
-    if (backlight_checkbox.checked == classes.contains('backlight')) {
-        ; // all good
-    } else if (backlight_checkbox.checked) {
-        classes.add('backlight');
-    } else {
-        classes.remove('backlight');
-    }
+    const documentView = document.getElementById('document-view');
+
+    documentView.classList.toggle('backlight', backlight_checkbox.checked);
 });
 
 
@@ -562,22 +516,22 @@ backlight_checkbox.addEventListener('change', function () {
  * Add highlight
  */
 
-var highlight_add_modal = document.getElementById('highlight-add-modal');
+const highlight_add_modal = document.getElementById('highlight-add-modal');
 
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
-    var hlinfo = document.getElementById('hlinfo');
+    let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
-        var current_range = window.getSelection().getRangeAt(0);
+        const current_range = window.getSelection().getRangeAt(0);
         if (current_range.toString().match(onlyWhitespace)) {
             hlinfo.style.display = 'none';
         } else if (current_range.endOffset > 0) {
-            var last_char_range = document.createRange();
+            let last_char_range = document.createRange();
             last_char_range.setStart(current_range.endContainer, current_range.endOffset - 1);
             last_char_range.setEnd(current_range.endContainer, current_range.endOffset);
-            var rect = last_char_range.getClientRects().item(0);
-            var scrollPos = getScrollPos();
+            let rect = last_char_range.getClientRects().item(0);
+            let scrollPos = getScrollPos();
             hlinfo.style.left = ((rect.x || rect.left) + rect.width) + 'px';
             hlinfo.style.top = ((rect.y || rect.top) + rect.height + scrollPos.y + 20) + 'px';
             hlinfo.style.display = 'block';
@@ -601,10 +555,10 @@ function createHighlight(selection) {
 }
 
 // TRANSLATORS: Key used to create a new highlight
-var newtag_key = gettext('n');
+const newtag_key = gettext('n');
 
 document.addEventListener('keyup', function (e) {
-    if (event.key == newtag_key && current_selection !== null) {
+    if (event.key === newtag_key && current_selection !== null) {
         createHighlight(current_selection);
     }
 });
@@ -628,21 +582,16 @@ function editHighlight() {
 document.getElementById('highlight-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
     const highlight_id = document.getElementById('highlight-add-id').value;
-    const selection = [
-        parseInt(document.getElementById('highlight-add-start').value),
-        parseInt(document.getElementById('highlight-add-end').value)
-    ];
+    const selection = [parseInt(document.getElementById('highlight-add-start').value), parseInt(document.getElementById('highlight-add-end').value)];
 
     const selectedTags = treeview_tags_highlight.treeview('getSelected');
 
     const hl_tags = selectedTags.map((tag) => tag.id);
 
-    if(hl_tags.length === 0) return;
+    if (hl_tags.length === 0) return;
 
     const highlight = {
-        id : highlight_id,
-        selection,
-        tags: hl_tags
+        id: highlight_id, selection, tags: hl_tags
     }
 
     //call submit
@@ -651,20 +600,18 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
 
 // Delete highlight button
 document.getElementById('highlight-delete').addEventListener('click', function () {
-    var highlight_id = document.getElementById('highlight-add-id').value;
+    let highlight_id = document.getElementById('highlight-add-id').value;
     if (highlight_id) {
         highlight_id = parseInt(highlight_id);
-        console.log("Posting highlight " + highlight_id + " deletion");
-        deleteURL(
-            '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id
-        )
+        log(`Posting highlight ${highlight_id} deletion`);
+        deleteURL(`/api/project/${project_id}/document/${current_document}/highlight/${highlight_id}`)
             .then(function () {
                 $(highlight_add_modal).modal('hide');
                 highlightModalReset();
             })
             .catch(function (error) {
-                console.error("Failed to delete highlight:", error);
-                alert(gettext("Couldn't delete highlight!") + "\n\n" + error);
+                log("Failed to delete highlight", 'error', {error});
+                showAlert(`${gettext("Couldn't delete highlight!")} \n \n`, 'error', {error})
             });
     }
 });
@@ -682,33 +629,17 @@ function removeMember(login) {
     delete members[login];
 }
 
-var members_modal = document.getElementById('members-modal');
-var members_initial = {};
-var members_displayed = {};
+const members_modal = document.getElementById('members-modal');
+let members_initial = {};
+let members_displayed = {};
 
 function _memberRow(login, user, can_edit, is_self) {
-    var elem = document.createElement('div');
+    let elem = document.createElement('div');
     elem.className = 'row members-item';
-    elem.innerHTML =
-        '<div class="col-md-4">' +
-        '  <p class="members-item-login">' + login + '</p>' +
-        '</div>' +
-        '<div class="col-md-4 form-group">' +
-        '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' +
-        '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' +
-        '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' +
-        '    <option value="TAG">' + gettext("View & make changes") + '</option>' +
-        '    <option value="READ">' + gettext("View only") + '</option>' +
-        '  </select>' +
-        '</div>' +
-        (is_self ?
-                '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>'
-                :
-                '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>'
-        );
+    elem.innerHTML = '<div class="col-md-4">' + '  <p class="members-item-login">' + login + '</p>' + '</div>' + '<div class="col-md-4 form-group">' + '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' + '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' + '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' + '    <option value="TAG">' + gettext("View & make changes") + '</option>' + '    <option value="READ">' + gettext("View only") + '</option>' + '  </select>' + '</div>' + (is_self ? '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>' : '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>');
 
     [].forEach.call(elem.querySelectorAll('option'), function (e) {
-        if (e.value == user.privileges) {
+        if (e.value === user.privileges) {
             e.selected = true;
         }
     });
@@ -724,7 +655,7 @@ function _memberRow(login, user, can_edit, is_self) {
 function showMembers() {
     document.getElementById('members-add').reset();
 
-    can_edit = members[user_login].privileges == 'ADMIN';
+    const can_edit = members[user_login].privileges === 'ADMIN';
 
     if (can_edit) {
         document.getElementById('members-add-fields').removeAttribute('disabled');
@@ -732,27 +663,24 @@ function showMembers() {
         document.getElementById('members-add-fields').setAttribute('disabled', 1);
     }
 
-    var entries = Object.entries(members);
+    let entries = Object.entries(members);
     sortByKey(entries, function (e) {
         return e[0];
     });
-    console.log(
-        "Members:",
-        entries.map(function (e) {
-            return e[0] + " (" + e[1].privileges + ")";
-        })
-            .join(", ")
-    );
+    log("Members:", entries.map(function (e) {
+        return e[0] + " (" + e[1].privileges + ")";
+    })
+        .join(", "));
 
     // Empty the list
-    var current_members = document.getElementById('members-current');
+    let current_members = document.getElementById('members-current');
     current_members.innerHTML = '';
 
     // Fill it back up
-    for (var i = 0; i < entries.length; ++i) {
-        var login = entries[i][0];
-        var user = entries[i][1];
-        var elem = _memberRow(login, user, can_edit, login == user_login);
+    for (let i = 0; i < entries.length; ++i) {
+        const login = entries[i][0];
+        const user = entries[i][1];
+        const elem = _memberRow(login, user, can_edit, login === user_login);
 
         current_members.appendChild(elem);
     }
@@ -767,50 +695,47 @@ function showMembers() {
 document.getElementById('members-add').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    var login = document.getElementById('member-add-name').value.toLowerCase();
+    const login = document.getElementById('member-add-name').value.toLowerCase();
     if (!login) {
         return;
     }
-    var privileges = document.getElementById('member-add-privileges').value;
+    const privileges = document.getElementById('member-add-privileges').value;
 
     // Check login
     if (login in members_displayed) {
-        alert(gettext("Already a member!"));
+        showAlert(gettext("Already a member!"));
         document.getElementById('members-add').reset();
         return;
     }
-    postJSON(
-        '/api/check_user',
-        {login: login}
-    )
+    postJSON('/api/check_user', {login: login})
         .then(function (result) {
             if (result.exists) {
                 // Add it at the top
-                var elem = _memberRow(login, {privileges: privileges});
-                var current_members = document.getElementById('members-current');
+                const elem = _memberRow(login, {privileges: privileges});
+                const current_members = document.getElementById('members-current');
                 current_members.insertBefore(elem, current_members.firstChild);
                 members_displayed[login] = true;
 
                 document.getElementById('members-add').reset();
             } else {
-                alert(gettext("This user doesn't exist!"));
+                showAlert(gettext("This user doesn't exist!"));
             }
         })
 });
 
 function sendMembersPatch() {
-    var patch = {};
+    let patch = {};
 
-    var members_before = Object.assign({}, members_initial);
+    let members_before = Object.assign({}, members_initial);
 
-    var rows = document.getElementById('members-current').querySelectorAll('.members-item');
-    for (var i = 0; i < rows.length; ++i) {
-        var row = rows[i];
-        var login = row.querySelector('.members-item-login').textContent;
-        var privileges = row.querySelector('select').value;
+    const rows = document.getElementById('members-current').querySelectorAll('.members-item');
+    for (let i = 0; i < rows.length; ++i) {
+        const row = rows[i];
+        const login = row.querySelector('.members-item-login').textContent;
+        const privileges = row.querySelector('select').value;
 
         // Add to patch, if different from stored version
-        if (!members_before[login] || members_before[login].privileges != privileges) {
+        if (!members_before[login] || members_before[login].privileges !== privileges) {
             patch[login] = {privileges: privileges};
         }
 
@@ -819,24 +744,21 @@ function sendMembersPatch() {
     }
 
     // Remove the members that are left
-    var entries = Object.entries(members_before);
-    for (var i = 0; i < entries.length; ++i) {
+    const entries = Object.entries(members_before);
+    for (let i = 0; i < entries.length; ++i) {
         patch[entries[i][0]] = null;
     }
 
-    console.log("Patching members list");
+    log("Patching members list");
     showSpinner();
-    patchJSON(
-        '/api/project/' + project_id + '/members',
-        patch
-    )
+    patchJSON('/api/project/' + project_id + '/members', patch)
         .then(function () {
-            console.log("Members list patched");
+            log("Members list patched");
             $(members_modal).modal('hide');
         })
         .catch(function (error) {
-            console.error("Failed to patch members list:", error);
-            alert(gettext("Couldn't update collaborators!") + "\n\n" + error);
+            log("Failed to patch members list", 'error', {error});
+            showAlert(`${gettext("Couldn't update collaborators!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 
@@ -858,8 +780,8 @@ document.getElementById('members-current').addEventListener('submit', function (
  * Load contents
  */
 
-var document_contents = document.getElementById('document-contents');
-var export_button = document.getElementById('export-button');
+const document_contents = document.getElementById('document-contents');
+const export_button = document.getElementById('export-button');
 
 function loadDocument(document_id) {
     if (document_id === null) {
@@ -868,22 +790,18 @@ function loadDocument(document_id) {
         return;
     }
     showSpinner();
-    var info = getJSON(
-        '/api/project/' + project_id + '/document/' + document_id
-    );
-    var contents = getJSON(
-        '/api/project/' + project_id + '/document/' + document_id + '/contents'
-    );
+    const info = getJSON(`/api/project/${project_id}/document/${document_id}`);
+    const contents = getJSON(`/api/project/${project_id}/document/${document_id}/contents`);
     Promise.all([info, contents])
         .then(function (results) {
-            var info = results[0];
-            var contents = results[1];
+            const info = results[0];
+            const contents = results[1];
             document_contents.innerHTML = '';
             highlights = {};
             chunk_offsets = [];
-            for (var i = 0; i < contents.contents.length; ++i) {
-                var chunk = contents.contents[i];
-                var elem = document.createElement('div');
+            for (let i = 0; i < contents.contents.length; ++i) {
+                let chunk = contents.contents[i];
+                let elem = document.createElement('div');
                 elem.setAttribute('id', 'doc-offset-' + chunk.offset);
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
@@ -897,36 +815,33 @@ function loadDocument(document_id) {
             current_document = document_id;
 
             // Update current document highlight in left panel
-            var document_links = document.getElementsByClassName('document-link-current');
-            for (var i = document_links.length - 1; i >= 0; --i) {
+            let document_links = document.getElementsByClassName('document-link-current');
+            for (let i = document_links.length - 1; i >= 0; --i) {
                 document_links[i].classList.remove('document-link-current');
             }
-            var document_link = document.getElementById('document-link-' + current_document);
+            let document_link = document.getElementById('document-link-' + current_document);
             if (document_link) {
                 document_link.classList.add('document-link-current');
             }
 
             current_tag = null;
-            var tag_links = document.getElementsByClassName('tag-current');
-            for (var i = tag_links.length - 1; i >= 0; --i) {
+            let tag_links = document.getElementsByClassName('tag-current');
+            for (let i = tag_links.length - 1; i >= 0; --i) {
                 tag_links[i].classList.remove('tag-current');
             }
-            console.log("Loaded document", document_id);
-            for (var i = 0; i < info.highlights.length; ++i) {
+            log(`Loaded document ${document_id}`);
+            for (let i = 0; i < info.highlights.length; ++i) {
                 setHighlight(info.highlights[i]);
             }
-            console.log("Loaded " + info.highlights.length + " highlights");
+            log(`Loaded ${info.highlights.length} highlight`);
 
             // Update export button
             export_button.style.display = '';
-            var items = export_button.getElementsByClassName('dropdown-item');
-            for (var i = 0; i < items.length; ++i) {
-                var ext = items[i].getAttribute('data-extension');
+            let items = export_button.getElementsByClassName('dropdown-item');
+            for (let i = 0; i < items.length; ++i) {
+                const ext = items[i].getAttribute('data-extension');
                 if (items[i].getAttribute('data-document') !== 'false') {
-                    items[i].setAttribute(
-                        'href',
-                        base_path + '/project/' + project_id + '/export/document/' + document_id + '.' + ext,
-                    );
+                    items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
                     items[i].style.display = '';
                 } else {
                     items[i].style.display = 'none';
@@ -939,8 +854,8 @@ function loadDocument(document_id) {
             }, 0);
         })
         .catch(function (error) {
-            console.error("Failed to load document:", error);
-            alert(gettext("Error loading document!") + "\n\n" + error);
+            log("Failed to load document", 'error', {error});
+            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 }
@@ -951,51 +866,51 @@ function loadTag(tag_path, page) {
     }
     showSpinner();
     getJSON(
-        '/api/project/' + project_id + '/highlights/' + encodeURIComponent(tag_path) + '?page=' + page
+        `/api/project/${project_id}/highlights/${encodeURIComponent(tag_path)}?page=${page}`
     )
         .then(function (result) {
-            console.log("Loaded highlights for tag", tag_path || "''");
+            log(`Loaded highlights for tag ${tag_path}`);
             document_contents.style.direction = 'ltr';
             current_tag = tag_path;
             current_document = null;
-            var document_links = document.getElementsByClassName('document-link-current');
-            for (var i = document_links.length - 1; i >= 0; --i) {
+            let document_links = document.getElementsByClassName('document-link-current');
+            for (let i = document_links.length - 1; i >= 0; --i) {
                 document_links[i].classList.remove('document-link-current');
             }
             // No need to clear the 'tag-current', we are calling updateTagsList() below
             document_contents.innerHTML = '';
             highlights = {};
-            for (var i = 0; i < result.highlights.length; ++i) {
-                var hl = result.highlights[i];
-                var content = document.createElement('div');
+            for (let i = 0; i < result.highlights.length; ++i) {
+                const hl = result.highlights[i];
+                let content = document.createElement('div');
                 if (hl.text_direction === 'RIGHT_TO_LEFT') {
                     content.style.direction = 'rtl';
                 } else {
                     content.style.direction = 'ltr';
                 }
                 content.innerHTML = result.highlights[i].content;
-                var elem = document.createElement('div');
+                let elem = document.createElement('div');
                 elem.className = 'highlight-entry';
                 elem.setAttribute('id', 'highlight-entry-' + hl.id);
                 elem.appendChild(content);
                 elem.appendChild(document.createTextNode(' '));
 
-                var doclink = document.createElement('a');
+                let doclink = document.createElement('a');
                 doclink.className = 'badge badge-light';
                 doclink.textContent = documents['' + hl.document_id].name;
                 linkDocument(doclink, hl.document_id);
                 elem.appendChild(doclink);
                 elem.appendChild(document.createTextNode(' '));
 
-                var tag_names = hl.tags.map(function (tag) {
+                let tag_names = hl.tags.map(function (tag) {
                     return findTag(tag).path;
                 });
                 tag_names.sort();
-                for (var j = 0; j < tag_names.length; ++j) {
+                for (let j = 0; j < tag_names.length; ++j) {
                     if (j > 0) {
                         elem.appendChild(document.createTextNode(' '));
                     }
-                    var taglink = document.createElement('a');
+                    let taglink = document.createElement('a');
                     taglink.className = 'badge badge-dark';
                     taglink.textContent = tag_names[j];
                     linkTag(taglink, taglink.textContent);
@@ -1004,13 +919,13 @@ function loadTag(tag_path, page) {
 
                 document_contents.appendChild(elem);
             }
-            if (result.highlights.length == 0) {
+            if (result.highlights.length === 0) {
                 document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
             }
 
             // Pagination controls
             function makePageLink(page_nb, label, current, enabled) {
-                var item;
+                let item;
                 if (current) {
                     item = document.createElement('li');
                     item.className = 'page-item active';
@@ -1039,12 +954,12 @@ function loadTag(tag_path, page) {
                 if (result.pages === undefined && page !== 1) {
                     result.pages = 1;
                 }
-                pagination = document.createElement('nav');
+                let pagination = document.createElement('nav');
                 pagination.setAttribute('aria-label', "Page navigation");
-                var pagination_ul = document.createElement('ul');
+                let pagination_ul = document.createElement('ul');
                 pagination_ul.className = 'pagination justify-content-center';
-                var min_page = Math.max(2, page - 2);
-                var max_page = Math.min(result.pages - 1, page + 2);
+                const min_page = Math.max(2, page - 2);
+                const max_page = Math.min(result.pages - 1, page + 2);
 
                 // Previous button
                 pagination_ul.appendChild(makePageLink(page - 1, "Previous", false, page > 1));
@@ -1055,7 +970,7 @@ function loadTag(tag_path, page) {
                     pagination_ul.appendChild(makePageLink(page, "...", false, false));
                 }
                 // Other pages
-                for (var i = min_page; i <= max_page; ++i) {
+                for (let i = min_page; i <= max_page; ++i) {
                     pagination_ul.appendChild(makePageLink(i, i, i === page, i !== page));
                 }
                 // "..." between other pages and last page, if appropriate
@@ -1075,14 +990,11 @@ function loadTag(tag_path, page) {
 
             // Update export button
             export_button.style.display = '';
-            var items = export_button.getElementsByClassName('dropdown-item');
-            for (var i = 0; i < items.length; ++i) {
-                var ext = items[i].getAttribute('data-extension');
+            let items = export_button.getElementsByClassName('dropdown-item');
+            for (let i = 0; i < items.length; ++i) {
+                const ext = items[i].getAttribute('data-extension');
                 if (items[i].getAttribute('data-highlights') !== 'false') {
-                    items[i].setAttribute(
-                        'href',
-                        base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,
-                    );
+                    items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
                     items[i].style.display = '';
                 } else {
                     items[i].style.display = 'none';
@@ -1095,30 +1007,29 @@ function loadTag(tag_path, page) {
             }, 0);
         })
         .catch(function (error) {
-            console.error("Failed to load tag highlights:", error);
-            alert(gettext("Error loading tag highlights!") + "\n\n" + error);
+            log("Failed to load tag highlights", 'error', {error});
+            showAlert(`${gettext("Error loading tag highlights!")} \n \n`, 'error', {error})
         })
         .then(hideSpinner);
 }
 
 // Load the document if the URL includes one
-setTimeout(
-    function () {
-        var _document_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/document/([0-9]+)');
-        // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
-        var m = window.location.pathname.match(_document_url);
-        if (m) {
-            loadDocument(parseInt(m[2]));
-        }
-        // Or a tag
-        var _tag_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/highlights/([^/]*)');
-        m = window.location.pathname.match(_tag_url);
-        if (m) {
-            loadTag(decodeURIComponent(m[2]));
-        }
-    },
-    0,
-);
+setTimeout(function () {
+    // const _document_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/document/([0-9]+)');
+    const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)`);
+    // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
+    let m = window.location.pathname.match(_document_url);
+    if (m) {
+        loadDocument(parseInt(m[2]));
+    }
+    // Or a tag
+    // const _tag_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/highlights/([^/]*)');
+    const _tag_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/highlights/([^/]*)`);
+    m = window.location.pathname.match(_tag_url);
+    if (m) {
+        loadTag(decodeURIComponent(m[2]));
+    }
+}, 0,);
 
 
 // Load documents as we go through browser history
@@ -1135,36 +1046,6 @@ window.onpopstate = function (e) {
         loadDocument(null);
     }
 };
-
-
-/*
- * Long polling
- */
-
-// null: active now
-// Date: inactive since then
-var windowLastActive = new Date();
-if (document.hasFocus()) {
-    windowLastActive = null; // Focused now
-}
-
-window.addEventListener('focus', function () {
-    // We are active as long as we have the focus
-    windowLastActive = null;
-    maybeResumePolling();
-});
-window.addEventListener('mousemove', function () {
-    if (windowLastActive !== null) {
-        // If the mouse moved over the window and we're not focused, refresh timer
-        windowLastActive = new Date();
-        maybeResumePolling();
-    }
-});
-window.addEventListener('blur', function () {
-    // We lost focus, start timer
-    windowLastActive = new Date();
-});
-
 
 /*
  * Attach input change for tag search event
