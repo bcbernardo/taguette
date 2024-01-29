@@ -1,6 +1,4 @@
-import aiohttp
 import asyncio
-import concurrent.futures
 from datetime import datetime
 import functools
 import io
@@ -16,15 +14,16 @@ import string
 import tempfile
 import textwrap
 import time
-from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPTestCase
 import unittest
 from unittest import mock
 from urllib.parse import urlencode, urlparse
 from xml.etree import ElementTree
-
+from tornado.testing import AsyncTestCase, gen_test
+from tests.http_test_case import MyHTTPTestCase
+from tests.selenium_test import SeleniumTest
 from taguette import exact_version
 from taguette import convert, database, extract, import_codebook, main, \
-    validate, web
+    web
 from taguette.utils import sanitize_filename
 
 if 'TAGUETTE_TEST_DB' in os.environ:
@@ -466,71 +465,6 @@ class TestReadCodebook(unittest.TestCase):
         self.assertEqual(err.exception.row, 3)
 
 
-class MyHTTPTestCase(AsyncHTTPTestCase):
-    xsrf = None
-
-    def setUp(self):
-        web.Application.check_messages = lambda s: s.messages_event.set()
-        validate.filename.windows = True  # escape device names
-        super(MyHTTPTestCase, self).setUp()
-
-        # Tornado's http client doesn't support cookies, use aiohttp instead
-        @self.io_loop.run_sync
-        async def async_init():
-            self.http_client = aiohttp.ClientSession(
-                # Need to set 'unsafe' to work when host is an IP address
-                cookie_jar=aiohttp.cookiejar.CookieJar(unsafe=True),
-            )
-            await self.http_client.__aenter__()
-
-    def tearDown(self):
-        self.io_loop.run_sync(
-            lambda: self.http_client.close(),
-            timeout=3,
-        )
-
-    def _fetch(self, url, method='GET', **kwargs):
-        # Copied from tornado.testing.AsyncHTTPTestCase.fetch()
-        if not url.lower().startswith(('http://', 'https://')):
-            url = self.get_url(url)
-        return getattr(self.http_client, method.lower())(url, **kwargs)
-
-    def aget(self, url, headers=None):
-        return self._fetch(url, headers=headers, allow_redirects=False)
-
-    def apost(self, url, **kwargs):
-        cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
-        if '_xsrf' in cookies:
-            token = cookies['_xsrf'].value
-            if 'data' in kwargs:
-                if isinstance(kwargs['data'], dict):
-                    kwargs['data'] = dict(kwargs['data'], _xsrf=token)
-            else:
-                url = '%s%s%s' % (url, '&' if '?' in url else '?',
-                                  urlencode(dict(_xsrf=token)))
-        if 'files' in kwargs:
-            files = kwargs.pop('files')
-            data = aiohttp.FormData()
-            for key, value in kwargs.get('data', {}).items():
-                data.add_field(key, value)
-            for key, (filename, content_type, value) in files.items():
-                data.add_field(
-                    key, value,
-                    content_type=content_type,
-                    filename=filename,
-                )
-            kwargs['data'] = data
-        return self._fetch(url, method='POST', allow_redirects=False, **kwargs)
-
-    def adelete(self, url):
-        cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
-        if '_xsrf' in cookies:
-            token = cookies['_xsrf'].value
-            url = '%s%s%s' % (url, '&' if '?' in url else '?',
-                              urlencode(dict(_xsrf=token)))
-        return self._fetch(url, method='DELETE')
-
-
 async def set_dumb_password(DBSession):
     db = DBSession()
     admin = database.User(login='admin')
@@ -744,7 +678,7 @@ class TestMultiuser(MyHTTPTestCase):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
         self.assertEqual(
             init_js,
             '<script type="text/javascript">\n'
@@ -756,6 +690,7 @@ class TestMultiuser(MyHTTPTestCase):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
+            '  let selected_tag_id = 0;\n'
             '</script>' % (
                 exact_version(),
                 json.dumps(
@@ -2397,120 +2332,6 @@ class TestSingleuser(MyHTTPTestCase):
         self.assertIn(b"last project", body)
 
 
-class SeleniumTest(MyHTTPTestCase):
-    def setUp(self):
-        super(SeleniumTest, self).setUp()
-
-        from selenium import webdriver
-        if os.environ['TAGUETTE_TEST_WEBDRIVER'] == 'firefox':
-            self.driver = webdriver.Firefox()
-        elif os.environ['TAGUETTE_TEST_WEBDRIVER'] == 'chromium':
-            from selenium.webdriver.chrome.options import Options
-            options = Options()
-            options.add_argument('--disable-gpu')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--no-sandbox')
-            self.driver = webdriver.Chrome(options=options)
-        else:
-            raise EnvironmentError
-        self.driver.set_window_size(1024, 768)
-        self.driver_pool = concurrent.futures.ThreadPoolExecutor(1)
-
-        self.logs = []
-
-    def tearDown(self):
-        super(SeleniumTest, self).tearDown()
-
-        logs = self.get_logs()
-        if logs:
-            raise ValueError("Error in browser console: %s"
-                             % logs[0]['message'])
-
-        self.driver.quit()
-
-    @staticmethod
-    def extract_path(url):
-        m = re.match('^http://127.0.0.1:[0-9]+(.+)$', url)
-        return m.group(1)
-
-    @property
-    def s_path(self):
-        path = self.extract_path(self.driver.current_url)
-        self.assertTrue(
-            path.startswith(self.application.config['BASE_PATH']),
-            "Not under base path: %r" % path,
-        )
-        return path[len(self.application.config['BASE_PATH']):]
-
-    async def s_get(self, url, *, ignore_base_path=False):
-        self.store_logs()
-        if not ignore_base_path:
-            url = self.application.config['BASE_PATH'] + url
-        url = self.get_url(url)
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: self.driver.get(url),
-        )
-        await asyncio.sleep(0.2)
-
-    async def s_click(self, element):
-        self.store_logs()
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: element.click(),
-        )
-        await asyncio.sleep(0.2)
-
-    async def s_click_button(self, text, tag='button', parent=None):
-        from selenium.webdriver.common.by import By
-        await asyncio.sleep(0.2)
-        if parent is None:
-            parent = self.driver
-        buttons = parent.find_elements(By.TAG_NAME, tag)
-        correct_button, = [
-            button for button in buttons
-            if button.text == text
-        ]
-        await self.s_click(correct_button)
-
-    async def s_perform_action(self, action):
-        self.store_logs()
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: action.perform(),
-        )
-        await asyncio.sleep(0.2)
-
-    def _filter_logs(self, logs):
-        return [
-            line
-            for line in logs
-            if 'Polling failed:' not in line['message']
-        ]
-
-    def store_logs(self):
-        from selenium import webdriver
-        if isinstance(self.driver, webdriver.Chrome):
-            logs = self.driver.get_log('browser')
-            logs = self._filter_logs(logs)
-            if self.logs:
-                for i in reversed(range(len(logs))):
-                    if logs[i] == self.logs[-1]:
-                        self.logs.extend(logs[i + 1:])
-                        return
-            self.logs.extend(logs)
-
-    def get_logs(self):
-        from selenium import webdriver
-        if isinstance(self.driver, webdriver.Chrome):
-            self.store_logs()
-            logs = self.logs
-            self.logs = []
-            return logs
-        else:
-            return None
-
-
 @unittest.skipUnless(
     os.environ.get('TAGUETTE_TEST_WEBDRIVER', ''),
     "TAGUETTE_TEST_WEBDRIVER not set",
@@ -2538,17 +2359,16 @@ class TestSeleniumMultiuser(SeleniumTest):
 
     @gen_test(timeout=120)
     async def test_login(self):
-        from selenium.webdriver.common.by import By
         # Fetch index, should have welcome message and register link
         await self.s_get('/')
         self.assertEqual(self.driver.title, 'Welcome | Taguette')
         self.assertEqual(
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'h1')],
+            [el.text for el in self.find_by_tag('h1')],
             ['Welcome'],
         )
         self.assertIn(
             'Register now',
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'a')],
+            [el.text for el in self.find_by_tag('a')],
         )
 
         # Only admin so far
@@ -2565,17 +2385,14 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # Accept cookies
-        await self.s_click_button('Accept cookies')
+        await self.s_click_button_by_text('Accept cookies')
         self.assertEqual(self.s_path, '/register')
 
         # Register
-        elem = self.driver.find_element(By.ID, 'register-login')
-        elem.send_keys('Tester')
-        elem = self.driver.find_element(By.ID, 'register-password1')
-        elem.send_keys('hacktoo')
-        elem = self.driver.find_element(By.ID, 'register-password2')
-        elem.send_keys('hacktoo')
-        await self.s_click_button('Register')
+        self.set_value('register-login', 'Tester')
+        self.set_value('register-password1', 'hacktoo')
+        self.set_value('register-password2', 'hacktoo')
+        await self.s_click_button('register-button')
 
         # User exists in database
         db = self.application.DBSession()
@@ -2586,21 +2403,20 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Fetch index, should have project list
         await self.s_get('/')
         self.assertEqual(
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'h1')],
+            [el.text for el in self.find_by_tag('h1')],
             ['Welcome tester'],
         )
         self.assertIn(
             'Here are your projects:',
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'p')],
+            [el.text for el in self.find_by_tag('p')],
         )
 
         # Fetch project creation page
         await self.s_get('/project/new')
 
         # Create a project
-        elem = self.driver.find_element(By.ID, 'project-name')
-        elem.send_keys('test project')
-        await self.s_click_button('Create')
+        self.set_value('project-name', 'test project')
+        await self.s_click_button('save-project-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Log out
@@ -2610,7 +2426,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Hit error page
         await self.s_get('/api/project/1/highlights/')
         self.assertNotEqual(
-            self.driver.find_element(By.TAG_NAME, 'body').text.find(
+            self.find_by_tag('body')[0].text.find(
                 '"Not logged in"',
             ),
             -1,
@@ -2628,28 +2444,35 @@ class TestSeleniumMultiuser(SeleniumTest):
         await self.s_get(
             '/login?' + urlencode(dict(next=self.base_path + '/project/1')),
         )
-        elem = self.driver.find_element(By.ID, 'log-in-login')
-        elem.send_keys('Tester')
-        elem = self.driver.find_element(By.ID, 'log-in-password')
-        elem.send_keys('hacktoo')
-        await self.s_click_button('Log in')
+        self.set_value('log-in-login', 'Tester')
+        self.set_value('log-in-password', 'hacktoo')
+        await self.s_click_button('log-in-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Check redirect to account
         await self.s_get('/.well-known/change-password', ignore_base_path=True)
         self.assertEqual(self.s_path, '/account')
 
-    # Todo: adapt with treeview for select tags
     def get_highlight_add_tags(self):
         from selenium.webdriver.common.by import By
         tags = {}
-        form = self.driver.find_element(By.ID, 'highlight-add-form')
-        for elem in form.find_elements(By.TAG_NAME, 'input'):
-            if elem.get_attribute('type') == 'checkbox':
-                id = elem.get_attribute('id')
-                self.assertTrue(id.startswith('highlight-add-tags-'))
-                id = int(id[19:])
-                tags[id] = elem.get_property('checked')
+
+        tags_highlight = (
+            self.driver.find_element(By.ID, 'treeview-tags-highlight')
+            .find_elements(By.CLASS_NAME, 'node-treeview-tags-highlight')
+        )
+
+        for elem in tags_highlight:
+            node_id = elem.get_attribute('data-nodeid')
+            tag_id = self.driver.execute_script(
+                f"""
+                var all = $("#treeview-tags-highlight").treeview('getEnabled');
+                var node = all.find(item => item.nodeId === {int(node_id)});
+                return node.id;
+                """
+            )
+            class_list = elem.get_attribute('class')
+            tags[tag_id] = 'node-selected' in class_list.split()
         return tags
 
     @gen_test(timeout=120)
@@ -2677,28 +2500,24 @@ class TestSeleniumMultiuser(SeleniumTest):
         from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
-        # from selenium.webdriver.support.select import Select
+
         # Accept cookies
         await self.s_get('/cookies')
-        await self.s_click_button('Accept cookies')
+        await self.s_click_button_by_text('Accept cookies')
         self.assertEqual(self.s_path, '/')
 
         # Log in
         await self.s_get('/login')
-        elem = self.driver.find_element(By.ID, 'log-in-login')
-        elem.send_keys('admin')
-        elem = self.driver.find_element(By.ID, 'log-in-password')
-        elem.send_keys('hackme')
-        await self.s_click_button('Log in')
+        self.set_value('log-in-login', 'admin')
+        self.set_value('log-in-password', 'hackme')
+        await self.s_click_button('log-in-button')
         self.assertEqual(self.s_path, '/')
 
         # Create project 1
         await self.s_get('/project/new')
-        elem = self.driver.find_element(By.ID, 'project-name')
-        elem.send_keys('one')
-        elem = self.driver.find_element(By.ID, 'project-description')
-        elem.send_keys("Remi's project")
-        await self.s_click_button('Create')
+        self.set_value("project-name", "Project 1")
+        self.set_value("project-description", "phun's project")
+        await self.s_click_button('save-project-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Check project page
@@ -2711,6 +2530,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
+            '  let selected_tag_id = 0;\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -2734,253 +2554,263 @@ class TestSeleniumMultiuser(SeleniumTest):
         ))
 
         # Create tag 2 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        await self.s_click_button('Create a tag', tag='a')
-        elem = self.driver.find_element(By.ID, 'tag-add-path')
-        elem.send_keys('people')
-        elem = self.driver.find_element(By.ID, 'tag-add-description')
-        elem.send_keys('People of interest')
-        await self.s_click_button('Save & Close')
+        await self.s_click(self.find_by_id('tags-tab'))
+        await self.s_click_button('create-tag-link')
+        self.set_value("tag-add-path", "people")
+        self.set_value("tag-add-description", "People of interest")
+        await self.s_click_button('save-tag-button')
 
         # Check tags
-        # Todo: Update to treeview
-        # tag_links = (
-        #     self.driver.find_element(By.ID, 'tags-list')
-        #     .find_elements(By.CLASS_NAME, 'tag-name')
-        # )
-        # self.assertEqual(
-        #     [link.text for link in tag_links],
-        #     ['interesting', 'people'],
-        # )
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
+        self.assertEqual(
+            [link.text.split('\n')[0] for link in tag_links],
+            ['interesting', 'people'],
+        )
 
         # Create document 1 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
-        await self.s_click_button('Add a document', tag='a')
-        elem = self.driver.find_element(By.ID, 'document-add-name')
-        elem.send_keys('otherdoc')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
+        await self.s_click_button('documents-tab')
+        await self.s_click_button('create-document-link')
+        self.set_value("document-add-name", "doc 1")
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
             tmp.flush()
-            elem.send_keys(tmp.name)
-            await self.s_click_button('Import')
+            self.set_value("document-add-file", tmp.name)
+            await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(1)
-        self.assertEqual(doc.name, 'otherdoc')
+        self.assertEqual(doc.name, 'doc 1')
         self.assertEqual(doc.description, '')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
         self.assertTrue(doc.filename, os.path.basename(tmp.name))
 
         # Change project 2 metadata
-        self.assertEqual(
-            self.driver.find_element(By.CLASS_NAME, 'project-name').text,
-            'one',
-        )
-        await self.s_click(self.driver.find_element(By.ID, 'project-tab'))
-        elem = self.driver.find_element(By.ID, 'project-name')
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'Project 1')
+        await self.s_click_button('project-tab')
         await self.s_perform_action(
             ActionChains(self.driver)
-            .click(elem)
+            .click(self.find_by_id('project-name'))
             .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
             .send_keys('new project')
         )
-        elem = self.driver.find_element(By.ID, 'project-description')
-        elem.click()
+        self.find_by_id('project-description').click()
         await asyncio.sleep(0.5)
         await self.s_perform_action(
             ActionChains(self.driver)
             .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
         )
         await asyncio.sleep(0.5)
-        elem.send_keys('Meaningful')
-        await self.s_click(
-            self.driver.find_element(By.ID, 'document-contents'),
-        )
+        self.set_value('project-description', 'Meaningful')
+        await self.s_click(self.find_by_id('document-contents'))
         await asyncio.sleep(10)  # Wait for XHR
-        self.assertEqual(
-            self.driver.find_element(By.CLASS_NAME, 'project-name').text,
-            'new project',
-        )
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'new project')
         db = self.application.DBSession()
         proj = db.query(database.Project).get(1)
         self.assertEqual(proj.name, 'new project')
         self.assertEqual(proj.description, 'Meaningful')
 
         # Create document 2 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
-        await self.s_click_button('Add a document', tag='a')
-        elem = self.driver.find_element(By.ID, 'document-add-name')
-        elem.send_keys('third')
-        elem = self.driver.find_element(By.ID, 'document-add-description')
-        elem.send_keys('Last one')
-        await self.s_click_button('Right to left', tag='label')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
+        await self.s_click_button('documents-tab')
+        await self.s_click_button('create-document-link')
+        self.set_value('document-add-name', 'doc 2')
+        self.set_value('document-add-description', 'description doc 2')
+        await self.s_click_button('document-add-direction-rtl-input')
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
             tmp.flush()
-            elem.send_keys(tmp.name)
-            await self.s_click_button('Import')
+            self.set_value('document-add-file', tmp.name)
+            await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
-        self.assertEqual(doc.name, 'third')
-        self.assertEqual(doc.description, 'Last one')
+        self.assertEqual(doc.name, 'doc 2')
+        self.assertEqual(doc.description, 'description doc 2')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
         self.assertTrue(doc.filename, os.path.basename(tmp.name))
 
-        # Todo : adapt to treeview selection
-        # Create highlight 1 in document 1
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'document-link-1')
-        #     .find_element(By.CLASS_NAME, 'document-link-a')
-        # )
-        # self.driver.execute_script('restoreSelection([0, 4]);')
-        # await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     {1: False, 2: False},
-        # )
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'highlight-add-tags-1'),
-        # )
-        # await self.s_click_button('Save & Close')
+        # Check highlight 1 in document 1
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 2: False}
+        )
 
-        # Create highlight 2 in document 1
-        # self.driver.execute_script('restoreSelection([13, 17]);')
-        # await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     {1: False, 2: False},
-        # )
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'highlight-add-tags-1'),
-        # )
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'highlight-add-tags-2'),
-        # )
-        # await self.s_click_button('Save & Close')
+        # Select document and create highlight 1 and 2
+        await self.s_click(
+            self.driver.find_element(By.ID, 'document-link-1')
+            .find_element(By.CLASS_NAME, 'document-link-a')
+        )
 
-        # Check highlighted document
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents')
-        #     .get_attribute('innerHTML'),
-        #     (
-        #        '<div id="doc-offset-0"><a class="highlight highlight-1" '
-        #        + 'data-highlight-id="1" title="interesting">diff</a> '
-        #        + ' diff</a>erent con '
-        #        + '<a class="highlight highlight-2" data-highlight-id="2" '
-        #        + 'title="interesting, people">tent</a></div>'
-        #     ),
-        # )
+        # create highlight 1 diff
+        self.driver.execute_script('restoreSelection([0, 4]);')
+        await self.s_click_button_by_text(
+            'new highlight\n(shortcut: n)',
+            tag='a'
+        )
+        self.driver.execute_script('''
+            $("#treeview-tags-highlight").treeview("selectNode", 0);
+        ''')
+        await self.s_click_button('save-highlight-button')
+
+        # Create highlight 2 tent
+        self.driver.execute_script('restoreSelection([13, 17]);')
+        await self.s_click_button_by_text(
+            'new highlight\n(shortcut: n)',
+            tag='a'
+        )
+        # check tags before select
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 2: False}
+        )
+
+        self.driver.execute_script("""
+              $("#treeview-tags-highlight").treeview("selectNode", 0);
+              """)
+        self.driver.execute_script("""
+              $("#treeview-tags-highlight").treeview("selectNode", 1);
+              """)
+
+        # check tags after select
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: True, 2: True}
+        )
+
+        await self.s_click_button('save-highlight-button')
+
+        # Check highlighted document 1
+        self.assertEqual(
+            self.find_by_id('document-contents').get_attribute('innerHTML'),
+            (
+                '<div id="doc-offset-0"><a class="highlight highlight-1" '
+                + 'data-highlight-id="1" title="interesting">diff</a>erent con'
+                + '<a class="highlight highlight-2" data-highlight-id="2" '
+                + 'title="interesting, people">tent</a></div>'
+            ),
+        )
 
         # Edit highlight 1 in document 1
-        # hl, = self.driver.find_elements(By.CLASS_NAME, 'highlight-1')
-        # await self.s_click(hl)
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     {1: True, 2: False},
-        # )
+        hl, = self.find_by_class('highlight-1')
+        await self.s_click(hl)
 
-        # Create tag 3 in project 1
-        # await self.s_click_button('Create a tag', tag='a')
-        # elem = self.driver.find_element(By.ID, 'tag-add-path')
-        # elem.send_keys('interesting.places')
-        # await self.s_click_button(
-        #     'Save & Close',
-        #     parent=self.driver.find_element(By.ID, 'tag-add-form'),
-        # )
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: True, 2: False}
+        )
+
+        await self.s_click_button('save-highlight-button')
+
+        # Create tag 3 in project 1 (todo: create from modal)
+        await self.s_click(self.find_by_id('tags-tab'))
+        await self.s_click_button('create-tag-link')
+        self.set_value("tag-add-path", "interesting.places")
+        await self.s_click_button('save-tag-button')
 
         # Finish editing highlight 1 in document 1
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     3 was created while this modal was opened, it should be selected
-        #     {1: True, 2: False, 3: True},
-        # )
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'highlight-add-tags-1')
-        # )
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     {1: False, 2: False, 3: True},
-        # )
-        # await self.s_click_button('Save & Close')
+        hl, = self.find_by_class('highlight-1')
+        await self.s_click(hl)
 
-        # Check tags
-        # await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        # tag_links = (
-        #     self.driver.find_element(By.ID, 'tags-list')
-        #     .find_elements(By.CLASS_NAME, 'tag-name')
-        # )
-        # self.assertEqual(
-        #     [link.text for link in tag_links],
-        #     ['interesting', 'interesting.places', 'people'],
-        # )
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("selectNode", 1);')
+
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: True, 3: True, 2: False},
+        )
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("unselectNode", 0);')
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 3: True, 2: False},
+        )
+        await self.s_click_button('save-highlight-button')
+
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
+        self.assertEqual(
+            [link.text.split('\n')[0] for link in tag_links],
+            ['interesting', 'interesting.places', 'people'],
+        )
 
         # Create highlight 3 in document 2
-        # await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'document-link-2')
-        #     .find_element(By.CLASS_NAME, 'document-link-a')
-        # )
-        # self.driver.execute_script('restoreSelection([0, 7]);')
-        # await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
+        await self.s_click_button('documents-tab')
+        await self.s_click(
+            self.driver.find_element(By.ID, 'document-link-2')
+            .find_element(By.CLASS_NAME, 'document-link-a')
+        )
+        self.driver.execute_script('restoreSelection([0, 7]);')
+        await self.s_click_button_by_text(
+            'new highlight\n(shortcut: n)',
+            tag='a'
+        )
 
-        # self.assertEqual(
-        #     self.get_highlight_add_tags(),
-        #     {1: False, 2: False, 3: False},
-        # )
-        # await self.s_click(
-        #     self.driver.find_element(By.ID, 'highlight-add-tags-2'),
-        # )
-        # await self.s_click_button('Save & Close')
+        # check before select
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 3: False, 2: False},
+        )
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("selectNode", 2);')
+        # check after select
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 3: False, 2: True},
+        )
+        await self.s_click_button('save-highlight-button')
 
         # List highlights in project 1 under 'people'
-        # await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        # await self.s_click(self.driver.find_element(By.ID, 'tag-link-2'))
-        # self.assertEqual(self.s_path, '/project/1/highlights/people')
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents').text,
-        #     'tent\notherdoc interesting people\nOpinion\nthird people',
-        # )
+        await self.s_click(self.find_by_id('tags-tab'))
+        self.driver.execute_script(
+            '$("#treeview-tags").treeview("selectNode", 2);')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(self.s_path, '/project/1/highlights/people')
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            'tent\ndoc 1 interesting people\nOpinion\ndoc 2 people'
+        )
 
         # List highlights in project 1 under 'interesting.places'
-        # await self.s_get('/project/1/highlights/interesting.places')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents').text,
-        #     'diff\notherdoc interesting.places',
-        # )
+        await self.s_get('/project/1/highlights/interesting.places')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            'diff\ndoc 1 interesting.places'
+        )
 
         # List highlights in project 1 under 'interesting'
-        # await self.s_get('/project/1/highlights/interesting')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents').text,
-        #     ('diff\notherdoc interesting.places\n'
-        #      'tent\notherdoc interesting people'),
-        # )
+        await self.s_get('/project/1/highlights/interesting')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            ('diff\ndoc 1 interesting.places\n'
+             'tent\ndoc 1 interesting people'),
+        )
 
         # List all highlights in project 1
-        # await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        # await self.s_click_button('See all highlights', tag='a')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(self.s_path, '/project/1/highlights/')
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents').text,
-        #     ('diff\notherdoc interesting.places\n'
-        #      'tent\notherdoc interesting people\n'
-        #      'Opinion\nthird people'),
-        # )
+        await self.s_click(self.find_by_id('tags-tab'))
+        await self.s_click_button('see-all-highlights-button')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(self.s_path, '/project/1/highlights/')
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            ('diff\ndoc 1 interesting.places\n'
+             'tent\ndoc 1 interesting people\n'
+             'Opinion\ndoc 2 people'),
+        )
 
         # Check export options for document 1
         await self.s_get('/project/1/document/1')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('Export this view')
+        await self.s_click_button('dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'export-button')
+                self.find_by_id('export-button')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -2994,11 +2824,11 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Check export options for highlights in project 1 under 'interesting'
         await self.s_get('/project/1/highlights/interesting')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('Export this view')
+        await self.s_click_button('dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'export-button')
+                self.find_by_id('export-button')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -3013,12 +2843,12 @@ class TestSeleniumMultiuser(SeleniumTest):
         ])
 
         # Check codebook export options of project 1
-        await self.s_click(self.driver.find_element(By.ID, 'project-tab'))
-        await self.s_click_button('Export codebook')
+        await self.s_click_button('project-tab')
+        await self.s_click_button('dropdown-codebook')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'dropdown-codebook')
+                self.find_by_id('dropdown-codebook')
                 .find_element(By.XPATH, './..')
                 .find_elements(By.TAG_NAME, 'a')
             )
@@ -3033,34 +2863,47 @@ class TestSeleniumMultiuser(SeleniumTest):
             ('PDF', self.base_path + '/project/1/export/codebook.pdf'),
         ])
 
-        # Todo : adapt to treeview selection
         # Merge tag 2 into 1
-        # await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        # edit_button, = [
-        #     b
-        #     for b in (
-        #         self.driver.find_element(By.ID, 'tag-link-2')
-        #         .find_element(By.XPATH, './../..')
-        #         .find_elements(By.TAG_NAME, 'a')
-        #     )
-        #     if b.text == 'Edit'
-        # ]
-        # await self.s_click(edit_button)
-        # await self.s_click_button('Merge...')
-        # select = Select(self.driver.find_element(By.ID, 'tag-merge-dest'))
-        # select.select_by_value('1')
-        # await self.s_click_button('Merge tags')
+        await self.s_click_button('tags-tab')
+        self.driver.execute_script(
+            '$("#treeview-tags").treeview("selectNode", 1);')
+        await asyncio.sleep(1)  # Wait for XHR
+        await self.s_click_button('edit-tag-link')
+        await self.s_click_button('show-merge-tag-modal-button')
+        await self.s_click(self.find_by_id('dropdownMenuButtonTagMerge'))
+        await asyncio.sleep(2)
+
+        parent = (
+            self.find_by_test_id('hs-menu-inner-tag-merge')
+        )
+
+        await self.s_click_button_by_text(
+            'interesting',
+            tag='a',
+            parent=parent
+        )
+
+        await self.s_click_button('merge-tag-button')
+
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
+        # check tags
+        self.assertEqual(
+            [link.text.split('\n')[0] for link in tag_links],
+            ['interesting', 'interesting.places'],
+        )
 
         # List all highlights in project 1
-        # await self.s_click_button('See all highlights', tag='a')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(self.s_path, '/project/1/highlights/')
-        # self.assertEqual(
-        #     self.driver.find_element(By.ID, 'document-contents').text,
-        #     ('diff\notherdoc interesting.places\n'
-        #      'tent\notherdoc interesting\n'
-        #      'Opinion\nthird interesting'),
-        # )
+        await self.s_click_button('see-all-highlights-button')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(self.s_path, '/project/1/highlights/')
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            ('diff\ndoc 1 interesting.places\n'
+             'tent\ndoc 1 interesting\n'
+             'Opinion\ndoc 2 interesting'),
+        )
 
 
 if __name__ == '__main__':

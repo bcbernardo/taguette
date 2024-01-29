@@ -1,0 +1,430 @@
+/*
+ * Utilities
+ */
+
+if (!Object.entries) {
+    Object.entries = function (obj) {
+        var ownProps = Object.keys(obj),
+            i = ownProps.length,
+            resArray = new Array(i); // preallocate the Array
+        while (i--) {
+            resArray[i] = [ownProps[i], obj[ownProps[i]]];
+        }
+
+        return resArray;
+    };
+}
+
+function sortByKey(array, key, reverse) {
+    var orderByX = 1;
+    if (reverse) {
+        orderByX = -1
+    }
+    array.sort(function (a, b) {
+        if (key(a) < key(b)) {
+            return -1 * orderByX;
+        } else if (key(a) > key(b)) {
+            return 1 * orderByX;
+        } else {
+            return 0;
+        }
+    });
+}
+
+function encodeGetParams(params) {
+    return Object.entries(params)
+        .filter(function (kv) {
+            return kv[1] !== undefined;
+        })
+        .map(function (kv) {
+            return kv.map(encodeURIComponent).join("=");
+        })
+        .join("&");
+}
+
+// Don't use RegExp literals https://github.com/python-babel/babel/issues/640
+var _escapeA = new RegExp('&', 'g'),
+    _escapeL = new RegExp('<', 'g'),
+    _escapeG = new RegExp('>', 'g'),
+    _escapeQ = new RegExp('"', 'g'),
+    _escapeP = new RegExp("'", 'g');
+
+function escapeHtml(s) {
+    return s
+        .replace(_escapeA, "&amp;")
+        .replace(_escapeL, "&lt;")
+        .replace(_escapeG, "&gt;")
+        .replace(_escapeQ, "&quot;")
+        .replace(_escapeP, "&#039;");
+}
+
+function nextElement(node) {
+    while (node && !node.nextSibling) {
+        node = node.parentNode;
+    }
+    if (!node) {
+        return null;
+    }
+    node = node.nextSibling;
+    while (node.firstChild) {
+        node = node.firstChild;
+    }
+    return node;
+}
+
+var onlyWhitespace = new RegExp('^[\r\n\t]*$');
+
+function getScrollPos() {
+    var doc = document.scrollingElement || document.documentElement, body = document.body;
+    var x = (doc && doc.scrollLeft || body && body.scrollLeft || 0) - (doc.clientLeft || 0);
+    var y = (doc && doc.scrollTop || body && body.scrollTop || 0) - (doc.clientTop || 0);
+    return {x: x, y: y};
+}
+
+function getCookie(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
+}
+
+function ApiError(response, message) {
+    if (!message) {
+        message = "Status " + response.status;
+    }
+    this.status = response.status;
+    this.message = message;
+}
+
+ApiError.prototype.toString = function () {
+    return this.message;
+};
+
+function getJSON(url = '', args) {
+    if (args) {
+        args = '?' + encodeGetParams(args);
+    } else {
+        args = '';
+    }
+    return fetch(
+        base_path + url + args,
+        {
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            redirect: 'error'
+        }
+    ).then(function (response) {
+        if (response.status != 200) {
+            return response.json()
+                .then(
+                    function (json) {
+                        if ("error" in json) {
+                            throw new ApiError(response, json.error);
+                        } else {
+                            throw new ApiError(response);
+                        }
+                    },
+                    function () {
+                        throw new ApiError(response);
+                    }
+                );
+        }
+        return response.json().catch(function () {
+            throw new ApiError(response, "Invalid JSON");
+        });
+    });
+}
+
+function deleteURL(url = '', args) {
+    if (args) {
+        args = encodeGetParams(args);
+    } else {
+        args = '';
+    }
+    var xsrf = getCookie('_xsrf');
+    return fetch(
+        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
+        {
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            cache: 'no-cache',
+            redirect: 'error',
+            method: 'DELETE'
+        }
+    ).then(function (response) {
+        if (response.status != 204) {
+            throw new ApiError(response);
+        }
+    });
+}
+
+function postJSON(url = '', data = {}, args) {
+    if (args) {
+        args = encodeGetParams(args);
+    } else {
+        args = '';
+    }
+    var xsrf = getCookie('_xsrf');
+    return fetch(
+        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
+        {
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            cache: 'no-cache',
+            redirect: 'error',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify(data)
+        }
+    ).then(function (response) {
+        if (response.status != 200) {
+            return response.json()
+                .then(
+                    function (json) {
+                        if ("error" in json) {
+                            throw new ApiError(response, json.error);
+                        } else {
+                            throw new ApiError(response);
+                        }
+                    },
+                    function () {
+                        throw new ApiError(response);
+                    }
+                );
+        }
+        return response.json().catch(function () {
+            throw new ApiError(response, "Invalid JSON");
+        });
+    });
+}
+
+function patchJSON(url = '', data = {}, args) {
+    if (args) {
+        args = encodeGetParams(args);
+    } else {
+        args = '';
+    }
+    var xsrf = getCookie('_xsrf');
+    return fetch(
+        base_path + url + '?' + (xsrf !== undefined ? '_xsrf=' + encodeURIComponent(xsrf) + '&' : '') + args,
+        {
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            cache: 'no-cache',
+            redirect: 'error',
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            body: JSON.stringify(data)
+        }
+    ).then(function (response) {
+        if (response.status != 204) {
+            return response.json()
+                .then(
+                    function (json) {
+                        if ("error" in json) {
+                            throw new ApiError(response, json.error);
+                        } else {
+                            throw new ApiError(response);
+                        }
+                    },
+                    function () {
+                        throw new ApiError(response);
+                    }
+                );
+        } else {
+            return null;
+        }
+    });
+}
+
+// Returns the byte length of a string encoded in UTF-8
+// https://stackoverflow.com/q/5515869/711380
+if (window.TextEncoder) {
+    function lengthUTF8(s) {
+        return (new TextEncoder('utf-8').encode(s)).length;
+    }
+} else {
+    function lengthUTF8(s) {
+        var l = s.length;
+        for (var i = s.length - 1; i >= 0; --i) {
+            var code = s.charCodeAt(i);
+            if (code > 0x7f && code <= 0x7ff) ++l;
+            else if (code > 0x7ff && code <= 0xffff) l += 2;
+            if (code >= 0xDC00 && code <= 0xDFFF) i--; // trailing surrogate
+        }
+        return l;
+    }
+}
+
+// Escape a string for use in a regexp
+// https://stackoverflow.com/a/6969486/711380
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+window.addEventListener('load', function () {
+    // https://css-tricks.com/snippets/jquery/draggable-without-jquery-ui/
+    (function ($) {
+        $.fn.drags = function (opt) {
+            opt = $.extend({handle: "", cursor: "move"}, opt);
+            if (opt.handle === "") {
+                var $el = this;
+            } else {
+                var $el = this.find(opt.handle);
+            }
+
+            return $el.css('cursor', opt.cursor).on("mousedown", function (e) {
+                if (opt.handle === "") {
+                    var $drag = $(this).addClass('draggable');
+                } else {
+                    var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
+                }
+                var z_idx = $drag.css('z-index'),
+                    drg_h = $drag.outerHeight(),
+                    drg_w = $drag.outerWidth(),
+                    pos_y = $drag.offset().top + drg_h - e.pageY,
+                    pos_x = $drag.offset().left + drg_w - e.pageX;
+                $drag.css('z-index', 1000).parents().on("mousemove", function (e) {
+                    $('.draggable').offset({
+                        top: e.pageY + pos_y - drg_h,
+                        left: e.pageX + pos_x - drg_w
+                    }).on("mouseup", function () {
+                        $(this).removeClass('draggable').css('z-index', z_idx);
+                    });
+                });
+                e.preventDefault(); // disable selection
+            }).on("mouseup", function () {
+                if (opt.handle === "") {
+                    $(this).removeClass('draggable');
+                } else {
+                    $(this).removeClass('active-handle').parent().removeClass('draggable');
+                }
+            });
+        }
+    })(jQuery);
+});
+
+function showSpinner() {
+    let $spinner_modal = $('#spinner-modal')
+    if (typeof $spinner_modal.modal !== 'undefined') {
+        $spinner_modal.modal('show');
+    }
+}
+
+function hideSpinner() {
+    $('#spinner-modal').modal('hide');
+}
+
+
+/*
+ * Selection stuff
+ */
+
+var chunk_offsets = [];
+
+// Get the document offset from a position
+function describePos(node, offset) {
+    // Convert current offset from character to bytes
+    offset = lengthUTF8(node.textContent.substring(0, offset));
+    while (!node.id) {
+        if (node.previousSibling) {
+            node = node.previousSibling;
+            offset += lengthUTF8(node.textContent);
+        } else {
+            node = node.parentNode;
+        }
+    }
+    if (node.id.substring(0, 11) != 'doc-offset-') {
+        return null;
+    }
+    return parseInt(node.id.substring(11)) + offset;
+}
+
+// Find a position from the document offset
+function locatePos(pos) {
+    // Find the right chunk
+    var chunk_start = 0;
+    for (var i = 0; i < chunk_offsets.length; ++i) {
+        if (chunk_offsets[i] > pos) {
+            break;
+        }
+        chunk_start = chunk_offsets[i];
+    }
+
+    var offset = pos - chunk_start;
+    var node = document.getElementById('doc-offset-' + chunk_start);
+    while (node.firstChild) {
+        node = node.firstChild;
+    }
+    while (offset > 0) {
+        if (lengthUTF8(node.textContent) >= offset) {
+            break;
+        } else {
+            offset -= lengthUTF8(node.textContent);
+            node = nextElement(node);
+        }
+    }
+    return [node, offset]
+}
+
+var current_selection = null;
+
+// Describe the selection e.g. [14, 56]
+function describeSelection() {
+    var sel = window.getSelection();
+    if (sel.rangeCount != 0) {
+        var range = sel.getRangeAt(0);
+        if (!range.collapsed) {
+            var start = describePos(range.startContainer, range.startOffset);
+            var end = describePos(range.endContainer, range.endOffset);
+            if (start !== null && end !== null) {
+                return [start, end];
+            }
+        }
+    }
+    return null;
+}
+
+// Restore a described selection
+function restoreSelection(saved) {
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    if (saved !== null) {
+        var range = document.createRange();
+        var start = locatePos(saved[0]);
+        var end = locatePos(saved[1]);
+        range.setStart(start[0], start[1]);
+        range.setEnd(end[0], end[1]);
+        sel.addRange(range);
+    }
+}
+
+function splitAtPos(pos, after) {
+    var node = pos[0], idx = pos[1];
+    if (idx === 0) {
+        // Leftmost index: return current node
+        return node;
+    } else if (idx >= lengthUTF8(node.textContent)) {
+        // Rightmost index: return next node
+        return nextElement(node);
+    } else {
+        // Find the character index from the byte index
+        var idx_char = 0;
+        while (idx > 0) {
+            var code = node.textContent.charCodeAt(idx_char);
+            if (code <= 0x7f) idx -= 1;
+            else if (code <= 0x7ff) idx -= 2;
+            else if (code <= 0xffff) idx -= 3;
+            else idx -= 4;
+            idx_char += 1;
+        }
+        if (idx_char >= node.textContent.length) {
+            console.error("Error computing character position!");
+            idx_char = node.textContent.length - 1;
+        }
+        // Split, return right node
+        return node.splitText(idx_char);
+    }
+}
