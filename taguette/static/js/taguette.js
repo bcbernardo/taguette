@@ -320,6 +320,7 @@ function linkTag(elem, tag_path) {
         e.preventDefault();
         window.history.pushState({tag_path: tag_path}, "Tag " + tag_path, url);
         loadTag(tag_path);
+        selectAllTag();
     });
 }
 
@@ -864,7 +865,9 @@ function loadTag(tag_path, page) {
     if (page === undefined) {
         page = 1;
     }
-    showSpinner();
+    if(tag_path !== undefined) {
+        showSpinner();
+    }
     getJSON(
         `/api/project/${project_id}/highlights/${encodeURIComponent(tag_path)}?page=${page}`
     )
@@ -1010,7 +1013,11 @@ function loadTag(tag_path, page) {
             log("Failed to load tag highlights", 'error', {error});
             showAlert(`${gettext("Error loading tag highlights!")} \n \n`, 'error', {error})
         })
-        .then(hideSpinner);
+        .then(function (result) {
+            hideSpinner();
+            addTagEditButton();
+            addTagDragDrop();
+        });
 }
 
 // Load the document if the URL includes one
@@ -1065,7 +1072,6 @@ document.getElementById('input-search-tags').addEventListener('input', function 
 });
 
 const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
-const container_tag_highlight = $('#container-create-tag-highlight');
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
     const filterText = $('#input-search-tags-highlight').val().toLowerCase();
     hideSearchErrorMessage();
@@ -1079,10 +1085,8 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
 
 function showSearchErrorMessage() {
     alert_tag_highlight_treeview.removeClass('d-none');
-    container_tag_highlight.removeClass('d-none');
 }
 
 function hideSearchErrorMessage() {
     alert_tag_highlight_treeview.addClass('d-none');
-    container_tag_highlight.addClass('d-none');
 }
