@@ -1,4 +1,4 @@
-<div class="modal" id="highlight-add-modal" tabindex="-1" role="dialog">
+<div class="modal fade" id="highlight-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <form id="highlight-add-form" class="modal-content">
             <div class="modal-header">
@@ -19,14 +19,14 @@
                 </div>
                 <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-highlight-treeview">
                 </div>
-                <div class="container mb-3 mt-3 d-none" id="container-create-tag-highlight">
+                <div class="container mb-3 mt-3" id="container-create-tag-highlight">
                     <a href="javascript:createTag(2)" data-test-id="create-tag-from-highlight-link">{% trans %}Create a tag{% endtrans
                         %}</a>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary" data-test-id="save-highlight-button">{% trans %}Save & Close{% endtrans %}</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal" id="highlight-delete">{% trans
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="highlight-delete">{% trans
                     %}Delete highlight{% endtrans %}
                 </button>
             </div>

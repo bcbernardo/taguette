@@ -1,5 +1,5 @@
 <!-- Change document modal -->
-<div class="modal" id="document-change-modal" tabindex="-1" role="dialog">
+<div class="modal fade" id="document-change-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <form id="document-change-form" class="modal-content">
             <div class="modal-header">
@@ -31,7 +31,7 @@
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-                <button type="button" id="document-change-delete" class="btn btn-danger" data-dismiss="modal">{% trans %}Delete document{% endtrans %}</button>
+                <button type="button" id="document-change-delete" class="btn btn-danger" data-bs-dismiss="modal">{% trans %}Delete document{% endtrans %}</button>
             </div>
         </form>
     </div>

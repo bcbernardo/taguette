@@ -141,13 +141,22 @@ function mergeTags(tag_src, tag_dest) {
 
 // highlight tag
 function selectTag(tag_id) {
-
     const allNodes = treeview_tags.treeview('getEnabled');
     const node = allNodes.find(item => item.id === tag_id)
     const nodeId = node.nodeId;
     treeview_tags.treeview('selectNode', nodeId);
     const nodeSelector = $('li[data-nodeid="' + nodeId + '"]');
     nodeSelector.addClass("node-selected")
+}
+
+function selectAllTag() {
+    const allNodes = treeview_tags.treeview('getEnabled');
+    for(const node of allNodes) {
+        const nodeId = node.nodeId;
+        const nodeSelector = $('li[data-nodeid="' + nodeId + '"]');
+        nodeSelector.addClass("node-selected")
+        nodeSelector.css({ color: "#FFFFFF", backgroundColor: "#428bca" });
+    }
 }
 
 /*
@@ -179,11 +188,10 @@ function updateTagsList() {
 
     // update all treeview and select tags
     initTagsTreeview(false);
+
     initTagsHighlightTreeview(false);
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
-    // Todo : make it method
-    edit_tag_button.addClass('d-none');
     hideSearchErrorMessage();
 }
 
@@ -229,10 +237,4 @@ function handleSearch(filterText) {
 
         return false;
     });
-}
-
-function getTagId(treeview, node_id) {
-    const allNodes = $(`#${treeview}`).treeview('getEnabled');
-    const node = allNodes.find(item => item.nodeId === parseInt(node_id))
-    return node.id;
 }

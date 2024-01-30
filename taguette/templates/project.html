@@ -91,7 +91,6 @@
         <div class="tab-pane fade" id="tags" role="tabpanel" aria-labelledby="tags-tab">
           <div class="row">
             <div class="col-md-12 mb-3 d-flex justify-content-end">
-                <a id="edit-tag-btn" class="btn btn-sm btn-primary float-end ms-2 d-none" data-test-id="edit-tag-link" href="javascript:editTag()">{% trans %}Edit a tag{% endtrans %}</a>
                 <a class="btn btn-sm btn-primary ms-2" href="javascript:createTag()" data-test-id="create-tag-link">{% trans %}Create a tag{% endtrans %}</a>
                 <a id="load-all-tags" class="btn btn-sm btn-primary float-end ms-2" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
                 <div class="dropdown ms-2">
@@ -136,10 +135,9 @@
           <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
         </div>
       </div>
-
-      <div id="document-contents" style="direction: ltr;">
-        <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
-      </div>
+        <div id="document-contents" style="direction: ltr;">
+            <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
+        </div>
     </div>
 
   </div>
@@ -168,6 +166,12 @@
 
 <!-- Spinner modal -->
 {% include 'partials/spinner.html' %}
+
+<!-- Alert modal -->
+{% include 'partials/alert.html' %}
+
+<!-- Confirm modal -->
+{% include 'partials/confirm.html' %}
 
 <!-- Initial state -->
 <script type="text/javascript">
@@ -223,6 +227,7 @@
         initMergeTagHierarchySelect();
 
     });
+
 </script>
 
 {% endblock %}

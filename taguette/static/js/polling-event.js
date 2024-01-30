@@ -1,5 +1,31 @@
+/*
+ * Long polling
+ */
+
 let lastPoll = null;
 let polling = true;
+let windowLastActive = new Date();
+
+if (document.hasFocus()) {
+    windowLastActive = null; // Focused now
+}
+
+window.addEventListener('focus', function () {
+    // We are active as long as we have the focus
+    windowLastActive = null;
+    maybeResumePolling();
+});
+window.addEventListener('mousemove', function () {
+    if (windowLastActive !== null) {
+        // If the mouse moved over the window, and we're not focused, refresh timer
+        windowLastActive = new Date();
+        maybeResumePolling();
+    }
+});
+window.addEventListener('blur', function () {
+    // We lost focus, start timer
+    windowLastActive = new Date();
+});
 
 function maybeResumePolling() {
     if (!polling) {
@@ -10,7 +36,7 @@ function maybeResumePolling() {
 function longPollForEvents() {
     // If we've been inactive for 10min, pause polling for now
     if (windowLastActive !== null && (new Date() - windowLastActive > 600000)) {
-        console.log("Browser window inactive, stop polling");
+        log("Browser window inactive, stop polling");
         polling = false;
         return;
     }
@@ -18,17 +44,17 @@ function longPollForEvents() {
     polling = true;
     lastPoll = Date.now();
     getJSON(
-        '/api/project/' + project_id + '/events',
+        `/api/project/${project_id}/events`,
         {version: version, from: last_event}
     )
         .then(function (result) {
             if (result.reload) {
-                console.log("Server sent signal to reload");
+                log("Server sent signal to reload");
                 window.location.reload();
                 return;
             }
-            for (var i = 0; i < result.events.length; ++i) {
-                var event = result.events[i];
+            for (let i = 0; i < result.events.length; ++i) {
+                const event = result.events[i];
                 if (event.type === 'project_meta') {
                     setProjectMetadata({
                         project_name: event.project_name,
@@ -78,19 +104,19 @@ function longPollForEvents() {
             // Re-open connection
             setTimeout(longPollForEvents, 1);
         }, function (error) {
-            console.error("Polling failed:", error);
-            if (error instanceof ApiError && error.status == 403) {
-                alert(gettext("It appears that you have been logged out."));
+            log("Polling failed", 'error', {error})
+            if (error instanceof ApiError && error.status === 403) {
+                showAlert(gettext("It appears that you have been logged out."));
                 window.location = '/';
-            } else if (error instanceof ApiError && error.status == 404) {
-                alert(gettext("You can no longer access this project."));
+            } else if (error instanceof ApiError && error.status === 404) {
+                showAlert(gettext("You can no longer access this project."));
                 window.location = '/';
             } else {
                 setTimeout(longPollForEvents, Math.max(1, 5000 + lastPoll - Date.now()));
             }
         })
         .catch(function (error) {
-            console.error("Polling function error:", error);
+            log("Polling function error", 'error', {error})
         });
 }
 

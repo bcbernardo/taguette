@@ -2868,7 +2868,12 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.driver.execute_script(
             '$("#treeview-tags").treeview("selectNode", 1);')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('edit-tag-link')
+        edit_button = self.find_by_path('//*[@data-nodeid="1"]')
+        await self.s_click_button_by_text(
+            'Edit',
+            tag='a',
+            parent=edit_button
+        )
         await self.s_click_button('show-merge-tag-modal-button')
         await self.s_click(self.find_by_id('dropdownMenuButtonTagMerge'))
         await asyncio.sleep(2)
@@ -2894,7 +2899,14 @@ class TestSeleniumMultiuser(SeleniumTest):
             ['interesting', 'interesting.places'],
         )
 
+        self.driver.execute_script(
+            '$("#tag-add-modal").modal("hide")'
+        )
+
+        await asyncio.sleep(1)
+
         # List all highlights in project 1
+        await self.s_click(self.find_by_id('tags-tab'))
         await self.s_click_button('see-all-highlights-button')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(self.s_path, '/project/1/highlights/')
