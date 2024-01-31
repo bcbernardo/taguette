@@ -37,15 +37,13 @@ function removeHighlight(id) {
     log(`Highlight removed: ${id}`);
 
     // Loop over highlight-<id> elements
-    const elements = document.getElementsByClassName(`highlight-${id}`);
-    for (let i = 0; i < elements.length; ++i) {
+    $(`.highlight-${id}`).each(function() {
         // Move children up and delete this element
-        let node = elements[i];
-        while (node.firstChild) {
-            node.parentNode.insertBefore(node.firstChild, node);
+        while (this.firstChild) {
+            $(this.firstChild).insertBefore(this);
         }
-        node.parentNode.removeChild(node);
-    }
+        $(this).remove();
+    });
 }
 
 // Highlight a described selection
