@@ -313,14 +313,19 @@ function sortTagsBy(field, dir) {
     updateTagsList();
 }
 
-function linkTag(elem, tag_path) {
+function linkTag(elem, tag_path, selectAll = true) {
     const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(tag_path)}`;
     elem.setAttribute('href', url);
     elem.addEventListener('click', function (e) {
         e.preventDefault();
         window.history.pushState({tag_path: tag_path}, "Tag " + tag_path, url);
         loadTag(tag_path);
-        selectAllTag();
+        if (selectAll) {
+            selectAllTag();
+        } else {
+            const tag = findTag(tag_path)
+            selectTag(treeview_tags ,tag.id)
+        }
     });
 }
 
@@ -579,9 +584,10 @@ function editHighlight() {
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
-// Save highlight button
-document.getElementById('highlight-add-form').addEventListener('submit', function (e) {
+$('#highlight-add-form').off().on('submit', (e) => {
+
     e.preventDefault();
+
     const highlight_id = document.getElementById('highlight-add-id').value;
     const selection = [parseInt(document.getElementById('highlight-add-start').value), parseInt(document.getElementById('highlight-add-end').value)];
 
@@ -597,7 +603,8 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
 
     //call submit
     submitHighLightCreation(highlight);
-});
+})
+
 
 // Delete highlight button
 document.getElementById('highlight-delete').addEventListener('click', function () {
@@ -899,7 +906,7 @@ function loadTag(tag_path, page) {
                 elem.appendChild(document.createTextNode(' '));
 
                 let doclink = document.createElement('a');
-                doclink.className = 'badge badge-light';
+                doclink.className = 'badge badge-primary';
                 doclink.textContent = documents['' + hl.document_id].name;
                 linkDocument(doclink, hl.document_id);
                 elem.appendChild(doclink);
@@ -914,9 +921,9 @@ function loadTag(tag_path, page) {
                         elem.appendChild(document.createTextNode(' '));
                     }
                     let taglink = document.createElement('a');
-                    taglink.className = 'badge badge-dark';
+                    taglink.className = 'badge badge-secondary';
                     taglink.textContent = tag_names[j];
-                    linkTag(taglink, taglink.textContent);
+                    linkTag(taglink, taglink.textContent, false);
                     elem.appendChild(taglink);
                 }
 
