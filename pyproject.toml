@@ -66,6 +66,8 @@ subtitle-parser = ">=1,<2"
 tornado = ">=6.1"
 XlsxWriter = ">=1.4,<4"
 
+streaming-form-data = ">=1,<2"
+
 opentelemetry-distro = {version = "*", optional = true, allow-prereleases = true}
 opentelemetry-instrumentation-sqlalchemy = {version = ">=0.24b0,<0.26", optional = true, allow-prereleases = true}
 opentelemetry-instrumentation-tornado = {version = ">=0.24b0,<0.26", optional = true, allow-prereleases = true}

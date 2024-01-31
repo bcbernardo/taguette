@@ -645,15 +645,16 @@ document.getElementById('document-add-form').addEventListener('submit', function
   form_data.append('name', name);
   form_data.append('description',
                    document.getElementById('document-add-description').value);
-  form_data.append('file',
-                   document.getElementById('document-add-file').files[0]);
+  let file = document.getElementById('document-add-file').files[0];
+  form_data.append('file', file);
+  form_data.append('filename', file.name);
   form_data.append('text_direction',
                    document.getElementById('document-add-form').elements['document-add-direction'].value);
-  form_data.append('_xsrf', getCookie('_xsrf'));
 
   var xhr = new XMLHttpRequest();
   xhr.responseType = 'json';
   xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
+  xhr.setRequestHeader('X-XSRFToken', getCookie('_xsrf'))
   showSpinner();
   xhr.onload = function() {
     if(xhr.status == 200) {
