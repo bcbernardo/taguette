@@ -331,6 +331,11 @@ a.dropdown-item:hover {
   padding: 1rem 0.6rem 1rem 0.6rem;
 }
 
+.draggable {
+    cursor: grab;
+    user-select: none;
+}
+
 /* Spinner animation */
 #spinner {
   border: 3vh solid #dcdcdc;

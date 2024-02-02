@@ -2681,12 +2681,13 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         await self.s_click_button('save-highlight-button')
-
         # Check highlighted document 1
         self.assertEqual(
             self.find_by_id('document-contents').get_attribute('innerHTML'),
             (
-                '<div id="doc-offset-0"><a class="highlight highlight-1" '
+                '<div id="doc-offset-0" class="draggable" '
+                + 'contenteditable="true">'
+                + '<a class="highlight highlight-1" '
                 + 'data-highlight-id="1" title="interesting">diff</a>erent con'
                 + '<a class="highlight highlight-2" data-highlight-id="2" '
                 + 'title="interesting, people">tent</a></div>'

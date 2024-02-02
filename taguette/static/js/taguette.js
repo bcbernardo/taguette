@@ -557,7 +557,8 @@ function createHighlight(selection) {
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
-    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
+    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
+    $(highlight_add_modal).modal('show');
 }
 
 // TRANSLATORS: Key used to create a new highlight
@@ -581,7 +582,8 @@ function editHighlight() {
         const node = allNodes.find((node) => node.id === hl_tags[i]);
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
-    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
+    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
+    $(highlight_add_modal).modal('show');
 }
 
 $('#highlight-add-form').off().on('submit', (e) => {
@@ -811,6 +813,11 @@ function loadDocument(document_id) {
                 let chunk = contents.contents[i];
                 let elem = document.createElement('div');
                 elem.setAttribute('id', 'doc-offset-' + chunk.offset);
+                elem.classList.add('draggable');
+                elem.setAttribute('contenteditable', 'true');
+                elem.addEventListener('dragstart', function (event) {
+                        event.dataTransfer.effectAllowed = 'move';
+                });
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
                 chunk_offsets.push(chunk.offset);
