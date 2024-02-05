@@ -311,7 +311,7 @@ class TagAdd(BaseHandler):
 
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
-            
+
             tag = database.Tag(project=project,
                                parent_id=obj['parent_id'],
                                path=obj['path'],

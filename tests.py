@@ -698,6 +698,7 @@ class TestMultiuser(MyHTTPTestCase):
                         {
                             "children": [],
                             "count": 0,
+                            "count_document": 0,
                             "description": "Further review required",
                             "id": 1,
                             "parent": None,
@@ -2538,6 +2539,7 @@ class TestSeleniumMultiuser(SeleniumTest):
                     {
                         "children": [],
                         "count": 0,
+                        "count_document": 0,
                         "description": "Further review required",
                         "id": 1,
                         "parent": None,
