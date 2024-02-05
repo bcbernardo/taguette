@@ -740,6 +740,7 @@ class Project(BaseHandler):
                     "description": child_tag.description,
                     "parent": parent_id,
                     "count": child_tag.highlights_count,
+                    "count_document": child_tag.documents_count,
                     "children": build_tree(child_id)
                 }
                 children.append(child_info)

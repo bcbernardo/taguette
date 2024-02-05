@@ -9,7 +9,7 @@ import logging
 import opentelemetry.trace
 import os
 from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
-    Table, UniqueConstraint, select
+    Table, UniqueConstraint, select, distinct
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
@@ -660,6 +660,19 @@ Tag.highlights_count = column_property(
     .where(
         highlight_tags.c.tag_id == Tag.id,
     )
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
+Tag.documents_count = column_property(
+    select(
+        [functions.count(distinct(Document.id)).label('count')],
+    )
+    .where(
+        highlight_tags.c.tag_id == Tag.id,
+        highlight_tags.c.highlight_id == Highlight.id,
+        Highlight.document_id == Document.id,
+        )
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )

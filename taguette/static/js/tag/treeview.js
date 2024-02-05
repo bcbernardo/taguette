@@ -13,7 +13,7 @@ function convertToTreeNode(data, includeTags) {
         };
 
         if (includeTags) {
-            node.tags = [`${item.count}`];
+            node.tags = [`${item.count_document}`, `${item.count}`];
         }
 
         return node;
@@ -73,9 +73,13 @@ function addTagEditButton() {
 
             secondDiv.addClass('d-flex align-items-center');
 
-            // Find the existing badge within the second div and replace its classes
-            const existingBadge = secondDiv.find('.badge');
-            existingBadge.removeClass().addClass('ml-3 badge rounded-pill badge-secondary');
+            // Find and update the first badge with class 'badge-primary'
+            const firstBadge = secondDiv.find('.badge:first');
+            firstBadge.removeClass().addClass('ms-1 badge badge-primary rounded-pill');
+
+            // Find and update the second badge with class 'badge-secondary'
+            const secondBadge = secondDiv.find('.badge:eq(1)');
+            secondBadge.removeClass().addClass('ms-1 badge badge-secondary rounded-pill ms-2');
 
             // Create the Edit button
             const editButton = $('<a>', {
