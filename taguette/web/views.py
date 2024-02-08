@@ -461,6 +461,8 @@ class ProjectAdd(BaseHandler):
                 project=project,
                 # TRANSLATORS: Default tag name
                 path=self.gettext("interesting"),
+                # TRANSLATORS: Default tag color
+                color=self.gettext('#000000'),
                 # TRANSLATORS: Default tag description
                 description=self.gettext("Further review required")),
             )
@@ -606,12 +608,16 @@ class ImportCodebook(BaseHandler):
 
             for i in itertools.count():
                 path = self.get_body_argument('tag%d-path' % i, None)
+                color = self.get_body_argument('tag%d-color' % i, None)
                 description = self.get_body_argument(
                     'tag%d-description' % i,
                     '',
                 )
                 if path is None:
                     break
+
+                if color is None:
+                    color = self.gettext("#000000")
 
                 replace = enabled = True
                 if self.get_body_argument('tag%d-replace' % i, ''):
@@ -624,6 +630,7 @@ class ImportCodebook(BaseHandler):
                 try:
                     validate.tag_path(path)
                     validate.description(description)
+                    validate.color(color)
                 except validate.InvalidFormat as e:
                     errors.append(self.gettext(e.message))
                     continue
@@ -631,6 +638,7 @@ class ImportCodebook(BaseHandler):
                 tags.append({
                     'path': path,
                     'description': description,
+                    'color': color,
                     'enabled': enabled,
                 })
                 if not enabled:
@@ -642,6 +650,7 @@ class ImportCodebook(BaseHandler):
                     insert_tags.append({
                         'path': path,
                         'description': description,
+                        'color': color,
                     })
 
             if errors:
@@ -673,11 +682,11 @@ class ImportCodebook(BaseHandler):
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
+                        color=tag_insert['color'],
                         parent_id=None,
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)
-                print()
                 self.db.flush()
                 commands = []
                 for tag in changed_tags:
@@ -738,6 +747,7 @@ class Project(BaseHandler):
                     "id": child_tag.id,
                     "path": child_tag.path,
                     "description": child_tag.description,
+                    "color": child_tag.color,
                     "parent": parent_id,
                     "count": child_tag.highlights_count,
                     "count_document": child_tag.documents_count,

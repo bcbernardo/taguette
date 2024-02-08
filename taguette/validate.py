@@ -6,6 +6,7 @@ from .utils import _f
 
 class InvalidFormat(ValueError):
     """User-supplied value doesn't pass validation."""
+
     def __init__(self, message):
         super(InvalidFormat, self).__init__(message)
         self.message = message
@@ -16,6 +17,14 @@ def description(descr):
         raise ValueError("Description is not a string")
     if len(descr) > 102400:
         raise InvalidFormat(_f("Description is too long"))
+    return True
+
+
+def color(value):
+    if not value:
+        raise InvalidFormat(_f("color cannot be empty"))
+    if not isinstance(value, str):
+        raise ValueError("color is not a string")
     return True
 
 

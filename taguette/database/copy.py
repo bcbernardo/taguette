@@ -80,6 +80,7 @@ def copy_project(
         validators=dict(
             path=validate.tag_path,
             description=validate.description,
+            color=validate.color
         ),
     )
 
@@ -114,7 +115,6 @@ def copy_project(
     # Copy commands
     def transform_command(cmd):
         payload = cmd['payload']
-
         if payload['type'] not in Command.TYPES:
             raise ValueError("Unknown command %r" % payload['type'])
 
@@ -156,6 +156,7 @@ def copy_project(
             ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
+            tag_color=validate.color,
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
