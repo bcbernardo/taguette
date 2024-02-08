@@ -678,7 +678,7 @@ class TestMultiuser(MyHTTPTestCase):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:12])
+        init_js = '\n'.join(body[idx:].splitlines()[1:11])
         self.assertEqual(
             init_js,
             '<script type="text/javascript">\n'
@@ -690,19 +690,19 @@ class TestMultiuser(MyHTTPTestCase):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
-            '  let selected_tag_id = 0;\n'
             '</script>' % (
                 exact_version(),
                 json.dumps(
                     [
                         {
-                            "children": [],
+                            "id": 1,
+                            "path": "interesting",
+                            "description": "Further review required",
+                            "color": "#000000",
+                            "parent": None,
                             "count": 0,
                             "count_document": 0,
-                            "description": "Further review required",
-                            "id": 1,
-                            "parent": None,
-                            "path": "interesting"
+                            "children": []
                         },
                     ],
                     sort_keys=True)
@@ -728,26 +728,32 @@ class TestMultiuser(MyHTTPTestCase):
         # Create tags in project 2
         async with self.apost(
             '/api/project/2/tag/new',
-            json=dict(path='people', parent_id=None,
+            json=dict(path='people',
+                      parent_id=None,
+                      color='#000000',
                       description="People of interest"),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 1, 'tag_id': 3, 'tag_parent': None,
-             'tag_path': 'people', 'description': "People of interest"})
+             'tag_color': '#000000', 'tag_path': 'people',
+             'description': "People of interest"})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
             '/api/project/2/tag/new',
             json=dict(path='interesting.places',
-                      parent_id=None, description=''),
+                      color='#000000',
+                      parent_id=None,
+                      description=''),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 2, 'tag_id': 4, 'tag_parent': None,
-             'tag_path': 'interesting.places', 'description': ''})
+             'tag_color': '#000000', 'tag_path': 'interesting.places',
+             'description': ''})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -1479,6 +1485,7 @@ class TestMultiuser(MyHTTPTestCase):
         tag1 = database.Tag(
             project=project1,
             path='db%dtag%d1' % (db_num, project_num),
+            color='#000000',
             parent_id=None,
             description='',
         )
@@ -1486,6 +1493,7 @@ class TestMultiuser(MyHTTPTestCase):
         tag2 = database.Tag(
             project=project1,
             path='db%dtag%d2' % (db_num, project_num),
+            color='#000000',
             parent_id=None,
             description='',
         )
@@ -1517,7 +1525,9 @@ class TestMultiuser(MyHTTPTestCase):
         db.add(database.Command.document_add(user, document2))
         db.add(database.Command.document_delete(user, document_fake))
         db.delete(document_fake)
-        tag_fake = database.Tag(project=project1, path='db%dtagF' % db_num,
+        tag_fake = database.Tag(project=project1,
+                                path='db%dtagF' % db_num,
+                                color='#000000',
                                 parent_id=None,
                                 description='')
         db.add(tag_fake)
@@ -1680,14 +1690,17 @@ class TestMultiuser(MyHTTPTestCase):
                   'document_name': 'db2doc12.txt'}),
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 7,
-                  'tag_path': 'db2tag11', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': 7, 'tag_path': 'db2tag11',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (32, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': -3,
-                  'tag_path': 'db2tagF', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': -3, 'tag_path': 'db2tagF',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (33, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 8,
-                  'tag_path': 'db2tag12', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': 8, 'tag_path': 'db2tag12',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
@@ -1719,12 +1732,12 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertRowsEqualsExceptDates(
             db1.execute(database.Tag.__table__.select()),
             [
-                (1, 1, 'db1tag11', '', None),
-                (2, 1, 'db1tag12', '', None),
-                (4, 2, 'db1tag21', '', None),
-                (5, 2, 'db1tag22', '', None),
-                (7, 3, 'db2tag11', '', None),
-                (8, 3, 'db2tag12', '', None),
+                (1, 1, 'db1tag11', '', '#000000', None),
+                (2, 1, 'db1tag12', '', '#000000', None),
+                (4, 2, 'db1tag21', '', '#000000', None),
+                (5, 2, 'db1tag22', '', '#000000', None),
+                (7, 3, 'db2tag11', '', '#000000', None),
+                (8, 3, 'db2tag12', '', '#000000', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1835,14 +1848,14 @@ class TestMultiuser(MyHTTPTestCase):
                   'document_name': 'db1doc22.txt'}),
                 (4, 'admin', 1, -6, {'type': 'document_delete'}),
                 (5, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 1,
-                  'tag_path': 'db1tag21', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': 1, 'tag_path': 'db1tag21', 'tag_parent': None}),
                 (6, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': -6,
-                  'tag_path': 'db1tagF', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': -6, 'tag_path': 'db1tagF', 'tag_parent': None}),
                 (7, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 2,
-                  'tag_path': 'db1tag22', 'tag_parent': None}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': 2, 'tag_path': 'db1tag22', 'tag_parent': None}),
                 (8, 'admin', 1, None,
                  {'type': 'tag_delete', 'tag_id': -6}),
                 (9, 'admin', 1, 1,
@@ -1877,8 +1890,8 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Tag.__table__.c.id)
             ),
             [
-                (1, 1, 'db1tag21', '', None),
-                (2, 1, 'db1tag22', '', None),
+                (1, 1, 'db1tag21', '', '#000000', None),
+                (2, 1, 'db1tag22', '', '#000000', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -2124,7 +2137,7 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'tag_parent': None,
-                    'description': 'new',
+                    'tag_color': '#000000', 'description': 'new',
                 }),
             ],
         )
@@ -2179,12 +2192,12 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 1,
                     'tag_path': 'interesting', 'tag_parent': None,
-                    'description': 'yes replace',
+                    'tag_color': '#000000', 'description': 'yes replace',
                 }),
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'tag_parent': None,
-                    'description': 'new',
+                    'tag_color': '#000000', 'description': 'new',
                 }),
             ],
         )
@@ -2531,7 +2544,6 @@ class TestSeleniumMultiuser(SeleniumTest):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
-            '  let selected_tag_id = 0;\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -2540,6 +2552,7 @@ class TestSeleniumMultiuser(SeleniumTest):
                         "children": [],
                         "count": 0,
                         "count_document": 0,
+                        "color": "#000000",
                         "description": "Further review required",
                         "id": 1,
                         "parent": None,
@@ -2690,9 +2703,15 @@ class TestSeleniumMultiuser(SeleniumTest):
                 '<div id="doc-offset-0" class="draggable" '
                 + 'contenteditable="true">'
                 + '<a class="highlight highlight-1" '
-                + 'data-highlight-id="1" title="interesting">diff</a>erent con'
+                + 'data-highlight-id="1" title="interesting" '
+                + 'style="cursor: pointer; border-bottom: 5px solid #000000;">'
+                + 'diff</a>erent con'
                 + '<a class="highlight highlight-2" data-highlight-id="2" '
-                + 'title="interesting, people">tent</a></div>'
+                + 'title="interesting, people" '
+                + 'style="cursor: pointer; '
+                + 'border-bottom: 5px solid transparent; '
+                + 'border-image: linear-gradient(90deg, #000000, #000000); '
+                + 'border-image-slice: 1;">tent</a></div>'
             ),
         )
 
