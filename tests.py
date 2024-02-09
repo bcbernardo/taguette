@@ -385,8 +385,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': 'Named persons'},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': 'Named persons'},
             ]
         )
 
@@ -399,8 +401,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': ''},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': ''},
             ]
         )
 
@@ -416,8 +420,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': ''},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': ''},
             ]
         )
 
@@ -1223,10 +1229,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,Further review required,1
-                    people,People of interest,2
-                    interesting.places,,1
+                    tag,description,color,parent,number of highlights
+                    interesting,Further review required,#000000,,1
+                    people,People of interest,#000000,,2
+                    interesting.places,,#000000,,1
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2120,9 +2126,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,Further review required,0
-                    people,new,0
+                    tag,description,color,parent,number of highlights
+                    interesting,Further review required,#000000,,0
+                    people,new,,,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2137,7 +2143,7 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'tag_parent': None,
-                    'tag_color': '#000000', 'description': 'new',
+                    'tag_color': '', 'description': 'new',
                 }),
             ],
         )
@@ -2175,9 +2181,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,yes replace,0
-                    people,new,0
+                    tag,description,color,parent,number of highlights
+                    interesting,yes replace,#000000,,0
+                    people,new,,,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2197,7 +2203,7 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'tag_parent': None,
-                    'tag_color': '#000000', 'description': 'new',
+                    'tag_color': '', 'description': 'new',
                 }),
             ],
         )

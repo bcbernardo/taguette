@@ -55,13 +55,13 @@ def list_tags_csv(reader):
         col_description = header.index('description')
     except ValueError:
         col_description = None
-    
+
     # Is there a color?
     try:
         col_color = header.index('color')
     except ValueError:
         col_color = None
-    
+
     # Is there a parent?
     try:
         col_parent = header.index('parent')

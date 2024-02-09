@@ -616,7 +616,7 @@ class ImportCodebook(BaseHandler):
                 )
                 if path is None:
                     break
-                    
+
                 replace = enabled = True
                 if self.get_body_argument('tag%d-replace' % i, ''):
                     replace = True
@@ -678,7 +678,9 @@ class ImportCodebook(BaseHandler):
 
                 # Do inserts
                 for tag_insert in insert_tags:
-                    tag_parent = self.db.query(database.Tag).filter_by(path=tag_insert['parent']).first()
+                    tag_parent = (self.db.query(database.Tag)
+                                  .filter_by(path=tag_insert['parent'])
+                                  .first())
                     tag = database.Tag(
                         project_id=project.id,
                         path=tag_insert['path'],

@@ -124,12 +124,12 @@ def copy_project(
             | {'date', 'user_login', 'payload'}
         )
 
-       # expected_payload_fields = set(method.payload_fields) | {'type'}
+        # Keep expected_payload_fields = set(method.payload_fields) | {'type'}
 
         # Check that the right columns are set
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
-        
+
         # Remove check that the right JSON fields are set to allow importation
         # if payload.keys() != expected_payload_fields:
         #     raise ValueError("Command doesn't have expected fields")
