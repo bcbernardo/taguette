@@ -21,8 +21,6 @@ def description(descr):
 
 
 def color(value):
-    if not value:
-        raise InvalidFormat(_f("color cannot be empty"))
     if not isinstance(value, str):
         raise ValueError("color is not a string")
     return True

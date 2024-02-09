@@ -352,9 +352,10 @@ def codebook_csv(tags, file):
             file = stack.enter_context(open(file, 'w'))
 
         writer = csv.writer(file)
-        writer.writerow(['tag', 'description', 'number of highlights'])
+        writer.writerow(['tag', 'description', 'color', 'parent', 'number of highlights'])
         for tag in tags:
-            writer.writerow([tag.path, tag.description, tag.highlights_count])
+            writer.writerow([tag.path, tag.description, tag.color,
+                             tag.parent.path if tag.parent else '', tag.highlights_count])
 
 
 @tracer.start_as_current_span('taguette/export/codebook_xlsx')

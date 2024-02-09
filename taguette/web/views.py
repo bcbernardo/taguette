@@ -608,17 +608,15 @@ class ImportCodebook(BaseHandler):
 
             for i in itertools.count():
                 path = self.get_body_argument('tag%d-path' % i, None)
-                color = self.get_body_argument('tag%d-color' % i, None)
+                parent = self.get_body_argument('tag%d-parent' % i, None)
+                color = self.get_body_argument('tag%d-color' % i, '')
                 description = self.get_body_argument(
                     'tag%d-description' % i,
                     '',
                 )
                 if path is None:
                     break
-
-                if color is None:
-                    color = self.gettext("#000000")
-
+                    
                 replace = enabled = True
                 if self.get_body_argument('tag%d-replace' % i, ''):
                     replace = True
@@ -639,6 +637,7 @@ class ImportCodebook(BaseHandler):
                     'path': path,
                     'description': description,
                     'color': color,
+                    'parent': parent,
                     'enabled': enabled,
                 })
                 if not enabled:
@@ -651,6 +650,7 @@ class ImportCodebook(BaseHandler):
                         'path': path,
                         'description': description,
                         'color': color,
+                        'parent': parent,
                     })
 
             if errors:
@@ -678,12 +678,13 @@ class ImportCodebook(BaseHandler):
 
                 # Do inserts
                 for tag_insert in insert_tags:
+                    tag_parent = self.db.query(database.Tag).filter_by(path=tag_insert['parent']).first()
                     tag = database.Tag(
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
                         color=tag_insert['color'],
-                        parent_id=None,
+                        parent_id=tag_parent.id if tag_parent else None,
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)
