@@ -461,6 +461,8 @@ class ProjectAdd(BaseHandler):
                 project=project,
                 # TRANSLATORS: Default tag name
                 path=self.gettext("interesting"),
+                # TRANSLATORS: Default tag color
+                color=self.gettext('#000000'),
                 # TRANSLATORS: Default tag description
                 description=self.gettext("Further review required")),
             )
@@ -606,6 +608,8 @@ class ImportCodebook(BaseHandler):
 
             for i in itertools.count():
                 path = self.get_body_argument('tag%d-path' % i, None)
+                parent = self.get_body_argument('tag%d-parent' % i, None)
+                color = self.get_body_argument('tag%d-color' % i, '')
                 description = self.get_body_argument(
                     'tag%d-description' % i,
                     '',
@@ -624,6 +628,7 @@ class ImportCodebook(BaseHandler):
                 try:
                     validate.tag_path(path)
                     validate.description(description)
+                    validate.color(color)
                 except validate.InvalidFormat as e:
                     errors.append(self.gettext(e.message))
                     continue
@@ -631,6 +636,8 @@ class ImportCodebook(BaseHandler):
                 tags.append({
                     'path': path,
                     'description': description,
+                    'color': color,
+                    'parent': parent,
                     'enabled': enabled,
                 })
                 if not enabled:
@@ -642,6 +649,8 @@ class ImportCodebook(BaseHandler):
                     insert_tags.append({
                         'path': path,
                         'description': description,
+                        'color': color,
+                        'parent': parent,
                     })
 
             if errors:
@@ -669,15 +678,18 @@ class ImportCodebook(BaseHandler):
 
                 # Do inserts
                 for tag_insert in insert_tags:
+                    tag_parent = (self.db.query(database.Tag)
+                                  .filter_by(path=tag_insert['parent'])
+                                  .first())
                     tag = database.Tag(
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
-                        parent_id=None,
+                        color=tag_insert['color'],
+                        parent_id=tag_parent.id if tag_parent else None,
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)
-                print()
                 self.db.flush()
                 commands = []
                 for tag in changed_tags:
@@ -738,8 +750,10 @@ class Project(BaseHandler):
                     "id": child_tag.id,
                     "path": child_tag.path,
                     "description": child_tag.description,
+                    "color": child_tag.color,
                     "parent": parent_id,
                     "count": child_tag.highlights_count,
+                    "count_document": child_tag.documents_count,
                     "children": build_tree(child_id)
                 }
                 children.append(child_info)

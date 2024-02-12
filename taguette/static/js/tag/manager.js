@@ -97,19 +97,21 @@ function addTag(tag) {
         }
     } else {
         // Tag with the same id does not exist
-
         if (tag.parent) {
             // Find parent and add the new tag
             const parentTag = findTag(tag.parent);
             parentTag.children = parentTag.children || [];
-            parentTag.children.push(Object.assign({count: DEFAULT_COUNT, children: []}, tag));
+            parentTag.children.push(Object.assign({count: DEFAULT_COUNT,
+                count_document: DEFAULT_COUNT,
+                children: []}, tag));
         } else {
             // Add new tag with default values
-            tags.push(Object.assign({count: DEFAULT_COUNT, children: []}, tag));
+            tags.push(Object.assign({count: DEFAULT_COUNT,
+                count_document: DEFAULT_COUNT,
+                children: []}, tag));
         }
     }
 
-    selected_tag_id = 0;
     updateTagsList();
 }
 

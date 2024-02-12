@@ -348,6 +348,7 @@ function createTag(from) {
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
+    document.getElementById('tag-add-color').value = '';
     document.getElementById('tag-add-label-new').style.display = '';
     document.getElementById('tag-add-label-change').style.display = 'none';
     document.getElementById('tag-add-cancel').style.display = '';
@@ -360,13 +361,6 @@ function createTag(from) {
 }
 
 function editTag(tag_id) {
-    if (tag_id === undefined && selected_tag_id === 0) {
-        showAlert('Select un tag')
-        return;
-    }
-    if (selected_tag_id > 0) {
-        tag_id = selected_tag_id
-    }
     const tag = findTag(tag_id);
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '' + tag_id;
@@ -375,6 +369,7 @@ function editTag(tag_id) {
         document.getElementById('dropdownMenuButtonTag').innerText = findTag(tag.parent).path;
     }
     document.getElementById('tag-add-path').value = tag.path;
+    document.getElementById('tag-add-color').value = tag.color;
     document.getElementById('tag-add-description').value = tag.description;
     document.getElementById('tag-add-label-new').style.display = 'none';
     document.getElementById('tag-add-label-change').style.display = '';
@@ -411,12 +406,18 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
     if (tag_id) {
         log(`Posting update for tag ${tag_id}`);
         req = postJSON(`/api/project/${project_id}/tag/${tag_id}`, {
-            path: tag_path, description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
+            path: tag_path,
+            description: document.getElementById('tag-add-description').value,
+            color: document.getElementById('tag-add-color').value,
+            parent_id: tag_parent_id
         });
     } else {
         log("Posting new tag");
         req = postJSON('/api/project/' + project_id + '/tag/new', {
-            path: tag_path, description: document.getElementById('tag-add-description').value, parent_id: tag_parent_id
+            path: tag_path,
+            description: document.getElementById('tag-add-description').value,
+            color: document.getElementById('tag-add-color').value,
+            parent_id: tag_parent_id
         });
     }
     showSpinner();
@@ -426,7 +427,6 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
         last_added_tag = reply.id;
 
         $(tag_add_modal).modal('hide');
-        document.getElementById('tag-add-form').reset();
         document.getElementById('input-search-tags-highlight').value = '';
         document.getElementById('dropdownMenuButtonTag').innerText = 'None';
 
@@ -489,7 +489,7 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     if (!tag_dest) return;
     tag_dest = parseInt(tag_dest);
 
-    // Todo : add good text
+    // Todo : add trans key
     if (tag_src === tag_dest) {
         showAlert('Merge not possible')
         return
@@ -560,15 +560,6 @@ function createHighlight(selection) {
     //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
     $(highlight_add_modal).modal('show');
 }
-
-// TRANSLATORS: Key used to create a new highlight
-const newtag_key = gettext('n');
-
-document.addEventListener('keyup', function (e) {
-    if (event.key === newtag_key && current_selection !== null) {
-        createHighlight(current_selection);
-    }
-});
 
 function editHighlight() {
     highlightModalReset();
@@ -928,7 +919,9 @@ function loadTag(tag_path, page) {
                         elem.appendChild(document.createTextNode(' '));
                     }
                     let taglink = document.createElement('a');
-                    taglink.className = 'badge badge-secondary';
+                    const tag = findTag(tag_names[j])
+                    taglink.className = 'badge';
+                    taglink.setAttribute('style', `background-color: ${tag.color}; color: white; font-weight: bold;`);
                     taglink.textContent = tag_names[j];
                     linkTag(taglink, taglink.textContent, false);
                     elem.appendChild(taglink);
@@ -954,7 +947,7 @@ function loadTag(tag_path, page) {
                 } else {
                     item = document.createElement('li');
                     item.className = 'page-item';
-                    var link = document.createElement('a');
+                    let link = document.createElement('a');
                     link.className = 'page-link';
                     link.setAttribute('href', '#');
                     link.innerText = label;
@@ -1003,8 +996,6 @@ function loadTag(tag_path, page) {
                 document_contents.appendChild(pagination);
             }
 
-            // updateTagsList();
-
             // Update export button
             export_button.style.display = '';
             let items = export_button.getElementsByClassName('dropdown-item');
@@ -1029,14 +1020,11 @@ function loadTag(tag_path, page) {
         })
         .then(function (result) {
             hideSpinner();
-            addTagEditButton();
-            addTagDragDrop();
         });
 }
 
 // Load the document if the URL includes one
 setTimeout(function () {
-    // const _document_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/document/([0-9]+)');
     const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)`);
     // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
     let m = window.location.pathname.match(_document_url);
@@ -1044,7 +1032,6 @@ setTimeout(function () {
         loadDocument(parseInt(m[2]));
     }
     // Or a tag
-    // const _tag_url = new RegExp('^' + escapeRegExp(base_path) + '/project/([0-9]+)/highlights/([^/]*)');
     const _tag_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/highlights/([^/]*)`);
     m = window.location.pathname.match(_tag_url);
     if (m) {
