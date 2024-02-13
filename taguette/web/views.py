@@ -233,7 +233,9 @@ class TermsOfService(BaseHandler):
 class Account(BaseHandler):
     def get_languages(self):
         locale_list = [
-            (loc_code, tornado.locale.get(loc_code).name if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
+            (loc_code,
+             tornado.locale.get(loc_code).name
+             if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
             for loc_code in tornado.locale.get_supported_locales()
         ]
         # locale_list.append(('en', self.gettext("English")))
