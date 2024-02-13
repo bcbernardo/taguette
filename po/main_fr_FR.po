@@ -246,7 +246,7 @@ msgstr "Supprimer projet"
 
 #: taguette/templates/project.html:76
 msgid "Add a document"
-msgstr "Ajouter un document"
+msgstr "Ajout de documents"
 
 #: taguette/templates/project.html:80 taguette/templates/project.html:94
 #: taguette/templates/project.html:271
@@ -329,12 +329,7 @@ msgstr "Annuler"
 #: taguette/templates/project.html:176
 msgctxt "modal window title"
 msgid "Add a document"
-msgstr "Ajouter un document"
-
-#: taguette/templates/project.html:185
-msgctxt "form placeholder"
-msgid "Enter a document name"
-msgstr "Entrer un nom pour le document"
+msgstr "Ajout de documents fsdfsdfssdefsdf"
 
 #: taguette/templates/project.html:195 taguette/templates/project.html:236
 msgid "Left to right"
