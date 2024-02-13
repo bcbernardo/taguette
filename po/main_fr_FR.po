@@ -329,7 +329,7 @@ msgstr "Annuler"
 #: taguette/templates/project.html:176
 msgctxt "modal window title"
 msgid "Add a document"
-msgstr "Ajout de documents fsdfsdfssdefsdf"
+msgstr "Ajout de documents"
 
 #: taguette/templates/project.html:195 taguette/templates/project.html:236
 msgid "Left to right"
