@@ -2593,7 +2593,6 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Create document 1 in project 1
         await self.s_click_button('documents-tab')
         await self.s_click_button('create-document-link')
-        self.set_value("document-add-name", "doc 1")
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
             tmp.flush()
@@ -2637,7 +2636,6 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Create document 2 in project 1
         await self.s_click_button('documents-tab')
         await self.s_click_button('create-document-link')
-        self.set_value('document-add-name', 'doc 2')
         self.set_value('document-add-description', 'description doc 2')
         await self.s_click_button('document-add-direction-rtl-input')
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:

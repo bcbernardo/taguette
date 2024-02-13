@@ -175,56 +175,95 @@ function basename(filename) {
     return filename;
 }
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function doUpload(form_data) {
+    return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.responseType = 'json';
+        xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                log("Document upload complete");
+                resolve({
+                    'doc_to_load': xhr.response.created
+                })
+            } else {
+                const context = xhr.status;
+                log("Document upload failed: status", 'error', {context})
+                let error = null;
+                try {
+                    error = `<p>(${name}) ${xhr.response.error}</p>`;
+                } catch (e) {
+                }
+                if (!error) {
+                    error = `<p>(${name}) Status ${xhr.status}</p>`;
+                }
+                reject({
+                    'error_msg': error
+                });
+            }
+        };
+        xhr.onerror = function (e) {
+            log("Document upload failed:", 'error', {e});
+            reject({
+                'error_msg': `<p>${e}</p>`
+            });
+        }
+        xhr.send(form_data);
+    });
+}
+
+async function uploadFiles(files) {
+    showSpinner();
+    await delay(100); // Trick to refresh dom
+    let error_msg = '',
+        doc_to_load = null;
+    for(let f in files) {
+        if(isNaN(f)) {
+            continue;
+        }
+        let form_data = new FormData(),
+            name = files[f].name;
+        name = name.substring(0, 50);
+
+        form_data.append('name', name);
+        form_data.append('description', document.getElementById('document-add-description').value);
+        form_data.append('file', files[f]);
+        form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
+        form_data.append('_xsrf', getCookie('_xsrf'));
+
+        await doUpload(form_data).then(
+            function(success) {
+                if(doc_to_load === null) {
+                    doc_to_load = success.doc_to_load;
+                }
+            },
+            function(error) {
+                error_msg += error.error_msg;
+            }
+        );
+    }
+
+    if(error_msg !== '') {
+        showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error_msg})
+    }
+
+    // Load first uploaded document
+    if(doc_to_load !== null) {
+        $(document_add_modal).modal('hide');
+        document.getElementById('document-add-form').reset();
+        const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
+        window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
+        loadDocument(doc_to_load);
+    }
+    hideSpinner();
+}
+
 document.getElementById('document-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    log("Uploading document...");
-
-    let form_data = new FormData();
-    let name = document.getElementById('document-add-name').value;
-    if (!name) {
-        name = basename(document.getElementById('document-add-file').value);
-        name = name.substring(0, 50);
-    }
-    form_data.append('name', name);
-    form_data.append('description', document.getElementById('document-add-description').value);
-    form_data.append('file', document.getElementById('document-add-file').files[0]);
-    form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
-    form_data.append('_xsrf', getCookie('_xsrf'));
-
-    let xhr = new XMLHttpRequest();
-    xhr.responseType = 'json';
-    xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
-    showSpinner();
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            $(document_add_modal).modal('hide');
-            document.getElementById('document-add-form').reset();
-            log("Document upload complete");
-            let doc_id = xhr.response.created;
-            const url = `${base_path}/project/${project_id}/document/${doc_id}`;
-            window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
-            loadDocument(doc_id);
-        } else {
-            const context = xhr.status;
-            log("Document upload failed: status", 'error', {context})
-            var error = null;
-            try {
-                error = xhr.response.error;
-            } catch (e) {
-            }
-            if (!error) {
-                error = "Status " + xhr.status;
-            }
-            showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error})
-        }
-        hideSpinner();
-    };
-    xhr.onerror = function (e) {
-        log("Document upload failed:", 'error', {e});
-        showAlert(gettext("Error uploading file!"));
-        hideSpinner();
-    }
-    xhr.send(form_data);
+    log("Uploading documents...");
+    uploadFiles(document.getElementById('document-add-file').files)
 });
 
 
