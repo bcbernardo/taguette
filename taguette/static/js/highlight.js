@@ -37,15 +37,13 @@ function removeHighlight(id) {
     log(`Highlight removed: ${id}`);
 
     // Loop over highlight-<id> elements
-    const elements = document.getElementsByClassName(`highlight-${id}`);
-    for (let i = 0; i < elements.length; ++i) {
+    $(`.highlight-${id}`).each(function() {
         // Move children up and delete this element
-        let node = elements[i];
-        while (node.firstChild) {
-            node.parentNode.insertBefore(node.firstChild, node);
+        while (this.firstChild) {
+            $(this.firstChild).insertBefore(this);
         }
-        node.parentNode.removeChild(node);
-    }
+        $(this).remove();
+    });
 }
 
 // Highlight a described selection
@@ -59,6 +57,9 @@ function highlightSelection(saved, id, clickedCallback, title) {
     let end = locatePos(saved[1]);
     end = splitAtPos(end, true);
 
+    const colors = title.split(',').map((path) => findTag(path.trim()).color);
+    const gradientString = `linear-gradient(90deg, ${colors.join(', ')})`;
+
     let node = start;
     while (node !== end) {
         let next = nextElement(node);
@@ -69,6 +70,11 @@ function highlightSelection(saved, id, clickedCallback, title) {
             span.className = 'highlight highlight-' + id;
             span.setAttribute('data-highlight-id', '' + id);
             span.setAttribute('title', title);
+            if(colors.length > 1) {
+                span.setAttribute('style', `cursor: pointer; border-bottom: 5px solid transparent; border-image: ${gradientString}; border-image-slice: 1;`);
+            } else {
+                span.setAttribute('style', `cursor: pointer; border-bottom: 5px solid ${colors[0]};`);
+            }
             span.addEventListener('click', clickedCallback);
             node.parentNode.insertBefore(span, node);
             span.appendChild(node);
@@ -78,7 +84,6 @@ function highlightSelection(saved, id, clickedCallback, title) {
 }
 
 // Save highlight drag drop
-
 function saveHighlightDragDrop(tag_id) {
 
     const selection = current_selection;

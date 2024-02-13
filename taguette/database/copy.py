@@ -80,6 +80,7 @@ def copy_project(
         validators=dict(
             path=validate.tag_path,
             description=validate.description,
+            color=validate.color
         ),
     )
 
@@ -114,7 +115,6 @@ def copy_project(
     # Copy commands
     def transform_command(cmd):
         payload = cmd['payload']
-
         if payload['type'] not in Command.TYPES:
             raise ValueError("Unknown command %r" % payload['type'])
 
@@ -124,15 +124,15 @@ def copy_project(
             | {'date', 'user_login', 'payload'}
         )
 
-        expected_payload_fields = set(method.payload_fields) | {'type'}
+        # Keep expected_payload_fields = set(method.payload_fields) | {'type'}
 
         # Check that the right columns are set
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
-        # Check that the right JSON fields are set
-        if payload.keys() != expected_payload_fields:
-            raise ValueError("Command doesn't have expected fields")
+        # Remove check that the right JSON fields are set to allow importation
+        # if payload.keys() != expected_payload_fields:
+        #     raise ValueError("Command doesn't have expected fields")
 
         # Map an ID, using negative ID if it's unknown
         def mv(mapping, value):
@@ -156,6 +156,7 @@ def copy_project(
             ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
+            tag_color=validate.color,
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,

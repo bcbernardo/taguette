@@ -281,8 +281,8 @@ a.dropdown-item:hover {
 }
 
 #document-view .highlight {
-  background-color: #ff0;
-  color: black;
+    color: black;
+    text-decoration: none;
 }
 
 #hlinfo {
@@ -329,6 +329,15 @@ a.dropdown-item:hover {
   border: 1px solid rgba(0,0,0,.125);
   margin: 1rem 0;
   padding: 1rem 0.6rem 1rem 0.6rem;
+}
+
+.draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+.dropdown-toggle {
+    width: 100%;
 }
 
 /* Spinner animation */

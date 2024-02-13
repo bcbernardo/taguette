@@ -311,9 +311,11 @@ class TagAdd(BaseHandler):
 
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
-            # Todo: validate parent_id
+            validate.color(obj['color'])
+
             tag = database.Tag(project=project,
                                parent_id=obj['parent_id'],
+                               color=obj['color'],
                                path=obj['path'],
                                description=obj['description'])
             try:
@@ -358,6 +360,9 @@ class TagUpdate(BaseHandler):
                     tag.description = obj['description']
                 if 'parent_id' in obj:
                     tag.parent_id = obj['parent_id']
+                if 'color' in obj:
+                    validate.color(obj['color'])
+                    tag.color = obj['color']
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,

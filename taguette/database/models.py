@@ -9,7 +9,7 @@ import logging
 import opentelemetry.trace
 import os
 from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
-    Table, UniqueConstraint, select
+    Table, UniqueConstraint, select, distinct
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
@@ -466,7 +466,11 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id'],
-        payload_fields=['tag_id', 'tag_path', 'tag_parent', 'description'],
+        payload_fields=['tag_id',
+                        'tag_path',
+                        'tag_color',
+                        'tag_parent',
+                        'description'],
     )
     def tag_add(cls, user_login, tag):
         assert isinstance(tag, Tag)
@@ -477,6 +481,7 @@ class Command(Base):
             payload={'type': 'tag_add',  # keep in sync above
                      'tag_id': tag.id,
                      'tag_path': tag.path,
+                     'tag_color': tag.color,
                      'tag_parent': tag.parent_id,
                      'description': tag.description},
         )
@@ -619,6 +624,7 @@ class Tag(Base):
 
     path = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
+    color = Column(String(20), nullable=False)
 
     parent_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'),
                        nullable=True, index=True)
@@ -659,6 +665,19 @@ Tag.highlights_count = column_property(
     )
     .where(
         highlight_tags.c.tag_id == Tag.id,
+    )
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
+Tag.documents_count = column_property(
+    select(
+        [functions.count(distinct(Document.id)).label('count')],
+    )
+    .where(
+        highlight_tags.c.tag_id == Tag.id,
+        highlight_tags.c.highlight_id == Highlight.id,
+        Highlight.document_id == Document.id,
     )
     .correlate_except(highlight_tags)
     .scalar_subquery()

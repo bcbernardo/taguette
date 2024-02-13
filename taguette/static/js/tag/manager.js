@@ -2,7 +2,7 @@ const SPLICE_DEFAULT_INDEX = 1;
 const DEFAULT_COUNT = 0;
 const findTag = (id) => {
     const recursiveSearch = (tag) => {
-        if (tag.id === parseInt(id)) {
+        if (tag.id === parseInt(id) || tag.path === id) {
             return tag;
         }
 
@@ -97,19 +97,21 @@ function addTag(tag) {
         }
     } else {
         // Tag with the same id does not exist
-
         if (tag.parent) {
             // Find parent and add the new tag
             const parentTag = findTag(tag.parent);
             parentTag.children = parentTag.children || [];
-            parentTag.children.push(Object.assign({count: DEFAULT_COUNT, children: []}, tag));
+            parentTag.children.push(Object.assign({count: DEFAULT_COUNT,
+                count_document: DEFAULT_COUNT,
+                children: []}, tag));
         } else {
             // Add new tag with default values
-            tags.push(Object.assign({count: DEFAULT_COUNT, children: []}, tag));
+            tags.push(Object.assign({count: DEFAULT_COUNT,
+                count_document: DEFAULT_COUNT,
+                children: []}, tag));
         }
     }
 
-    selected_tag_id = 0;
     updateTagsList();
 }
 
@@ -136,17 +138,14 @@ function mergeTags(tag_src, tag_dest) {
 
     updateTagsList();
 
-    selectTag(tag_dest)
+    selectTag(treeview_tags, tag_dest)
 }
 
-// highlight tag
-function selectTag(tag_id) {
-    const allNodes = treeview_tags.treeview('getEnabled');
+function selectTag(treeview, tag_id) {
+    const allNodes = treeview.treeview('getEnabled');
     const node = allNodes.find(item => item.id === tag_id)
     const nodeId = node.nodeId;
-    treeview_tags.treeview('selectNode', nodeId);
-    const nodeSelector = $('li[data-nodeid="' + nodeId + '"]');
-    nodeSelector.addClass("node-selected")
+    treeview.treeview('selectNode', nodeId);
 }
 
 function selectAllTag() {
@@ -155,7 +154,7 @@ function selectAllTag() {
         const nodeId = node.nodeId;
         const nodeSelector = $('li[data-nodeid="' + nodeId + '"]');
         nodeSelector.addClass("node-selected")
-        nodeSelector.css({ color: "#FFFFFF", backgroundColor: "#428bca" });
+        nodeSelector.css({ color: "#3498DB", backgroundColor: "#e7f2ff" });
     }
 }
 

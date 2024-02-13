@@ -83,6 +83,7 @@ function longPollForEvents() {
                         id: event.tag_id,
                         path: event.tag_path,
                         description: event.description,
+                        color: event.tag_color,
                         parent: event.tag_parent
                     });
                 } else if (event.type === 'tag_delete') {

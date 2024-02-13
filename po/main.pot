@@ -318,6 +318,11 @@ msgstr ""
 msgid "interesting"
 msgstr ""
 
+#. Default tag color
+#: taguette/web/views.py:465
+msgid "#000000"
+msgstr ""
+
 #. Default tag description
 #: taguette/web/views.py:464
 msgid "Further review required"

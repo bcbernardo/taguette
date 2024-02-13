@@ -44,9 +44,7 @@ function initTagHierarchySelect() {
 
 function initMergeTagHierarchySelect() {
 
-    // Todo : update to remove itself
-    initHierarchySelect(hs_menu_inner_merge, tag_hierarchy_merge_select, false)
-
+    initHierarchySelect(hs_menu_inner_merge, tag_hierarchy_merge_select, false);
 }
 
 function initHierarchySelect(menu, select, withDefault = true) {
