@@ -90,6 +90,10 @@ div.sticky-top {
   opacity: 0.7;
 }
 
+.mr-auto {
+  margin-right: auto !important;
+}
+
 /* Tab navs for project*/
 
 .nav-link {
