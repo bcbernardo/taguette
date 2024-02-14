@@ -2593,18 +2593,23 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Create document 1 in project 1
         await self.s_click_button('documents-tab')
         await self.s_click_button('create-document-link')
+        docs_1 = []
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
             tmp.flush()
-            self.set_value("document-add-file", tmp.name)
+            docs_1.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+            self.set_value("document-add-file", docs_1[0]['path'])
             await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(1)
-        self.assertEqual(doc.name, os.path.basename(tmp.name))
+        self.assertEqual(doc.name, docs_1[0]['name'])
         self.assertEqual(doc.description, '')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        self.assertTrue(doc.filename, docs_1[0]['name'])
 
         # Change project 2 metadata
         self.assertEqual(self.find_by_class(
@@ -2633,23 +2638,42 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.assertEqual(proj.name, 'new project')
         self.assertEqual(proj.description, 'Meaningful')
 
-        # Create document 2 in project 1
+        # Create document 2 and 3 in project 1
         await self.s_click_button('documents-tab')
         await self.s_click_button('create-document-link')
-        self.set_value('document-add-description', 'description doc 2')
+        self.set_value('document-add-description', 'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
+        docs_2 = []
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
             tmp.flush()
-            self.set_value('document-add-file', tmp.name)
-            await self.s_click_button('import-document-button')
+            docs_2.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
+            tmp.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
+            tmp.flush()
+            docs_2.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+        self.set_value('document-add-file', f"{docs_2[0]['path']} \n {docs_2[1]['path']}")
+        await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
-        self.assertEqual(doc.name, os.path.basename(tmp.name))
-        self.assertEqual(doc.description, 'description doc 2')
+        self.assertEqual(doc.name, docs_2[0]['name'])
+        self.assertEqual(doc.description, 'description doc 2 & 3')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        self.assertTrue(doc.filename, docs_2[0]['name'])
+
+        doc = db.query(database.Document).get(3)
+        self.assertEqual(doc.name, docs_2[1]['name'])
+        self.assertEqual(doc.description, 'description doc 2 & 3')
+        self.assertEqual(doc.text_direction,
+                         database.TextDirection.RIGHT_TO_LEFT)
+        self.assertTrue(doc.filename, docs_2[1]['name'])
 
         # Check highlight 1 in document 1
         self.assertEqual(
@@ -2797,7 +2821,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            'tent\ndoc 1 interesting people\nOpinion\ndoc 2 people'
+            f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n{docs_2[0]['name']} people"
         )
 
         # List highlights in project 1 under 'interesting.places'
@@ -2805,7 +2829,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            'diff\ndoc 1 interesting.places'
+            f"diff\n{docs_1[0]['name']} interesting.places"
         )
 
         # List highlights in project 1 under 'interesting'
@@ -2813,8 +2837,8 @@ class TestSeleniumMultiuser(SeleniumTest):
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            ('diff\ndoc 1 interesting.places\n'
-             'tent\ndoc 1 interesting people'),
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people"),
         )
 
         # List all highlights in project 1
@@ -2824,9 +2848,9 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.assertEqual(self.s_path, '/project/1/highlights/')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            ('diff\ndoc 1 interesting.places\n'
-             'tent\ndoc 1 interesting people\n'
-             'Opinion\ndoc 2 people'),
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people\n"
+             f"Opinion\n{docs_2[0]['name']} people"),
         )
 
         # Check export options for document 1
@@ -2938,9 +2962,9 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.assertEqual(self.s_path, '/project/1/highlights/')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            ('diff\ndoc 1 interesting.places\n'
-             'tent\ndoc 1 interesting\n'
-             'Opinion\ndoc 2 interesting'),
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting\n"
+             f"Opinion\n{docs_2[0]['name']} interesting"),
         )
 
 
