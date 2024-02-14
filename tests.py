@@ -2651,12 +2651,12 @@ class TestSeleniumMultiuser(SeleniumTest):
                 "path": tmp.name,
                 "name": os.path.basename(tmp.name)
             })
-        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
-            tmp.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
-            tmp.flush()
+        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp2:
+            tmp2.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
+            tmp2.flush()
             docs_2.append({
-                "path": tmp.name,
-                "name": os.path.basename(tmp.name)
+                "path": tmp2.name,
+                "name": os.path.basename(tmp2.name)
             })
         self.set_value('document-add-file', f"{docs_2[0]['path']} \n {docs_2[1]['path']}")
         await self.s_click_button('import-document-button')
