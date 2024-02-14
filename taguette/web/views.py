@@ -232,10 +232,14 @@ class TermsOfService(BaseHandler):
 
 class Account(BaseHandler):
     def get_languages(self):
-        return [
-            (loc_code, tornado.locale.get(loc_code).name)
+        locale_list = [
+            (loc_code,
+             tornado.locale.get(loc_code).name
+             if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
             for loc_code in tornado.locale.get_supported_locales()
         ]
+        # locale_list.append(('en', self.gettext("English")))
+        return locale_list
 
     @authenticated
     @PROM_REQUESTS.sync('account')
@@ -243,6 +247,7 @@ class Account(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
+        logger.info(self.get_languages())
         return self.render('account.html', user=user,
                            languages=self.get_languages(),
                            current_language=user.language)
