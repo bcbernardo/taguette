@@ -142,3 +142,48 @@ sqlite3_pypy:
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -Wd tests.py -v
+
+deploy_staging:
+  image: ubuntu:latest
+  stage: deploy
+  when: always
+  script:
+    - mv $SSH_KEY_DEPLOY /ssh_identity
+    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[goto-host]/${STAGING_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - chmod 700 /ssh_identity
+    - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
+  only:
+    - Staging
+
+deploy_beta:
+  image: ubuntu:latest
+  stage: deploy
+  when: always
+  script:
+    - mv $SSH_KEY_DEPLOY /ssh_identity
+    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[goto-host]/${BETA_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - chmod 700 /ssh_identity
+    - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
+  only:
+    - beta
+
+deploy_prod:
+  image: ubuntu:latest
+  stage: deploy
+  when: manual
+  script:
+    - mv $SSH_KEY_DEPLOY /ssh_identity
+    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[goto-host]/${PROD_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - chmod 700 /ssh_identity
+    - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
+  only:
+    - main

@@ -1,0 +1,15 @@
+Host proxy
+  HostName [proxy-host]
+  IdentityFile /ssh_identity
+  StrictHostKeyChecking no
+  User [username]
+  ControlMaster yes
+  ControlPersist yes
+  ForwardX11 yes
+
+Host libreqda
+  HostName [goto-host]
+  IdentityFile /ssh_identity
+  StrictHostKeyChecking no
+  User [username]
+  ProxyJump proxy
