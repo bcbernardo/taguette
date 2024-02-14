@@ -2600,7 +2600,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(1)
-        self.assertEqual(doc.name, 'doc 1')
+        self.assertEqual(doc.name, os.path.basename(tmp.name))
         self.assertEqual(doc.description, '')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
@@ -2645,7 +2645,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
-        self.assertEqual(doc.name, 'doc 2')
+        self.assertEqual(doc.name, os.path.basename(tmp.name))
         self.assertEqual(doc.description, 'description doc 2')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
