@@ -1,0 +1,129 @@
+1707926475023	geckodriver	INFO	Listening on 127.0.0.1:38437
+1707926475529	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "58069" "-no-remote" "-profile" "/tmp/rust_mozprofileBazxhK"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707926475867	Marionette	INFO	Marionette enabled
+1707926475939	Marionette	INFO	Listening on port 33079
+WebDriver BiDi listening on ws://127.0.0.1:58069
+1707926476057	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:58069/devtools/browser/5e6f29cd-2de9-4bc2-9335-d5688bcc82a9
+1707926481752	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:39029."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:39029."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:39029."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:39029."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:39029."
+1707926486125	Marionette	INFO	Stopped listening on port 33079
+[116917] Sandbox: Unexpected EOF, op 0 flags 00 path /proc/cpuinfo
+1707926486886	geckodriver	INFO	Listening on 127.0.0.1:37049
+1707926487393	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "54719" "-no-remote" "-profile" "/tmp/rust_mozprofile7zsxkr"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707926487712	Marionette	INFO	Marionette enabled
+1707926487756	Marionette	INFO	Listening on port 37523
+WebDriver BiDi listening on ws://127.0.0.1:54719
+1707926487888	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:54719/devtools/browser/79ecb408-31e6-47ee-af96-602f73441d1e
+1707926493570	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:36445."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:36445."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:36445."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:36445."
+1707926515208	Marionette	INFO	Stopped listening on port 37523
+[117269] Sandbox: Unexpected EOF, op 0 flags 00 path /proc/cpuinfo
+1707927206448	geckodriver	INFO	Listening on 127.0.0.1:56815
+1707927206450	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "43427" "-no-remote" "-profile" "/tmp/rust_mozprofileCRfXXE"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707927206785	Marionette	INFO	Marionette enabled
+1707927206830	Marionette	INFO	Listening on port 45347
+WebDriver BiDi listening on ws://127.0.0.1:43427
+1707927206952	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:43427/devtools/browser/2f0e3f9c-c87e-48c2-a3ae-022a133f05a4
+1707927212708	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33869."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33869."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33869."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33869."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33869."
+1707927217035	Marionette	INFO	Stopped listening on port 45347
+1707927217585	geckodriver	INFO	Listening on 127.0.0.1:46139
+1707927217587	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "60443" "-no-remote" "-profile" "/tmp/rust_mozprofileeRZ8BE"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707927217900	Marionette	INFO	Marionette enabled
+1707927217947	Marionette	INFO	Listening on port 36537
+WebDriver BiDi listening on ws://127.0.0.1:60443
+1707927218095	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:60443/devtools/browser/56da0af3-801e-46fa-a242-91446bc5a904
+1707927223772	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33957."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33957."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33957."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:33957."
+1707927244732	Marionette	INFO	Stopped listening on port 36537
+1707927361942	geckodriver	INFO	Listening on 127.0.0.1:58729
+1707927361944	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "39119" "-no-remote" "-profile" "/tmp/rust_mozprofilePxoBuz"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707927362263	Marionette	INFO	Marionette enabled
+1707927362309	Marionette	INFO	Listening on port 33345
+WebDriver BiDi listening on ws://127.0.0.1:39119
+1707927362478	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:39119/devtools/browser/0c973e45-6078-41db-8726-57ef1237f9b7
+1707927368140	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38349."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38349."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38349."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38349."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38349."
+1707927372488	Marionette	INFO	Stopped listening on port 33345
+[124756] Sandbox: Unexpected EOF, op 0 flags 00 path /proc/cpuinfo
+1707927373063	geckodriver	INFO	Listening on 127.0.0.1:46213
+1707927373565	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "41753" "-no-remote" "-profile" "/tmp/rust_mozprofilewgzzNs"
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1707927373920	Marionette	INFO	Marionette enabled
+1707927373968	Marionette	INFO	Listening on port 41371
+WebDriver BiDi listening on ws://127.0.0.1:41753
+1707927374130	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: ({})
+DevTools listening on ws://127.0.0.1:41753/devtools/browser/9eb47cf7-b98d-4b73-85af-dd3b3e2eb061
+1707927380088	Marionette	WARN	TimedPromise timed out after 5000 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:219:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:203:10
+restoreWindow@chrome://remote/content/marionette/driver.sys.mjs:3500:9
+GeckoDriver.prototype.setWindowRect@chrome://remote/content/marionette/driver.sys.mjs:1133:13
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38899."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38899."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38899."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://127.0.0.1:38899."
+console.error: "update.locale" " file doesn't exist in either the application or GRE directories"
+1707927403926	addons.xpi	ERROR	System addon update list error SyntaxError: XMLHttpRequest.open: 'http://%(server)s/dummy-system-addons.xml' is not a valid URL.
+1707927433381	Marionette	INFO	Stopped listening on port 41371
+[125131] Sandbox: Unexpected EOF, op 0 flags 00 path /proc/cpuinfo

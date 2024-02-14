@@ -2644,23 +2644,24 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.set_value('document-add-description', 'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
         docs_2 = []
-        tmp = tempfile.NamedTemporaryFile('wb', suffix='.html')
-        tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
-        docs_2.append({
-            "path": tmp.name,
-            "name": os.path.basename(tmp.name)
-        })
-        # tmp2 = tempfile.NamedTemporaryFile('wb', suffix='.html')
-        # tmp2.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
-        # docs_2.append({
-        #     "path": tmp2.name,
-        #     "name": os.path.basename(tmp2.name)
-        # })
-        # self.set_value('document-add-file', f"{docs_2[0]['path']} \n {docs_2[1]['path']}")
-        # tmp2.close()
-        self.set_value('document-add-file', f"{docs_2[0]['path']}")
-        tmp.close()
-        await self.s_click_button('import-document-button')
+        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp, tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp2:
+            tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
+            tmp.flush()
+            docs_2.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+            self.set_value('document-add-file', docs_2[0]['path'])
+            tmp2.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
+            tmp2.flush()
+            docs_2.append({
+                "path": tmp2.name,
+                "name": os.path.basename(tmp2.name)
+            })
+            self.set_value('document-add-file', docs_2[1]['path'])
+            # self.set_value('document-add-file', f"{docs_2[0]['path']} \n {docs_2[1]['path']}")
+            await self.s_click_button('import-document-button')
+
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
         self.assertEqual(doc.name, docs_2[0]['name'])
