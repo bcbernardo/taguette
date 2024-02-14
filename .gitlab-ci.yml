@@ -149,10 +149,10 @@ deploy_staging:
   when: always
   script:
     - mv $SSH_KEY_DEPLOY /ssh_identity
-    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[goto-host]/${STAGING_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[goto-host\]/${STAGING_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[username\]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
     - chmod 700 /ssh_identity
     - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
   only:
@@ -164,10 +164,10 @@ deploy_beta:
   when: always
   script:
     - mv $SSH_KEY_DEPLOY /ssh_identity
-    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[goto-host]/${BETA_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[goto-host\]/${BETA_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[username\]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
     - chmod 700 /ssh_identity
     - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
   only:
@@ -179,10 +179,10 @@ deploy_prod:
   when: manual
   script:
     - mv $SSH_KEY_DEPLOY /ssh_identity
-    - cp config.ssh /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[proxy-host]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[goto-host]/${PROD_HOST}/" /etc/ssh/ssh_config.d/project.conf
-    - sed -i "s/[username]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
+    - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[goto-host\]/${PROD_HOST}/" /etc/ssh/ssh_config.d/project.conf
+    - sed -i "s/\[username\]/${USERNAME}/" /etc/ssh/ssh_config.d/project.conf
     - chmod 700 /ssh_identity
     - ssh $USERNAME@libreqda /opt/libreqda/updateCode.sh
   only:
