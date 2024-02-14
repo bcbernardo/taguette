@@ -344,6 +344,10 @@ a.dropdown-item:hover {
     width: 100%;
 }
 
+[contenteditable] {
+    outline: 0px solid transparent;
+}
+
 /* Spinner animation */
 #spinner {
   border: 3vh solid #dcdcdc;
