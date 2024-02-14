@@ -2644,7 +2644,8 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.set_value('document-add-description', 'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
         docs_2 = []
-        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp, tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp2:
+        with (tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp,
+              tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp2):
             tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
             tmp.flush()
             docs_2.append({
@@ -2659,7 +2660,6 @@ class TestSeleniumMultiuser(SeleniumTest):
                 "name": os.path.basename(tmp2.name)
             })
             self.set_value('document-add-file', docs_2[1]['path'])
-            # self.set_value('document-add-file', f"{docs_2[0]['path']} \n {docs_2[1]['path']}")
             await self.s_click_button('import-document-button')
 
         db = self.application.DBSession()
@@ -2823,7 +2823,8 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n{docs_2[0]['name']} people"
+            f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n"
+            f"{docs_2[0]['name']} people"
         )
 
         # List highlights in project 1 under 'interesting.places'
