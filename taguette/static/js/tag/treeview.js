@@ -107,7 +107,7 @@ function addTagUnderLineHighlightTreeview() {
 
         const tag_id = getTagIdFromTreeviewNode('treeview-tags-highlight', $(element).data("nodeid"));
 
-        addTagUnderline($(element), tag_id);
+        addTagVerticalLine($(element), tag_id);
     })
 }
 
@@ -116,7 +116,7 @@ function addTagEditButton() {
 
         const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
 
-        addTagUnderline($(element), tag_id);
+        addTagVerticalLine($(element), tag_id);
 
         const secondDiv = $(element).find("div:eq(1)");
 
@@ -149,11 +149,10 @@ function addTagEditButton() {
     });
 }
 
-function addTagUnderline(selector, tag_id) {
+function addTagVerticalLine(selector, tag_id) {
     // Find the first div within .node-treeview-tags
     const firstDiv = selector.find('div:first');
 
-    // Check if the text is not already wrapped in an anchor element
     if (firstDiv.find('a').length === 0) {
         // Get the text content
         const tagText = firstDiv.contents().filter(function() {
@@ -164,21 +163,48 @@ function addTagUnderline(selector, tag_id) {
         const tagTextAnchor = $('<a>', {
             href: '#',
             class: 'tag-text',
-            style: 'text-decoration: none',
+            style: 'text-decoration: none; position: relative; padding-left: 10px;',
             text: tagText
         });
 
+        // Prepend a span to act as the vertical line
+        $('<span>', {
+            class: `vertical-line-${tag_id}`,
+            css: {
+                display: 'inline-block',
+                position: 'absolute',
+                left: '0',
+                top: '0',
+                bottom: '0',
+                width: '5px',
+                backgroundColor: findTag(tag_id).color,
+            }
+        }).prependTo(tagTextAnchor);
+
         // Wrap the text in the anchor element
         firstDiv.contents().filter(function() {
-            return this.nodeType === 3; // Filter out text nodes
+            return this.nodeType === 3;
         }).replaceWith(tagTextAnchor);
     }
-
-    // Apply border to the new span
-    const tagTextAnchor = firstDiv.find('.tag-text');
-    // Add border-bottom style to the existing styles of .node-treeview-tags element
-    const color = findTag(tag_id).color;
-    tagTextAnchor.css('border-bottom', `6px solid ${color}`);
+    else {
+        const existingLine = firstDiv.find(`.vertical-line-${tag_id}`);
+        if (existingLine.length > 0) {
+            existingLine.css('backgroundColor', findTag(tag_id).color);
+        } else {
+            $('<span>', {
+                class: `vertical-line-${tag_id}`,
+                css: {
+                    display: 'inline-block',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    bottom: '0',
+                    width: '5px',
+                    backgroundColor: findTag(tag_id).color,
+                }
+            }).prependTo(firstDiv.find('.tag-text'));
+        }
+    }
 }
 
 function addTagDragDrop() {
