@@ -95,46 +95,47 @@ function saveHighlightDragDrop(tag_id) {
         tags: hl_tags
     }
 
+    const callbackSuccess = () => {
+        log("Highlight posted");
+    };
+    const callbackFail = (error) => {
+        log("Failed to create highlight", 'error', {error})
+        showAlert(`${gettext("Couldn't create highlight!")} \n\n`,'error');
+    };
+
     //call submit
-    submitHighLightCreation(highlight);
+    submitHighLightCreation(highlight, callbackSuccess, callbackFail);
 
 }
 
-function submitHighLightCreation(highlight) {
+function submitHighLightCreation(highlight, callbackSuccess, callbackFail) {
 
     let request;
     const { id, selection, tags} = highlight;
 
+    let requestData = {
+        start_offset: selection[0],
+        end_offset: selection[1],
+        tags: tags
+    };
+
     if (highlight.id) {
         log(`Posting update for highlight ${id}`);
         request = postJSON(
-             `/api/project/${project_id}/document/${current_document}/highlight/${id}`,
-            {
-                start_offset: selection[0],
-                end_offset: selection[1],
-                tags: tags
-            }
+            `/api/project/${project_id}/document/${current_document}/highlight/${id}`,
+            requestData
         );
     } else {
         log("Posting new highlight");
         request = postJSON(
             `/api/project/${project_id}/document/${current_document}/highlight/new`,
-            {
-                start_offset: selection[0],
-                end_offset: selection[1],
-                tags: tags
-            }
+            requestData
         );
     }
     showSpinner();
-    request.then(function () {
-        log("Highlight posted");
-        $(highlight_add_modal).modal('hide');
-        highlightModalReset();
-    })
-        .catch(function (error) {
-            log("Failed to create highlight", 'error', {error})
-            showAlert(`${gettext("Couldn't create highlight!")} \n\n`,'error');
-        })
-        .then(hideSpinner);
+    request.then(function (reply) {
+        callbackSuccess(reply);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
 }

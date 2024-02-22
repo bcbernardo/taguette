@@ -255,3 +255,26 @@ function handleSearch(filterText) {
         return false;
     });
 }
+
+function submitTagCreation(Tag, callbackSuccess, callbackFail) {
+
+    const { id } = Tag;
+    let tag = { ...Tag };
+    delete tag.id;
+
+    let request;
+    if (id) {
+        console.log(`Posting update for tag ${id}`);
+        request = postJSON(`/api/project/${project_id}/tag/${id}`, tag);
+    } else {
+        console.log("Posting new tag");
+        request = postJSON(`/api/project/${project_id}/tag/new`, tag);
+    }
+
+    showSpinner();
+    request.then(function (reply) {
+        callbackSuccess(reply);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
