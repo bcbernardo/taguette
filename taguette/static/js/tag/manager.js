@@ -26,7 +26,7 @@ const findTag = (id) => {
     }
 
     return null;
-};
+}
 
 const findTagAndDelete = (id) => {
 
@@ -40,7 +40,7 @@ const findTagAndDelete = (id) => {
         const indexToDelete = tags.findIndex(item => item.id === tag.id);
         tags.splice(indexToDelete, SPLICE_DEFAULT_INDEX);
     }
-};
+}
 
 /*
   addTag
@@ -48,6 +48,7 @@ const findTagAndDelete = (id) => {
 function addTag(tag) {
     // Check if the tag with the same id already exists
     let existingTag = findTag(tag.id);
+    const existingTagColor =  existingTag?.color ?? '';
 
     if (existingTag) {
         if (tag.parent) {
@@ -112,7 +113,25 @@ function addTag(tag) {
         }
     }
 
+    // Check if the tag color has changed
+    if(existingTagColor !== '' && (existingTagColor !== tag.color)) {
+        // Todo: check if tag is in highlight before update doc
+        updateAndLoadDocument()
+    }
+
     updateTagsList();
+}
+
+function updateAndLoadDocument() {
+    const url = window.location.href;
+    const documentPattern = /\/document\/(\d+)/;
+    const match = url.match(documentPattern);
+
+    if (match) {
+        const doc_id = match[1];
+        window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
+        loadDocument(doc_id);
+    }
 }
 
 function removeTag(id) {
@@ -182,7 +201,6 @@ function updateTagCount(tagsId) {
 function updateTagsList() {
 
     const isReverse = sortTags[1] === 'desc';
-    console.log(sortTags)
     sortTagsByKey(tags, sortTags[0], isReverse);
 
     // update all treeview and select tags
