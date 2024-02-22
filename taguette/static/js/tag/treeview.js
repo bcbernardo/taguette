@@ -209,6 +209,12 @@ function addTagVerticalLine(selector, tag_id) {
 
 function addTagDragDrop() {
 
+    $('.node-treeview-tags').on('dragstart', function (event) {
+        const nodeId = $(this).data('nodeid');
+        // event.dataTransfer.effectAllowed = 'move'
+        event.originalEvent.dataTransfer.setData('text', nodeId);
+    });
+
     $(".node-treeview-tags").each(function (index, element) {
 
         $(element).on('dragover', function (event) {
@@ -219,8 +225,15 @@ function addTagDragDrop() {
             event.preventDefault();
 
             const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+            const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
 
-            saveHighlightDragDrop(tag_id)
+            if(!isNaN(parseInt(draggedElementNodeId))) {
+                const tag_child_id = getTagIdFromTreeviewNode('treeview-tags', draggedElementNodeId);
+                if(tag_id === tag_child_id) return;
+                updateTagParent(tag_child_id, tag_id)
+            } else {
+                saveHighlightDragDrop(tag_id);
+            }
         });
     });
 }

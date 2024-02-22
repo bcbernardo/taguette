@@ -278,3 +278,17 @@ function submitTagCreation(Tag, callbackSuccess, callbackFail) {
         callbackFail(error);
     }).finally(hideSpinner);
 }
+
+// update tag parent
+function updateTagParent(child_tag_1, new_parent_tag_id) {
+    const tag = findTag(child_tag_1);
+    if(tag.parent === new_parent_tag_id) return;
+    const new_tag = {
+        id: tag.id,
+        path: tag.path,
+        description: tag.description,
+        color: tag.color,
+        parent_id: new_parent_tag_id
+    };
+    submitTagCreation(new_tag, () => {}, () => {});
+}
