@@ -32,17 +32,19 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="tag-add-color" class="form-label">Tag name</label>
-                        <input type="text"  class="form-control" id="tag-add-path" name="tag-add-path" placeholder="" required />
+                        <label for="tag-add-color" class="form-label">{% trans "tag change form placeholder" %}Name{% endtrans %}</label>
+                        <input type="text"  class="form-control" id="tag-add-path" name="tag-add-path"
+                               placeholder="{% trans "tag change form placeholder" %}Name{% endtrans %}" required />
                     </div>
                     <div class="form-group">
-                        <label for="tag-add-color" class="form-label">Color</label>
+                        <label for="tag-add-color" class="form-label">{% trans "tag change form placeholder" %}Color{% endtrans %}</label>
                         <input type="color" class="form-control" id="tag-add-color" name="tag-add-color" required />
                     </div>
                     <div class="form-group">
-                        <label for="tag-add-color" class="form-label">Description</label>
-                         <textarea class="form-control" id="tag-add-description" name="tag-add-description"
-                                   placeholder="{% trans " tag change form placeholder" %}Description{% endtrans
+                        <label for="tag-add-color" class="form-label">{% trans " tag change form placeholder" %}Description{% endtrans
+                            %}</label>
+                        <textarea class="form-control" id="tag-add-description" name="tag-add-description"
+                                  placeholder="{% trans " tag change form placeholder" %}Description{% endtrans
                         %}"></textarea>
                     </div>
                 </div>

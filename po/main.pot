@@ -183,8 +183,12 @@ msgstr ""
 msgid "Load a document on the left"
 msgstr ""
 
-#: taguette/templates/project.html:191
-msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
+#: taguette/templates/project.html:194
+msgid "New highlight"
+msgstr ""
+
+#: taguette/templates/project.html:199
+msgid "Select tag"
 msgstr ""
 
 #: taguette/templates/modal/create_document.html:6
@@ -297,8 +301,18 @@ msgctxt "modal window title"
 msgid "Change tag"
 msgstr ""
 
-#: taguette/templates/modal/create_tag.html:43
-msgctxt " tag change form placeholder"
+#: taguette/templates/modal/create_tag.html:35
+msgctxt "tag change form placeholder"
+msgid "Name"
+msgstr ""
+
+#: taguette/templates/modal/create_tag.html:40
+msgctxt "tag change form placeholder"
+msgid "Color"
+msgstr ""
+
+#: taguette/templates/modal/create_tag.html:44
+msgctxt "tag change form placeholder"
 msgid "Description"
 msgstr ""
 
@@ -833,6 +847,10 @@ msgstr ""
 #. Default tag name
 #: taguette/web/views.py:470
 msgid "interesting"
+msgstr ""
+
+#. Default tag color
+msgid "#555"
 msgstr ""
 
 #. Default tag description

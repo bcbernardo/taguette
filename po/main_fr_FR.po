@@ -2,10 +2,10 @@
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
 # This file is distributed under the same license as the Taguette project.
 # Remi Rampin <remi@rampin.org>, 2018.
-# 
+#
 # Translators:
 # Rémi Rampin <remirampin@gmail.com>, 2022
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Taguette\n"
@@ -392,6 +392,11 @@ msgctxt "tag change form placeholder"
 msgid "Name"
 msgstr "Nom"
 
+#: taguette/templates/project.html:298
+msgctxt "tag change form placeholder"
+msgid "Color"
+msgstr "Couleur"
+
 #: taguette/templates/project.html:299
 msgctxt "tag change form placeholder"
 msgid "Description"
@@ -406,9 +411,13 @@ msgstr "Fusionner..."
 msgid "Delete tag"
 msgstr "Supprimer le tag"
 
-#: taguette/templates/project.html:371
-msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-msgstr "<em>n</em>ouvelle marque <span class=\"sr-only\">(raccourci : n)</span>"
+#: taguette/templates/project.html:194
+msgid "New highlight"
+msgstr "Nouvelle marque"
+
+#: taguette/templates/project.html:199
+msgid "Select tag"
+msgstr "Sélectionner une marque"
 
 #: taguette/templates/index.html:10
 #, python-format
