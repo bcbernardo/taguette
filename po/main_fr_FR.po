@@ -868,11 +868,6 @@ msgstr "Le mot de passe a déjà été changé"
 msgid "interesting"
 msgstr "intéressant"
 
-#. Default tag color
-#: taguette/web/views.py:465
-msgid "#000000"
-msgstr "#000000"
-
 #. Default tag description
 #: taguette/web/views.py:468
 msgid "Further review required"

@@ -70,7 +70,7 @@ def copy_project(
             contents=convert.is_html_safe,
         ),
     )
-    
+
     # Update parent_id with new pk
     def transform_tag(row, mapping):
         if 'parent_id' in row and row['parent_id'] in mapping:
