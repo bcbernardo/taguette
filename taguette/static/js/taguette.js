@@ -246,7 +246,7 @@ async function uploadFiles(files) {
     }
 
     if(error_msg !== '') {
-        showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error_msg})
+        showAlert(`${gettext("Error uploading file!")} \n \n${error_msg}`, 'error')
     }
 
     // Load first uploaded document
