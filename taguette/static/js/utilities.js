@@ -382,15 +382,22 @@ function log(message, status = 'info', context = {}) {
     }
 }
 
-function showSpinner() {
+function showSpinner(cancel_action=null) {
     let $spinner_modal = $('#spinner-modal')
     if (typeof $spinner_modal.modal !== 'undefined') {
         $spinner_modal.modal('show');
+        if(cancel_action !== null) {
+            $('button.cancel', $spinner_modal).show();
+            $('button.cancel', $spinner_modal).bind("click", cancel_action);
+        }
     }
 }
 
 function hideSpinner() {
-    $('#spinner-modal').modal('hide');
+    let $spinner_modal = $('#spinner-modal');
+    $spinner_modal.modal('hide');
+    $('button.cancel', $spinner_modal).hide();
+    $('button.cancel', $spinner_modal).unbind("click");
 }
 
 
