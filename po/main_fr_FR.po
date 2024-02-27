@@ -323,6 +323,7 @@ msgstr "Enregistrer & Fermer"
 
 #: taguette/templates/project.html:165 taguette/templates/project.html:208
 #: taguette/templates/project.html:305
+#: taguette/templates/partials/spinner.html:5
 msgid "Cancel"
 msgstr "Annuler"
 
