@@ -71,6 +71,12 @@ def copy_project(
         ),
     )
 
+    # Update parent_id with new pk
+    def transform_tag(row, mapping):
+        if 'parent_id' in row and row['parent_id'] in mapping:
+            row['parent_id'] = mapping[row['parent_id']]
+        return row
+
     # Copy tags
     mapping_tags = copy(
         Tag.__table__, 'id',
@@ -82,6 +88,7 @@ def copy_project(
             description=validate.description,
             color=validate.color
         ),
+        transform=transform_tag
     )
 
     # Copy highlights
@@ -113,7 +120,7 @@ def copy_project(
         return True
 
     # Copy commands
-    def transform_command(cmd):
+    def transform_command(cmd, mapping):
         payload = cmd['payload']
         if payload['type'] not in Command.TYPES:
             raise ValueError("Unknown command %r" % payload['type'])
@@ -246,7 +253,7 @@ def copy_table(
                 row[field] = fkey_map[row[field]]
             # Generic transform
             if transform is not None:
-                row = transform(row)
+                row = transform(row, mapping)
             # Validate
             if validators:
                 for key, value in row.items():

@@ -2692,7 +2692,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # create highlight 1 diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
-            'new highlight\n(shortcut: n)',
+            'Select tag',
             tag='a'
         )
         self.driver.execute_script('''
@@ -2703,7 +2703,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Create highlight 2 tent
         self.driver.execute_script('restoreSelection([13, 17]);')
         await self.s_click_button_by_text(
-            'new highlight\n(shortcut: n)',
+            'Select tag',
             tag='a'
         )
         # check tags before select
@@ -2797,7 +2797,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
-            'new highlight\n(shortcut: n)',
+            'Select tag',
             tag='a'
         )
 

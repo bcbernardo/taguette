@@ -383,19 +383,27 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 
-function createTag(from) {
+function createTag(from, selection) {
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
     document.getElementById('tag-add-color').value = '';
+    document.getElementById('tag-highlight-add-start').value = '';
+    document.getElementById('tag-highlight-add-end').value = '';
     document.getElementById('tag-add-label-new').style.display = '';
     document.getElementById('tag-add-label-change').style.display = 'none';
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
     if (from === 2) {
-        document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value
+        document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
     }
+
+    if(selection) {
+        document.getElementById('tag-highlight-add-start').value = selection[0];
+        document.getElementById('tag-highlight-add-end').value = selection[1];
+    }
+
     $(tag_add_modal).modal('show');
 }
 
@@ -422,59 +430,69 @@ function editTag(tag_id) {
 document.getElementById('tag-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    let tag_id = document.getElementById('tag-add-id').value;
-    if (tag_id) {
-        tag_id = parseInt(tag_id);
-    } else {
-        tag_id = null;
-    }
+    let tag_id = document.getElementById('tag-add-id').value
+        ? parseInt(document.getElementById('tag-add-id').value) : null;
     let tag_path = document.getElementById('tag-add-path').value;
+    let tag_parent_id = document.getElementById('tag-add-parent-id').value
+        ? parseInt(document.getElementById('tag-add-parent-id').value) : null;
+
     if (!tag_path) {
         showAlert(gettext("Invalid tag name"));
         return;
     }
 
-    let tag_parent_id = document.getElementById('tag-add-parent-id').value;
-    if (tag_parent_id !== '') {
-        tag_parent_id = parseInt(tag_parent_id);
-    } else {
-        tag_parent_id = null;
+    if (tag_id && tag_parent_id && tag_id === tag_parent_id) {
+        showAlert(gettext("Impossible to define the same tag as parent"), 'warning');
+        return;
     }
 
-    let req;
-    if (tag_id) {
-        log(`Posting update for tag ${tag_id}`);
-        req = postJSON(`/api/project/${project_id}/tag/${tag_id}`, {
-            path: tag_path,
-            description: document.getElementById('tag-add-description').value,
-            color: document.getElementById('tag-add-color').value,
-            parent_id: tag_parent_id
-        });
-    } else {
-        log("Posting new tag");
-        req = postJSON('/api/project/' + project_id + '/tag/new', {
-            path: tag_path,
-            description: document.getElementById('tag-add-description').value,
-            color: document.getElementById('tag-add-color').value,
-            parent_id: tag_parent_id
-        });
-    }
-    showSpinner();
-    req.then(function (reply) {
+    const new_tag = {
+        id: tag_id,
+        path: tag_path,
+        description: document.getElementById('tag-add-description').value,
+        color: document.getElementById('tag-add-color').value,
+        parent_id: tag_parent_id
+    };
+
+    const callbackSuccess = (reply) => {
+
         log("Tag posted");
 
         last_added_tag = reply.id;
+
+        const selection = [
+            parseInt(document.getElementById('tag-highlight-add-start').value),
+            parseInt(document.getElementById('tag-highlight-add-end').value)
+        ];
+
+        // Check if either element of the selection array is NaN
+        const containsNaN = selection.some(isNaN);
+
+        // add highlight if it created from selection
+        if(!containsNaN) {
+            const highlight = {
+                id: undefined, selection, tags: [last_added_tag]
+            }
+
+            setTimeout(function() {
+                //call submit
+                submitHighLightCreation(highlight);
+            }, 60);
+        }
 
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
         document.getElementById('dropdownMenuButtonTag').innerText = 'None';
 
-    })
-        .catch(function (error) {
-            log("Failed to create tag", 'error', {error});
-            showAlert(`${gettext("Couldn't create tag!")} \n \n`, 'error', {error})
-        })
-        .then(hideSpinner);
+    };
+    const callbackFail = (error) => {
+        log("Failed to create tag", 'error', {error});
+        showAlert(`${gettext("Couldn't create tag!")} \n \n`, 'error', {error})
+    };
+
+    // Call submitTagCreation with the new_tag object and callbacks
+    submitTagCreation(new_tag, callbackSuccess, callbackFail);
+
 });
 
 // Delete tag button
@@ -633,10 +651,19 @@ $('#highlight-add-form').off().on('submit', (e) => {
         id: highlight_id, selection, tags: hl_tags
     }
 
-    //call submit
-    submitHighLightCreation(highlight);
-})
+    const callbackSuccess = () => {
+        log("Highlight posted");
+        $(highlight_add_modal).modal('hide');
+        highlightModalReset();
+    };
+    const callbackFail = (error) => {
+        log("Failed to create highlight", 'error', {error})
+        showAlert(`${gettext("Couldn't create highlight!")} \n\n`,'error');
+    };
 
+    //call submit
+    submitHighLightCreation(highlight, callbackSuccess, callbackFail);
+})
 
 // Delete highlight button
 document.getElementById('highlight-delete').addEventListener('click', function () {

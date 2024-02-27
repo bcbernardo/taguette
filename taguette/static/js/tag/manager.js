@@ -26,7 +26,7 @@ const findTag = (id) => {
     }
 
     return null;
-};
+}
 
 const findTagAndDelete = (id) => {
 
@@ -40,7 +40,7 @@ const findTagAndDelete = (id) => {
         const indexToDelete = tags.findIndex(item => item.id === tag.id);
         tags.splice(indexToDelete, SPLICE_DEFAULT_INDEX);
     }
-};
+}
 
 /*
   addTag
@@ -48,6 +48,7 @@ const findTagAndDelete = (id) => {
 function addTag(tag) {
     // Check if the tag with the same id already exists
     let existingTag = findTag(tag.id);
+    const existingTagColor =  existingTag?.color ?? '';
 
     if (existingTag) {
         if (tag.parent) {
@@ -112,7 +113,25 @@ function addTag(tag) {
         }
     }
 
+    // Check if the tag color has changed
+    if(existingTagColor !== '' && (existingTagColor !== tag.color)) {
+        // Todo: check if tag is in highlight before update doc
+        updateAndLoadDocument()
+    }
+
     updateTagsList();
+}
+
+function updateAndLoadDocument() {
+    const url = window.location.href;
+    const documentPattern = /\/document\/(\d+)/;
+    const match = url.match(documentPattern);
+
+    if (match) {
+        const doc_id = match[1];
+        window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
+        loadDocument(doc_id);
+    }
 }
 
 function removeTag(id) {
@@ -182,7 +201,6 @@ function updateTagCount(tagsId) {
 function updateTagsList() {
 
     const isReverse = sortTags[1] === 'desc';
-    console.log(sortTags)
     sortTagsByKey(tags, sortTags[0], isReverse);
 
     // update all treeview and select tags
@@ -236,4 +254,41 @@ function handleSearch(filterText) {
 
         return false;
     });
+}
+
+function submitTagCreation(Tag, callbackSuccess, callbackFail) {
+
+    const { id } = Tag;
+    let tag = { ...Tag };
+    delete tag.id;
+
+    let request;
+    if (id) {
+        console.log(`Posting update for tag ${id}`);
+        request = postJSON(`/api/project/${project_id}/tag/${id}`, tag);
+    } else {
+        console.log("Posting new tag");
+        request = postJSON(`/api/project/${project_id}/tag/new`, tag);
+    }
+
+    showSpinner();
+    request.then(function (reply) {
+        callbackSuccess(reply);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
+
+// update tag parent
+function updateTagParent(child_tag_1, new_parent_tag_id) {
+    const tag = findTag(child_tag_1);
+    if(tag.parent === new_parent_tag_id) return;
+    const new_tag = {
+        id: tag.id,
+        path: tag.path,
+        description: tag.description,
+        color: tag.color,
+        parent_id: new_parent_tag_id
+    };
+    submitTagCreation(new_tag, () => {}, () => {});
 }

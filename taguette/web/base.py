@@ -191,6 +191,8 @@ class Application(GracefulExitApplication):
                 digestmod=hashlib.sha256,
             ).hexdigest()
 
+        self.tag_default_color = config.get('TAG_DEFAULT_COLOR', '#000000')
+
         # Get messages from taguette.org
         self.messages = []
         self.messages_event = asyncio.Event()

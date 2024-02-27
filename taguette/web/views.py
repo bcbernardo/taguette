@@ -467,7 +467,7 @@ class ProjectAdd(BaseHandler):
                 # TRANSLATORS: Default tag name
                 path=self.gettext("interesting"),
                 # TRANSLATORS: Default tag color
-                color=self.gettext('#000000'),
+                color=self.application.tag_default_color,
                 # TRANSLATORS: Default tag description
                 description=self.gettext("Further review required")),
             )
@@ -751,11 +751,13 @@ class Project(BaseHandler):
             for child_tag in grouped_tags[parent_id]:
                 child_id = child_tag.id
                 parent_id = child_tag.parent.id if child_tag.parent else None
+                color = (child_tag.color if child_tag.color
+                         else self.application.tag_default_color)
                 child_info = {
                     "id": child_tag.id,
                     "path": child_tag.path,
                     "description": child_tag.description,
-                    "color": child_tag.color,
+                    "color": color,
                     "parent": parent_id,
                     "count": child_tag.highlights_count,
                     "count_document": child_tag.documents_count,
