@@ -376,6 +376,11 @@ a.dropdown-item:hover {
   width: 30vh;
 }
 
+#spinner-modal button.cancel {
+  display: none;
+  margin-top: 1em;
+}
+
 /* --------------------SCROLLBAR FOR MODALS--------------------------*/
 
 .modal-body {

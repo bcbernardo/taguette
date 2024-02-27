@@ -24,6 +24,7 @@ let project_name = project_name_input.value;
 
 const project_description_input = document.getElementById('project-description');
 let project_description = project_description_input.value;
+let upload_canceled = false;
 
 function setProjectMetadata(metadata, form = true) {
     if (project_name === metadata.project_name && project_description === metadata.description) {
@@ -179,7 +180,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function doUpload(form_data) {
     return new Promise(function(resolve, reject) {
-        let xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest(),
+            name = form_data.get('name');
         xhr.responseType = 'json';
         xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
         xhr.onload = function () {
@@ -215,12 +217,13 @@ function doUpload(form_data) {
 }
 
 async function uploadFiles(files) {
-    showSpinner();
+    showSpinner(function(){ upload_canceled = true; });
     await delay(100); // Trick to refresh dom
     let error_msg = '',
         doc_to_load = null;
+    upload_canceled = false;
     for(let f in files) {
-        if(isNaN(f)) {
+        if(isNaN(f) || upload_canceled) {
             continue;
         }
         let form_data = new FormData(),
@@ -246,7 +249,7 @@ async function uploadFiles(files) {
     }
 
     if(error_msg !== '') {
-        showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error_msg})
+        showAlert(`${gettext("Error uploading file!")} \n \n${error_msg}`, 'error')
     }
 
     // Load first uploaded document
