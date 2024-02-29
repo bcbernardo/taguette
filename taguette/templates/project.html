@@ -4,6 +4,7 @@
 {% block styles %}
   <link rel="stylesheet" href="{{ static_url('css/vendor/hierarchy-select.min.css') }}">
   <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap-treeview.min.css') }}">
+  <link rel="stylesheet" href="{{ static_url('css/vendor/jquery.contextMenu.min.css') }}">
 {% endblock %}
 
 {% block title %}{{ project.name }} | Taguette{% endblock %}
@@ -213,6 +214,7 @@
 <!-- libraries -->
 <script type="text/javascript" src="{{ static_url('js/vendor/hierarchy-select.min.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/vendor/bootstrap-treeview.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/jquery.contextMenu.min.js') }}"></script>
 
 <!-- tag -->
 <script type="text/javascript" src="{{ static_url('js/tag/manager.js') }}"></script>
@@ -235,6 +237,7 @@
         initTagsHighlightTreeview(false);
         initTagHierarchySelect();
         initMergeTagHierarchySelect();
+        addContextMenu();
 
     });
 

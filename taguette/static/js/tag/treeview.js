@@ -141,10 +141,51 @@ function addTagUnderLineHighlightTreeview() {
     })
 }
 
+function contextMenuAction(action, nodeId) {
+    const id = getTagIdFromTreeviewNode('treeview-tags', nodeId);
+    switch (action) {
+        case 'edit':
+            editTag(id);
+            break;
+        case 'merge':
+            mergeTag(id);
+            break;
+        case 'delete':
+            deleteTag(id);
+            break;
+        case 'quit':
+            break;
+        default:
+            console.log('No action found for: ' + action);
+    }
+}
+
+function addContextMenu() {
+    $.contextMenu({
+        selector: '.tag-context-menu',
+        callback: function(key, options) {
+            // Pass the ID of the element that triggered the context menu
+            contextMenuAction(key, options.$trigger.attr("id"));
+        },
+        items: {
+            "edit": {name: "Modifier", icon: "edit"},
+            "merge": {name: "Merger", icon: "copy"},
+            "delete": {name: "Supprimer", icon: "delete"},
+            "quit": {name: "Fermer", icon: function() {
+                    return 'context-menu-icon context-menu-icon-quit';
+                }}
+        }
+    });
+}
+
 function addTagEditButton() {
     $(".node-treeview-tags").each(function (index, element) {
 
         const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+
+        $(this).attr('id', `${$(element).data("nodeid")}`)
+
+        $(this).addClass('tag-context-menu');
 
         addTagVerticalLine($(element), tag_id);
 

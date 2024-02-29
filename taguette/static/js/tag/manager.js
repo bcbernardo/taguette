@@ -286,6 +286,30 @@ function submitTagCreation(Tag, callbackSuccess, callbackFail) {
     }).finally(hideSpinner);
 }
 
+function submitTagDelete(tag_id, callbackSuccess, callbackFail) {
+
+    const request = deleteURL(`/api/project/${project_id}/tag/${tag_id}`)
+
+    request.then(function (result) {
+        callbackSuccess(result);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
+
+function submitTagMerge(tag_src, tag_dest, callbackSuccess, callbackFail) {
+
+    const request =  postJSON(`/api/project/${project_id}/tag/merge`,
+                                {src: tag_src, dest: tag_dest})
+
+    showSpinner();
+    request.then(function (result) {
+        callbackSuccess(result);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
+
 // update tag parent
 function updateTagParent(child_tag_1, new_parent_tag_id) {
     const tag = findTag(child_tag_1);
