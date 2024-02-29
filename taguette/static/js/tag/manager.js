@@ -210,6 +210,13 @@ function updateTagsList() {
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
     hideSearchErrorMessage();
+
+    //check if create from highlight modal
+    if(createTagFromHighlight) {
+        console.log('tag from id');
+        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', last_added_tag)
+        treeview_tags_highlight.treeview('selectNode', nodeId);
+    }
 }
 
 function sortTagsByKey(array, key, reverse) {

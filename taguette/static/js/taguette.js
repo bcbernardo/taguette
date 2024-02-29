@@ -362,12 +362,7 @@ function linkTag(elem, tag_path, selectAll = true) {
         e.preventDefault();
         window.history.pushState({tag_path: tag_path}, "Tag " + tag_path, url);
         loadTag(tag_path);
-        if (selectAll) {
-            selectAllTag();
-        } else {
-            const tag = findTag(tag_path)
-            selectTag(treeview_tags ,tag.id)
-        }
+        selectAllTag();
     });
 }
 
@@ -385,8 +380,9 @@ const tag_add_modal = document.getElementById('tag-add-modal');
 $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
-
+let createTagFromHighlight;
 function createTag(from, selection) {
+    createTagFromHighlight = false;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
@@ -400,6 +396,7 @@ function createTag(from, selection) {
     document.getElementById('tag-add-merge').style.display = 'none';
     if (from === 2) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
+        createTagFromHighlight = true;
     }
 
     if(selection) {
@@ -482,6 +479,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
                 submitHighLightCreation(highlight);
             }, 60);
         }
+
 
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
@@ -992,7 +990,7 @@ function loadTag(tag_path, page) {
                     taglink.className = 'badge';
                     taglink.setAttribute('style', `background-color: ${tag.color}; color: white; font-weight: bold;`);
                     taglink.textContent = tag_names[j];
-                    linkTag(taglink, taglink.textContent, false);
+                    // linkTag(taglink, taglink.textContent, false);
                     elem.appendChild(taglink);
                 }
 

@@ -3,6 +3,8 @@ const treeview_tags_highlight = $('#treeview-tags-highlight');
 
 const DEFAULT_LEVEL_OPTION = 5
 
+let selectedTags = []
+
 function convertToTreeNode(data, includeTags) {
     return data.map(item => {
         const node = {
@@ -32,6 +34,7 @@ function initTagsTreeview(collapse = true, filterTags = null) {
         data: treeData,
         showBorder: true,
         levels: DEFAULT_LEVEL_OPTION,
+        multiSelect: true,
         showTags: true
     };
 
@@ -42,18 +45,22 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
-        const tag_path = data.text
-        const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(tag_path)}`;
-        event.preventDefault();
-        window.history.pushState({tag_path: tag_path}, `Tag ${tag_path}`, url);
-        loadTag(tag_path);
-        setTimeout(function() {
-            addTagEditButton();
-            addTagDragDrop();
-        }, 10);
+        // Check if tag_path is not already in selectedTags to avoid duplicates
+        if (!selectedTags.includes(data.id)) {
+            selectedTags.push(data.id);
+        }
+        loadTagsHighlights();
     });
 
     treeview_tags.on('nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
+
+        if(event.type === 'nodeUnselected') {
+            selectedTags = selectedTags.filter(function(tag) {
+                return tag !== node.id;
+            });
+            loadTagsHighlights();
+        }
+
         // Add a delay to ensure the treeview recreation is finished
         setTimeout(function() {
             addTagEditButton();
@@ -65,10 +72,33 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     addTagDragDrop();
 }
 
+function loadTagsHighlights() {
+    // Join all selectedTags to create a string that can be appended to the URL
+    const selectedTagIdsString = selectedTags.map(encodeURIComponent).join(',');
+    const url = `${base_path}/project/${project_id}/highlights/${selectedTagIdsString}`;
+    event.preventDefault();
+    window.history.pushState({tag_path: selectedTagIdsString}, `Tag ${selectedTagIdsString}`, url);
+    if(selectedTags.length > 0) {
+        loadTag(selectedTagIdsString);
+    } else {
+        document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
+    }
+    setTimeout(function() {
+        addTagEditButton();
+        addTagDragDrop();
+    }, 10);
+}
+
 function getTagIdFromTreeviewNode(treeview, node_id) {
     const allNodes = $(`#${treeview}`).treeview('getEnabled');
     const node = allNodes.find(item => item.nodeId === parseInt(node_id))
     return node.id;
+}
+
+function getNodeIdFromTreeviewByTagId(treeview, tagId) {
+    const allNodes = $(`#${treeview}`).treeview('getEnabled');
+    const node = allNodes.find((node) => node.id === parseInt(tagId));
+    return node.nodeId;
 }
 
 function initTagsHighlightTreeview(collapse = true, filterTags = null) {
