@@ -7,7 +7,6 @@ import math
 import os
 import prometheus_client
 from sqlalchemy import and_
-from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -653,8 +652,9 @@ class Highlights(BaseHandler):
             page = -1
         if page < 0:
             self.send_error_json(404, "Bad page number")
-        
-        ids = [int(tag_id) for tag_id in list_of_ids.split(',') if tag_id.isdigit()]
+
+        ids = [int(tag_id)
+               for tag_id in list_of_ids.split(',') if tag_id.isdigit()]
 
         if ids:
             tag = aliased(database.Tag)
@@ -668,7 +668,8 @@ class Highlights(BaseHandler):
                 .join(document, document.id == database.Highlight.document_id)
                 .filter(tag.id.in_(ids))
                 .filter(tag.project == project)
-                .order_by(database.Highlight.document_id, database.Highlight.start_offset)
+                .order_by(database.Highlight.document_id,
+                          database.Highlight.start_offset)
             )
         else:
             # Special case to select all highlights: we also need to select

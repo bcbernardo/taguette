@@ -76,7 +76,6 @@ function loadTagsHighlights() {
     // Join all selectedTags to create a string that can be appended to the URL
     const selectedTagIdsString = selectedTags.map(encodeURIComponent).join(',');
     const url = `${base_path}/project/${project_id}/highlights/${selectedTagIdsString}`;
-    event.preventDefault();
     window.history.pushState({tag_path: selectedTagIdsString}, `Tag ${selectedTagIdsString}`, url);
     if(selectedTags.length > 0) {
         loadTag(selectedTagIdsString);
