@@ -362,12 +362,7 @@ function linkTag(elem, tag_path, selectAll = true) {
         e.preventDefault();
         window.history.pushState({tag_path: tag_path}, "Tag " + tag_path, url);
         loadTag(tag_path);
-        if (selectAll) {
-            selectAllTag();
-        } else {
-            const tag = findTag(tag_path)
-            selectTag(treeview_tags ,tag.id)
-        }
+        selectAllTag();
     });
 }
 
@@ -385,8 +380,9 @@ const tag_add_modal = document.getElementById('tag-add-modal');
 $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
-
+let createTagFromHighlight;
 function createTag(from, selection) {
+    createTagFromHighlight = false;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
@@ -400,6 +396,7 @@ function createTag(from, selection) {
     document.getElementById('tag-add-merge').style.display = 'none';
     if (from === 2) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
+        createTagFromHighlight = true;
     }
 
     if(selection) {
@@ -483,6 +480,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
             }, 60);
         }
 
+
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
         document.getElementById('dropdownMenuButtonTag').innerText = 'None';
@@ -501,23 +499,31 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 // Delete tag button
 document.getElementById('tag-add-delete').addEventListener('click', function (e) {
     let tag_id = document.getElementById('tag-add-id').value;
-    const tag = findTag(tag_id)
+    deleteTag(tag_id);
+});
+
+function deleteTag(tag_id) {
     if (tag_id) {
+        const tag = findTag(tag_id)
         showConfirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tag.path}), function () {
             tag_id = parseInt(tag_id);
             log(`Posting tag ${tag_id} deletion`);
-            deleteURL(`/api/project/${project_id}/tag/${tag_id}`)
-                .then(function () {
-                    $(tag_add_modal).modal('hide');
-                    document.getElementById('tag-add-form').reset();
-                })
-                .catch(function (error) {
-                    log("Failed to delete tag", 'error', {error});
-                    showAlert(`${gettext("Couldn't delete tag!")} \n \n`, 'error', {error})
-                });
+            const callbackSuccess = (result) => {
+                $(tag_add_modal).modal('hide');
+                document.getElementById('tag-add-form').reset();
+            };
+
+            const callbackFail = (error) => {
+                log("Failed to delete tag", 'error', {error});
+                showAlert(`${gettext("Couldn't delete tag!")} \n \n`, 'error', {error})
+            };
+
+            submitTagDelete(tag_id, callbackSuccess, callbackFail);
         });
     }
-});
+}
+
+
 
 // Merge tags button in tag edit modal: shows merge modal
 document.getElementById('tag-add-merge').addEventListener('click', function (e) {
@@ -525,17 +531,19 @@ document.getElementById('tag-add-merge').addEventListener('click', function (e) 
 
     let tag_id = document.getElementById('tag-add-id').value;
     if (!tag_id) return;
+    mergeTag(tag_id);
+});
+
+function mergeTag(tag_id) {
+
     tag_id = parseInt(tag_id);
-    const tag = findTag(tag_id)
+    const tag = findTag(tag_id);
 
     document.getElementById('tag-merge-form').reset();
-
-    // Set source tag
     document.getElementById('tag-merge-src-id').value = '' + tag_id;
     document.getElementById('tag-merge-src-name').value = tag.path;
-
     $(document.getElementById('tag-merge-modal')).modal('show');
-});
+}
 
 // Merge modal submit button
 document.getElementById('tag-merge-form').addEventListener('submit', function (e) {
@@ -549,23 +557,22 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     if (!tag_dest) return;
     tag_dest = parseInt(tag_dest);
 
-    // Todo : add trans key
     if (tag_src === tag_dest) {
-        showAlert('Merge not possible')
+        showAlert(gettext("Couldn't merge tags!"))
         return
     }
 
-    showSpinner();
-    postJSON(`/api/project/${project_id}/tag/merge`, {src: tag_src, dest: tag_dest})
-        .then(function () {
-            log("Tag merge posted");
-            $(document.getElementById('tag-merge-modal')).modal('hide');
-        })
-        .catch(function (error) {
-            log("Failed to merge tags", 'error', {error});
-            showAlert(`${gettext("Couldn't merge tags!")} \n \n`, 'error', {error})
-        })
-        .then(hideSpinner);
+    const callbackSuccess = (result) => {
+        log("Tag merge posted");
+        $(document.getElementById('tag-merge-modal')).modal('hide');
+    };
+
+    const callbackFail = (error) => {
+        log("Failed to merge tags", 'error', {error});
+        showAlert(`${gettext("Couldn't merge tags!")} \n \n`, 'error', {error})
+    };
+
+    submitTagMerge(tag_src, tag_dest, callbackSuccess, callbackFail);
 });
 
 
@@ -992,7 +999,7 @@ function loadTag(tag_path, page) {
                     taglink.className = 'badge';
                     taglink.setAttribute('style', `background-color: ${tag.color}; color: white; font-weight: bold;`);
                     taglink.textContent = tag_names[j];
-                    linkTag(taglink, taglink.textContent, false);
+                    // linkTag(taglink, taglink.textContent, false);
                     elem.appendChild(taglink);
                 }
 

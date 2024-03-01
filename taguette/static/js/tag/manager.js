@@ -210,6 +210,13 @@ function updateTagsList() {
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
     hideSearchErrorMessage();
+
+    //check if create from highlight modal
+    if(createTagFromHighlight) {
+        console.log('tag from id');
+        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', last_added_tag)
+        treeview_tags_highlight.treeview('selectNode', nodeId);
+    }
 }
 
 function sortTagsByKey(array, key, reverse) {
@@ -274,6 +281,30 @@ function submitTagCreation(Tag, callbackSuccess, callbackFail) {
     showSpinner();
     request.then(function (reply) {
         callbackSuccess(reply);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
+
+function submitTagDelete(tag_id, callbackSuccess, callbackFail) {
+
+    const request = deleteURL(`/api/project/${project_id}/tag/${tag_id}`)
+
+    request.then(function (result) {
+        callbackSuccess(result);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}
+
+function submitTagMerge(tag_src, tag_dest, callbackSuccess, callbackFail) {
+
+    const request =  postJSON(`/api/project/${project_id}/tag/merge`,
+                                {src: tag_src, dest: tag_dest})
+
+    showSpinner();
+    request.then(function (result) {
+        callbackSuccess(result);
     }).catch(function (error) {
         callbackFail(error);
     }).finally(hideSpinner);
