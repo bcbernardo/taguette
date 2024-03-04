@@ -45,9 +45,11 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
-        // Check if tag_path is not already in selectedTags to avoid duplicates
         if (!selectedTags.includes(data.id)) {
-            selectedTags.push(data.id);
+            selectedTags.push({
+                id: data.id,
+                path: data.text
+            });
         }
         loadTagsHighlights();
     });
@@ -56,7 +58,7 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
         if(event.type === 'nodeUnselected') {
             selectedTags = selectedTags.filter(function(tag) {
-                return tag !== node.id;
+                return tag.id !== node.id;
             });
             loadTagsHighlights();
         }
@@ -73,12 +75,12 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 }
 
 function loadTagsHighlights() {
-    // Join all selectedTags to create a string that can be appended to the URL
-    const selectedTagIdsString = selectedTags.map(encodeURIComponent).join(',');
-    const url = `${base_path}/project/${project_id}/highlights/${selectedTagIdsString}`;
-    window.history.pushState({tag_path: selectedTagIdsString}, `Tag ${selectedTagIdsString}`, url);
+    const selectedTagPathsString = selectedTags.map(tag => tag.path).join(',');
+    const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
+    window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
+
     if(selectedTags.length > 0) {
-        loadTag(selectedTagIdsString);
+        loadTag(selectedTagPathsString);
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
     }

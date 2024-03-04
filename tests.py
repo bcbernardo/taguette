@@ -987,20 +987,7 @@ class TestMultiuser(MyHTTPTestCase):
         poll_proj2 = await self.poll_event(2, 14)
 
         # List highlights in project 2 under 'people'
-        async with self.aget('/api/project/2/highlights/2') as response:
-            self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {
-                'highlights': [
-                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"}
-                ],
-                'pages': 1
-            })
-
-        # List highlights in project 2 under 'interesting.places'
-        async with self.aget(
-            '/api/project/2/highlights/3',
-        ) as response:
+        async with self.aget('/api/project/2/highlights/people') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
@@ -1008,19 +995,37 @@ class TestMultiuser(MyHTTPTestCase):
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
                     {'id': 5, 'document_id': 3, 'tags': [3],
                      'text_direction': 'RIGHT_TO_LEFT',
-                     'content': "<strong>Opinion</strong>"}
+                     'content': "<strong>Opinion</strong>"},
                 ],
-                'pages': 1
+                'pages': 1,
+            })
+
+        # List highlights in project 2 under 'interesting.places'
+        async with self.aget(
+            '/api/project/2/highlights/interesting.places',
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {
+                'highlights': [
+                    {'id': 2, 'document_id': 2, 'tags': [4],
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                ],
+                'pages': 1,
             })
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/1',
+            '/api/project/2/highlights/interesting,interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
-                'highlights': [],
-                'pages': 0,
+                'highlights': [
+                    {'id': 2, 'document_id': 2, 'tags': [4],
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                ],
+                'pages': 1,
             })
 
         # List all highlights in project 2
@@ -1129,14 +1134,6 @@ class TestMultiuser(MyHTTPTestCase):
                       <body>
                         <h1>Taguette highlights: interesting</h1>
 
-                        diff
-                        <p>
-                          <strong>Document:</strong> otherdoc
-                          <strong>Tags:</strong>
-                            interesting.places
-                        </p>
-                        <hr>
-
                         tent
                         <p>
                           <strong>Document:</strong> otherdoc
@@ -1208,7 +1205,6 @@ class TestMultiuser(MyHTTPTestCase):
                 await response.text(),
                 textwrap.dedent('''\
                 id,document,tag,content
-                2,otherdoc,interesting.places,diff
                 3,otherdoc,interesting,tent
                 3,otherdoc,people,tent
                 ''').replace('\n', '\r\n'),
@@ -2815,7 +2811,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         self.driver.execute_script(
             '$("#treeview-tags").treeview("selectNode", 2);')
         await asyncio.sleep(1)  # Wait for XHR
-        self.assertEqual(self.s_path, '/project/1/highlights/2')
+        self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
             self.find_by_id('document-contents').text,
             f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n"
@@ -2823,7 +2819,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # List highlights in project 1 under 'interesting.places'
-        await self.s_get('/project/1/highlights/3')
+        await self.s_get('/project/1/highlights/interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
@@ -2831,12 +2827,12 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # List highlights in project 1 under 'interesting'
-        await self.s_get('/project/1/highlights/1')
+        await self.s_get('/project/1/highlights/interesting,interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
-        print(self.find_by_id('document-contents').text)
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            (f"tent\n{docs_1[0]['name']} interesting people")
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people"),
         )
 
         # List all highlights in project 1

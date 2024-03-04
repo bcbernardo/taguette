@@ -71,8 +71,9 @@ class _Translator(object):
         return trans
 
 
-def _get_highlights_for_export(db, project_id, path):
-    if path:
+def _get_highlights_for_export(db, project_id, paths):
+    list_of_paths = paths.split(',')
+    if any(list_of_paths):
         t_highlight = database.Highlight.__table__
         t_highlight_tag = database.highlight_tags
         t_tag = database.Tag.__table__
@@ -111,8 +112,8 @@ def _get_highlights_for_export(db, project_id, path):
                     t_document.c.id == t_highlight.c.document_id,
                 )
             )
-            .where(t_tag_m.c.path.startswith(path))
-            .where(t_document.c.project_id == project_id)
+            .filter(t_tag_m.c.path.in_(list_of_paths))
+            .filter(t_document.c.project_id == project_id)
             .order_by(
                 t_highlight.c.document_id,
                 t_highlight.c.start_offset,
