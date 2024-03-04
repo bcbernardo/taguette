@@ -24,8 +24,8 @@ function convertToTreeNode(data, includeTags) {
 
 function initTagsTreeview(collapse = true, filterTags = null) {
 
-    if(filterTags == null) {
-        filterTags  = tags
+    if (filterTags == null) {
+        filterTags = tags
     }
 
     const treeData = convertToTreeNode(filterTags, true);
@@ -56,15 +56,15 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
     treeview_tags.on('nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
 
-        if(event.type === 'nodeUnselected') {
-            selectedTags = selectedTags.filter(function(tag) {
+        if (event.type === 'nodeUnselected') {
+            selectedTags = selectedTags.filter(function (tag) {
                 return tag.id !== node.id;
             });
             loadTagsHighlights();
         }
 
         // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function() {
+        setTimeout(function () {
             addTagEditButton();
             addTagDragDrop();
         }, 10);
@@ -79,20 +79,82 @@ function loadTagsHighlights() {
     const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
     window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
 
-    if(selectedTags.length > 0) {
+    if (selectedTags.length > 0) {
         loadTag(selectedTagPathsString);
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
     }
-    setTimeout(function() {
+    setTimeout(function () {
         addTagEditButton();
         addTagDragDrop();
     }, 10);
 }
 
-function getTagIdFromTreeviewNode(treeview, node_id) {
+function expandNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', nodeId);
+
+    if (!node.state.expanded) {
+        $treeview.treeview('expandNode', [parseInt(nodeId, 10),
+            {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
+    }
+}
+
+function collapseNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', nodeId);
+
+    if (node.state.expanded) {
+        $treeview.treeview('collapseNode', [parseInt(nodeId, 10),
+            {silent: false}]);
+    }
+}
+
+function selectNodeAndChildren(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    expandNode('treeview-tags', nodeId);
+    selectSingleNodeAndChildren($treeview, node);
+}
+
+function unselectNodeAndChildren(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    unselectSingleNodeAndChildren($treeview, node);
+}
+
+function unselectSingleNodeAndChildren(treeview, node) {
+
+    if (node.state.selected) {
+
+        treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+
+        if (node.nodes && node.nodes.length > 0) {
+            node.nodes.forEach(function (childNode) {
+                unselectSingleNodeAndChildren(treeview, childNode);
+            });
+        }
+    }
+}
+
+function selectSingleNodeAndChildren(treeview, node) {
+
+    if (node.state.selected) {
+        return;
+    }
+
+    treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+
+    if (node.nodes && node.nodes.length > 0) {
+        node.nodes.forEach(function (childNode) {
+            selectSingleNodeAndChildren(treeview, childNode);
+        });
+    }
+}
+
+function getTagIdFromTreeviewNode(treeview, nodeId) {
     const allNodes = $(`#${treeview}`).treeview('getEnabled');
-    const node = allNodes.find(item => item.nodeId === parseInt(node_id))
+    const node = allNodes.find(item => item.nodeId === parseInt(nodeId))
     return node.id;
 }
 
@@ -104,8 +166,8 @@ function getNodeIdFromTreeviewByTagId(treeview, tagId) {
 
 function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
-    if(filterTags == null) {
-        filterTags  = tags
+    if (filterTags == null) {
+        filterTags = tags
     }
 
     const treeData = convertToTreeNode(filterTags, true);
@@ -127,7 +189,7 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
     treeview_tags_highlight.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, data) {
         // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function() {
+        setTimeout(function () {
             addTagUnderLineHighlightTreeview();
         }, 10);
     });
@@ -145,8 +207,20 @@ function addTagUnderLineHighlightTreeview() {
 function contextMenuAction(action, nodeId) {
     const id = getTagIdFromTreeviewNode('treeview-tags', nodeId);
     switch (action) {
+        case 'selectAll':
+            selectNodeAndChildren('treeview-tags', nodeId);
+            break;
+        case 'unselectAll':
+            unselectNodeAndChildren('treeview-tags', nodeId);
+            break;
         case 'edit':
             editTag(id);
+            break;
+        case 'expand':
+            expandNode('treeview-tags', nodeId);
+            break;
+        case 'collapse':
+            collapseNode('treeview-tags', nodeId);
             break;
         case 'merge':
             mergeTag(id);
@@ -164,17 +238,48 @@ function contextMenuAction(action, nodeId) {
 function addContextMenu() {
     $.contextMenu({
         selector: '.tag-context-menu',
-        callback: function(key, options) {
-            // Pass the ID of the element that triggered the context menu
-            contextMenuAction(key, options.$trigger.attr("id"));
-        },
-        items: {
-            "edit": {name: "Modifier", icon: "edit"},
-            "merge": {name: "Merger", icon: "copy"},
-            "delete": {name: "Supprimer", icon: "delete"},
-            "quit": {name: "Fermer", icon: function() {
-                    return 'context-menu-icon context-menu-icon-quit';
-                }}
+        build: function ($trigger, e) {
+            const nodeId = $trigger.attr('id');
+
+            const tagId = getTagIdFromTreeviewNode('treeview-tags', nodeId);
+            const hasChildren = findTag(tagId).children.length > 0;
+
+            return {
+                callback: function (key, options) {
+                    contextMenuAction(key, options.$trigger.attr("id"));
+                },
+                items: {
+                    "selectAll": {
+                        name: gettext('selectAll'),
+                        icon: "fa fa-eye",
+                        visible: hasChildren
+                    },
+                    "unselectAll": {
+                        name: gettext('unselectAll'),
+                        icon: "fa fa-eye",
+                        visible: hasChildren
+                    },
+                    "expand": {
+                        name: gettext('expand'),
+                        icon: "fa fa-eye",
+                        visible: hasChildren
+                    },
+                    "collapse": {
+                        name: gettext('collapse'),
+                        icon: "fa fa-eye",
+                        visible: hasChildren
+                    },
+                    "edit": {name: gettext('edit'), icon: "edit"},
+                    "merge": {name: gettext('merge'), icon: "copy"},
+                    "delete": {name: gettext('delete'), icon: "delete"},
+                    "quit": {
+                        name: gettext('quit'),
+                        icon: function () {
+                            return 'context-menu-icon context-menu-icon-quit';
+                        }
+                    }
+                }
+            };
         }
     });
 }
@@ -227,7 +332,7 @@ function addTagVerticalLine(selector, tag_id) {
 
     if (firstDiv.find('a').length === 0) {
         // Get the text content
-        const tagText = firstDiv.contents().filter(function() {
+        const tagText = firstDiv.contents().filter(function () {
             return this.nodeType === 3; // Filter out text nodes
         }).text().trim();
 
@@ -254,11 +359,10 @@ function addTagVerticalLine(selector, tag_id) {
         }).prependTo(tagTextAnchor);
 
         // Wrap the text in the anchor element
-        firstDiv.contents().filter(function() {
+        firstDiv.contents().filter(function () {
             return this.nodeType === 3;
         }).replaceWith(tagTextAnchor);
-    }
-    else {
+    } else {
         const existingLine = firstDiv.find(`.vertical-line-${tag_id}`);
         if (existingLine.length > 0) {
             existingLine.css('backgroundColor', findTag(tag_id).color);
@@ -299,9 +403,9 @@ function addTagDragDrop() {
             const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
             const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
 
-            if(!isNaN(parseInt(draggedElementNodeId))) {
+            if (!isNaN(parseInt(draggedElementNodeId))) {
                 const tag_child_id = getTagIdFromTreeviewNode('treeview-tags', draggedElementNodeId);
-                if(tag_id === tag_child_id) return;
+                if (tag_id === tag_child_id) return;
                 updateTagParent(tag_child_id, tag_id)
             } else {
                 saveHighlightDragDrop(tag_id);
