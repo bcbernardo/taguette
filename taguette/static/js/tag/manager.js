@@ -263,19 +263,19 @@ function handleSearch(filterText) {
     });
 }
 
-function submitTagCreation(Tag, callbackSuccess, callbackFail) {
+function submitTagCreation(tag, callbackSuccess, callbackFail) {
 
-    const { id } = Tag;
-    let tag = { ...Tag };
-    delete tag.id;
+    const { id } = tag;
+    let newTag = { ...tag };
+    delete newTag.id;
 
     let request;
     if (id) {
         console.log(`Posting update for tag ${id}`);
-        request = postJSON(`/api/project/${project_id}/tag/${id}`, tag);
+        request = postJSON(`/api/project/${project_id}/tag/${id}`, newTag);
     } else {
         console.log("Posting new tag");
-        request = postJSON(`/api/project/${project_id}/tag/new`, tag);
+        request = postJSON(`/api/project/${project_id}/tag/new`, newTag);
     }
 
     showSpinner();
@@ -322,4 +322,14 @@ function updateTagParent(child_tag_1, new_parent_tag_id) {
         parent_id: new_parent_tag_id
     };
     submitTagCreation(new_tag, () => {}, () => {});
+}
+
+// update tag parent
+function removeTagParent(tagId) {
+    const tag = findTag(tagId);
+    tag.parent_id = null;
+    submitTagCreation(tag,
+        () => {},
+        () => {}
+    );
 }

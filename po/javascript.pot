@@ -87,3 +87,38 @@ msgstr ""
 msgid "No highlights with this tag yet."
 msgstr ""
 
+#
+msgid "selectAll"
+msgstr "Select All"
+
+#
+msgid "unselectAll"
+msgstr "Unselect All"
+
+#
+msgid "expand"
+msgstr "Expand"
+
+#
+msgid "collapse"
+msgstr "Collapse"
+
+#
+msgid "edit"
+msgstr "Edit"
+
+#
+msgid "merge"
+msgstr "Merge"
+
+#
+msgid "delete"
+msgstr "Delete"
+
+#
+msgid "deleteParent"
+msgstr "Delete parent"
+
+#
+msgid "quit"
+msgstr "Quit"

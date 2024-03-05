@@ -150,3 +150,39 @@ msgstr "Il semble que vous vous soyez déconnecté de votre profil."
 #: taguette/static/js/taguette.js:1815
 msgid "You can no longer access this project."
 msgstr "Vous ne pouvez plus accéder à ce projet."
+
+#
+msgid "selectAll"
+msgstr "Sélectionner tout"
+
+#
+msgid "unselectAll"
+msgstr "Désélectionner tout"
+
+#
+msgid "expand"
+msgstr "Développer"
+
+#
+msgid "collapse"
+msgstr "Réduire"
+
+#
+msgid "edit"
+msgstr "Modifier"
+
+#
+msgid "merge"
+msgstr "Fusionner"
+
+#
+msgid "delete"
+msgstr "Supprimer"
+
+#
+msgid "deleteParent"
+msgstr "Supprimer le parent"
+
+#
+msgid "quit"
+msgstr "Quitter"

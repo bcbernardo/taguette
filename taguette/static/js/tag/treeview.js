@@ -24,8 +24,8 @@ function convertToTreeNode(data, includeTags) {
 
 function initTagsTreeview(collapse = true, filterTags = null) {
 
-    if(filterTags == null) {
-        filterTags  = tags
+    if (filterTags == null) {
+        filterTags = tags
     }
 
     const treeData = convertToTreeNode(filterTags, true);
@@ -45,24 +45,26 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
-        // Check if tag_path is not already in selectedTags to avoid duplicates
         if (!selectedTags.includes(data.id)) {
-            selectedTags.push(data.id);
+            selectedTags.push({
+                id: data.id,
+                path: data.text
+            });
         }
         loadTagsHighlights();
     });
 
     treeview_tags.on('nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
 
-        if(event.type === 'nodeUnselected') {
-            selectedTags = selectedTags.filter(function(tag) {
-                return tag !== node.id;
+        if (event.type === 'nodeUnselected') {
+            selectedTags = selectedTags.filter(function (tag) {
+                return tag.id !== node.id;
             });
             loadTagsHighlights();
         }
 
         // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function() {
+        setTimeout(function () {
             addTagEditButton();
             addTagDragDrop();
         }, 10);
@@ -73,24 +75,102 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 }
 
 function loadTagsHighlights() {
-    // Join all selectedTags to create a string that can be appended to the URL
-    const selectedTagIdsString = selectedTags.map(encodeURIComponent).join(',');
-    const url = `${base_path}/project/${project_id}/highlights/${selectedTagIdsString}`;
-    window.history.pushState({tag_path: selectedTagIdsString}, `Tag ${selectedTagIdsString}`, url);
-    if(selectedTags.length > 0) {
-        loadTag(selectedTagIdsString);
+    const selectedTagPathsString = selectedTags.map(tag => tag.path).join(',');
+    const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
+    window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
+
+    if (selectedTags.length > 0) {
+        loadTag(selectedTagPathsString);
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
     }
-    setTimeout(function() {
+    setTimeout(function () {
         addTagEditButton();
         addTagDragDrop();
     }, 10);
 }
 
-function getTagIdFromTreeviewNode(treeview, node_id) {
+function expandNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', nodeId);
+
+    if (!node.state.expanded) {
+        $treeview.treeview('expandNode', [parseInt(nodeId, 10),
+            {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
+    }
+}
+
+function collapseNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', nodeId);
+
+    if (node.state.expanded) {
+        $treeview.treeview('collapseNode', [parseInt(nodeId, 10),
+            {silent: false}]);
+    }
+}
+
+function expandAllNodes(treeviewId) {
+    const $treeview = $(`#${treeviewId}`);
+    if ($treeview.length && !$treeview.data('expanded')) {
+        $treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
+        $treeview.data('expanded', true);
+    }
+}
+
+function collapseAllNodes(treeviewId) {
+    const $treeview = $(`#${treeviewId}`);
+    if ($treeview.length && $treeview.data('expanded')) {
+        $treeview.treeview('collapseAll', {silent: false});
+        $treeview.data('expanded', false);
+    }
+}
+
+function selectNodeAndChildren(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    expandNode('treeview-tags', nodeId);
+    selectSingleNodeAndChildren($treeview, node);
+}
+
+function unselectNodeAndChildren(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    unselectSingleNodeAndChildren($treeview, node);
+}
+
+function unselectSingleNodeAndChildren(treeview, node) {
+
+    if (node.state.selected) {
+
+        treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+
+        if (node.nodes && node.nodes.length > 0) {
+            node.nodes.forEach(function (childNode) {
+                unselectSingleNodeAndChildren(treeview, childNode);
+            });
+        }
+    }
+}
+
+function selectSingleNodeAndChildren(treeview, node) {
+
+    if (node.state.selected) {
+        return;
+    }
+
+    treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+
+    if (node.nodes && node.nodes.length > 0) {
+        node.nodes.forEach(function (childNode) {
+            selectSingleNodeAndChildren(treeview, childNode);
+        });
+    }
+}
+
+function getTagIdFromTreeviewNode(treeview, nodeId) {
     const allNodes = $(`#${treeview}`).treeview('getEnabled');
-    const node = allNodes.find(item => item.nodeId === parseInt(node_id))
+    const node = allNodes.find(item => item.nodeId === parseInt(nodeId))
     return node.id;
 }
 
@@ -102,8 +182,8 @@ function getNodeIdFromTreeviewByTagId(treeview, tagId) {
 
 function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
-    if(filterTags == null) {
-        filterTags  = tags
+    if (filterTags == null) {
+        filterTags = tags
     }
 
     const treeData = convertToTreeNode(filterTags, true);
@@ -125,7 +205,7 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
     treeview_tags_highlight.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, data) {
         // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function() {
+        setTimeout(function () {
             addTagUnderLineHighlightTreeview();
         }, 10);
     });
@@ -134,59 +214,34 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 function addTagUnderLineHighlightTreeview() {
     $(".node-treeview-tags-highlight").each(function (index, element) {
 
-        const tag_id = getTagIdFromTreeviewNode('treeview-tags-highlight', $(element).data("nodeid"));
+        const tagId = getTagIdFromTreeviewNode('treeview-tags-highlight', $(element).data("nodeid"));
+        const hasChildren = findTag(tagId).children.length > 0;
 
-        addTagVerticalLine($(element), tag_id);
-    })
-}
-
-function contextMenuAction(action, nodeId) {
-    const id = getTagIdFromTreeviewNode('treeview-tags', nodeId);
-    switch (action) {
-        case 'edit':
-            editTag(id);
-            break;
-        case 'merge':
-            mergeTag(id);
-            break;
-        case 'delete':
-            deleteTag(id);
-            break;
-        case 'quit':
-            break;
-        default:
-            console.log('No action found for: ' + action);
-    }
-}
-
-function addContextMenu() {
-    $.contextMenu({
-        selector: '.tag-context-menu',
-        callback: function(key, options) {
-            // Pass the ID of the element that triggered the context menu
-            contextMenuAction(key, options.$trigger.attr("id"));
-        },
-        items: {
-            "edit": {name: "Modifier", icon: "edit"},
-            "merge": {name: "Merger", icon: "copy"},
-            "delete": {name: "Supprimer", icon: "delete"},
-            "quit": {name: "Fermer", icon: function() {
-                    return 'context-menu-icon context-menu-icon-quit';
-                }}
+        if (!hasChildren) {
+            const $icon = $(element).find('.icon');
+            $icon.css('display', 'none');
         }
-    });
+
+        addTagVerticalLine($(element), tagId);
+    })
 }
 
 function addTagEditButton() {
     $(".node-treeview-tags").each(function (index, element) {
 
-        const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+        const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+
+        const hasChildren = findTag(tagId).children.length > 0;
+
+        if (!hasChildren) {
+            const $icon = $(element).find('.icon');
+            $icon.css('display', 'none');
+        }
 
         $(this).attr('id', `${$(element).data("nodeid")}`)
-
         $(this).addClass('tag-context-menu');
 
-        addTagVerticalLine($(element), tag_id);
+        addTagVerticalLine($(element), tagId);
 
         const secondDiv = $(element).find("div:eq(1)");
 
@@ -194,27 +249,21 @@ function addTagEditButton() {
         if (secondDiv.find('.edit-button').length === 0) {
 
             secondDiv.addClass('d-flex align-items-center');
-
-            // Find and update the first badge with class 'badge-primary'
-            const firstBadge = secondDiv.find('.badge:first');
-            firstBadge.removeClass().addClass('ms-1 badge badge-primary rounded-pill');
-
-            // Find and update the second badge with class 'badge-secondary'
-            const secondBadge = secondDiv.find('.badge:eq(1)');
-            secondBadge.removeClass().addClass('ms-1 badge badge-secondary rounded-pill ms-2');
+            secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
+            secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
 
             // Create the Edit button
-            const editButton = $('<a>', {
+            /* const editButton = $('<a>', {
                 href: 'javascript:void(0);',
                 class: 'btn btn-primary btn-sm ms-2 edit-button',
                 text: 'Edit',
                 click: function (event) {
-                    event.stopPropagation(); // Prevent event propagation
-                    editTag(tag_id);
+                    event.stopPropagation();
+                    editTag(tagId);
                 }
             });
 
-            secondDiv.append(editButton);
+            secondDiv.append(editButton); */
         }
     });
 }
@@ -225,7 +274,7 @@ function addTagVerticalLine(selector, tag_id) {
 
     if (firstDiv.find('a').length === 0) {
         // Get the text content
-        const tagText = firstDiv.contents().filter(function() {
+        const tagText = firstDiv.contents().filter(function () {
             return this.nodeType === 3; // Filter out text nodes
         }).text().trim();
 
@@ -233,7 +282,7 @@ function addTagVerticalLine(selector, tag_id) {
         const tagTextAnchor = $('<a>', {
             href: '#',
             class: 'tag-text',
-            style: 'text-decoration: none; position: relative; padding-left: 10px;',
+            style: 'text-decoration: none;',
             text: tagText
         });
 
@@ -246,17 +295,16 @@ function addTagVerticalLine(selector, tag_id) {
                 left: '0',
                 top: '0',
                 bottom: '0',
-                width: '5px',
+                width: '3px',
                 backgroundColor: findTag(tag_id).color,
             }
         }).prependTo(tagTextAnchor);
 
         // Wrap the text in the anchor element
-        firstDiv.contents().filter(function() {
+        firstDiv.contents().filter(function () {
             return this.nodeType === 3;
         }).replaceWith(tagTextAnchor);
-    }
-    else {
+    } else {
         const existingLine = firstDiv.find(`.vertical-line-${tag_id}`);
         if (existingLine.length > 0) {
             existingLine.css('backgroundColor', findTag(tag_id).color);
@@ -269,7 +317,7 @@ function addTagVerticalLine(selector, tag_id) {
                     left: '0',
                     top: '0',
                     bottom: '0',
-                    width: '5px',
+                    width: '4px',
                     backgroundColor: findTag(tag_id).color,
                 }
             }).prependTo(firstDiv.find('.tag-text'));
@@ -297,9 +345,9 @@ function addTagDragDrop() {
             const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
             const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
 
-            if(!isNaN(parseInt(draggedElementNodeId))) {
+            if (!isNaN(parseInt(draggedElementNodeId))) {
                 const tag_child_id = getTagIdFromTreeviewNode('treeview-tags', draggedElementNodeId);
-                if(tag_id === tag_child_id) return;
+                if (tag_id === tag_child_id) return;
                 updateTagParent(tag_child_id, tag_id)
             } else {
                 saveHighlightDragDrop(tag_id);

@@ -261,6 +261,18 @@ msgstr "Rétroéclairage"
 msgid "See all highlights"
 msgstr "Voir toutes les marques"
 
+msgid "More actions"
+msgstr "Plus d'action"
+
+msgid "Expand all"
+msgstr "Développer Tout"
+
+msgid "Collapse all"
+msgstr "Réduire Tout"
+
+msgid "Filter by"
+msgstr "Filter par"
+
 #: taguette/templates/project.html:90 taguette/templates/project.html:272
 msgid "Create a tag"
 msgstr "Créer un tag"

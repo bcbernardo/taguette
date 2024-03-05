@@ -92,11 +92,20 @@
         <div class="tab-pane fade" id="tags" role="tabpanel" aria-labelledby="tags-tab">
           <div class="row">
             <div class="col-md-12 mb-3 d-flex justify-content-end">
-                <a class="btn btn-sm btn-primary ms-2" href="javascript:createTag()" data-test-id="create-tag-link">{% trans %}Create a tag{% endtrans %}</a>
-                <a id="load-all-tags" class="btn btn-sm btn-primary float-end ms-2" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
+                <a class="btn btn-sm btn-primary ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
+                <div class="dropdown ms-2">
+                    <button class="btn btn-sm btn-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
+                    </button>
+                    <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
+                        <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
+                        <a class="dropdown-item" href="javascript:expandAllNodes('treeview-tags')">{% trans %}Expand all{% endtrans %}</a>
+                        <a class="dropdown-item" href="javascript:collapseAllNodes('treeview-tags')">{% trans %}Collapse all{% endtrans %}</a>
+                    </div>
+                </div>
                 <div class="dropdown ms-2">
                     <button class="btn btn-sm btn-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-sort"></i>
+                        <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
                     </button>
                     <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
                         <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
@@ -220,7 +229,7 @@
 <script type="text/javascript" src="{{ static_url('js/tag/manager.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/tag/hierarchy-select.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/tag/treeview.js') }}"></script>
-
+<script type="text/javascript" src="{{ static_url('js/tag/context-menu.js') }}"></script>
 <!-- highlight -->
 <script type="text/javascript" src="{{ static_url('js/highlight.js') }}"></script>
 

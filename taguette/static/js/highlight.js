@@ -71,9 +71,9 @@ function highlightSelection(saved, id, clickedCallback, title) {
             span.setAttribute('data-highlight-id', '' + id);
             span.setAttribute('title', title);
             if(colors.length > 1) {
-                span.setAttribute('style', `cursor: pointer; border-bottom: 5px solid transparent; border-image: ${gradientString}; border-image-slice: 1;`);
+                span.setAttribute('style', `cursor: pointer; border-bottom: 4px solid transparent; border-image: ${gradientString}; border-image-slice: 1;`);
             } else {
-                span.setAttribute('style', `cursor: pointer; border-bottom: 5px solid ${colors[0]};`);
+                span.setAttribute('style', `cursor: pointer; border-bottom: 4px solid ${colors[0]};`);
             }
             span.addEventListener('click', clickedCallback);
             node.parentNode.insertBefore(span, node);

@@ -643,7 +643,7 @@ class Highlights(BaseHandler):
 
     @api_auth
     @PROM_REQUESTS.sync('highlights')
-    def get(self, project_id, list_of_ids):
+    def get(self, project_id, paths):
         project, _ = self.get_project(project_id)
         page = self.get_query_argument('page', '1')
         try:
@@ -653,20 +653,19 @@ class Highlights(BaseHandler):
         if page < 0:
             self.send_error_json(404, "Bad page number")
 
-        ids = [int(tag_id)
-               for tag_id in list_of_ids.split(',') if tag_id.isdigit()]
+        list_of_paths = paths.split(',')
 
-        if ids:
+        if any(list_of_paths):
             tag = aliased(database.Tag)
-            hltag = aliased(database.highlight_tags)
+            hl_tag = aliased(database.highlight_tags)
             document = aliased(database.Document)
             query = (
                 self.db.query(database.Highlight, document.text_direction)
                 .options(joinedload(database.Highlight.tags))
-                .join(hltag, hltag.c.highlight_id == database.Highlight.id)
-                .join(tag, hltag.c.tag_id == tag.id)
+                .join(hl_tag, hl_tag.c.highlight_id == database.Highlight.id)
+                .join(tag, hl_tag.c.tag_id == tag.id)
                 .join(document, document.id == database.Highlight.document_id)
-                .filter(tag.id.in_(ids))
+                .filter(tag.path.in_(list_of_paths))
                 .filter(tag.project == project)
                 .order_by(database.Highlight.document_id,
                           database.Highlight.start_offset)
