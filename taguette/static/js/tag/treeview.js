@@ -110,6 +110,22 @@ function collapseNode(treeview, nodeId) {
     }
 }
 
+function expandAllNodes(treeviewId) {
+    const $treeview = $(`#${treeviewId}`);
+    if ($treeview.length && !$treeview.data('expanded')) {
+        $treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
+        $treeview.data('expanded', true);
+    }
+}
+
+function collapseAllNodes(treeviewId) {
+    const $treeview = $(`#${treeviewId}`);
+    if ($treeview.length && $treeview.data('expanded')) {
+        $treeview.treeview('collapseAll', {silent: false});
+        $treeview.data('expanded', false);
+    }
+}
+
 function selectNodeAndChildren(treeview, nodeId) {
     const $treeview = $(`#${treeview}`);
     const node = $treeview.treeview('getNode', parseInt(nodeId));
@@ -198,22 +214,34 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 function addTagUnderLineHighlightTreeview() {
     $(".node-treeview-tags-highlight").each(function (index, element) {
 
-        const tag_id = getTagIdFromTreeviewNode('treeview-tags-highlight', $(element).data("nodeid"));
+        const tagId = getTagIdFromTreeviewNode('treeview-tags-highlight', $(element).data("nodeid"));
+        const hasChildren = findTag(tagId).children.length > 0;
 
-        addTagVerticalLine($(element), tag_id);
+        if (!hasChildren) {
+            const $icon = $(element).find('.icon');
+            $icon.css('display', 'none');
+        }
+
+        addTagVerticalLine($(element), tagId);
     })
 }
 
 function addTagEditButton() {
     $(".node-treeview-tags").each(function (index, element) {
 
-        const tag_id = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+        const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+
+        const hasChildren = findTag(tagId).children.length > 0;
+
+        if (!hasChildren) {
+            const $icon = $(element).find('.icon');
+            $icon.css('display', 'none');
+        }
 
         $(this).attr('id', `${$(element).data("nodeid")}`)
-
         $(this).addClass('tag-context-menu');
 
-        addTagVerticalLine($(element), tag_id);
+        addTagVerticalLine($(element), tagId);
 
         const secondDiv = $(element).find("div:eq(1)");
 
@@ -221,27 +249,21 @@ function addTagEditButton() {
         if (secondDiv.find('.edit-button').length === 0) {
 
             secondDiv.addClass('d-flex align-items-center');
-
-            // Find and update the first badge with class 'badge-primary'
-            const firstBadge = secondDiv.find('.badge:first');
-            firstBadge.removeClass().addClass('ms-1 badge badge-primary rounded-pill');
-
-            // Find and update the second badge with class 'badge-secondary'
-            const secondBadge = secondDiv.find('.badge:eq(1)');
-            secondBadge.removeClass().addClass('ms-1 badge badge-secondary rounded-pill ms-2');
+            secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
+            secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
 
             // Create the Edit button
-            const editButton = $('<a>', {
+            /* const editButton = $('<a>', {
                 href: 'javascript:void(0);',
                 class: 'btn btn-primary btn-sm ms-2 edit-button',
                 text: 'Edit',
                 click: function (event) {
-                    event.stopPropagation(); // Prevent event propagation
-                    editTag(tag_id);
+                    event.stopPropagation();
+                    editTag(tagId);
                 }
             });
 
-            secondDiv.append(editButton);
+            secondDiv.append(editButton); */
         }
     });
 }
@@ -260,7 +282,7 @@ function addTagVerticalLine(selector, tag_id) {
         const tagTextAnchor = $('<a>', {
             href: '#',
             class: 'tag-text',
-            style: 'text-decoration: none; position: relative; padding-left: 10px;',
+            style: 'text-decoration: none;',
             text: tagText
         });
 
@@ -273,7 +295,7 @@ function addTagVerticalLine(selector, tag_id) {
                 left: '0',
                 top: '0',
                 bottom: '0',
-                width: '5px',
+                width: '3px',
                 backgroundColor: findTag(tag_id).color,
             }
         }).prependTo(tagTextAnchor);
@@ -295,7 +317,7 @@ function addTagVerticalLine(selector, tag_id) {
                     left: '0',
                     top: '0',
                     bottom: '0',
-                    width: '5px',
+                    width: '4px',
                     backgroundColor: findTag(tag_id).color,
                 }
             }).prependTo(firstDiv.find('.tag-text'));

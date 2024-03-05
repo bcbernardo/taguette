@@ -116,5 +116,9 @@ msgid "delete"
 msgstr "Delete"
 
 #
+msgid "deleteParent"
+msgstr "Delete parent"
+
+#
 msgid "quit"
 msgstr "Quit"

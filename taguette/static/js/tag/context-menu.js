@@ -5,7 +5,9 @@ function addContextMenu() {
             const nodeId = $trigger.attr('id');
 
             const tagId = getTagIdFromTreeviewNode('treeview-tags', nodeId);
-            const hasChildren = findTag(tagId).children.length > 0;
+            const tag = findTag(tagId);
+            const hasChildren = tag.children.length > 0;
+            const hasParent = tag.parent > 0;
 
             const node = $('#treeview-tags').treeview('getNode', nodeId);
 
@@ -19,22 +21,29 @@ function addContextMenu() {
                 items: {
                     "toggleSelect": {
                         name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
-                        icon: "fa fa-eye",
+                        icon: "",
                         visible: hasChildren,
-                        callback: function(key, options) {
+                        callback: function (key, options) {
                             contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', nodeId);
                         }
                     },
                     "toggleExpand": {
                         name: isExpanded ? gettext('collapse') : gettext('expand'),
-                        icon: "fa fa-eye",
+                        icon: function () {
+                            return '';
+                        },
                         visible: hasChildren,
-                        callback: function(key, options) {
+                        callback: function (key, options) {
                             contextMenuAction(isExpanded ? 'collapse' : 'expand', nodeId);
                         }
                     },
                     "edit": {name: gettext('edit'), icon: "edit"},
                     "merge": {name: gettext('merge'), icon: "copy"},
+                    "deleteParent": {
+                        name: gettext('deleteParent'),
+                        visible: hasParent,
+                        icon: "delete"
+                    },
                     "delete": {name: gettext('delete'), icon: "delete"},
                     "quit": {
                         name: gettext('quit'),
@@ -71,6 +80,9 @@ function contextMenuAction(action, nodeId) {
             break;
         case 'delete':
             deleteTag(id);
+            break;
+        case 'deleteParent':
+            removeTagParent(id);
             break;
         case 'quit':
             break;
