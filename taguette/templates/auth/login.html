@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{% trans "page title" %}Log in{% endtrans %} | Taguette{% endblock %}
+
+{% block contents %}
+    <div class="row">
+        <div class="col">
+            <h1>{% trans "tab" %}Log in{% endtrans %}</h1>
+            <p>{% trans %}Authentication process by CILogon{% endtrans %}</p>
+            <p><em>{% trans %}<a target="_blank" href="https://www.cilogon.org/home">CILogon</a> facilitates secure
+                access to CyberInfrastructures and supports thousands of identity providers (IdPs) including University
+                campuses around the world.{% endtrans %}</em></p>
+            <p>{% trans %}After you click "Sign In with CILogon", simply SELECT your home institution and then proceed
+                with the authentication process at your institution.{% endtrans %}</p>
+            <p><button class="btn btn-primary">{% trans %}Log in with{% endtrans %} CILogon</button></p>
+        </div>
+    </div>
+{% endblock %}

@@ -109,8 +109,12 @@ class Login(BaseHandler):
         if self.current_user:
             return self._go_to_next()
         else:
-            return self.render('login.html', register=False,
-                               next=self.get_argument('next', ''))
+            if not self.application.config['CI_LOGON_ID']:
+                return self.render('login.html', register=False,
+                                   next=self.get_argument('next', ''))
+            else:
+                return self.render('auth/login.html', next=self.get_argument('next', ''))
+
 
     @PROM_REQUESTS.async_('login')
     async def post(self):
@@ -164,7 +168,10 @@ class Register(BaseHandler):
         if self.current_user:
             return self.redirect(self.reverse_url('index'))
         else:
-            return self.render('login.html', register=True)
+            if not self.application.config['CI_LOGON_ID']:
+                return self.render('login.html', register=True)
+            else:
+                return self.render('auth/login.html')
 
     @PROM_REQUESTS.async_('register')
     async def post(self):

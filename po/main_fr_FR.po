@@ -617,6 +617,33 @@ msgctxt "form submit button"
 msgid "Register"
 msgstr "Créer un compte"
 
+#: taguette/templates/auth/login.html:9
+msgid "Authentication process by CILogon"
+msgstr "Le processus d'authentification par CILogon"
+
+#: taguette/templates/auth/login.html:10
+msgid ""
+"<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
+"facilitates secure\n"
+"                access to CyberInfrastructures and supports thousands of "
+"identity providers (IdPs) including University\n"
+"                campuses around the world."
+msgstr "<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> facilite l'accès sécuritaire aux "
+"cyberinfrastructures et supporte des milliers de fournisseurs d'identité (IdPs) tels que les universités dans le "
+"monde entier."
+
+#: taguette/templates/auth/login.html:13
+msgid ""
+"After you click \"Sign In with CILogon\", simply SELECT your home "
+"institution and then proceed\n"
+"                with the authentication process at your institution."
+msgstr "Après avoir appuyé sur le bouton \"Connexion avec CILogon\", sélectionnez votre institution et procédez avec "
+"l'authentification."
+
+#: taguette/templates/auth/login.html:15
+msgid "Log in with"
+msgstr "Connexion avec"
+
 #: taguette/templates/new_password.html:3
 #: taguette/templates/reset_password.html:3
 msgctxt "page title"
