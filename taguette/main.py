@@ -153,6 +153,10 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 
 # Max size of output file
 # HTML_OUT_SIZE_LIMIT = 5000000
+
+# Replace current authentification by CI_LOGON
+# CI_LOGON_ID=""
+# CI_LOGON_SECRET=""
 '''.format(secret=base64.b64encode(os.urandom(30)).decode('ascii')))
     if output is not None:
         out.close()
