@@ -114,6 +114,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
         UnbakedURLSpec('/login', views.Login, name='login'),
         UnbakedURLSpec('/logout', views.Logout, name='logout'),
         UnbakedURLSpec('/register', views.Register, name='register'),
+        UnbakedURLSpec('/cilogon', views.Cilogon, name='cilogon'),
+        UnbakedURLSpec('/cilogon_callback', views.CilogonCallback, name='cilogon_callback'),
         UnbakedURLSpec('/tos', views.TermsOfService, name='tos'),
         UnbakedURLSpec('/account', views.Account, name='account'),
         UnbakedURLSpec('/reset_password', views.AskResetPassword,

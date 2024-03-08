@@ -434,8 +434,8 @@ msgstr "Sélectionner une marque"
 
 #: taguette/templates/index.html:10
 #, python-format
-msgid "Welcome %(user_login)s"
-msgstr "Bienvenue %(user_login)s"
+msgid "Welcome %(user_display_name)s"
+msgstr "Bienvenue %(user_display_name)s"
 
 #: taguette/templates/index.html:12
 msgid "Welcome!"
