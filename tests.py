@@ -1016,7 +1016,7 @@ class TestMultiuser(MyHTTPTestCase):
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/interesting,interesting.places',
+            '/api/project/2/highlights/interesting|interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
