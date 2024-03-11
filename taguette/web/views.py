@@ -56,7 +56,7 @@ class Index(BaseHandler):
                 return self.redirect(self.reverse_url('index'))
             user = self.db.query(database.User).get(self.current_user)
             user_display_name = user.login
-            if user.displayname is not None:
+            if user.displayname is not None and user.displayname != "":
                 user_display_name = user.displayname
             return self.render(
                 'index.html',
