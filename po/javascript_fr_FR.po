@@ -160,6 +160,30 @@ msgid "unselectAll"
 msgstr "Désélectionner tout"
 
 #
+msgid "Unselect"
+msgstr "Désélectionner"
+
+#
+msgid "Select"
+msgstr "Sélectionner"
+
+#
+msgid "AND"
+msgstr "Combiner avec (ET)"
+
+#
+msgid "OR"
+msgstr "Inclure également (OU)"
+
+#
+msgid "NOT"
+msgstr "Exclure également (NOT)"
+
+#
+msgid "unselectAll"
+msgstr "Désélectionner tout"
+
+#
 msgid "expand"
 msgstr "Développer"
 
