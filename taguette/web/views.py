@@ -286,10 +286,10 @@ class Cilogon(BaseHandler):
 
 
 class CilogonCallback(BaseHandler):
-    @PROM_REQUESTS.sync('cilogon_callback')
+    @PROM_REQUESTS.sync('ci_callback')
     def get(self):
-        error = self.get_argument('error')
-        error_description = self.get_argument('error_description')
+        error = self.get_argument('error', None)
+        error_description = self.get_argument('error_description', None)
         if error:
             logger.error(f"CILogon : ERROR : {error}, MESSAGE: {error_description}")
             error = url_escape(error)
@@ -297,51 +297,69 @@ class CilogonCallback(BaseHandler):
             return self.redirect(self.reverse_url('login')+f"?error={error}&error_msg={error_description}")
         else:
             logger.info("CILogon : Success")
-            auth_code = self.get_argument('code')
+            auth_code = self.get_argument('code', None)
             self.cilogon_callback(auth_code)
 
-
     def cilogon_callback(self, auth_code=''):
+        if not auth_code:
+            login_url = self.reverse_url('login')
+            error_description = url_escape("Invalid authorization code")
+            return self.redirect(f"{login_url}?error=error&error_msg={error_description}")
         ########################################################################
         ### Get user informations from CILogon
         params = {
             'grant_type': 'authorization_code',
             'code': auth_code,
-            'client_id': self.application.config['CILOGON_CLIENT_ID'],
-            'client_secret': self.application.config['CILOGON_CLIENT_SECRET'],
-            'redirect_uri': self.application.config['CILOGON_CALLBACK_URL']
+            'client_id': self.application.config['CI_LOGON_ID'],
+            'client_secret': self.application.config['CI_LOGON_SECRET'],
+            'redirect_uri': self.application.config['CI_LOGON_CALLBACK_URL']
         }
-        tok = requests.get('https://cilogon.org/oauth2/token', params=params).json()
+        error = False
+        cil_user_infos = {}
 
-        r = requests.get('https://cilogon.org/oauth2/userinfo', params={'access_token': tok['access_token']})
+        tok = requests.get('https://cilogon.org/oauth2/token', params=params)
+        if tok.status_code == 200:
+            tok = tok.json()
+            r = requests.get('https://cilogon.org/oauth2/userinfo', params={'access_token': tok['access_token']})
+            logger.info(r)
+            if r.status_code == 200:
+                cil_user_infos = r.json()
+                logger.info(cil_user_infos)
+            else:
+                error = True
+        else:
+            error = True
 
-        cil_user_infos = r.json()
+        if error:
+            login_url = self.reverse_url('login')
+            error_description = url_escape("Invalid CI Logon response")
+            return self.redirect(f"{login_url}?error=error&error_msg={error_description}")
 
         ##############################################################################
         ### Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
-        edugain_idp = database.EdugainIdps.query.filter_by(entityid=cil_user_infos['idp']).first()
-
-        # From EduGain
-        if edugain_idp is not None:
-            user_from_edugain = True
-        else:
-            user_from_edugain = False
-
-        # From Canadian Access Federation
-        if edugain_idp is not None:
-            if edugain_idp.code == 'CAF':
-                user_from_caf = True
-            else:
-                user_from_caf = False
-        else:
-            user_from_caf = False
-
-        # From Google
-        if cil_user_infos['idp_name'] == 'Google':
-            user_from_google = True
-        else:
-            user_from_google = False
+        # edugain_idp = database.EdugainIdps.query.filter_by(entityid=cil_user_infos['idp']).first()
+        #
+        # # From EduGain
+        # if edugain_idp is not None:
+        #     user_from_edugain = True
+        # else:
+        #     user_from_edugain = False
+        #
+        # # From Canadian Access Federation
+        # if edugain_idp is not None:
+        #     if edugain_idp.code == 'CAF':
+        #         user_from_caf = True
+        #     else:
+        #         user_from_caf = False
+        # else:
+        #     user_from_caf = False
+        #
+        # # From Google
+        # if cil_user_infos['idp_name'] == 'Google':
+        #     user_from_google = True
+        # else:
+        #     user_from_google = False
 
         # For testing
         logger.info("Dump CILogon information for testing period")
@@ -353,7 +371,8 @@ class CilogonCallback(BaseHandler):
             logger.error("LOGIN FAILED : Using CILogon : CILogon user email= !!! Email not provided !!!")
             logger.error("Dump CILogon information")
             logger.error(json.dumps(cil_user_infos, indent=3))
-            return self.redirect(self.reverse_url('login')+"?m=in")
+            error_msg = url_escape("No email provided from CI Logon")
+            return self.redirect(self.reverse_url('login')+f"?error=error&error_msg={error_msg}")
 
         self.init_session(cil_user_infos)
 
@@ -361,25 +380,31 @@ class CilogonCallback(BaseHandler):
         logger.info(f"LOGIN SUCCESS : Using CILogon : email={cil_user_infos['email']}")
 
     def init_session(self, user_info):
-        login = user_info['email']
+        login = user_info['email'].lower()
         user = self.db.query(database.User).get(login)
         if user is None:
-            user = self.db.query(database.User).filter(database.User.email == login)
-            user.login = login
-            user.displayname = login
-            user.external = True
-            self.db.commit()
-        if user is None or user.disabled:
+            logger.info(f"CILogon Login: User login not found: {login}, searching email.")
+            user = self.db.query(database.User).filter(database.User.email == login).first()
+            if user:
+                logger.info(f"CILogon Login: Updating user info for existing user: {user.login} -> {login}.")
+                user.login = login
+                user.displayname = user_info['name']
+                user.external = True
+                self.db.commit()
+        if user is None:
             logger.info(f"CILogon Login: non-existent user, create user {login}")
             user = database.User(login=login)
-            user.displayname = login
+            user.displayname = user_info['name']
+            user.login = login
             user.email = login
+            user.external = True
+            user.disabled = False
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie('user', login)
             return self.redirect(self.reverse_url('index'))
         else:
-            logger.info("CILogon Login: existing user, logging in..")
+            logger.info("CILogon Login: Logging in..")
             self.login(user.login)
             return self._go_to_next()
 
@@ -449,7 +474,7 @@ class Account(BaseHandler):
             if email is not None:
                 if email:
                     validate.user_email(email)
-                user.email = email or None
+                user.email = email.lower() or None
             if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
                 if password1 or password2:
                     validate.user_password(password1)

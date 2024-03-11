@@ -152,7 +152,7 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 # If True, CI Logon variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
 
-# Replace current authentification by CI_LOGON
+# Replace current authentication by CI_LOGON
 # CI_LOGON_ID=""
 # CI_LOGON_SECRET=""
 # CI_LOGON_CALLBACK_URL=""
