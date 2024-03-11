@@ -1,7 +1,7 @@
 """user login length
 
 Revision ID: 4c55b3b3ff30
-Revises: 68a144874e3f
+Revises: 1b96a606551d
 Create Date: 2024-03-11 09:31:27.003711
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '4c55b3b3ff30'
-down_revision = '68a144874e3f'
+down_revision = '1b96a606551d'
 branch_labels = None
 depends_on = None
 
