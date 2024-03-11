@@ -291,7 +291,7 @@ class CilogonCallback(BaseHandler):
     @PROM_REQUESTS.sync('ci_callback')
     def get(self):
         error = self.get_argument('error', None)
-        error_description = self.get_argument('error_description', None)
+        error_description = self.get_argument('error_description', '')
         if error:
             logger.error(f"CILogon : ERROR : {error}, "
                          f"MESSAGE: {error_description}")
@@ -305,6 +305,18 @@ class CilogonCallback(BaseHandler):
             logger.info("CILogon : Success")
             auth_code = self.get_argument('code', None)
             self.cilogon_callback(auth_code)
+
+    def get_ci_token(self, params):
+        return requests.get(
+            'https://cilogon.org/oauth2/token',
+            params=params
+        )
+
+    def get_ci_user_infos(self, access_token):
+        return requests.get(
+            'https://cilogon.org/oauth2/userinfo',
+            params={'access_token': access_token}
+        )
 
     def cilogon_callback(self, auth_code=''):
         if not auth_code:
@@ -324,16 +336,10 @@ class CilogonCallback(BaseHandler):
         error = False
         cil_user_infos = {}
 
-        tok = requests.get(
-            'https://cilogon.org/oauth2/token',
-            params=params
-        )
+        tok = self.get_ci_token(params)
         if tok.status_code == 200:
             tok = tok.json()
-            r = requests.get(
-                'https://cilogon.org/oauth2/userinfo',
-                params={'access_token': tok['access_token']}
-            )
+            r = self.get_ci_user_infos(tok['access_token'])
             logger.info(r)
             if r.status_code == 200:
                 cil_user_infos = r.json()
@@ -353,8 +359,9 @@ class CilogonCallback(BaseHandler):
         #######################################################################
         # Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
-        edugain_idp = (database.EdugainIdps.query
-                       .filter_by(entityid=cil_user_infos['idp'])
+        edugain_idp = (self.db.query(database.EdugainIdps)
+                       .filter(database.EdugainIdps.entityid
+                               == cil_user_infos['idp'])
                        .first())
 
         # From EduGain
