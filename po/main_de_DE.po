@@ -399,8 +399,8 @@ msgstr "<em>n</em>eues Highlight <span class=\"sr-only\">(shortcut: n)</span>"
 
 #: taguette/templates/index.html:10
 #, python-format
-msgid "Welcome %(user_login)s"
-msgstr "Willkommen %(user_login)s"
+msgid "Welcome %(user_display_name)s"
+msgstr "Willkommen %(user_display_name)s"
 
 #: taguette/templates/index.html:12
 msgid "Welcome!"

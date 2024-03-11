@@ -416,8 +416,8 @@ msgstr "sorotan <em>b</em>aru <span class=\"sr-only\">(shortcut: b)</span>"
 
 #: taguette/templates/index.html:10
 #, python-format
-msgid "Welcome %(user_login)s"
-msgstr "Selamat datang %(user_login)s"
+msgid "Welcome %(user_display_name)s"
+msgstr "Selamat datang %(user_display_name)s"
 
 #: taguette/templates/index.html:12
 msgid "Welcome!"

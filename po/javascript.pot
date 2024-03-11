@@ -8,14 +8,54 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-02-13 14:10-0500\n"
+"POT-Creation-Date: 2024-03-07 13:48-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.13.1\n"
+
+#: taguette/static/js/tag/treeview.js:85 taguette/static/js/taguette.js:1009
+msgid "No highlights with this tag yet."
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:23
+msgid "unselectAll"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:23
+msgid "selectAll"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:31
+msgid "collapse"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:31
+msgid "expand"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:40
+msgid "edit"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:41
+msgid "merge"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:43
+msgid "deleteParent"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:47
+msgid "delete"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:49
+msgid "quit"
+msgstr ""
 
 #: taguette/static/js/polling-event.js:110
 msgid "It appears that you have been logged out."
@@ -25,100 +65,65 @@ msgstr ""
 msgid "You can no longer access this project."
 msgstr ""
 
-#: taguette/static/js/taguette.js:118
+#: taguette/static/js/taguette.js:119
 msgid "Edit"
 msgstr ""
 
-#: taguette/static/js/taguette.js:126
+#: taguette/static/js/taguette.js:127
 msgid "There are no documents in this project yet."
 msgstr ""
 
-#: taguette/static/js/taguette.js:224
-msgid "Error uploading file!"
-msgstr ""
-
-#: taguette/static/js/taguette.js:256
+#: taguette/static/js/taguette.js:298
 msgid "Document name cannot be empty"
 msgstr ""
 
-#: taguette/static/js/taguette.js:280
+#: taguette/static/js/taguette.js:322
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr ""
 
-#: taguette/static/js/taguette.js:394
+#: taguette/static/js/taguette.js:440
 msgid "Invalid tag name"
 msgstr ""
 
-#: taguette/static/js/taguette.js:446
+#: taguette/static/js/taguette.js:445
+msgid "Impossible to define the same tag as parent"
+msgstr ""
+
+#: taguette/static/js/taguette.js:508
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr ""
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:561
+msgid "Couldn't merge tags!"
+msgstr ""
+
+#: taguette/static/js/taguette.js:716
 msgid "Full permissions"
 msgstr ""
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:716
 msgid "Can't change collaborators / delete project"
 msgstr ""
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:716
 msgid "View & make changes"
 msgstr ""
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:716
 msgid "View only"
 msgstr ""
 
-#: taguette/static/js/taguette.js:707
+#: taguette/static/js/taguette.js:783
 msgid "Already a member!"
 msgstr ""
 
-#: taguette/static/js/taguette.js:722
+#: taguette/static/js/taguette.js:798
 msgid "This user doesn't exist!"
 msgstr ""
 
-#: taguette/static/js/taguette.js:790
+#: taguette/static/js/taguette.js:866
 msgid "Load a document on the left"
 msgstr ""
 
-#: taguette/static/js/taguette.js:933
-msgid "No highlights with this tag yet."
-msgstr ""
-
-#
-msgid "selectAll"
-msgstr "Select All"
-
-#
-msgid "unselectAll"
-msgstr "Unselect All"
-
-#
-msgid "expand"
-msgstr "Expand"
-
-#
-msgid "collapse"
-msgstr "Collapse"
-
-#
-msgid "edit"
-msgstr "Edit"
-
-#
-msgid "merge"
-msgstr "Merge"
-
-#
-msgid "delete"
-msgstr "Delete"
-
-#
-msgid "deleteParent"
-msgstr "Delete parent"
-
-#
-msgid "quit"
-msgstr "Quit"
