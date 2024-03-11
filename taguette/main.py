@@ -148,6 +148,16 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 # If you want to enable multi-user app
 # MULTIUSER = True
 
+# Allow external authentication, MULTIUSER must be set to True
+# (only CILogon, see below)
+# If True, CI Logon variables must be defined
+ALLOW_EXTERNAL_LOGIN = False
+
+# Replace current authentication by CI_LOGON
+# CI_LOGON_ID=""
+# CI_LOGON_SECRET=""
+# CI_LOGON_CALLBACK_URL=""
+
 # Output manifest max size
 # OPF_OUT_SIZE_LIMIT = 5000000
 
@@ -160,6 +170,7 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 
 DEFAULT_CONFIG = {
     'MULTIUSER': True,
+    'ALLOW_EXTERNAL_LOGIN': False,
     'BIND_ADDRESS': '0.0.0.0',
     'BASE_PATH': '',
     'EXTRA_FOOTER': None,

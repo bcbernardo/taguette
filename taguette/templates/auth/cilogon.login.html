@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{% trans "page title" %}Log in{% endtrans %} | Taguette{% endblock %}
+
+{% block contents %}
+    <div class="row">
+        <div class="col">
+            <h1>{% trans "tab" %}Log in{% endtrans %}</h1>
+            <p>{% trans %}Authentication process by CILogon{% endtrans %}</p>
+            <p><em>{% trans %}<a target="_blank" href="https://www.cilogon.org/home">CILogon</a> facilitates secure
+                access to CyberInfrastructures and supports thousands of identity providers (IdPs) including University
+                campuses around the world.{% endtrans %}</em></p>
+            <p>{% trans %}After you click "Sign In with CILogon", simply SELECT your home institution and then proceed
+                with the authentication process at your institution.{% endtrans %}</p>
+            <p><a class="btn btn-primary" id="cilogon" href="/cilogon">{% trans %}Log in with{% endtrans %} CILogon</a></p>
+        </div>
+    </div>
+
+    <!-- Alert modal -->
+    {% include 'partials/alert.html' %}
+
+    {% if error %}
+        <script type="text/javascript">
+            let error_msg = `{{ error_msg }}`;
+            window.addEventListener('load', function() {
+                showAlert(error_msg, 'error');
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block morejs %}
+<!-- Utilities -->
+<script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+{% endblock %}

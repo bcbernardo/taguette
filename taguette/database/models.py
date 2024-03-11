@@ -13,7 +13,8 @@ from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
-from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text
+from sqlalchemy.types import (Boolean, DateTime, Enum, Integer, String, Text,
+                              BigInteger)
 
 from .base import PROM_COMMAND
 
@@ -50,7 +51,8 @@ SCRYPT_MAX_MEM = 64 << 20
 class User(Base):
     __tablename__ = 'users'
 
-    login = Column(String(30), primary_key=True)
+    login = Column(String(255), primary_key=True)
+    displayname = Column(String(255), nullable=True, default="")
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
     hashed_password = Column(String(192), nullable=True)
@@ -59,6 +61,7 @@ class User(Base):
     language = Column(String(10), nullable=True)
     email = Column(String(256), nullable=True, index=True, unique=True)
     email_sent = Column(DateTime, nullable=True)
+    external = Column(Boolean, nullable=True, default=False)
     project_memberships = relationship(
         'ProjectMember',
         cascade='all,delete-orphan',
@@ -277,7 +280,7 @@ class ProjectMember(Base):
     project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
                         primary_key=True, index=True)
     project = relationship('Project', back_populates='members')
-    user_login = Column(String(30),
+    user_login = Column(String(255),
                         ForeignKey('users.login',
                                    ondelete='CASCADE', onupdate='CASCADE'),
                         primary_key=True, index=True)
@@ -341,7 +344,7 @@ class Command(Base):
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False,
                   default=lambda: datetime.utcnow(), index=True)
-    user_login = Column(String(30),
+    user_login = Column(String(255),
                         ForeignKey('users.login', onupdate='CASCADE'),
                         nullable=False, index=True)
     user = relationship('User')
@@ -682,3 +685,24 @@ Tag.documents_count = column_property(
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )
+
+
+class EdugainIdps(Base):
+    __tablename__ = 'edigainidps'
+
+    id = Column(Integer, primary_key=True)
+    entityid = Column(String(255), nullable=True)
+    e_displayname = Column(String(255), nullable=True)
+    regauth = Column(String(255), nullable=True)
+    entity_cat = Column(String(255), nullable=True)
+    eccs_status = Column(Integer, nullable=True)
+    validator_status = Column(BigInteger(), nullable=True)
+    coco_status = Column(String(255), nullable=True)
+    coco_id = Column(Integer, nullable=True)
+    sirtfi_status = Column(Integer, nullable=True)
+    code = Column(String(255), nullable=True)
+    scopes = Column(String(255), nullable=True)
+
+    def __repr__(self):
+        return (f"<EdugainIdps {self.e_displayname} "
+                f"({self.id}, {self.entityid})>")
