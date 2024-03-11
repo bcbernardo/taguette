@@ -253,7 +253,8 @@ class Cilogon(BaseHandler):
                 return d["FLOW"]
 
             # Notes:
-            # The first in the list of selected_idp will be the default choice of idp
+            # The first in the list of selected_idp will be the
+            # default choice of idp
             f = OAuth2WebServerFlow(
                 auth_uri='https://cilogon.org/authorize',
                 token_uri='https://cilogon.org/oauth2/token',
@@ -261,7 +262,7 @@ class Cilogon(BaseHandler):
                 client_secret=self.application.config['CI_LOGON_SECRET'],
                 scope=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
                 redirect_uri=self.application.config['CI_LOGON_CALLBACK_URL'],
-                )
+            )
             f.params['access_type'] = 'offline'          # offline access
             f.params['include_granted_scopes'] = 'true'  # incremental auth
 
@@ -312,7 +313,7 @@ class CilogonCallback(BaseHandler):
             return self.redirect(
                 f"{login_url}?error=error&error_msg={error_description}")
         #######################################################################
-        ### Get user informations from CILogon
+        # Get user informations from CILogon
         params = {
             'grant_type': 'authorization_code',
             'code': auth_code,
@@ -350,7 +351,7 @@ class CilogonCallback(BaseHandler):
             )
 
         #######################################################################
-        ### Set user provenances.
+        # Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
         edugain_idp = (database.EdugainIdps.query
                        .filter_by(entityid=cil_user_infos['idp'])
@@ -477,11 +478,13 @@ class Account(BaseHandler):
         user = self.db.query(database.User).get(self.current_user)
         logger.info(self.get_languages())
         if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
-            return self.render('auth/account.html',
-                   user=user,
-                   languages=self.get_languages(),
-                   current_language=user.language,
-                   is_external=self.application.config['ALLOW_EXTERNAL_LOGIN'])
+            return self.render(
+                'auth/account.html',
+                user=user,
+                languages=self.get_languages(),
+                current_language=user.language,
+                is_external=self.application.config['ALLOW_EXTERNAL_LOGIN']
+            )
         else:
             return self.render('auth/external_account.html', user=user,
                                languages=self.get_languages(),

@@ -148,7 +148,7 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 # If you want to enable multi-user app
 # MULTIUSER = True
 
-# Allow external authentication, MULTIUSER must be set to True 
+# Allow external authentication, MULTIUSER must be set to True
 # (only CILogon, see below)
 # If True, CI Logon variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
