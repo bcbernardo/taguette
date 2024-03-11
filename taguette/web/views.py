@@ -338,32 +338,36 @@ class CilogonCallback(BaseHandler):
         ##############################################################################
         ### Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
-        # edugain_idp = database.EdugainIdps.query.filter_by(entityid=cil_user_infos['idp']).first()
-        #
-        # # From EduGain
-        # if edugain_idp is not None:
-        #     user_from_edugain = True
-        # else:
-        #     user_from_edugain = False
-        #
-        # # From Canadian Access Federation
-        # if edugain_idp is not None:
-        #     if edugain_idp.code == 'CAF':
-        #         user_from_caf = True
-        #     else:
-        #         user_from_caf = False
-        # else:
-        #     user_from_caf = False
-        #
-        # # From Google
-        # if cil_user_infos['idp_name'] == 'Google':
-        #     user_from_google = True
-        # else:
-        #     user_from_google = False
+        edugain_idp = database.EdugainIdps.query.filter_by(entityid=cil_user_infos['idp']).first()
+
+        # From EduGain
+        if edugain_idp is not None:
+            user_from_edugain = True
+        else:
+            user_from_edugain = False
+
+        # From Canadian Access Federation
+        if edugain_idp is not None:
+            if edugain_idp.code == 'CAF':
+                user_from_caf = True
+            else:
+                user_from_caf = False
+        else:
+            user_from_caf = False
+
+        # From Google
+        if cil_user_infos['idp_name'] == 'Google':
+            user_from_google = True
+        else:
+            user_from_google = False
 
         # For testing
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
+
+        if not user_from_edugain or (not user_from_caf and not user_from_google):
+            error_msg = url_escape("Restricted access. Users must comes from Canadian Access Federation (CAF).")
+            return self.redirect(self.reverse_url('login')+f"?error=error&error_msg={error_msg}")
 
         if 'email' in cil_user_infos.keys():
             logger.info("OK CILogon provided email")

@@ -13,7 +13,7 @@ from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
-from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text
+from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text, BigInteger
 
 from .base import PROM_COMMAND
 
@@ -684,3 +684,22 @@ Tag.documents_count = column_property(
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )
+
+class EdugainIdps(Base):
+    __tablename__ = 'edigainidps'
+
+    id = Column(Integer, primary_key=True)
+    entityid = Column(String(255), nullable=True)
+    e_displayname = Column(String(255), nullable=True)
+    regauth = Column(String(255), nullable=True)
+    entity_cat = Column(String(255), nullable=True)
+    eccs_status = Column(Integer, nullable=True)
+    validator_status = Column(BigInteger(), nullable=True)
+    coco_status = Column(String(255), nullable=True)
+    coco_id = Column(Integer, nullable=True)
+    sirtfi_status = Column(Integer, nullable=True)
+    code = Column(String(255), nullable=True)
+    scopes = Column(String(255), nullable=True)
+
+    def __repr__(self):
+        return f"<EdugainIdps {self.e_displayname} ({self.id}, {self.entityid})>"
