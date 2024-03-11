@@ -1021,10 +1021,12 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'document_id': 2, 'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
-                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                    {'id': 3, 'document_id': 2, 'content': "tent",
+                     'tags': [2, 3],
+                     'text_direction': 'LEFT_TO_RIGHT'},
+                    {'id': 2, 'document_id': 2, 'content': "diff",
+                     'tags': [4],
+                     'text_direction': 'LEFT_TO_RIGHT'},
                 ],
                 'pages': 1,
             })
@@ -1044,6 +1046,8 @@ class TestMultiuser(MyHTTPTestCase):
                 ],
                 'pages': 1,
             })
+
+        # TODO : add test with condition or and not
 
         # Get contents of document 2
         async with self.aget('/api/project/2/document/2') as response:
@@ -2958,13 +2962,13 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # List highlights in project 1 under 'interesting'
-        await self.s_get('/project/1/highlights/interesting,'
+        await self.s_get('/project/1/highlights/interesting|'
                          'interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            (f"diff\n{docs_1[0]['name']} interesting.places\n"
-             f"tent\n{docs_1[0]['name']} interesting people"),
+            (f"tent\n{docs_1[0]['name']} interesting people\n"
+             f"diff\n{docs_1[0]['name']} interesting.places"),
         )
 
         # List all highlights in project 1

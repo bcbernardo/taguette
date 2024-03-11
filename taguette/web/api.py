@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_,func, distinct, not_
+from sqlalchemy import and_, func, distinct, not_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -49,7 +49,7 @@ def api_auth(method):
         if not self.current_user:
             return self.send_error_json(403, self.gettext("Not logged in"))
         return method(self, *args, **kwargs)
-    
+
     return wrapper
 
 
@@ -131,10 +131,10 @@ class DocumentAdd(BaseHandler):
                     400,
                     "Invalid text direction",
                 )
-            
+
             # Close DB connection to not overflow the connection pool
             self.close_db_connection()
-            
+
             try:
                 body = await convert.to_html_chunks(
                     file.body, content_type, filename,
@@ -174,7 +174,7 @@ class Document(BaseHandler):
     @PROM_REQUESTS.sync('document_info')
     def get(self, project_id, document_id):
         document, _ = self.get_document(project_id, document_id)
-        
+
         highlights = (
             self.db.query(database.Highlight)
             .options(defer('snippet'))
@@ -193,7 +193,7 @@ class Document(BaseHandler):
                 for hl in highlights
             ],
         })
-    
+
     @api_auth
     @PROM_REQUESTS.sync('document_update')
     def post(self, project_id, document_id):
@@ -227,12 +227,12 @@ class Document(BaseHandler):
                 self.db.commit()
                 self.db.refresh(cmd)
                 self.application.notify_project(document.project_id, cmd)
-            
+
             return self.send_json({'id': document.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating DocumentUpdate: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
-    
+
     @api_auth
     @PROM_REQUESTS.sync('document_delete')
     def delete(self, project_id, document_id):
@@ -248,7 +248,7 @@ class Document(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(document.project_id, cmd)
-        
+
         self.set_status(204)
         return self.finish()
 
@@ -260,7 +260,7 @@ class DocumentContents(BaseHandler):
         # Document contents are immutable. If we ever make a change to the
         # format of this response, change this constant
         version = 1
-        
+
         # Still, don't do it in desktop mode, because people might re-create
         # their Taguette database sooner than their browser profile
         if self.application.config['MULTIUSER']:
@@ -269,14 +269,14 @@ class DocumentContents(BaseHandler):
                 'Cache-Control',
                 'private,max-age=31536000,immutable',
             )
-            
+
             # Use a fixed etag
             try:
                 document_id = int(document_id)
             except ValueError:
                 raise HTTPError(404)
             self.set_header('Etag', '"doc-%d-%d"' % (document_id, version))
-            
+
             # Always return 304 if the client has a copy cached
             # This means that access control is not enforced, however:
             #   * no content is sent
@@ -288,7 +288,7 @@ class DocumentContents(BaseHandler):
                     'application/json; charset=utf-8',
                 )
                 return self.finish()
-        
+
         document, _ = self.get_document(project_id, document_id, True)
         return self.send_json({
             'contents': [
@@ -306,11 +306,11 @@ class TagAdd(BaseHandler):
             return self.send_error_json(403, self.gettext("Unauthorized"))
         try:
             obj = self.get_json()
-            
+
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
             validate.color(obj['color'])
-            
+
             tag = database.Tag(project=project,
                                parent_id=obj['parent_id'],
                                color=obj['color'],
@@ -330,7 +330,7 @@ class TagAdd(BaseHandler):
             self.db.commit()
             self.db.refresh(cmd)
             self.application.notify_project(project.id, cmd)
-            
+
             return self.send_json({'id': tag.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagAdd: %r", e)
@@ -373,12 +373,12 @@ class TagUpdate(BaseHandler):
                     return self.send_error_json(409, "Conflict")
                 self.db.refresh(cmd)
                 self.application.notify_project(project.id, cmd)
-            
+
             return self.send_json({'id': tag.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagUpdate: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
-    
+
     @api_auth
     @PROM_REQUESTS.sync('tag_delete')
     def delete(self, project_id, tag_id):
@@ -398,7 +398,7 @@ class TagUpdate(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(project.id, cmd)
-        
+
         self.set_status(204)
         return self.finish()
 
@@ -420,7 +420,7 @@ class TagMerge(BaseHandler):
             or tag_dest.project_id != project.id
         ):
             return self.send_error_json(404, self.gettext("No such tag"))
-        
+
         # Remove tag from tag_src if it's already in tag_dest
         highlights_in_dest = (
             self.db.query(database.highlight_tags.c.highlight_id)
@@ -444,7 +444,7 @@ class TagMerge(BaseHandler):
         )
         # Delete tag_src
         self.db.delete(tag_src)
-        
+
         cmd = database.Command.tag_merge(
             self.current_user,
             project.id,
@@ -455,7 +455,7 @@ class TagMerge(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(project.id, cmd)
-        
+
         return self.send_json({'id': tag_dest.id})
 
 
@@ -469,7 +469,7 @@ class HighlightAdd(BaseHandler):
         obj = self.get_json()
         start, end = obj['start_offset'], obj['end_offset']
         new_tags = set(obj.get('tags', []))
-        
+
         # Check the tags exist and are in this project
         tags = (
             self.db.query(database.Tag)
@@ -479,18 +479,18 @@ class HighlightAdd(BaseHandler):
         )
         if set(tag.id for tag in tags) != new_tags:
             return self.send_error_json(400, self.gettext("No such tag"))
-        
+
         snippet = extract.extract(document.contents, start, end)
         if all(c in '\r\n\t' for c in snippet):
             return self.send_error_json(400, self.gettext("Empty highlight"))
-        
+
         hl = database.Highlight(document=document,
                                 start_offset=start,
                                 end_offset=end,
                                 snippet=snippet)
         self.db.add(hl)
         self.db.flush()  # Need to flush to get hl.id
-        
+
         # Insert tags in database
         if new_tags:
             self.db.execute(
@@ -514,7 +514,7 @@ class HighlightAdd(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(document.project_id, cmd)
-        
+
         return self.send_json({'id': hl.id})
 
 
@@ -543,7 +543,7 @@ class HighlightUpdate(BaseHandler):
                     .all()
                 )
                 new_tags = set(obj['tags'])
-                
+
                 # Check the tags exist and are in this project
                 tags = (
                     self.db.query(database.Tag)
@@ -556,7 +556,7 @@ class HighlightUpdate(BaseHandler):
                         400,
                         self.gettext("No such tag"),
                     )
-                
+
                 # Update tags in database
                 self.db.execute(
                     database.highlight_tags.delete(
@@ -574,7 +574,7 @@ class HighlightUpdate(BaseHandler):
                             for tag in sorted(new_tags)
                         ],
                     )
-                
+
                 # Compute the change in tag counts
                 tag_count_changes = {}
                 for tag in old_tags - new_tags:
@@ -590,7 +590,7 @@ class HighlightUpdate(BaseHandler):
                     .all()
                 )
                 tag_count_changes = {}
-            
+
             cmd = database.Command.highlight_add(
                 self.current_user,
                 document,
@@ -602,9 +602,9 @@ class HighlightUpdate(BaseHandler):
             self.db.commit()
             self.db.refresh(cmd)
             self.application.notify_project(document.project_id, cmd)
-        
+
         return self.send_json({'id': hl.id})
-    
+
     @api_auth
     @PROM_REQUESTS.sync('highlight_delete')
     def delete(self, project_id, document_id, highlight_id):
@@ -631,7 +631,7 @@ class HighlightUpdate(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(document.project_id, cmd)
-        
+
         self.set_status(204)
         return self.finish()
 
@@ -639,7 +639,7 @@ class HighlightUpdate(BaseHandler):
 def check_operator_consistency(paths):
     has_and = '&' in paths
     has_or = '|' in paths
-    
+
     if has_and and has_or:
         return 'mixed'
     elif has_and:
@@ -665,7 +665,7 @@ def parse_paths_for_exclusion(paths):
 
 class Highlights(BaseHandler):
     PAGE_SIZE = 50
-    
+
     @api_auth
     @PROM_REQUESTS.sync('highlights')
     def get(self, project_id, paths):
@@ -677,24 +677,24 @@ class Highlights(BaseHandler):
             page = -1
         if page < 0:
             self.send_error_json(404, "Bad page number")
-        
+
         exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
 
         operator_type = check_operator_consistency(paths)
-        
+
         list_of_paths = []
-        
+
         if operator_type == 'and':
             list_of_paths = include_paths_string.split('&')
         elif operator_type == 'or':
             list_of_paths = include_paths_string.split('|')
         elif operator_type == 'mixed':
             print('mixed')
-        
+
         tag = aliased(database.Tag)
         hl_tag = aliased(database.highlight_tags)
         document = aliased(database.Document)
-        
+
         # main query
         query = (
             self.db.query(database.Highlight, document.text_direction)
@@ -704,17 +704,23 @@ class Highlights(BaseHandler):
             .join(document, document.id == database.Highlight.document_id)
             .filter(tag.project == project)
         )
-        
+
         if any(list_of_paths) and operator_type == 'or':
             query = query.filter(tag.path.in_(list_of_paths))
         elif any(list_of_paths) and operator_type == 'and':
             subquery = (self.db.query(hl_tag.c.highlight_id)
                         .join(tag, hl_tag.c.tag_id == tag.id)
-                        .filter(tag.path.in_(list_of_paths), tag.project == project)
-                        .group_by(hl_tag.c.highlight_id)
-                        .having(func.count(distinct(tag.id)) == len(list_of_paths))
-                        .subquery())
-            query = query.join(subquery, subquery.c.highlight_id == database.Highlight.id)
+                        .filter(
+                            tag.path.in_(list_of_paths),
+                            tag.project == project
+            )
+                .group_by(hl_tag.c.highlight_id)
+                .having(
+                            func.count(distinct(tag.id)) == len(list_of_paths)
+            )
+                .subquery())
+            query = query.join(
+                subquery, subquery.c.highlight_id == database.Highlight.id)
         else:
             # Special case to select all highlights: we also need to select
             # highlights that have no tag at all
@@ -726,14 +732,16 @@ class Highlights(BaseHandler):
                 .order_by(database.Highlight.document_id,
                           database.Highlight.start_offset)
             )
-        
+
         if any(exclude_paths):
             exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
                                 .join(tag, hl_tag.c.tag_id == tag.id)
-                                .filter(tag.path.in_(exclude_paths), tag.project == project)
+                                .filter(tag.path.in_(exclude_paths),
+                                        tag.project == project)
                                 .subquery())
-            query = query.filter(not_(database.Highlight.id.in_(exclude_subquery)))
-        
+            query = query.filter(
+                not_(database.Highlight.id.in_(exclude_subquery)))
+
         total = query.count()
         highlights = (
             query
@@ -741,7 +749,7 @@ class Highlights(BaseHandler):
             .limit(self.PAGE_SIZE)
             .all()
         )
-        
+
         return self.send_json({
             'highlights': [
                 {
@@ -765,21 +773,21 @@ class MembersUpdate(BaseHandler):
             raise HTTPError(404)
         obj = self.get_json()
         project, privileges = self.get_project(project_id)
-        
+
         if (obj.keys() == {self.current_user} and
-            not obj[self.current_user]):
+                not obj[self.current_user]):
             # Special case: you are always allowed to remove yourself
             pass
         elif not privileges.can_edit_members():
             return self.send_error_json(403, self.gettext("Unauthorized"))
-        
+
         # Get all members
         members = (
             self.db.query(database.ProjectMember)
             .filter(database.ProjectMember.project_id == project.id)
         ).all()
         members = {member.user_login: member for member in members}
-        
+
         # Go over the JSON patch and update
         commands = []
         for login, user_info in obj.items():
@@ -825,7 +833,7 @@ class MembersUpdate(BaseHandler):
                 )
                 self.db.add(cmd)
                 commands.append(cmd)
-        
+
         # Check that there are still admins
         for member in members.values():
             if member.privileges == database.Privileges.ADMIN:
@@ -836,12 +844,12 @@ class MembersUpdate(BaseHandler):
                 400,
                 self.gettext("There must be one admin"),
             )
-        
+
         self.db.commit()
         for cmd in commands:
             self.db.refresh(cmd)
             self.application.notify_project(project.id, cmd)
-        
+
         self.set_status(204)
         return self.finish()
 
@@ -850,7 +858,7 @@ class ProjectImport(BaseHandler):
     def prepare(self):
         if not self.application.config['SQLITE3_IMPORT_ENABLED']:
             raise HTTPError(403)
-    
+
     @api_auth
     @PROM_REQUESTS.sync('project_import')
     async def post(self):
@@ -858,16 +866,16 @@ class ProjectImport(BaseHandler):
             file = self.request.files['file'][0]
         except (KeyError, IndexError):
             raise MissingArgumentError('file')
-        
+
         with tempfile.TemporaryDirectory(
             prefix='taguette_export_',
         ) as tmp_dir:
             filename = os.path.join(tmp_dir, 'db.sqlite3')
-            
+
             # Write the database to temporary file
             with open(filename, 'wb') as fp:
                 fp.write(file.body)
-            
+
             project_id = self.get_body_argument('project_id', None)
             if project_id is None:
                 return await self._list_projects(filename)
@@ -880,7 +888,7 @@ class ProjectImport(BaseHandler):
                         'error': "Invalid project ID",
                     })
                 return await self._import_project(filename, project_id)
-    
+
     async def _list_projects(self, filename):
         # Connect to the database
         try:
@@ -902,7 +910,7 @@ class ProjectImport(BaseHandler):
             return self.send_error_json(400, self.gettext(
                 "This is not a Taguette project file",
             ))
-        
+
         # List projects
         projects = src_db.execute(database.Project.__table__.select())
         output = False
@@ -924,7 +932,7 @@ class ProjectImport(BaseHandler):
         if not output:
             self.write('{"projects": [')
         return await self.finish(']}')
-    
+
     async def _import_project(self, filename, project_id):
         # Connect to the database
         try:
@@ -936,21 +944,21 @@ class ProjectImport(BaseHandler):
             return self.send_error_json(400, self.gettext(
                 "This is not a Taguette project file",
             ))
-        
+
         # Copy data
         new_project_id = database.copy_project(
             src_db, self.db,
             project_id, self.current_user,
         )
         src_db.close()
-        
+
         # Insert a command for the import
         self.db.add(
             database.Command.project_import(self.current_user, new_project_id)
         )
-        
+
         self.db.commit()
-        
+
         return await self.send_json({'project_id': new_project_id})
 
 
@@ -965,9 +973,9 @@ class ProjectEvents(BaseHandler):
     PROM_POLLING_CLIENTS.set_function(
         lambda: len(ProjectEvents.polling_clients)
     )
-    
+
     wait_future = None
-    
+
     @api_auth
     @PROM_REQUESTS.async_('events')
     async def get(self, project_id):
@@ -979,36 +987,36 @@ class ProjectEvents(BaseHandler):
             self.request.remote_ip,
             self.current_user,
         )
-        
+
         client_version = self.get_query_argument('version', None)
         if client_version != exact_version():
             return await self.send_json({'reload': True})
-        
+
         from_id = int(self.get_query_argument('from'))
         project, _ = self.get_project(project_id)
         self.project_id = int(project_id)
-        
+
         try:
             cmds_json = await self._get_commands(project.id, from_id)
         except TooManyCommands:
             return await self.send_json({'reload': True})
         except asyncio.CancelledError:
             return
-        
+
         # Remove 'project_id' from each event
         def _change_cmd_json(old):
             new = dict(old)
             new.pop('project_id')
             return new
-        
+
         cmds_json = [_change_cmd_json(cmd) for cmd in cmds_json]
-        
+
         return await self.send_json({'events': cmds_json})
-    
+
     async def _get_commands(self, project_id, from_id):
         # Limit over which we won't send update but rather reload the frontend
         LIMIT = 20
-        
+
         # Check for immediate update
         cmds = (
             self.db.query(database.Command)
@@ -1016,21 +1024,21 @@ class ProjectEvents(BaseHandler):
             .filter(database.Command.project_id == project_id)
             .limit(LIMIT)
         ).all()
-        
+
         if len(cmds) >= LIMIT:
             raise TooManyCommands
-        
+
         if cmds:
             # Convert to JSON, return
             return [cmd.to_json() for cmd in cmds]
-        
+
         # Subscribe for events (which come as JSON)
         self.wait_future = Future()
         recheck = await self.application.observe_project(
             project_id,
             self.wait_future,
         )
-        
+
         # Check again, if necessary
         if recheck:
             cmds = (
@@ -1049,24 +1057,24 @@ class ProjectEvents(BaseHandler):
                 )
                 self.wait_future = None
                 return [cmd.to_json() for cmd in cmds]
-        
+
         self.db.expire_all()
-        
+
         # Close DB connection to not overflow the connection pool
         self.close_db_connection()
-        
+
         return [await self.wait_future]
-    
+
     def on_connection_close(self):
         self.response_cancelled = True
         if self.wait_future:
             self.wait_future.cancel()
         self.application.unobserve_project(self.project_id, self.wait_future)
-    
+
     def on_finish(self):
         super(ProjectEvents, self).on_finish()
         ProjectEvents.polling_clients.discard(self.request.remote_ip)
-    
+
     def _log(self):
         if not self.response_cancelled:
             self.application.log_request(self)
