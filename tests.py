@@ -2290,9 +2290,7 @@ class TestMultiuserExternal(MyHTTPTestCase):
         # token_uri='https://cilogon.org/oauth2/token'
         # userinfo_uri='https://cilogon.org/oauth2/userinfo'
 
-        async with self.aget(
-                f'/ci_callback'
-        ) as response:
+        async with self.aget('/ci_callback') as response:
             # Should redirect with message
             self.assertGreaterEqual(response.status, 200)
             self.assertLess(response.status, 400)
@@ -2300,7 +2298,8 @@ class TestMultiuserExternal(MyHTTPTestCase):
         # Insert in EdugainIdps
         # 	{
         # 		"id" : 34519,
-        # 		"entityid" : "https:\/\/shibboleth.usherbrooke.ca\/idp\/shibboleth",
+        # 		"entityid" :
+        #             "https:\/\/shibboleth.usherbrooke.ca\/idp\/shibboleth",
         # 		"e_displayname" : null,
         # 		"regauth" : "http:\/\/www.canarie.ca",
         # 		"entity_cat" : "11;76",
@@ -2328,7 +2327,8 @@ class TestMultiuserExternal(MyHTTPTestCase):
         #         "idp_name": "Universit\u00e9 de Sherbrooke",
         #         "eppn": "test@example.com",
         #         "cert_subject_dn": "...",
-        #         "eptid": "https://shibboleth.usherbrooke.ca/idp/shibboleth!https://cilogon.org/shibboleth!123456789",
+        #         "eptid": "https://shibboleth.usherbrooke.ca/idp/shibboleth"
+        #                  "!https://cilogon.org/shibboleth!123456789",
         #         "iss": "https://cilogon.org",
         #         "given_name": "My complete",
         #         "acr": "https://refeds.org/profile/mfa",
@@ -2339,7 +2339,8 @@ class TestMultiuserExternal(MyHTTPTestCase):
         #         "name": "My complete Name",
         #         "family_name": "Name",
         #         "email": "test@example.com",
-        #         "jti": "https://cilogon.org/oauth2/idToken/123456789/123456789"
+        #         "jti":
+        #             "https://cilogon.org/oauth2/idToken/123456789/123456789"
         #     }
 
         # Test login non-existing user
