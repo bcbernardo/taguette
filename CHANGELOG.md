@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.5.0 (2024-03-11)
+------------------
+
+- Add an option to pass the authentication process to [CI Logon](https://www.cilogon.org/)
+
 1.4.1 (2023-02-04)
 ------------------
 
