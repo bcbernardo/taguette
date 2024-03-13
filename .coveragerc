@@ -1,0 +1,10 @@
+[run]
+source = taguette
+omit =
+    taguette/migrations/*,
+    *__init__.py
+
+[report]
+omit =
+    taguette/migrations/*,
+    *__init__.py

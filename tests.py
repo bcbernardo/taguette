@@ -20,7 +20,7 @@ from urllib.parse import urlencode, urlparse
 from xml.etree import ElementTree
 from tornado.testing import AsyncTestCase, gen_test
 from tests.http_test_case import MyHTTPTestCase
-from tests.selenium_test import SeleniumTest
+from tests.selenium_wrapper import SeleniumTest
 from taguette import exact_version
 from taguette import convert, database, extract, import_codebook, main, \
     web

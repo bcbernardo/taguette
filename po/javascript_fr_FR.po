@@ -151,62 +151,50 @@ msgstr "Il semble que vous vous soyez déconnecté de votre profil."
 msgid "You can no longer access this project."
 msgstr "Vous ne pouvez plus accéder à ce projet."
 
-#
+#: taguette/static/js/tag/context-menu.js.js:25
 msgid "selectAll"
 msgstr "Sélectionner tout"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:25
 msgid "unselectAll"
 msgstr "Désélectionner tout"
 
-#
-msgid "Unselect"
-msgstr "Désélectionner"
-
-#
+#: taguette/static/js/tag/context-menu.js.js:33
 msgid "Select"
 msgstr "Sélectionner"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:38
 msgid "AND"
 msgstr "Combiner avec (ET)"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:45
 msgid "OR"
 msgstr "Inclure également (OU)"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:52
 msgid "NOT"
 msgstr "Exclure également (NOT)"
 
-#
-msgid "unselectAll"
-msgstr "Désélectionner tout"
-
-#
+#: taguette/static/js/tag/context-menu.js.js:61
 msgid "expand"
 msgstr "Développer"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:61
 msgid "collapse"
 msgstr "Réduire"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:70
 msgid "edit"
 msgstr "Modifier"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:71
 msgid "merge"
 msgstr "Fusionner"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:77
 msgid "delete"
 msgstr "Supprimer"
 
-#
+#: taguette/static/js/tag/context-menu.js.js:73
 msgid "deleteParent"
 msgstr "Supprimer le parent"
-
-#
-msgid "quit"
-msgstr "Quitter"

@@ -11,10 +11,11 @@ sqlite3:
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -m readme_renderer README.md >/dev/null
-    - python -Wd -m coverage run --branch --source=taguette tests.py -v
+    - python -Wd -m coverage run --branch --source=taguette test_main.py -v
+    - coverage report
     - coverage html
     - coverage report | tail -n 1 | grep -o '\([0-9]\+\(\.[0-9]\+\)\?%\)$'
-    - flake8 --ignore=W503,W504 tests.py taguette
+    - flake8 --ignore=W503,W504 tests taguette
     - "! find taguette -name '*.py' -exec grep --color 'raise \\(validate\\.\\)\\?InvalidFormat([^_]' {} +"
   artifacts:
     paths:
@@ -30,7 +31,7 @@ sqlite3_redis:
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_REDIS=redis://redis:6379 python -Wd tests.py -v
+    - TAGUETTE_TEST_REDIS=redis://redis:6379 python -Wd test_main.py -v
 
 frontend_firefox:
   stage: test
@@ -43,8 +44,9 @@ frontend_firefox:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
-    - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python tests.py -v TestSeleniumMultiuser
+    - >
+      TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python -m unittest
+      tests.e2e.test_e2e_multi_user.Test2E2MultiUser -v
 
 frontend_chromium_redis:
   stage: test
@@ -57,7 +59,11 @@ frontend_chromium_redis:
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=chromium TAGUETTE_TEST_REDIS=redis://redis:6379 xvfb-run python tests.py -v TestSeleniumMultiuser
+    - >
+      TAGUETTE_TEST_WEBDRIVER=chromium
+      TAGUETTE_TEST_REDIS=redis://redis:6379
+      xvfb-run python -m unittest
+      tests.e2e.test_e2e_multi_user.Test2E2MultiUser -v
 
 frontend_chromium_subdir:
   stage: test
@@ -68,7 +74,11 @@ frontend_chromium_subdir:
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - TAGUETTE_TEST_WEBDRIVER=chromium TAGUETTE_TEST_BASE_PATH=/base/path xvfb-run python tests.py -v TestSeleniumMultiuser
+    - >
+      TAGUETTE_TEST_WEBDRIVER=chromium
+      TAGUETTE_TEST_BASE_PATH=/base/path
+      xvfb-run python -m unittest
+      tests.e2e.test_e2e_multi_user.Test2E2MultiUser -v
 
 sqlite3_latest:
   stage: test
@@ -81,7 +91,7 @@ sqlite3_latest:
     - cat pyproject.toml
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py -v
+    - python -Wd test_main.py -v
 
 sqlite3_latest_pip:
   stage: test
@@ -94,7 +104,7 @@ sqlite3_latest_pip:
     - $HOME/.local/bin/poetry build
     - rm -rf taguette
     - pip --disable-pip-version-check --no-cache-dir install --upgrade dist/taguette-*.whl bcrypt "aiohttp>=3.4,<4"
-    - python -Wd tests.py -v
+    - python -Wd test_main.py -v
 
 postgres:
   stage: test
@@ -110,7 +120,7 @@ postgres:
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction -E postgres
     - scripts/update_translations.sh
-    - python -Wd tests.py -v
+    - python -Wd test_main.py -v
 
 mariadb:
   stage: test
@@ -128,7 +138,7 @@ mariadb:
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - $HOME/.local/bin/poetry install --no-interaction -E mysql
     - scripts/update_translations.sh
-    - python -Wd tests.py -v
+    - python -Wd test_main.py -v
 
 sqlite3_pypy:
   stage: test
@@ -141,7 +151,7 @@ sqlite3_pypy:
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
-    - python -Wd tests.py -v
+    - python -Wd test_main.py -v
 
 deploy_staging:
   image: ubuntu:latest
