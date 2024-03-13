@@ -21,6 +21,7 @@ from .. import database
 from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
+from ..utils import get_path_informations
 
 logger = logging.getLogger(__name__)
 
@@ -636,33 +637,6 @@ class HighlightUpdate(BaseHandler):
         return self.finish()
 
 
-def check_operator_consistency(paths):
-    has_and = '&' in paths
-    has_or = '|' in paths
-
-    if has_and and has_or:
-        return 'mixed'
-    elif has_and:
-        return 'and'
-    elif has_or:
-        return 'or'
-    else:
-        return 'or'
-
-
-def parse_paths_for_exclusion(paths):
-    import re
-    exclude_paths = []
-    include_paths = []
-    for path in re.findall(r'([&|!]?[^\|&!]+)', paths):
-        if path.startswith('!'):
-            exclude_paths.append(path[1:])
-        else:
-            include_paths.append(path)
-    include_paths_string = ''.join(include_paths)
-    return exclude_paths, include_paths_string
-
-
 class Highlights(BaseHandler):
     PAGE_SIZE = 50
 
@@ -678,18 +652,8 @@ class Highlights(BaseHandler):
         if page < 0:
             self.send_error_json(404, "Bad page number")
 
-        exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
-
-        operator_type = check_operator_consistency(paths)
-
-        list_of_paths = []
-
-        if operator_type == 'and':
-            list_of_paths = include_paths_string.split('&')
-        elif operator_type == 'or':
-            list_of_paths = include_paths_string.split('|')
-        elif operator_type == 'mixed':
-            print('mixed')
+        list_of_paths, operator_type, exclude_paths = get_path_informations(
+            paths)
 
         tag = aliased(database.Tag)
         hl_tag = aliased(database.highlight_tags)
@@ -708,6 +672,7 @@ class Highlights(BaseHandler):
         if any(list_of_paths) and operator_type == 'or':
             query = query.filter(tag.path.in_(list_of_paths))
         elif any(list_of_paths) and operator_type == 'and':
+            # Special case to select all highlights: we also need to select
             subquery = (self.db.query(hl_tag.c.highlight_id)
                         .join(tag, hl_tag.c.tag_id == tag.id)
                         .filter(
@@ -729,10 +694,9 @@ class Highlights(BaseHandler):
                 .options(joinedload(database.Highlight.tags))
                 .join(document, document.id == database.Highlight.document_id)
                 .filter(document.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
             )
 
+        # Handle exclusions
         if any(exclude_paths):
             exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
                                 .join(tag, hl_tag.c.tag_id == tag.id)
@@ -741,6 +705,11 @@ class Highlights(BaseHandler):
                                 .subquery())
             query = query.filter(
                 not_(database.Highlight.id.in_(exclude_subquery)))
+
+        query = query.order_by(
+            database.Highlight.document_id,
+            database.Highlight.start_offset
+        )
 
         total = query.count()
         highlights = (

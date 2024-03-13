@@ -30,9 +30,9 @@ function addContextMenu() {
                         }
                     },
                     "toggleSelect": {
-                        name: gettext(isSelected ? 'Unselect' : 'Select'),
+                        name: gettext('Select'),
                         icon: "",
-                        visible: selectedNodes.length > 0,
+                        visible: !isSelected && selectedNodes.length > 0,
                         items: isSelected ? null : {
                             "andSelect": {
                                 name: gettext('AND'),
@@ -55,10 +55,7 @@ function addContextMenu() {
                                     contextMenuAction('selectNot', nodeId);
                                 }
                             }
-                        },
-                        callback: isSelected ? function (key, options) {
-                            contextMenuAction('unselect', nodeId);
-                        } : null,
+                        }
                     },
                     "toggleExpand": {
                         name: isExpanded ? gettext('collapse') : gettext('expand'),
@@ -77,13 +74,7 @@ function addContextMenu() {
                         visible: hasParent,
                         icon: "delete"
                     },
-                    "delete": {name: gettext('delete'), icon: "delete"},
-                    "quit": {
-                        name: gettext('quit'),
-                        icon: function () {
-                            return 'context-menu-icon context-menu-icon-quit';
-                        }
-                    }
+                    "delete": {name: gettext('delete'), icon: "delete"}
                 }
             };
         }

@@ -1021,12 +1021,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 3, 'document_id': 2, 'content': "tent",
-                     'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT'},
-                    {'id': 2, 'document_id': 2, 'content': "diff",
-                     'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT'},
+                    {'id': 2, 'document_id': 2, 'tags': [4],
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
                 ],
                 'pages': 1,
             })
@@ -2967,8 +2965,8 @@ class TestSeleniumMultiuser(SeleniumTest):
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            (f"tent\n{docs_1[0]['name']} interesting people\n"
-             f"diff\n{docs_1[0]['name']} interesting.places"),
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people"),
         )
 
         # List all highlights in project 1

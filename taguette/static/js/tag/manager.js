@@ -333,3 +333,49 @@ function removeTagParent(tagId) {
         () => {}
     );
 }
+
+function generateTagBadgeHtml(tag, index, condition) {
+    const abbreviation = abbreviateTag(tag.path);
+    let conditionTextHtml = "";
+    if (index > 0) {
+        conditionTextHtml = getConditionText(condition);
+    }
+    return `${conditionTextHtml}<span title="${tag.path}" style="background-color: ${tag.color}; color: white; padding: 1px 8px; border-radius: 15px; margin-top: 5px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+        ${abbreviation}
+        <button onclick="removeTagBadge(${tag.id})" style="background-color: transparent; border: none; color: white; cursor: pointer; margin-left: 5px;font-size: 1rem; font-weight: bold">x</button>
+    </span>`;
+}
+
+function getConditionText(condition) {
+    switch (condition) {
+        case 'and':
+            return `<span style="margin: 5px;">et seulement</span>`;
+        case 'or':
+            return `<span style="margin: 5px;">et</span>`;
+        case 'not':
+            return `<span style="margin: 5px;">sans</span>`;
+    }
+}
+
+function showTagSelection() {
+    const tagsCriteria = $('#tag-selection-criteria');
+    let description = selectedTags.length > 0 ? "<span style='font-size: 0.9rem'>Votre sélection conprend : <br/></span>" : "";
+    selectedTags.forEach((item, index) => {
+        const tag = findTag(item.id);
+        description += generateTagBadgeHtml(tag, index, item.condition);
+    });
+
+    tagsCriteria.html(description);
+}
+
+
+function removeTagBadge(tagId) {
+    selectedTags = selectedTags.filter(tag => tag.id !== tagId);
+    showTagSelection();
+    const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags', tagId);
+    unselectNode('treeview-tags', nodeId);
+}
+
+function abbreviateTag(tagPath) {
+    return tagPath;
+}

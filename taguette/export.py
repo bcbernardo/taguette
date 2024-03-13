@@ -3,9 +3,10 @@ import contextlib
 import csv
 import jinja2
 import pkg_resources
-import sqlalchemy
 from markupsafe import Markup
 import opentelemetry.trace
+from sqlalchemy import not_, func, distinct
+from sqlalchemy import and_, select, exists
 from sqlalchemy.orm import joinedload
 import uuid
 import xlsxwriter
@@ -16,10 +17,9 @@ from . import exact_version
 from . import convert
 from . import database
 from . import extract
-
+from .utils import get_path_informations
 
 tracer = opentelemetry.trace.get_tracer(__name__)
-
 
 template_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
@@ -32,7 +32,6 @@ template_env = jinja2.Environment(
 
 def _render_string(template_name, locale, **kwargs):
     translator = _Translator(locale)
-
     template = template_env.get_template(template_name)
     return template.render(
         version=exact_version(),
@@ -72,104 +71,97 @@ class _Translator(object):
 
 
 def _get_highlights_for_export(db, project_id, paths):
-    list_of_paths = paths.split(',')
-    if any(list_of_paths):
-        t_highlight = database.Highlight.__table__
-        t_highlight_tag = database.highlight_tags
-        t_tag = database.Tag.__table__
-        t_document = database.Document.__table__
-        # Join with tags a second time to find highlights that match the
-        # given path, while returning all tags for those highlights
-        t_highlight_tag_m = database.highlight_tags.alias()
-        t_tag_m = database.Tag.__table__.alias()
-        query = (
-            sqlalchemy.select([
-                t_highlight.c.id,
-                t_highlight.c.snippet,
-                t_document.c.name,
-                t_tag.c.path,
-            ])
-            .select_from(
-                t_highlight
-                .join(
-                    t_highlight_tag,
-                    t_highlight.c.id == t_highlight_tag.c.highlight_id,
-                )
-                .join(
-                    t_tag,
-                    t_tag.c.id == t_highlight_tag.c.tag_id,
-                )
-                .join(
-                    t_highlight_tag_m,
-                    t_highlight.c.id == t_highlight_tag_m.c.highlight_id,
-                )
-                .join(
-                    t_tag_m,
-                    t_tag_m.c.id == t_highlight_tag_m.c.tag_id,
-                )
-                .join(
-                    t_document,
-                    t_document.c.id == t_highlight.c.document_id,
-                )
-            )
-            .filter(t_tag_m.c.path.in_(list_of_paths))
-            .filter(t_document.c.project_id == project_id)
-            .order_by(
-                t_highlight.c.document_id,
-                t_highlight.c.start_offset,
-                t_highlight.c.id,
-            )
+    list_of_paths, operator_type, exclude_paths = get_path_informations(paths)
+
+    t_highlight = database.Highlight.__table__
+    t_highlight_tag = database.highlight_tags
+    t_tag = database.Tag.__table__
+    t_document = database.Document.__table__
+    t_highlight_tag_m = t_highlight_tag.alias()
+    t_tag_m = t_tag.alias()
+
+    # Base query setup
+    query = select([
+        t_highlight.c.id,
+        t_highlight.c.snippet,
+        t_document.c.name,
+        t_tag.c.path,
+    ]).select_from(
+        t_highlight
+        .join(t_highlight_tag,
+              t_highlight.c.id == t_highlight_tag.c.highlight_id)
+        .join(t_tag, t_tag.c.id == t_highlight_tag.c.tag_id)
+        .join(t_document, t_document.c.id == t_highlight.c.document_id)
+    ).where(t_document.c.project_id == project_id)
+
+    if operator_type == 'or' and any(list_of_paths):
+        query = query.join(
+            t_highlight_tag_m,
+            t_highlight.c.id == t_highlight_tag_m.c.highlight_id
+        ).join(
+            t_tag_m, t_tag_m.c.id == t_highlight_tag_m.c.tag_id
+        ).filter(
+            t_tag_m.c.path.in_(list_of_paths)
         )
+
+    elif operator_type == 'and' and any(list_of_paths):
+        highlight_ids_with_all_tags = select(
+            [t_highlight_tag.c.highlight_id]
+        ).join(
+            t_tag,
+            t_tag.c.id == t_highlight_tag.c.tag_id
+        ).where(
+            and_(
+                t_tag.c.path.in_(
+                    list_of_paths), t_tag.c.project_id == project_id
+            )
+        ).group_by(
+            t_highlight_tag.c.highlight_id
+        ).having(
+            func.count(distinct(t_tag.c.id)) == len(list_of_paths)
+        ).alias()
+
+        query = query.join(highlight_ids_with_all_tags,
+                           t_highlight.c.id ==
+                           highlight_ids_with_all_tags.c.highlight_id)
     else:
         # Special case to select all highlights: we also need to select
         # highlights that have no tag at all, so the startswith() condition
         # would not work
-        t_highlight = database.Highlight.__table__
-        t_highlight_tag = database.highlight_tags
-        t_tag = database.Tag.__table__
-        t_document = database.Document.__table__
-        query = (
-            sqlalchemy.select([
-                t_highlight.c.id,
-                t_highlight.c.snippet,
-                t_document.c.name,
-                t_tag.c.path,
-            ])
-            .select_from(
-                t_highlight
-                .join(
-                    t_highlight_tag,
-                    t_highlight.c.id == t_highlight_tag.c.highlight_id,
+        pass
+
+    # Handle exclusion of paths
+    if any(exclude_paths):
+        exclude_subquery = select([t_highlight_tag.c.highlight_id]) \
+            .join(t_tag, t_tag.c.id == t_highlight_tag.c.tag_id) \
+            .where(and_(t_tag.c.path.in_(exclude_paths),
+                        t_tag.c.project_id == project_id)).alias()
+
+        query = query.where(
+            not_(
+                exists().where(
+                    t_highlight.c.id == exclude_subquery.c.highlight_id
                 )
-                .join(
-                    t_tag,
-                    t_tag.c.id == t_highlight_tag.c.tag_id,
-                )
-                .join(
-                    t_document,
-                    t_document.c.id == t_highlight.c.document_id,
-                )
-            )
-            .where(t_document.c.project_id == project_id)
-            .order_by(
-                t_highlight.c.document_id,
-                t_highlight.c.start_offset,
-                t_highlight.c.id,
             )
         )
 
+    query = query.order_by(
+        t_highlight.c.document_id,
+        t_highlight.c.start_offset,
+        t_highlight.c.id,
+    )
+
+    # Collect highlights
     highlights = []
     for row in db.execute(query).fetchall():
         highlight_id, snippet, document, tag_path = row
+        # Ensure no duplicate tags in the list
         if highlights and highlights[-1][0] == highlight_id:
-            highlights[-1][3].append(tag_path)
+            if tag_path not in highlights[-1][3]:
+                highlights[-1][3].append(tag_path)
         else:
-            highlights.append((
-                highlight_id,
-                snippet,
-                document,
-                [] if tag_path is None else [tag_path],
-            ))
+            highlights.append((highlight_id, snippet, document, [
+                tag_path] if tag_path else []))
 
     return highlights
 
@@ -237,7 +229,7 @@ def highlights_doc(db, project_id, path, ext, *, config, locale):
     """Export highlights to a text document.
     """
     highlights = _get_highlights_for_export(db, project_id, path)
-
+    # TODO : update path title and filename
     html = _render_string(
         'export_highlights.html',
         locale,
@@ -255,6 +247,7 @@ async def highlighted_document(db, document, ext, *, config, locale):
 
     Each highlight is followed by its tags in brackets.
     """
+    # TODO : update with tag color
     highlights = (
         db.query(database.Highlight)
         .filter(database.Highlight.document_id == document.id)

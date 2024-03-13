@@ -103,6 +103,7 @@ function loadTagsHighlights() {
     setTimeout(function () {
         addTagEditButton();
         addTagDragDrop();
+        showTagSelection();
     }, 10);
 }
 
@@ -296,19 +297,6 @@ function addTagEditButton() {
             secondDiv.addClass('d-flex align-items-center');
             secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
             secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
-
-            // Create the Edit button
-            /* const editButton = $('<a>', {
-                href: 'javascript:void(0);',
-                class: 'btn btn-primary btn-sm ms-2 edit-button',
-                text: 'Edit',
-                click: function (event) {
-                    event.stopPropagation();
-                    editTag(tagId);
-                }
-            });
-
-            secondDiv.append(editButton); */
         }
     });
 }
