@@ -82,13 +82,16 @@ let current_tag = null;
 let last_added_tag = null;
 const documents_list = document.getElementById('documents-list');
 
-function linkDocument(elem, doc_id) {
-    const url = `${base_path}/project/${project_id}/document/${doc_id}`;
+function linkDocument(elem, doc_id, highlight_id=null) {
+    let url = `${base_path}/project/${project_id}/document/${doc_id}`;
+    if(highlight_id !== null && !isNaN(highlight_id)) {
+        url += `/highlight/${highlight_id}`;
+    }
     elem.setAttribute('href', url);
     elem.addEventListener('click', function (e) {
         e.preventDefault();
-        window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
-        loadDocument(doc_id);
+        window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
+        loadDocument(doc_id, highlight_id);
     });
 }
 
@@ -860,7 +863,7 @@ document.getElementById('members-current').addEventListener('submit', function (
 const document_contents = document.getElementById('document-contents');
 const export_button = document.getElementById('export-button');
 
-function loadDocument(document_id) {
+function loadDocument(document_id, highlight_id=null) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -932,7 +935,13 @@ function loadDocument(document_id) {
 
             // Scroll up
             window.setTimeout(function () {
-                window.scrollTo(0, 0);
+                let scroll_position = 0;
+                if(highlight_id !== null && !isNaN(highlight_id)) {
+                    log(`Go to highlight :  ${highlight_id}`);
+                    scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - 15;
+                    $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
+                }
+                window.scrollTo(0, scroll_position);
             }, 0);
         })
         .catch(function (error) {
@@ -982,7 +991,7 @@ function loadTag(tag_path, page) {
                 let doclink = document.createElement('a');
                 doclink.className = 'badge badge-primary';
                 doclink.textContent = documents['' + hl.document_id].name;
-                linkDocument(doclink, hl.document_id);
+                linkDocument(doclink, hl.document_id, hl.id);
                 elem.appendChild(doclink);
                 elem.appendChild(document.createTextNode(' '));
 
@@ -1101,11 +1110,15 @@ function loadTag(tag_path, page) {
 
 // Load the document if the URL includes one
 setTimeout(function () {
-    const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)`);
+    const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))?`);
     // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
     let m = window.location.pathname.match(_document_url);
     if (m) {
-        loadDocument(parseInt(m[2]));
+        let h_id = null;
+        if(typeof m[4] !== 'undefined') {
+            h_id = parseInt(m[4]);
+        }
+        loadDocument(parseInt(m[2]), h_id);
     }
     // Or a tag
     const _tag_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/highlights/([^/]*)`);
@@ -1120,7 +1133,8 @@ setTimeout(function () {
 window.onpopstate = function (e) {
     if (e.state) {
         if (e.state.document_id !== undefined) {
-            loadDocument(e.state.document_id);
+            let highlight_id = (e.state.highlight_id !== undefined ) ? e.state.highlight_id : null;
+            loadDocument(e.state.document_id, highlight_id);
         } else if (e.state.tag_path !== undefined) {
             loadTag(e.state.tag_path);
         } else {

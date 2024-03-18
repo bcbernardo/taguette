@@ -558,6 +558,11 @@ class Test2E2MultiUser(SeleniumTest):
             ('PDF', self.base_path + '/project/1/export/document/1.pdf'),
         ])
 
+        # Check scroll position for highlight 1
+        await self.s_get('/project/1/document/1/highlight/1')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertNotEqual(self.s_get_scroll_height(), 0)
+
         # Check export options for highlights in project 1 under 'interesting'
         await self.s_get('/project/1/highlights/interesting')
         await asyncio.sleep(1)  # Wait for XHR
