@@ -9,22 +9,52 @@ function addContextMenu() {
             const hasChildren = tag.children.length > 0;
             const hasParent = tag.parent > 0;
 
-            const node = $('#treeview-tags').treeview('getNode', nodeId);
+            const node = getNode('treeview-tags', nodeId);
 
             const isExpanded = node.state.expanded;
             const isSelected = node.state.selected;
+
+            const selectedNodes = $('#treeview-tags').treeview('getSelected');
 
             return {
                 callback: function (key, options) {
                     contextMenuAction(key, options.$trigger.attr("id"));
                 },
                 items: {
-                    "toggleSelect": {
+                    "toggleSelectAll": {
                         name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
                         icon: "",
                         visible: hasChildren,
                         callback: function (key, options) {
                             contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', nodeId);
+                        }
+                    },
+                    "toggleSelect": {
+                        name: gettext('Select'),
+                        icon: "",
+                        visible: !isSelected && selectedNodes.length > 0,
+                        items: isSelected ? null : {
+                            "andSelect": {
+                                name: gettext('AND'),
+                                icon: "",
+                                callback: function (key, options) {
+                                    contextMenuAction('selectAnd', nodeId);
+                                }
+                            },
+                            "orSelect": {
+                                name: gettext('OR'),
+                                icon: "",
+                                callback: function (key, options) {
+                                    contextMenuAction('selectOr', nodeId);
+                                }
+                            },
+                            "notSelect": {
+                                name: gettext('NOT'),
+                                icon: "",
+                                callback: function (key, options) {
+                                    contextMenuAction('selectNot', nodeId);
+                                }
+                            }
                         }
                     },
                     "toggleExpand": {
@@ -44,13 +74,7 @@ function addContextMenu() {
                         visible: hasParent,
                         icon: "delete"
                     },
-                    "delete": {name: gettext('delete'), icon: "delete"},
-                    "quit": {
-                        name: gettext('quit'),
-                        icon: function () {
-                            return 'context-menu-icon context-menu-icon-quit';
-                        }
-                    }
+                    "delete": {name: gettext('delete'), icon: "delete"}
                 }
             };
         }
@@ -58,7 +82,7 @@ function addContextMenu() {
 }
 
 function contextMenuAction(action, nodeId) {
-    const id = getTagIdFromTreeviewNode('treeview-tags', nodeId);
+    const tagId = getTagIdFromTreeviewNode('treeview-tags', nodeId);
     switch (action) {
         case 'selectAll':
             selectNodeAndChildren('treeview-tags', nodeId);
@@ -66,8 +90,20 @@ function contextMenuAction(action, nodeId) {
         case 'unselectAll':
             unselectNodeAndChildren('treeview-tags', nodeId);
             break;
+        case 'selectAnd':
+            selectWithCondition('treeview-tags', nodeId, 'and');
+            break;
+        case 'selectOr':
+            selectWithCondition('treeview-tags', nodeId, 'or');
+            break;
+        case 'selectNot':
+            selectWithCondition('treeview-tags', nodeId, 'not');
+            break;
+        case 'unselect':
+            unselectNode('treeview-tags', nodeId);
+            break;
         case 'edit':
-            editTag(id);
+            editTag(tagId);
             break;
         case 'expand':
             expandNode('treeview-tags', nodeId);
@@ -76,13 +112,13 @@ function contextMenuAction(action, nodeId) {
             collapseNode('treeview-tags', nodeId);
             break;
         case 'merge':
-            mergeTag(id);
+            mergeTag(tagId);
             break;
         case 'delete':
-            deleteTag(id);
+            deleteTag(tagId);
             break;
         case 'deleteParent':
-            removeTagParent(id);
+            removeTagParent(tagId);
             break;
         case 'quit':
             break;

@@ -20,7 +20,7 @@ from urllib.parse import urlencode, urlparse
 from xml.etree import ElementTree
 from tornado.testing import AsyncTestCase, gen_test
 from tests.http_test_case import MyHTTPTestCase
-from tests.selenium_test import SeleniumTest
+from tests.selenium_wrapper import SeleniumTest
 from taguette import exact_version
 from taguette import convert, database, extract, import_codebook, main, \
     web
@@ -1016,7 +1016,7 @@ class TestMultiuser(MyHTTPTestCase):
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/interesting,interesting.places',
+            '/api/project/2/highlights/interesting|interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
@@ -1044,6 +1044,8 @@ class TestMultiuser(MyHTTPTestCase):
                 ],
                 'pages': 1,
             })
+
+        # TODO : add test with condition or and not
 
         # Get contents of document 2
         async with self.aget('/api/project/2/document/2') as response:
@@ -2958,7 +2960,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # List highlights in project 1 under 'interesting'
-        await self.s_get('/project/1/highlights/interesting,'
+        await self.s_get('/project/1/highlights/interesting|'
                          'interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(

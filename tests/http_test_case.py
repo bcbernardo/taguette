@@ -1,8 +1,7 @@
 import aiohttp
-from urllib.parse import urlencode, urlparse
-from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPTestCase
-from taguette import convert, database, extract, import_codebook, main, \
-    validate, web
+from urllib.parse import urlencode
+from tornado.testing import AsyncHTTPTestCase
+from taguette import validate, web
 
 
 class MyHTTPTestCase(AsyncHTTPTestCase):

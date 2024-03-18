@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_
+from sqlalchemy import and_, func, distinct, not_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -21,10 +21,9 @@ from .. import database
 from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
-
+from ..utils import get_path_informations
 
 logger = logging.getLogger(__name__)
-
 
 PROM_POLLING_CLIENTS = prometheus_client.Gauge(
     'polling_clients',
@@ -549,9 +548,9 @@ class HighlightUpdate(BaseHandler):
                 # Check the tags exist and are in this project
                 tags = (
                     self.db.query(database.Tag)
-                        .filter(database.Tag.id.in_(new_tags))
-                        .filter(database.Tag.project_id == document.project_id)
-                        .all()
+                    .filter(database.Tag.id.in_(new_tags))
+                    .filter(database.Tag.project_id == document.project_id)
+                    .all()
                 )
                 if set(tag.id for tag in tags) != new_tags:
                     return self.send_error_json(
@@ -653,35 +652,64 @@ class Highlights(BaseHandler):
         if page < 0:
             self.send_error_json(404, "Bad page number")
 
-        list_of_paths = paths.split(',')
+        list_of_paths, operator_type, exclude_paths = get_path_informations(
+            paths)
 
-        if any(list_of_paths):
-            tag = aliased(database.Tag)
-            hl_tag = aliased(database.highlight_tags)
-            document = aliased(database.Document)
-            query = (
-                self.db.query(database.Highlight, document.text_direction)
-                .options(joinedload(database.Highlight.tags))
-                .join(hl_tag, hl_tag.c.highlight_id == database.Highlight.id)
-                .join(tag, hl_tag.c.tag_id == tag.id)
-                .join(document, document.id == database.Highlight.document_id)
-                .filter(tag.path.in_(list_of_paths))
-                .filter(tag.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
+        tag = aliased(database.Tag)
+        hl_tag = aliased(database.highlight_tags)
+        document = aliased(database.Document)
+
+        # main query
+        query = (
+            self.db.query(database.Highlight, document.text_direction)
+            .options(joinedload(database.Highlight.tags))
+            .join(hl_tag, hl_tag.c.highlight_id == database.Highlight.id)
+            .join(tag, hl_tag.c.tag_id == tag.id)
+            .join(document, document.id == database.Highlight.document_id)
+            .filter(tag.project == project)
+        )
+
+        if any(list_of_paths) and operator_type == 'or':
+            query = query.filter(tag.path.in_(list_of_paths))
+        elif any(list_of_paths) and operator_type == 'and':
+            # Special case to select all highlights: we also need to select
+            subquery = (self.db.query(hl_tag.c.highlight_id)
+                        .join(tag, hl_tag.c.tag_id == tag.id)
+                        .filter(
+                            tag.path.in_(list_of_paths),
+                            tag.project == project
             )
+                .group_by(hl_tag.c.highlight_id)
+                .having(
+                            func.count(distinct(tag.id)) == len(list_of_paths)
+            )
+                .subquery())
+            query = query.join(
+                subquery, subquery.c.highlight_id == database.Highlight.id)
         else:
             # Special case to select all highlights: we also need to select
             # highlights that have no tag at all
-            document = aliased(database.Document)
             query = (
                 self.db.query(database.Highlight, document.text_direction)
                 .options(joinedload(database.Highlight.tags))
                 .join(document, document.id == database.Highlight.document_id)
                 .filter(document.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
             )
+
+        # Handle exclusions
+        if any(exclude_paths):
+            exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                .join(tag, hl_tag.c.tag_id == tag.id)
+                                .filter(tag.path.in_(exclude_paths),
+                                        tag.project == project)
+                                .subquery())
+            query = query.filter(
+                not_(database.Highlight.id.in_(exclude_subquery)))
+
+        query = query.order_by(
+            database.Highlight.document_id,
+            database.Highlight.start_offset
+        )
 
         total = query.count()
         highlights = (

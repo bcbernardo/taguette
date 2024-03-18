@@ -48,7 +48,8 @@ function initTagsTreeview(collapse = true, filterTags = null) {
         if (!selectedTags.includes(data.id)) {
             selectedTags.push({
                 id: data.id,
-                path: data.text
+                path: data.text,
+                condition: selectCondition
             });
         }
         loadTagsHighlights();
@@ -75,7 +76,22 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 }
 
 function loadTagsHighlights() {
-    const selectedTagPathsString = selectedTags.map(tag => tag.path).join(',');
+
+    let selectedTagPathsString = '';
+    selectedTags.forEach((tag, index) => {
+        let conditionSymbol = '';
+        if (index > 0) {
+            if (tag.condition === 'and') {
+                conditionSymbol = '&';
+            } else if (tag.condition === 'or') {
+                conditionSymbol = '|';
+            } else if (tag.condition === 'not') {
+                conditionSymbol = '!';
+            }
+        }
+        selectedTagPathsString += `${conditionSymbol}${tag.path}`;
+    });
+
     const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
     window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
 
@@ -87,7 +103,13 @@ function loadTagsHighlights() {
     setTimeout(function () {
         addTagEditButton();
         addTagDragDrop();
+        showTagSelection();
     }, 10);
+}
+
+function getNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    return $treeview.treeview('getNode', nodeId);
 }
 
 function expandNode(treeview, nodeId) {
@@ -137,6 +159,30 @@ function unselectNodeAndChildren(treeview, nodeId) {
     const $treeview = $(`#${treeview}`);
     const node = $treeview.treeview('getNode', parseInt(nodeId));
     unselectSingleNodeAndChildren($treeview, node);
+}
+
+let selectCondition = 'or';
+function selectWithCondition(treeview, nodeId, condition) {
+    selectCondition = condition;
+    selectNode(treeview, nodeId);
+    selectCondition = 'or';
+}
+
+function selectNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    if (node.state.selected) {
+        return;
+    }
+    $treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+}
+
+function unselectNode(treeview, nodeId) {
+    const $treeview = $(`#${treeview}`);
+    const node = $treeview.treeview('getNode', parseInt(nodeId));
+    if (node.state.selected) {
+        $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+    }
 }
 
 function unselectSingleNodeAndChildren(treeview, node) {
@@ -251,19 +297,6 @@ function addTagEditButton() {
             secondDiv.addClass('d-flex align-items-center');
             secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
             secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
-
-            // Create the Edit button
-            /* const editButton = $('<a>', {
-                href: 'javascript:void(0);',
-                class: 'btn btn-primary btn-sm ms-2 edit-button',
-                text: 'Edit',
-                click: function (event) {
-                    event.stopPropagation();
-                    editTag(tagId);
-                }
-            });
-
-            secondDiv.append(editButton); */
         }
     });
 }
