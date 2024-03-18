@@ -162,3 +162,7 @@ class SeleniumTest(MyHTTPTestCase):
             return logs
         else:
             return None
+
+    async def s_get_scroll_height(self):
+        await asyncio.sleep(0.2)
+        return self.driver.execute_script("return document.body.scrollHeight")

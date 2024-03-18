@@ -289,6 +289,15 @@ a.dropdown-item:hover {
     text-decoration: none;
 }
 
+#document-view .highlight.flash-once {
+  animation: flashOnceBackground 2s;
+}
+@keyframes flashOnceBackground{
+  0%		{ background-color: #fff;}
+  50%		{ background-color: #92b2cb;}
+  100%	        { background-color: #fff;}
+}
+
 #hlinfo {
   display: none;
   position: absolute;
