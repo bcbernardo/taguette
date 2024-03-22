@@ -372,6 +372,11 @@ msgctxt "document change form placeholder"
 msgid "Name"
 msgstr "Nom"
 
+#: taguette/templates/project.html:121
+msgctxt "tag change form placeholder"
+msgid "Search tags"
+msgstr "Filtrer la liste"
+
 #: taguette/templates/project.html:244
 msgctxt "document change form placeholder"
 msgid "Description"

@@ -364,12 +364,6 @@ class CilogonCallback(BaseHandler):
                                == cil_user_infos['idp'])
                        .first())
 
-        # From EduGain
-        if edugain_idp is not None:
-            user_from_edugain = True
-        else:
-            user_from_edugain = False
-
         # From Canadian Access Federation
         if edugain_idp is not None:
             if edugain_idp.code == 'CAF':

@@ -2,6 +2,9 @@ import functools
 import itertools
 import tempfile
 from xml.etree import ElementTree
+import json
+
+DEFAULT_COLOR = '#000000'
 
 
 def _compare_xml(e1, e2):
@@ -25,3 +28,76 @@ def with_tempdir(func):
             return func(*args, **kwargs, tmp=tmp)
 
     return wrapper
+
+
+def generate_initial_state_script(user_login,
+                                  project_id,
+                                  version,
+                                  documents,
+                                  tags,
+                                  members,
+                                  last_event):
+
+    documents_json = json.dumps(documents)
+    tags_json = json.dumps(tags, sort_keys=True)
+    members_json = json.dumps(members)
+
+    return (
+        f'<script type="text/javascript">\n'
+        f'  const user_login = "{user_login}";\n'
+        f'  const project_id = {project_id};\n'
+        f'  const version = \'{version}\';\n'
+        f'  let documents = {documents_json};\n'
+        f'  let tags = {tags_json};\n'
+        f'  let members = {members_json};\n'
+        f'  let highlights = {{}};\n'
+        f'  let last_event = {last_event};\n'
+        f'</script>'
+    )
+
+
+def build_tag_pool_response(pool_id,
+                            tag_id,
+                            path,
+                            parent_id=None,
+                            color=DEFAULT_COLOR,
+                            description=''):
+    return {
+        'type': 'tag_add',
+        'id': pool_id,
+        'tag_id': tag_id,
+        'tag_parent': parent_id,
+        'tag_color': color,
+        'tag_path': path,
+        'description': description
+    }
+
+
+def build_tag_response(tag_id,
+                       path,
+                       description,
+                       color=DEFAULT_COLOR,
+                       parent=None,
+                       children=None):
+    return {
+        "id": tag_id,
+        "path": path,
+        "description": description,
+        "color": color,
+        "parent": parent,
+        "count": 0,
+        "count_document": 0,
+        "children": children if children is not None else []
+    }
+
+
+def build_tag_data(path,
+                   parent_id=None,
+                   color=DEFAULT_COLOR,
+                   description=""):
+    return {
+        "path": path,
+        "parent_id": parent_id,
+        "color": color,
+        "description": description
+    }
