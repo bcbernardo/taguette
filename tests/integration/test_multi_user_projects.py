@@ -1,5 +1,4 @@
 import asyncio
-import json
 import textwrap
 import time
 
@@ -9,10 +8,13 @@ from taguette import database
 from taguette import exact_version
 from .test_multi_user import TestMultiUser
 from tests.utils import compare_xml
+from tests.utils import build_tag_data
+from tests.utils import build_tag_response
+from tests.utils import build_tag_pool_response
+from tests.utils import generate_initial_state_script
 
 
 class TestMultiUserProject(TestMultiUser):
-
     @gen_test(timeout=30)
     async def test_projects(self):
         # project 1               project 2
@@ -71,6 +73,13 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(response.status, 303)
             self.assertEqual(response.headers['Location'], '/project/1')
 
+            # default project values
+            user_login = "admin"
+            project_id = 1
+            version = exact_version()
+            documents = {}
+            members = {"admin": {"privileges": "ADMIN"}}
+
         # Check project page
         async with self.aget('/project/1') as response:
             self.assertEqual(response.status, 200)
@@ -78,35 +87,20 @@ class TestMultiUserProject(TestMultiUser):
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
         init_js = '\n'.join(body[idx:].splitlines()[1:11])
-        self.assertEqual(
-            init_js,
-            '<script type="text/javascript">\n'
-            '  const user_login = "admin";\n'
-            '  const project_id = 1;\n'
-            '  const version = \'%s\';\n'
-            '  let documents = {};\n'
-            '  let tags = %s;\n'
-            '  let members = {"admin": {"privileges": "ADMIN"}};\n'
-            '  let highlights = {};\n'
-            '  let last_event = -1;\n'
-            '</script>' % (
-                exact_version(),
-                json.dumps(
-                    [
-                        {
-                            "id": 1,
-                            "path": "interesting",
-                            "description": "Further review required",
-                            "color": "#000000",
-                            "parent": None,
-                            "count": 0,
-                            "count_document": 0,
-                            "children": []
-                        },
-                    ],
-                    sort_keys=True)
-            ),
-        )
+
+        tags = [
+            build_tag_response(
+                tag_id=1,
+                path="interesting",
+                description="Further review required")
+        ]
+
+        last_event = -1
+        init_js_expected = generate_initial_state_script(
+            user_login, project_id, version, documents, tags,
+            members, last_event)
+
+        self.assertEqual(init_js, init_js_expected)
 
         # Start polling
         poll_proj1 = await self.poll_event(1, -1)
@@ -124,35 +118,38 @@ class TestMultiUserProject(TestMultiUser):
         # Start polling
         poll_proj2 = await self.poll_event(2, -1)
 
-        # Create tags in project 2
+        # Create a tag "people" in project 2
         async with self.apost(
             '/api/project/2/tag/new',
-            json=dict(path='people',
-                      parent_id=None,
-                      color='#000000',
-                      description="People of interest"),
+            json=build_tag_data(path='people',
+                                description="People of interest"),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 1, 'tag_id': 3, 'tag_parent': None,
-             'tag_color': '#000000', 'tag_path': 'people',
-             'description': "People of interest"})
+            build_tag_pool_response(
+                pool_id=1,
+                tag_id=3,
+                path='people',
+                description="People of interest"
+            ))
         poll_proj2 = await self.poll_event(2, 1)
 
+        # Create a tag "interesting.places" in project 2
         async with self.apost(
             '/api/project/2/tag/new',
-            json=dict(path='interesting.places',
-                      color='#000000',
-                      parent_id=None,
-                      description=''),
+            json=build_tag_data(path='interesting.places',
+                                description=''),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 2, 'tag_id': 4, 'tag_parent': None,
-             'tag_color': '#000000', 'tag_path': 'interesting.places',
-             'description': ''})
+            build_tag_pool_response(
+                pool_id=2,
+                tag_id=4,
+                path='interesting.places',
+                description=''
+            ))
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1

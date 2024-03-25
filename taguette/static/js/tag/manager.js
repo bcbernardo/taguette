@@ -349,9 +349,9 @@ function generateTagBadgeHtml(tag, index, condition) {
 function getConditionText(condition) {
     switch (condition) {
         case 'and':
-            return `<span style="margin: 5px;">et seulement</span>`;
-        case 'or':
             return `<span style="margin: 5px;">et</span>`;
+        case 'or':
+            return `<span style="margin: 5px;">ou</span>`;
         case 'not':
             return `<span style="margin: 5px;">sans</span>`;
     }
@@ -366,6 +366,12 @@ function showTagSelection() {
     });
 
     tagsCriteria.html(description);
+}
+
+function emptyTagSelection() {
+    //keep reselect instead of empty
+    selectedTags = [];
+    showTagSelection();
 }
 
 

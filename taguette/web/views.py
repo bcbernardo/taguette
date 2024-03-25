@@ -364,12 +364,6 @@ class CilogonCallback(BaseHandler):
                                == cil_user_infos['idp'])
                        .first())
 
-        # From EduGain
-        if edugain_idp is not None:
-            user_from_edugain = True
-        else:
-            user_from_edugain = False
-
         # From Canadian Access Federation
         if edugain_idp is not None:
             if edugain_idp.code == 'CAF':
@@ -389,8 +383,7 @@ class CilogonCallback(BaseHandler):
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
 
-        if (not user_from_edugain or
-                (not user_from_caf and not user_from_google)):
+        if not user_from_caf and not user_from_google:
             error_msg = url_escape("Restricted access. Users must comes from "
                                    "Canadian Access Federation (CAF).")
             return self.redirect(self.reverse_url('login')

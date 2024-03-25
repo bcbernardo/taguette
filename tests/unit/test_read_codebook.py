@@ -24,6 +24,22 @@ class TestReadCodebook(unittest.TestCase):
         self.assertEqual(
             import_codebook.list_tags(io.BytesIO(
                 (
+                    'name,color,parent,description\n'
+                    + 'interesting,,,,\n'
+                    + 'people,#a55ccc,interesting,Named persons\n'
+                ).encode('utf-8'),
+            )),
+            [
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '#a55ccc',
+                 'parent': 'interesting', 'description': 'Named persons'},
+            ]
+        )
+
+        self.assertEqual(
+            import_codebook.list_tags(io.BytesIO(
+                (
                     'other,path\n'
                     + '1,interesting\n'
                     + '2,people\n'

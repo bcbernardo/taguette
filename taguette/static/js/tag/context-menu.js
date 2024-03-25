@@ -1,128 +1,113 @@
+const treeviewTags = 'treeview-tags';
 function addContextMenu() {
     $.contextMenu({
         selector: '.tag-context-menu',
-        build: function ($trigger, e) {
+        build: function ($trigger) {
             const nodeId = $trigger.attr('id');
+            const node = getNode(treeviewTags, nodeId);
 
-            const tagId = getTagIdFromTreeviewNode('treeview-tags', nodeId);
-            const tag = findTag(tagId);
-            const hasChildren = tag.children.length > 0;
-            const hasParent = tag.parent > 0;
-
-            const node = getNode('treeview-tags', nodeId);
-
-            const isExpanded = node.state.expanded;
-            const isSelected = node.state.selected;
-
-            const selectedNodes = $('#treeview-tags').treeview('getSelected');
+            let items = generateContextMenuItems(node);
 
             return {
-                callback: function (key, options) {
-                    contextMenuAction(key, options.$trigger.attr("id"));
-                },
-                items: {
-                    "toggleSelectAll": {
-                        name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
-                        icon: "",
-                        visible: hasChildren,
-                        callback: function (key, options) {
-                            contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', nodeId);
-                        }
-                    },
-                    "toggleSelect": {
-                        name: gettext('Select'),
-                        icon: "",
-                        visible: !isSelected && selectedNodes.length > 0,
-                        items: isSelected ? null : {
-                            "andSelect": {
-                                name: gettext('AND'),
-                                icon: "",
-                                callback: function (key, options) {
-                                    contextMenuAction('selectAnd', nodeId);
-                                }
-                            },
-                            "orSelect": {
-                                name: gettext('OR'),
-                                icon: "",
-                                callback: function (key, options) {
-                                    contextMenuAction('selectOr', nodeId);
-                                }
-                            },
-                            "notSelect": {
-                                name: gettext('NOT'),
-                                icon: "",
-                                callback: function (key, options) {
-                                    contextMenuAction('selectNot', nodeId);
-                                }
-                            }
-                        }
-                    },
-                    "toggleExpand": {
-                        name: isExpanded ? gettext('collapse') : gettext('expand'),
-                        icon: function () {
-                            return '';
-                        },
-                        visible: hasChildren,
-                        callback: function (key, options) {
-                            contextMenuAction(isExpanded ? 'collapse' : 'expand', nodeId);
-                        }
-                    },
-                    "edit": {name: gettext('edit'), icon: "edit"},
-                    "merge": {name: gettext('merge'), icon: "copy"},
-                    "deleteParent": {
-                        name: gettext('deleteParent'),
-                        visible: hasParent,
-                        icon: "delete"
-                    },
-                    "delete": {name: gettext('delete'), icon: "delete"}
-                }
+                callback: (key, options) => contextMenuAction(key, options.$trigger.attr("id")),
+                items
             };
         }
     });
 }
 
-function contextMenuAction(action, nodeId) {
-    const tagId = getTagIdFromTreeviewNode('treeview-tags', nodeId);
-    switch (action) {
-        case 'selectAll':
-            selectNodeAndChildren('treeview-tags', nodeId);
-            break;
-        case 'unselectAll':
-            unselectNodeAndChildren('treeview-tags', nodeId);
-            break;
-        case 'selectAnd':
-            selectWithCondition('treeview-tags', nodeId, 'and');
-            break;
-        case 'selectOr':
-            selectWithCondition('treeview-tags', nodeId, 'or');
-            break;
-        case 'selectNot':
-            selectWithCondition('treeview-tags', nodeId, 'not');
-            break;
-        case 'unselect':
-            unselectNode('treeview-tags', nodeId);
-            break;
-        case 'edit':
-            editTag(tagId);
-            break;
-        case 'expand':
-            expandNode('treeview-tags', nodeId);
-            break;
-        case 'collapse':
-            collapseNode('treeview-tags', nodeId);
-            break;
-        case 'merge':
-            mergeTag(tagId);
-            break;
-        case 'delete':
-            deleteTag(tagId);
-            break;
-        case 'deleteParent':
-            removeTagParent(tagId);
-            break;
-        case 'quit':
-            break;
-        default:
-            console.log('No action found for: ' + action);
+function generateContextMenuItems(node) {
+
+    const tagId = getTagIdFromTreeviewNode(treeviewTags, node.nodeId);
+    const tag = findTag(tagId);
+
+    const hasChildren = tag.children.length > 0;
+    const hasParent = tag.parent > 0;
+    const isExpanded = node.state.expanded;
+    const isSelected = node.state.selected;
+
+    const selectedNodes = getAllSelectedNodes(treeviewTags).length > 0;
+
+    return {
+        "toggleSelectAll": {
+            name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
+            icon: isSelected ? 'fas fa-eye-slash' : 'fas fa-eye',
+            visible: hasChildren,
+            callback: (key, options) => contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', node.nodeId)
+        },
+        "toggleSelect": {
+            name: gettext('Select With Condition'),
+            icon: 'fas fa-check',
+            visible: !isSelected && selectedNodes,
+            items: {
+                "andSelect": {
+                    name: gettext('AND'),
+                    icon: '',
+                    callback: (key, options) => contextMenuAction('selectAnd', node.nodeId)
+                },
+                "orSelect": {
+                    name: gettext('OR'),
+                    icon: 'fas fa-union',
+                    callback: (key, options) => contextMenuAction('selectOr', node.nodeId)
+                },
+                "notSelect": {
+                    name: gettext('NOT'),
+                    icon: 'fas fa-remove',
+                    callback: (key, options) => contextMenuAction('selectNot', node.nodeId)
+                }
+            }
+        },
+        "toggleExpand": {
+            name: isExpanded ? gettext('collapse') : gettext('expand'),
+            icon: isExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down',
+            visible: hasChildren,
+            callback: (key, options) => contextMenuAction(isExpanded ? 'collapse' : 'expand', node.nodeId)
+        },
+        "edit": {
+            name: gettext('edit'),
+            icon: "edit",
+            callback: (key, options) => contextMenuAction('edit', tagId)
+        },
+        "merge": {
+            name: gettext('merge'),
+            icon: "copy",
+            callback: (key, options) => contextMenuAction('merge', tagId)
+        },
+        "deleteParent": {
+            name: gettext('deleteParent'),
+            icon: "delete",
+            visible: hasParent,
+            callback: (key, options) => contextMenuAction('deleteParent', tagId)
+        },
+        "delete": {
+            name: gettext('delete'),
+            icon: "delete",
+            callback: (key, options) => contextMenuAction('delete', tagId)
+        }
+    };
+}
+
+function contextMenuAction(action, param) {
+    const actionFunction = actions[action];
+
+    if (actionFunction) {
+        actionFunction(param);
+    } else {
+        console.log('No action found for:', action);
     }
 }
+
+const actions = {
+    selectAll: nodeId => selectNodeAndChildren(treeviewTags, nodeId),
+    unselectAll: nodeId => unselectNodeAndChildren(treeviewTags, nodeId),
+    selectAnd: nodeId => selectWithCondition(treeviewTags, nodeId, 'and'),
+    selectOr: nodeId => selectWithCondition(treeviewTags, nodeId, 'or'),
+    selectNot: nodeId => selectWithCondition(treeviewTags, nodeId, 'not'),
+    expand: nodeId => expandNode(treeviewTags, nodeId),
+    collapse: nodeId => collapseNode(treeviewTags, nodeId),
+    unselect: nodeId => unselectNode(treeviewTags, nodeId),
+    edit: tagId => editTag(tagId),
+    merge: tagId => mergeTag(tagId),
+    delete: tagId => deleteTag(tagId),
+    deleteParent: tagId => removeTagParent(tagId)
+};

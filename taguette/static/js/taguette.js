@@ -632,6 +632,11 @@ function createHighlight(selection) {
 }
 
 function editHighlight() {
+    const selection = describeSelection();
+    if(selection) {
+        createHighlight(selection);
+        return;
+    }
     highlightModalReset();
     const id = this.getAttribute('data-highlight-id');
     document.getElementById('highlight-add-id').value = id;
