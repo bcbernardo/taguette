@@ -278,8 +278,17 @@ function loadTagsHighlights() {
     const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
     window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
 
+    const tags_return = $('#tag-selection-return'),
+        tags_return_link = $('a', tags_return);
+    tags_return_link.unbind('click')
     if (selectedTags.length > 0) {
         loadTag(selectedTagPathsString);
+        tags_return_link.attr('href', url);
+        tags_return_link.bind('click', function(e){
+            e.preventDefault();
+            window.history.back();
+            tags_return_link.hide();
+        });
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
     }

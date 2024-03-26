@@ -8,17 +8,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-03-07 13:48-0500\n"
+"POT-Creation-Date: 2024-03-26 14:15-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.13.1\n"
+"Generated-By: Babel 2.11.0\n"
 
+#: taguette/templates/auth/reset_password.html:3
 #: taguette/templates/new_password.html:3
-#: taguette/templates/reset_password.html:3
 msgctxt "page title"
 msgid "Reset password"
 msgstr ""
@@ -27,13 +27,14 @@ msgstr ""
 msgid "Please enter a new password below:"
 msgstr ""
 
-#: taguette/templates/login.html:34 taguette/templates/login.html:66
+#: taguette/templates/auth/login.html:34 taguette/templates/auth/login.html:66
 #: taguette/templates/new_password.html:15
 msgctxt "form label"
 msgid "Password"
 msgstr ""
 
-#: taguette/templates/login.html:72 taguette/templates/new_password.html:21
+#: taguette/templates/auth/login.html:72
+#: taguette/templates/new_password.html:21
 msgctxt "form label"
 msgid "Confirm password"
 msgstr ""
@@ -45,32 +46,9 @@ msgstr ""
 
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:57
-#: taguette/templates/modal/manage_collaborators.html:37
+#: taguette/templates/modal/manage_collaborators.html:41
 #: taguette/templates/partials/spinner.html:5
 msgid "Cancel"
-msgstr ""
-
-#: taguette/templates/reset_password.html:13
-msgid ""
-"If you had set an email address in your profile, you can enter it below "
-"and a link to reset your password will be sent to you."
-msgstr ""
-
-#: taguette/templates/account.html:20 taguette/templates/login.html:78
-#: taguette/templates/reset_password.html:17
-msgctxt "form label for email address"
-msgid "Email"
-msgstr ""
-
-#: taguette/templates/reset_password.html:22
-msgctxt "password reset form submit button"
-msgid "Send"
-msgstr ""
-
-#: taguette/templates/reset_password.html:26
-msgid ""
-"If you didn't set an email address, you can try contacting your server "
-"administrator."
 msgstr ""
 
 #. Left pane tab, keep short
@@ -117,23 +95,23 @@ msgstr ""
 msgid "QDC (XML)"
 msgstr ""
 
-#: taguette/templates/project.html:61 taguette/templates/project.html:144
+#: taguette/templates/project.html:61 taguette/templates/project.html:146
 msgid "Excel"
 msgstr ""
 
-#: taguette/templates/project.html:62 taguette/templates/project.html:145
+#: taguette/templates/project.html:62 taguette/templates/project.html:147
 msgid "CSV"
 msgstr ""
 
-#: taguette/templates/project.html:63 taguette/templates/project.html:141
+#: taguette/templates/project.html:63 taguette/templates/project.html:143
 msgid "HTML"
 msgstr ""
 
-#: taguette/templates/project.html:64 taguette/templates/project.html:142
+#: taguette/templates/project.html:64 taguette/templates/project.html:144
 msgid "DOCX"
 msgstr ""
 
-#: taguette/templates/project.html:65 taguette/templates/project.html:143
+#: taguette/templates/project.html:65 taguette/templates/project.html:145
 msgid "PDF"
 msgstr ""
 
@@ -198,19 +176,29 @@ msgstr ""
 msgid "Count [9&rarr;0]"
 msgstr ""
 
-#: taguette/templates/project.html:138
+#: taguette/templates/modal/create_highlight.html:14
+#: taguette/templates/project.html:121
+msgctxt "tag change form placeholder"
+msgid "Search tags"
+msgstr ""
+
+#: taguette/templates/project.html:124
+msgid "Back to highlights"
+msgstr ""
+
+#: taguette/templates/project.html:140
 msgid "Export this view"
 msgstr ""
 
-#: taguette/templates/project.html:149
+#: taguette/templates/project.html:151
 msgid "Load a document on the left"
 msgstr ""
 
-#: taguette/templates/project.html:204
+#: taguette/templates/project.html:206
 msgid "New highlight"
 msgstr ""
 
-#: taguette/templates/project.html:209
+#: taguette/templates/project.html:211
 msgid "Select tag"
 msgstr ""
 
@@ -248,44 +236,53 @@ msgctxt "modal window title"
 msgid "Add Collaborators"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:16
+#: taguette/templates/auth/account.html:26
+#: taguette/templates/auth/external_account.html:26
+#: taguette/templates/auth/login.html:78
+#: taguette/templates/auth/reset_password.html:17
+#: taguette/templates/modal/manage_collaborators.html:17
+msgctxt "form label for email address"
+msgid "Email"
+msgstr ""
+
+#: taguette/templates/modal/manage_collaborators.html:19
 msgctxt "project members form placeholder"
 msgid "Username"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:20
+#: taguette/templates/modal/manage_collaborators.html:24
 msgctxt "permission level"
 msgid "Full permissions"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:21
+#: taguette/templates/modal/manage_collaborators.html:25
 msgctxt "permission level"
 msgid "Can't change collaborators / delete project"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:22
+#: taguette/templates/modal/manage_collaborators.html:26
 msgctxt "permission level"
 msgid "View & make changes"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:23
+#: taguette/templates/modal/manage_collaborators.html:27
 msgctxt "permission level"
 msgid "View only"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:26
+#: taguette/templates/modal/manage_collaborators.html:30
 msgctxt "form submit button"
 msgid "Add to project"
 msgstr ""
 
-#: taguette/templates/modal/manage_collaborators.html:30
+#: taguette/templates/modal/manage_collaborators.html:34
 msgid "Current Collaborators"
 msgstr ""
 
 #: taguette/templates/modal/change_document.html:33
 #: taguette/templates/modal/create_highlight.html:28
 #: taguette/templates/modal/create_tag.html:56
-#: taguette/templates/modal/manage_collaborators.html:36
+#: taguette/templates/modal/manage_collaborators.html:40
 msgid "Save & Close"
 msgstr ""
 
@@ -572,79 +569,153 @@ msgctxt "form submit button"
 msgid "Create"
 msgstr ""
 
-#: taguette/templates/token_needed.html:3
+#: taguette/templates/auth/account.html:4
+#: taguette/templates/auth/external_account.html:4
+msgctxt "page title"
+msgid "Account settings"
+msgstr ""
+
+#: taguette/templates/auth/account.html:7
+#: taguette/templates/auth/external_account.html:7
+msgctxt "title"
+msgid "Account settings"
+msgstr ""
+
+#: taguette/templates/auth/account.html:14
+#: taguette/templates/auth/external_account.html:14
+#: taguette/templates/auth/login.html:28 taguette/templates/auth/login.html:59
+msgctxt "form label for user name"
+msgid "Login"
+msgstr ""
+
+#: taguette/templates/auth/account.html:20
+#: taguette/templates/auth/external_account.html:20
+msgctxt "form label for displayname"
+msgid "Display name"
+msgstr ""
+
+#: taguette/templates/auth/account.html:33
+#: taguette/templates/auth/external_account.html:32
+msgctxt "form label for language selection"
+msgid "Language"
+msgstr ""
+
+#: taguette/templates/auth/account.html:36
+#: taguette/templates/auth/external_account.html:35
+msgctxt "language selection option"
+msgid "Auto-detect"
+msgstr ""
+
+#: taguette/templates/auth/account.html:57
+#: taguette/templates/auth/external_account.html:44
+msgctxt "form submit button"
+msgid "Update"
+msgstr ""
+
+#: taguette/templates/auth/reset_password.html:13
+msgid ""
+"If you had set an email address in your profile, you can enter it below "
+"and a link to reset your password will be sent to you."
+msgstr ""
+
+#: taguette/templates/auth/reset_password.html:22
+msgctxt "password reset form submit button"
+msgid "Send"
+msgstr ""
+
+#: taguette/templates/auth/reset_password.html:26
+msgid ""
+"If you didn't set an email address, you can try contacting your server "
+"administrator."
+msgstr ""
+
+#: taguette/templates/auth/token_needed.html:3
 msgctxt "page title"
 msgid "Error"
 msgstr ""
 
-#: taguette/templates/token_needed.html:6
+#: taguette/templates/auth/token_needed.html:6
 msgid ""
 "Your browser did not supply a secret token to authenticate with the "
 "application. Please check the console for the correct URL to log in, or "
 "simply restart Taguette."
 msgstr ""
 
-#: taguette/templates/auth/login.html:3 taguette/templates/login.html:3
+#: taguette/templates/auth/cilogon.login.html:3
+#: taguette/templates/auth/login.html:3
 msgctxt "page title"
 msgid "Log in"
 msgstr ""
 
-#: taguette/templates/auth/login.html:8 taguette/templates/login.html:9
+#: taguette/templates/auth/cilogon.login.html:8
+#: taguette/templates/auth/login.html:9
 msgctxt "tab"
 msgid "Log in"
 msgstr ""
 
-#: taguette/templates/login.html:12
+#: taguette/templates/auth/login.html:12
 msgctxt "tab"
 msgid "Register"
 msgstr ""
 
-#: taguette/templates/account.html:14 taguette/templates/login.html:28
-#: taguette/templates/login.html:59
-msgctxt "form label for user name"
-msgid "Login"
-msgstr ""
-
-#: taguette/templates/login.html:41
+#: taguette/templates/auth/login.html:41
 msgctxt "form submit button"
 msgid "Log in"
 msgstr ""
 
-#: taguette/templates/login.html:42
+#: taguette/templates/auth/login.html:42
 msgctxt "form link"
 msgid "Forgot password"
 msgstr ""
 
-#: taguette/templates/login.html:62
+#: taguette/templates/auth/login.html:62
 msgid "Please use only letters, numbers, dot, underscore, and dashes (._-)"
 msgstr ""
 
-#: taguette/templates/account.html:23 taguette/templates/login.html:81
+#: taguette/templates/auth/account.html:29
+#: taguette/templates/auth/login.html:81
 msgid ""
 "Optional. <em>We will not share your email with anyone. This is only used"
 " in case you forget your password.</em>"
 msgstr ""
 
-#: taguette/templates/login.html:86
+#: taguette/templates/auth/login.html:86
 msgctxt "link from registration form"
 msgid "Terms of service"
 msgstr ""
 
-#: taguette/templates/login.html:90
+#: taguette/templates/auth/login.html:90
 #, python-format
 msgid "I accept the <a href=\"%(url)s\">terms of service</a>"
 msgstr ""
 
-#: taguette/templates/login.html:97
+#: taguette/templates/auth/login.html:97
 msgctxt "form submit button"
 msgid "Register"
 msgstr ""
 
-#: taguette/templates/auth/login.html:9
+#: taguette/templates/auth/email_reset_password.html:1
+#, python-format
+msgid ""
+"Someone has requested to reset the password on the Taguette account "
+"associated with this email. If this was you, please follow this link: <a "
+"href=\"%(link)s\">%(link)s</a>"
+msgstr ""
+
+#: taguette/templates/auth/email_reset_password.html:3
+#, python-format
+msgid "Your user name is: <strong>%(login)s</strong>"
+msgstr ""
+
+#: taguette/templates/auth/email_reset_password.html:5
+msgid "This link will expire in 1 day."
+msgstr ""
+
+#: taguette/templates/auth/cilogon.login.html:9
 msgid "Authentication process by CILogon"
 msgstr ""
 
-#: taguette/templates/auth/login.html:10
+#: taguette/templates/auth/cilogon.login.html:10
 msgid ""
 "<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
 "facilitates secure\n"
@@ -653,32 +724,23 @@ msgid ""
 "                campuses around the world."
 msgstr ""
 
-#: taguette/templates/auth/login.html:13
+#: taguette/templates/auth/cilogon.login.html:13
 msgid ""
 "After you click \"Sign In with CILogon\", simply SELECT your home "
 "institution and then proceed\n"
 "                with the authentication process at your institution."
 msgstr ""
 
-#: taguette/templates/auth/login.html:15
+#: taguette/templates/auth/cilogon.login.html:15
 msgid "Log in with"
 msgstr ""
 
-#: taguette/templates/email_reset_password.html:1
-#, python-format
-msgid ""
-"Someone has requested to reset the password on the Taguette account "
-"associated with this email. If this was you, please follow this link: <a "
-"href=\"%(link)s\">%(link)s</a>"
+#: taguette/templates/auth/account.html:44
+msgid "New password"
 msgstr ""
 
-#: taguette/templates/email_reset_password.html:3
-#, python-format
-msgid "Your user name is: <strong>%(login)s</strong>"
-msgstr ""
-
-#: taguette/templates/email_reset_password.html:5
-msgid "This link will expire in 1 day."
+#: taguette/templates/auth/account.html:50
+msgid "Repeat new password"
 msgstr ""
 
 #: taguette/templates/project_delete.html:3
@@ -708,39 +770,6 @@ msgstr ""
 #: taguette/templates/project_delete.html:13
 msgctxt "submit button"
 msgid "Delete forever"
-msgstr ""
-
-#: taguette/templates/account.html:4
-msgctxt "page title"
-msgid "Account settings"
-msgstr ""
-
-#: taguette/templates/account.html:7
-msgctxt "title"
-msgid "Account settings"
-msgstr ""
-
-#: taguette/templates/account.html:27
-msgctxt "form label for language selection"
-msgid "Language"
-msgstr ""
-
-#: taguette/templates/account.html:30
-msgctxt "language selection option"
-msgid "Auto-detect"
-msgstr ""
-
-#: taguette/templates/account.html:38
-msgid "New password"
-msgstr ""
-
-#: taguette/templates/account.html:44
-msgid "Repeat new password"
-msgstr ""
-
-#: taguette/templates/account.html:51
-msgctxt "form submit button"
-msgid "Update"
 msgstr ""
 
 #: taguette/templates/cookies_prompt.html:3
@@ -846,118 +875,118 @@ msgctxt "page title"
 msgid "Error %d"
 msgstr ""
 
-#: taguette/web/views.py:142
+#: taguette/web/views.py:157
 msgid "Invalid login or password"
 msgstr ""
 
-#: taguette/web/views.py:192 taguette/web/views.py:280
-#: taguette/web/views.py:432
+#: taguette/web/views.py:209 taguette/web/views.py:518
+#: taguette/web/views.py:684
 msgid "Passwords do not match"
 msgstr ""
 
-#: taguette/web/views.py:194
+#: taguette/web/views.py:211
 msgid "User name is taken"
 msgstr ""
 
-#: taguette/web/views.py:201
+#: taguette/web/views.py:218
 msgid "Email address is already used"
 msgstr ""
 
-#: taguette/web/views.py:211
+#: taguette/web/views.py:228
 msgid "Terms of Service must be accepted"
 msgstr ""
 
-#: taguette/web/views.py:318
+#: taguette/web/views.py:565
 msgid "This email address is not associated with any user"
 msgstr ""
 
-#: taguette/web/views.py:347
+#: taguette/web/views.py:594
 msgid "Password reset for Taguette"
 msgstr ""
 
-#: taguette/web/views.py:389
+#: taguette/web/views.py:637
 msgid "Invalid token"
 msgstr ""
 
-#: taguette/web/views.py:393
+#: taguette/web/views.py:641
 msgid "No user associated with that token"
 msgstr ""
 
-#: taguette/web/views.py:396
+#: taguette/web/views.py:644
 msgid "Password has already been changed"
 msgstr ""
 
 #. Default tag name
-#: taguette/web/views.py:475
+#: taguette/web/views.py:728
 msgid "interesting"
 msgstr ""
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:479
+#: taguette/web/views.py:732
 msgid "Further review required"
 msgstr ""
 
-#: taguette/web/views.py:514
+#: taguette/web/views.py:767
 msgid "You don't have permission to delete this project"
 msgstr ""
 
-#: taguette/web/views.py:548 taguette/web/views.py:575
+#: taguette/web/views.py:801 taguette/web/views.py:828
 msgid "You don't have permission to import a codebook"
 msgstr ""
 
-#: taguette/web/views.py:594
+#: taguette/web/views.py:847
 #, python-format
 msgid "Row %d: %s"
 msgstr ""
 
-#: taguette/web/views.py:723
+#: taguette/web/views.py:976
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr ""
 
-#: taguette/web/views.py:738
+#: taguette/web/views.py:991
 msgid "No file provided"
 msgstr ""
 
-#: taguette/web/api.py:52
+#: taguette/web/api.py:51
 msgid "Not logged in"
 msgstr ""
 
-#: taguette/web/api.py:82 taguette/web/api.py:113 taguette/web/api.py:204
-#: taguette/web/api.py:243 taguette/web/api.py:308 taguette/web/api.py:348
-#: taguette/web/api.py:389 taguette/web/api.py:414 taguette/web/api.py:470
-#: taguette/web/api.py:529 taguette/web/api.py:615 taguette/web/api.py:723
+#: taguette/web/api.py:81 taguette/web/api.py:112 taguette/web/api.py:203
+#: taguette/web/api.py:242 taguette/web/api.py:307 taguette/web/api.py:347
+#: taguette/web/api.py:388 taguette/web/api.py:413 taguette/web/api.py:469
+#: taguette/web/api.py:528 taguette/web/api.py:614 taguette/web/api.py:751
 msgid "Unauthorized"
 msgstr ""
 
-#: taguette/web/api.py:353 taguette/web/api.py:392 taguette/web/api.py:424
-#: taguette/web/api.py:483 taguette/web/api.py:559
+#: taguette/web/api.py:352 taguette/web/api.py:391 taguette/web/api.py:423
+#: taguette/web/api.py:482 taguette/web/api.py:558
 msgid "No such tag"
 msgstr ""
 
-#: taguette/web/api.py:487
+#: taguette/web/api.py:486
 msgid "Empty highlight"
 msgstr ""
 
-#: taguette/web/api.py:533 taguette/web/api.py:618
+#: taguette/web/api.py:532 taguette/web/api.py:617
 msgid "No such highlight"
 msgstr ""
 
-#: taguette/web/api.py:786
+#: taguette/web/api.py:814
 msgid "There must be one admin"
 msgstr ""
 
-#: taguette/web/api.py:841
+#: taguette/web/api.py:869
 msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
 msgstr ""
 
-#: taguette/web/api.py:847
+#: taguette/web/api.py:875
 msgid "This database could not be updated to the current version"
 msgstr ""
 
-#: taguette/web/api.py:851 taguette/web/api.py:885
+#: taguette/web/api.py:879 taguette/web/api.py:913
 msgid "This is not a Taguette project file"
 msgstr ""
 
@@ -1012,78 +1041,78 @@ msgstr ""
 msgid "Invalid CSV file"
 msgstr ""
 
-#: taguette/main.py:273
+#: taguette/main.py:280
 msgid "Port number on which to listen"
 msgstr ""
 
-#: taguette/main.py:275
+#: taguette/main.py:282
 msgid "Address to bind on"
 msgstr ""
 
-#: taguette/main.py:277
+#: taguette/main.py:284
 msgid "Open web browser to the application"
 msgstr ""
 
-#: taguette/main.py:279
+#: taguette/main.py:286
 msgid "Don't open the web browser"
 msgstr ""
 
-#: taguette/main.py:284
+#: taguette/main.py:291
 #, python-format
 msgid ""
 "Database location or connection string, for example 'project.db' or "
 "'postgresql://me:pw@localhost/mydb' (default: %(default)r)"
 msgstr ""
 
-#: taguette/main.py:291
+#: taguette/main.py:298
 msgid "Set the file creation mask (umask) on systems that support it."
 msgstr ""
 
-#: taguette/main.py:295
+#: taguette/main.py:302
 msgid "Don't change umask on startup"
 msgstr ""
 
-#: taguette/main.py:301
+#: taguette/main.py:308
 msgid "additional commands"
 msgstr ""
 
-#: taguette/main.py:305
+#: taguette/main.py:312
 msgid "Manually trigger a database migration"
 msgstr ""
 
-#: taguette/main.py:316
+#: taguette/main.py:323
 msgid "Print the default server configuration"
 msgstr ""
 
-#: taguette/main.py:318
+#: taguette/main.py:325
 msgid "Output to this file rather than stdout"
 msgstr ""
 
-#: taguette/main.py:324
+#: taguette/main.py:331
 msgid "Run in server mode, suitable for a multi-user deployment"
 msgstr ""
 
-#: taguette/main.py:326
+#: taguette/main.py:333
 msgid ""
 "Configuration file for the server. The default configuration can be "
 "generated using the `default-config` command"
 msgstr ""
 
-#: taguette/main.py:338
+#: taguette/main.py:345
 #, python-format
 msgid "Invalid umask: %(arg)s"
 msgstr ""
 
-#: taguette/main.py:362
+#: taguette/main.py:369
 #, python-format
 msgid "Missing required configuration variable %(var)s"
 msgstr ""
 
-#: taguette/main.py:369
+#: taguette/main.py:376
 msgid "Invalid BASE_PATH"
 msgstr ""
 
-#: taguette/main.py:443
+#: taguette/main.py:450
 #, python-format
 msgid ""
 "\n"

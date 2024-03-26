@@ -222,6 +222,10 @@ textarea.form-control {
   word-break: break-all;
 }
 
+#tag-selection-return a {
+  display: none;
+}
+
 a.document-link-a {
   word-break: break-all;
 }

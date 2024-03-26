@@ -87,3 +87,6 @@ msgstr "Load a document on the left"
 msgid "No highlights with this tag yet."
 msgstr "No highlights with this tag yet."
 
+#: taguette/static/js/tag/manager.js:362
+msgid "Your selection"
+msgstr "Your selection"

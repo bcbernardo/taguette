@@ -198,3 +198,7 @@ msgstr "Supprimer"
 #: taguette/static/js/tag/context-menu.js.js:73
 msgid "deleteParent"
 msgstr "Supprimer le parent"
+
+#: taguette/static/js/tag/manager.js:362
+msgid "Your selection"
+msgstr "Votre sélection"
