@@ -212,6 +212,12 @@ textarea.form-control {
   resize: none;
 }
 
+select.form-control {
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  appearance: auto;
+}
+
 /* To match bs4 css, may be removed in a future release */
 .form-group {
   margin-bottom: 1rem;
