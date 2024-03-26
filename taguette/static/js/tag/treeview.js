@@ -356,8 +356,8 @@ function customizeNodeRow() {
         const secondDiv = $(element).find("div:eq(1)");
 
         secondDiv.addClass('d-flex align-items-center');
-        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
-        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
+        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary').attr('title', gettext("Documents"));
+        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2').attr('title', gettext("Highlights"));
 
     });
 }

@@ -199,6 +199,14 @@ msgstr "Supprimer"
 msgid "deleteParent"
 msgstr "Supprimer le parent"
 
+#: taguette/static/js/tag/treeview.js:359
+msgid "Documents"
+msgstr "Documents"
+
+#: taguette/static/js/tag/treeview.js:360
+msgid "Highlights"
+msgstr "Marques"
+
 #: taguette/static/js/tag/manager.js:362
 msgid "Your selection"
 msgstr "Votre sélection"
