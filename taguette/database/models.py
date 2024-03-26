@@ -701,7 +701,7 @@ class EdugainIdps(Base):
     coco_id = Column(Integer, nullable=True)
     sirtfi_status = Column(Integer, nullable=True)
     code = Column(String(255), nullable=True)
-    scopes = Column(String(255), nullable=True)
+    scopes = Column(Text(), nullable=True)
 
     def __repr__(self):
         return (f"<EdugainIdps {self.e_displayname} "
