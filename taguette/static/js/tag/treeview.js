@@ -50,6 +50,16 @@ function unselectNode(treeview, nodeId) {
     }
 }
 
+function deselectAllNodes(treeview) {
+    const $treeview = $(`#${treeview}`);
+    const allNodes = getAllNodes(treeview);
+    allNodes.forEach(node => {
+        if (node.state.selected) {
+            $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        }
+    });
+}
+
 function toggleNodeSelection(treeview, nodeId, select = true) {
     const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
@@ -278,8 +288,18 @@ function loadTagsHighlights() {
     const url = `${base_path}/project/${project_id}/highlights/${encodeURIComponent(selectedTagPathsString)}`;
     window.history.pushState({tag_path: selectedTagPathsString}, `Tag ${selectedTagPathsString}`, url);
 
+    const tags_return = $('#tag-selection-return'),
+        tags_return_link = $('a', tags_return);
+    tags_return_link.unbind('click')
     if (selectedTags.length > 0) {
         loadTag(selectedTagPathsString);
+        tags_return_link.attr('href', url);
+        tags_return_link.bind('click', function(e){
+            e.preventDefault();
+            window.history.back();
+            tags_return_link.hide();
+            toggleToolbarActions(false);
+        });
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
     }
@@ -347,8 +367,8 @@ function customizeNodeRow() {
         const secondDiv = $(element).find("div:eq(1)");
 
         secondDiv.addClass('d-flex align-items-center');
-        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary');
-        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2');
+        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary').attr('title', gettext("Documents"));
+        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2').attr('title', gettext("Highlights"));
 
     });
 }

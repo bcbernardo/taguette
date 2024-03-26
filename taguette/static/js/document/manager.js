@@ -14,6 +14,11 @@ function linkDocument(elem, doc_id, highlight_id=null) {
         e.preventDefault();
         window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
         loadDocument(doc_id, highlight_id);
+        if(highlight_id !== null && !isNaN(highlight_id)) {
+            const tags_return = $('#tag-selection-return'),
+                tags_return_link = $('a', tags_return);
+            tags_return_link.show();
+        }
     });
 }
 
@@ -61,12 +66,6 @@ function updateDocumentsList() {
 
         dropdown.appendChild(listItem);
     });
-
-    if (entries.length === 0) {
-        let emptyMessage = document.createElement('li');
-        emptyMessage.textContent = "There are no documents in this project yet.";
-        dropdown.appendChild(emptyMessage);
-    }
 
     console.log("Documents list in dropdown updated");
 }

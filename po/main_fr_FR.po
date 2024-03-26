@@ -281,6 +281,10 @@ msgstr "Créer un tag"
 msgid "Export this view"
 msgstr "Exporter cette vue"
 
+#: taguette/templates/project.html:124
+msgid "Back to highlights"
+msgstr "Retour aux marques"
+
 #: taguette/templates/project.html:120
 msgid "Load a document on the left"
 msgstr "Chargez un document sur la gauche"

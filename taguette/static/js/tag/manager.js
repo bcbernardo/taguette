@@ -340,7 +340,7 @@ function generateTagBadgeHtml(tag, index, condition) {
     if (index > 0) {
         conditionTextHtml = getConditionText(condition);
     }
-    return `${conditionTextHtml}<span title="${tag.path}" style="background-color: ${tag.color}; color: white; padding: 1px 8px; border-radius: 15px; margin-top: 5px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+    return `${conditionTextHtml}<span title="${tag.path}" style="background-color: ${tag.color}; color: white; padding: 3px 8px; border-radius: 15px; margin-top: 15px; display: inline-flex; align-items: center; font-size: 0.8rem;">
         ${abbreviation}
         <button onclick="removeTagBadge(${tag.id})" style="background-color: transparent; border: none; color: white; cursor: pointer; margin-left: 5px;font-size: 1rem; font-weight: bold">x</button>
     </span>`;
@@ -359,21 +359,41 @@ function getConditionText(condition) {
 
 function showTagSelection() {
     const tagsCriteria = $('#tag-selection-criteria');
-    let description = selectedTags.length > 0 ? "<span style='font-size: 0.9rem'>Votre sélection conprend : <br/></span>" : "";
-    selectedTags.forEach((item, index) => {
-        const tag = findTag(item.id);
-        description += generateTagBadgeHtml(tag, index, item.condition);
-    });
 
-    tagsCriteria.html(description);
+    let criteriaContent = selectedTags.length > 0 ?
+        '<span id="clear-selection" class="mx-2" onclick="emptyTagSelection(true)" style="cursor:pointer;">' +
+        '<i class="fa fa-times" aria-hidden="true" title="Clear selection"></i></span>' : '';
+
+    if (selectedTags.length > 0) {
+        criteriaContent += "<span style='font-size: 0.9rem'>" + gettext("Your selection") + " : <br/></span>";
+        tagsCriteria.show();
+        selectedTags.forEach((item, index) => {
+            const tag = findTag(item.id);
+            criteriaContent += generateTagBadgeHtml(tag, index, item.condition);
+        });
+    } else {
+        tagsCriteria.hide();
+    }
+
+    tagsCriteria.html(criteriaContent);
 }
 
-function emptyTagSelection() {
+function emptyTagSelection(unSelectNode = false) {
     //keep reselect instead of empty
     selectedTags = [];
     showTagSelection();
+    hideTagReturnLink();
+
+    if (unSelectNode) {
+        deselectAllNodes('treeview-tags');
+    }
 }
 
+function hideTagReturnLink() {
+    const tags_return = $('#tag-selection-return'),
+        tags_return_link = $('a', tags_return);
+    tags_return_link.hide();
+}
 
 function removeTagBadge(tagId) {
     selectedTags = selectedTags.filter(tag => tag.id !== tagId);

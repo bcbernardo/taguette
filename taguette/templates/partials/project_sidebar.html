@@ -1,11 +1,8 @@
-<!-- L'overlay -->
-<div id="myNav" class="overlay">
+<div id="project-sidebar" class="project-sidebar">
 
-    <!-- Bouton pour fermer l'overlay -->
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="javascript:void(0)" class="close-project-navbar" onclick="closeSideBar()">&times;</a>
 
-    <!-- Contenu de l'overlay -->
-    <div class="overlay-content">
+    <div class="project-sidebar-content">
 
         <div class="px-5">
             <form id="project-metadata-form" >
@@ -41,9 +38,10 @@
                             </div>
                         </fieldset>
                     </form>
-                    <h5>{% trans %}Current Collaborators{% endtrans %}</h5>
+                    <h5 class="pb-2">{% trans %}Current Collaborators{% endtrans %}</h5>
                     <form id="members-current">
                     </form>
+                    <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save members{% endtrans %}</button>
                 </div>
 
             {% endif %}

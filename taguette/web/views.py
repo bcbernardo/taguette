@@ -1067,4 +1067,5 @@ class Project(BaseHandler):
             members=members_json,
             can_import_codebook=can_import_codebook,
             can_delete_project=can_delete_project,
+            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN']
         )

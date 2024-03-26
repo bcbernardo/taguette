@@ -2,9 +2,9 @@
 {% set active_page = "project" %}
 
 {% block styles %}
-  <link rel="stylesheet" href="{{ static_url('css/vendor/hierarchy-select.min.css') }}">
-  <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap-treeview.min.css') }}">
-  <link rel="stylesheet" href="{{ static_url('css/vendor/jquery.contextMenu.min.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/vendor/hierarchy-select.min.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap-treeview.min.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/vendor/jquery.contextMenu.min.css') }}">
 {% endblock %}
 
 {% block title %}{{ project.name }} | Taguette{% endblock %}
@@ -13,94 +13,62 @@
 
 {% block contents %}
 <div class="row">
-  <!-- Left panel -->
-  <div class="col-md-3">
-      {% include 'modal/edit_project.html' %}
-    <div class="sticky-top">
-        <div class="row py-1">
-            <div class="col-md-12 mb-3 mx-1 d-flex justify-content-start">
-                <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
-                <div class="dropdown ms-2">
-                    <button class="btn btn-sm rounded-4 btn-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
-                    </button>
-                    <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
-                        <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
-                        <a class="dropdown-item" href="javascript:expandAllNodes('treeview-tags')">{% trans %}Expand all{% endtrans %}</a>
-                        <a class="dropdown-item" href="javascript:collapseAllNodes('treeview-tags')">{% trans %}Collapse all{% endtrans %}</a>
+    <!-- Left panel -->
+    <div class="col-md-3">
+        {% include 'partials/project_sidebar.html' %}
+        <div class="sticky-top">
+            <div class="row py-1">
+                <div class="col-md-12 mb-3 mx-1 d-flex justify-content-start">
+                    <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
+                        </button>
+                        <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
+                            <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:expandAllNodes('treeview-tags')">{% trans %}Expand all{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:collapseAllNodes('treeview-tags')">{% trans %}Collapse all{% endtrans %}</a>
+                        </div>
+                    </div>
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
+                        </button>
+                        <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
+                            <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
+                        </div>
                     </div>
                 </div>
-                <div class="dropdown ms-2">
-                    <button class="btn btn-sm rounded-4 btn-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
-                    </button>
-                    <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
-                        <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
-                        <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
-                        <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
-                        <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
-                    </div>
+            </div>
+            <div class="container mb-2">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search tags{% endtrans %}">
                 </div>
-            </div>
-        </div>
-        <div class="container mb-2">
-            <div class="form-group">
-                <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search tags{% endtrans %}">
-            </div>
-            <div id="tag-selection-criteria" class="mt-3 mb-3">
-            </div>
-            <div id="treeview-tags"></div>
-            <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
+                <div id="tag-selection-criteria" class="mt-3 mb-3">
+                </div>
+                <p id="tag-selection-return"><a href="">{% trans %}Back to highlights{% endtrans %}</a></p>
+                <div id="treeview-tags"></div>
+                <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
+                </div>
             </div>
         </div>
     </div>
-  </div>
 
-  <!-- Right panel -->
-  <div class="col-md-9">
+    <!-- Right panel -->
+    <div class="col-md-9">
 
-      <div class="toolbar-container py-3 d-flex justify-content-between align-items-center">
+        {% include 'partials/document_toolbar.html' %}
 
-          <div style="width: 100%" class="d-flex align-items-center mx-3">
-              <!-- Texte juste avant le sélecteur -->
-              <span class="text-label mr-2">{% trans %}Select the document{% endtrans %}</span>
-              <div class="custom-select rounded-5 mx-3">
-                  <button class="select-button" role="combobox" aria-labelledby="select button" aria-haspopup="listbox" aria-expanded="false" aria-controls="select-dropdown">
-                      <span class="selected-value">{% trans %}...{% endtrans %}</span>
-                      <span class="arrow"></span>
-                  </button>
-                  <ul class="select-dropdown" role="listbox" id="select-dropdown"></ul>
-              </div>
-          </div>
-
-          <div class="action-buttons d-flex mx-2">
-              <!-- Boutons de zoom -->
-              <button class="btn btn-outline-primary mx-2" id="zoom-in"><i class="fas fa-search-plus"></i></button>
-              <button class="btn btn-outline-primary mx-2" id="zoom-out"><i class="fas fa-search-minus"></i></button>
-
-              <!-- Bouton Export -->
-              <div class="export-button dropdown mx-2">
-                  <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-test-id="dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      <i class="fas fa-download"></i>
-                  </button>
-                  <div class="dropdown-menu" aria-labelledby="dropdown-export">
-                      <a href="#" class="dropdown-item" data-extension="html">HTML</a>
-                      <a href="#" class="dropdown-item" data-extension="docx">DOCX</a>
-                      <a href="#" class="dropdown-item" data-extension="pdf">PDF</a>
-                      <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">Excel</a>
-                      <a href="#" class="dropdown-item" data-extension="csv" data-document="false">CSV</a>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <div id="document-view" class="document-view">
-        <div id="document-contents" style="direction: ltr;">
-            <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
+        <div id="document-view" class="document-view">
+            <div id="document-contents" style="direction: ltr;">
+                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
+            </div>
         </div>
-    </div>
 
-  </div>
+    </div>
 </div>
 
 <!-- Manage collaborators modal -->
@@ -135,14 +103,14 @@
 
 <!-- Initial state -->
 <script type="text/javascript">
-  const user_login = {{ user_login }};
-  const project_id = {{ project.id }};
-  const version = '{{ version }}';
-  let documents = {{ documents }};
-  let tags = {{ tags }};
-  let members = {{ members }};
-  let highlights = {};
-  let last_event = {{ last_event }};
+    const user_login = {{ user_login }};
+    const project_id = {{ project.id }};
+    const version = '{{ version }}';
+    let documents = {{ documents }};
+    let tags = {{ tags }};
+    let members = {{ members }};
+    let highlights = {};
+    let last_event = {{ last_event }};
 </script>
 
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>

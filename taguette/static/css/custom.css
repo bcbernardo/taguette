@@ -217,6 +217,12 @@ textarea.form-control {
   resize: none;
 }
 
+select.form-control {
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  appearance: auto;
+}
+
 /* To match bs4 css, may be removed in a future release */
 .form-group {
   margin-bottom: 1rem;
@@ -225,6 +231,10 @@ textarea.form-control {
 /* Wrap long tag names and long doc names */
 .tag-name {
   word-break: break-all;
+}
+
+#tag-selection-return a {
+  display: none;
 }
 
 a.document-link-a {
@@ -651,6 +661,19 @@ Document custom select
     align-items: center;
 }
 
+.create-document-option a {
+    width: 100%;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.create-document-option a:hover {
+   color:white;
+}
+
 .select-dropdown li label {
     width: 100%;
     padding: 8px 10px;
@@ -675,7 +698,6 @@ Document custom select
 
 .select-dropdown li:hover,
 .select-dropdown input:checked ~ label {
-    /*background-color: #f2f2f2;*/
     background-color: #125368;
     color: #f1f1f1;
 }
@@ -712,11 +734,10 @@ Document custom select
     border-radius: 5px;
     background-color: #f8f9fa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-
 }
 
-/* Style pour l'overlay entier (cacher par défaut) */
-.overlay {
+/* project sidebar */
+.project-sidebar {
     height: 100%;
     width: 0;
     position: fixed;
@@ -729,19 +750,78 @@ Document custom select
     transition: 0.5s;
 }
 
-/* Style pour le contenu de l'overlay */
-.overlay-content {
+.project-sidebar-content {
     position: relative;
     top: 10%;
     width: 100%;
     text-align: left;
 }
 
-/* Style pour le bouton de fermeture */
-.closebtn {
+.close-project-navbar {
     position: absolute;
     top: 0;
     right: 25px;
     font-size: 36px;
     margin-left: 50px;
+}
+
+/* Backlight checkbox */
+.custom-checkbox {
+    display: inline-block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    user-select: none;
+}
+
+
+.custom-checkbox .custom-control-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox .custom-control-label:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #125368;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label:after {
+    content: "✓";
+    position: absolute;
+    left: 4px;
+    top: -2px;
+    font-size: 18px;
+    color: #125368;
+}
+
+.custom-checkbox:hover .custom-control-input ~ .custom-control-label:before {
+    background-color: #f0f0f0;
+}
+
+#tag-selection-criteria {
+    display: none;
+    border: 1px solid #cccccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    margin: 10px 0;
+    width: 100%;
+}
+
+#clear-selection:hover i {
+    color: red;
+}
+
+#clear-selection {
+    display: block;
+    text-align: right;
 }
