@@ -179,6 +179,10 @@ msgstr "Count [9&rarr;0]"
 msgid "Export this view"
 msgstr "Export this view"
 
+#: taguette/templates/project.html:124
+msgid "Back to highlights"
+msgstr "Back to highlights"
+
 #: taguette/templates/project.html:139
 msgid "Load a document on the left"
 msgstr "Load a document on the left"

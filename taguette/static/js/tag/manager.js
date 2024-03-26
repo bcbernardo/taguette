@@ -359,7 +359,7 @@ function getConditionText(condition) {
 
 function showTagSelection() {
     const tagsCriteria = $('#tag-selection-criteria');
-    let description = selectedTags.length > 0 ? "<span style='font-size: 0.9rem'>Votre sélection conprend : <br/></span>" : "";
+    let description = selectedTags.length > 0 ? "<span style='font-size: 0.9rem'>" + gettext("Your selection") + " : <br/></span>" : "";
     selectedTags.forEach((item, index) => {
         const tag = findTag(item.id);
         description += generateTagBadgeHtml(tag, index, item.condition);
