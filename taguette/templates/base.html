@@ -28,9 +28,12 @@
               <a class="nav-link {{ 'active' if active_page == 'index' else '' }}" href="{{ reverse_url('index') }}">{% trans "navigation item" %}Home{% endtrans %}</a>
             </li>
             {% if project %}
-            <li class="nav-item">
-              <a class="nav-link {{ 'active' if active_page == 'project' else '' }} project-name" href="{{ reverse_url('project', project.id) }}">{{ project.name }}</a>
-            </li>
+              <li class="nav-item d-flex align-items-center">
+                  <a class="nav-link {{ 'active' if active_page == 'project' else '' }} project-name" href="{{ reverse_url('project', project.id) }}">
+                      {{ project.name }}
+                  </a>
+                  <i id="open-overlay" class="fas fa-edit" style="color: white; cursor: pointer;"></i>
+              </li>
             {% endif %}
           </ul>
           <ul class="navbar-nav">

@@ -19,12 +19,24 @@
  * Project metadata
  */
 
-const project_name_input = document.getElementById('project-name');
-let project_name = project_name_input.value;
+// const project_name_input = document.getElementById('project-name');
+// let project_name = project_name_input.value;
 
-const project_description_input = document.getElementById('project-description');
-let project_description = project_description_input.value;
+// const project_description_input = document.getElementById('project-description');
+// let project_description = project_description_input.value;
 let upload_canceled = false;
+
+function openNav() {
+    document.getElementById("myNav").style.width = "600px";
+    showMembers();
+}
+
+function closeNav() {
+    document.getElementById("myNav").style.width = "0";
+}
+
+// Lier l'ouverture de l'overlay au bouton
+document.getElementById('open-overlay').addEventListener('click', openNav);
 
 function setProjectMetadata(metadata, form = true) {
     if (project_name === metadata.project_name && project_description === metadata.description) {
@@ -65,75 +77,96 @@ function projectMetadataChanged() {
     }
 }
 
-document.getElementById('project-metadata-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    projectMetadataChanged();
-});
-project_name_input.addEventListener('blur', projectMetadataChanged);
-project_description_input.addEventListener('blur', projectMetadataChanged);
+// document.getElementById('project-metadata-form').addEventListener('submit', function (e) {
+//     e.preventDefault();
+//     projectMetadataChanged();
+// });
+// project_name_input.addEventListener('blur', projectMetadataChanged);
+// project_description_input.addEventListener('blur', projectMetadataChanged);
 
 
 /*
  * Documents list
  */
 
-let current_document = null;
-let current_tag = null;
-let last_added_tag = null;
-const documents_list = document.getElementById('documents-list');
 
-function linkDocument(elem, doc_id, highlight_id=null) {
-    let url = `${base_path}/project/${project_id}/document/${doc_id}`;
-    if(highlight_id !== null && !isNaN(highlight_id)) {
-        url += `/highlight/${highlight_id}`;
-    }
-    elem.setAttribute('href', url);
-    elem.addEventListener('click', function (e) {
-        e.preventDefault();
-        window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
-        loadDocument(doc_id, highlight_id);
-    });
-}
+// function updateDocumentsList() {
+//     // Empty the list
+//     while (documents_list.firstChild) {
+//         const first = documents_list.firstChild;
+//         if (first.classList && first.classList.contains('special-item-button')) {
+//             break;
+//         }
+//         documents_list.removeChild(first);function updateDocumentsList() {
+//             // Empty the list
+//             while (documents_list.firstChild) {
+//                 const first = documents_list.firstChild;
+//                 if (first.classList && first.classList.contains('special-item-button')) {
+//                     break;
+//                 }
+//                 documents_list.removeChild(first);
+//             }
+//
+//             // Fill up the list again
+//             const before = documents_list.firstChild;
+//             const entries = Object.entries(documents);
+//             sortByKey(entries, function (e) {
+//                 return e[1].name;
+//             });
+//             for (let i = 0; i < entries.length; ++i) {
+//                 let doc = entries[i][1];
+//                 let elem = document.createElement('li');
+//                 elem.setAttribute('id', 'document-link-' + doc.id);
+//                 elem.className = 'list-group-item document-link';
+//                 if (doc.id === current_document) {
+//                     elem.classList.add('document-link-current');
+//                 }
+//                 elem.innerHTML = '<div class="d-flex justify-content-between align-items-center">' + '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' + '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' + '</div>';
+//                 documents_list.insertBefore(elem, before);
+//                 const links = elem.getElementsByTagName('a');
+//                 linkDocument(links[0], doc.id);
+//             }
+//             if (entries.length === 0) {
+//                 let elem = document.createElement('div');
+//                 elem.className = 'list-group-item disabled';
+//                 elem.textContent = gettext("There are no documents in this project yet.");
+//                 documents_list.insertBefore(elem, before);
+//             }
+//             log("Documents list updated");
+//         }
+//
+//         updateDocumentsList();
+//     }
+//
+//     // Fill up the list again
+//     const before = documents_list.firstChild;
+//     const entries = Object.entries(documents);
+//     sortByKey(entries, function (e) {
+//         return e[1].name;
+//     });
+//     for (let i = 0; i < entries.length; ++i) {
+//         let doc = entries[i][1];
+//         let elem = document.createElement('li');
+//         elem.setAttribute('id', 'document-link-' + doc.id);
+//         elem.className = 'list-group-item document-link';
+//         if (doc.id === current_document) {
+//             elem.classList.add('document-link-current');
+//         }
+//         elem.innerHTML = '<div class="d-flex justify-content-between align-items-center">' + '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' + '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' + '</div>';
+//         documents_list.insertBefore(elem, before);
+//         const links = elem.getElementsByTagName('a');
+//         linkDocument(links[0], doc.id);
+//     }
+//     if (entries.length === 0) {
+//         let elem = document.createElement('div');
+//         elem.className = 'list-group-item disabled';
+//         elem.textContent = gettext("There are no documents in this project yet.");
+//         documents_list.insertBefore(elem, before);
+//     }
+//     log("Documents list updated");
+// }
 
-function updateDocumentsList() {
-    // Empty the list
-    while (documents_list.firstChild) {
-        const first = documents_list.firstChild;
-        if (first.classList && first.classList.contains('special-item-button')) {
-            break;
-        }
-        documents_list.removeChild(first);
-    }
 
-    // Fill up the list again
-    const before = documents_list.firstChild;
-    const entries = Object.entries(documents);
-    sortByKey(entries, function (e) {
-        return e[1].name;
-    });
-    for (let i = 0; i < entries.length; ++i) {
-        let doc = entries[i][1];
-        let elem = document.createElement('li');
-        elem.setAttribute('id', 'document-link-' + doc.id);
-        elem.className = 'list-group-item document-link';
-        if (doc.id === current_document) {
-            elem.classList.add('document-link-current');
-        }
-        elem.innerHTML = '<div class="d-flex justify-content-between align-items-center">' + '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' + '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' + '</div>';
-        documents_list.insertBefore(elem, before);
-        const links = elem.getElementsByTagName('a');
-        linkDocument(links[0], doc.id);
-    }
-    if (entries.length === 0) {
-        let elem = document.createElement('div');
-        elem.className = 'list-group-item disabled';
-        elem.textContent = gettext("There are no documents in this project yet.");
-        documents_list.insertBefore(elem, before);
-    }
-    log("Documents list updated");
-}
-
-updateDocumentsList();
 
 function addDocument(document) {
     documents['' + document.id] = document;
@@ -580,12 +613,12 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
 
 
 // Backlight
-const backlight_checkbox = document.getElementById('backlight');
-backlight_checkbox.addEventListener('change', function () {
-    const documentView = document.getElementById('document-view');
-
-    documentView.classList.toggle('backlight', backlight_checkbox.checked);
-});
+// const backlight_checkbox = document.getElementById('backlight');
+// backlight_checkbox.addEventListener('change', function () {
+//     const documentView = document.getElementById('document-view');
+//
+//     documentView.classList.toggle('backlight', backlight_checkbox.checked);
+// });
 
 
 /*
@@ -902,23 +935,29 @@ function loadDocument(document_id, highlight_id=null) {
             } else {
                 document_contents.style.direction = 'ltr';
             }
+
             current_document = document_id;
 
             // Update current document highlight in left panel
-            let document_links = document.getElementsByClassName('document-link-current');
-            for (let i = document_links.length - 1; i >= 0; --i) {
-                document_links[i].classList.remove('document-link-current');
-            }
-            let document_link = document.getElementById('document-link-' + current_document);
-            if (document_link) {
-                document_link.classList.add('document-link-current');
-            }
+            console.log(documents)
+            const doc = documents[document_id];
+            selectedValue.textContent = doc.name;
 
-            current_tag = null;
-            let tag_links = document.getElementsByClassName('tag-current');
-            for (let i = tag_links.length - 1; i >= 0; --i) {
-                tag_links[i].classList.remove('tag-current');
-            }
+            // let document_links = document.getElementsByClassName('document-link-current');
+            // for (let i = document_links.length - 1; i >= 0; --i) {
+            //     document_links[i].classList.remove('document-link-current');
+            // }
+            // let document_link = document.getElementById('document-link-' + current_document);
+            // if (document_link) {
+            //     document_link.classList.add('document-link-current');
+            // }
+
+            //current_tag = null;
+            // let tag_links = document.getElementsByClassName('tag-current');
+            // for (let i = tag_links.length - 1; i >= 0; --i) {
+            //     tag_links[i].classList.remove('tag-current');
+            // }
+
             log(`Loaded document ${document_id}`);
             for (let i = 0; i < info.highlights.length; ++i) {
                 setHighlight(info.highlights[i]);
@@ -926,17 +965,17 @@ function loadDocument(document_id, highlight_id=null) {
             log(`Loaded ${info.highlights.length} highlight`);
 
             // Update export button
-            export_button.style.display = '';
-            let items = export_button.getElementsByClassName('dropdown-item');
-            for (let i = 0; i < items.length; ++i) {
-                const ext = items[i].getAttribute('data-extension');
-                if (items[i].getAttribute('data-document') !== 'false') {
-                    items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
-                    items[i].style.display = '';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
+            // export_button.style.display = '';
+            // let items = export_button.getElementsByClassName('dropdown-item');
+            // for (let i = 0; i < items.length; ++i) {
+            //     const ext = items[i].getAttribute('data-extension');
+            //     if (items[i].getAttribute('data-document') !== 'false') {
+            //         items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
+            //         items[i].style.display = '';
+            //     } else {
+            //         items[i].style.display = 'none';
+            //     }
+            // }
 
             // Scroll up
             window.setTimeout(function () {
@@ -1087,17 +1126,17 @@ function loadTag(tag_path, page) {
             }
 
             // Update export button
-            export_button.style.display = '';
-            let items = export_button.getElementsByClassName('dropdown-item');
-            for (let i = 0; i < items.length; ++i) {
-                const ext = items[i].getAttribute('data-extension');
-                if (items[i].getAttribute('data-highlights') !== 'false') {
-                    items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
-                    items[i].style.display = '';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
+            // export_button.style.display = '';
+            // let items = export_button.getElementsByClassName('dropdown-item');
+            // for (let i = 0; i < items.length; ++i) {
+            //     const ext = items[i].getAttribute('data-extension');
+            //     if (items[i].getAttribute('data-highlights') !== 'false') {
+            //         items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
+            //         items[i].style.display = '';
+            //     } else {
+            //         items[i].style.display = 'none';
+            //     }
+            // }
 
             // Scroll up
             window.setTimeout(function () {
