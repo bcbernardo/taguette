@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_, func, distinct, not_
+from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -672,7 +672,6 @@ class Highlights(BaseHandler):
         if any(list_of_paths) and operator_type == 'or':
             query = query.filter(tag.path.in_(list_of_paths))
         elif any(list_of_paths) and operator_type == 'and':
-            # Special case to select all highlights: we also need to select
             subquery = (self.db.query(hl_tag.c.highlight_id)
                         .join(tag, hl_tag.c.tag_id == tag.id)
                         .filter(
@@ -686,6 +685,25 @@ class Highlights(BaseHandler):
                 .subquery())
             query = query.join(
                 subquery, subquery.c.highlight_id == database.Highlight.id)
+        elif any(list_of_paths) and operator_type == 'mixed':
+            print(list_of_paths)
+            or_conditions = []
+            # check to remove  ! if necessary
+            for group in list_of_paths:
+                if len(group) == 1:
+                    or_conditions.append(tag.path == group[0])
+                else:
+                    et_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                   .join(tag, hl_tag.c.tag_id == tag.id)
+                                   .filter(tag.project == project)
+                                   .filter(tag.path.in_(group))
+                                   .group_by(hl_tag.c.highlight_id)
+                                   .having(func.count(distinct(tag.id)) == len(group))
+                                   .subquery())
+                    or_conditions.append(database.Highlight.id.in_(self.db.query(et_subquery.c.highlight_id)))
+            if or_conditions:
+                # print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
+                query = query.filter(or_(*or_conditions))
         else:
             # Special case to select all highlights: we also need to select
             # highlights that have no tag at all
