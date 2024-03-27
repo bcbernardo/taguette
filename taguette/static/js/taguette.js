@@ -92,6 +92,9 @@ function linkDocument(elem, doc_id, highlight_id=null) {
         e.preventDefault();
         window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
         loadDocument(doc_id, highlight_id);
+        const tags_return = $('#tag-selection-return'),
+            tags_return_link = $('a', tags_return);
+        tags_return_link.show();
     });
 }
 
