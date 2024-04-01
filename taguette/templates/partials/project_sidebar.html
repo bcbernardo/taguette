@@ -17,37 +17,45 @@
             </form>
 
             {% if multiuser %}
-
-                <div class="py-5">
-                    <h5>{% trans "modal window title" %}Add Collaborators{% endtrans %}</h5>
-                    <form id="members-add">
-                        <fieldset id="members-add-fields">
-                            <div class="row">
-                                <div class="col-md-4 form-group">
-                                    <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
-                                </div>
-                                <div class="col-md-4 form-group">
-                                    <select id="member-add-privileges" class="form-control">
-                                        <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
-                                        <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
-                                        <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
-                                        <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                    <h5 class="pb-2">{% trans %}Current Collaborators{% endtrans %}</h5>
-                    <form id="members-current">
-                    </form>
-                    <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save members{% endtrans %}</button>
+            <div class="accordion py-5" id="accordionCollaborators">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingCollaborators">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollaborators" aria-expanded="false" aria-controls="collapseCollaborators">
+                            {% trans "modal window title" %}Add Collaborators{% endtrans %}
+                        </button>
+                    </h2>
+                    <div id="collapseCollaborators" class="accordion-collapse collapse" aria-labelledby="headingCollaborators" data-bs-parent="#accordionCollaborators">
+                        <div class="accordion-body mt-2">
+                            <form id="members-add">
+                                <fieldset id="members-add-fields">
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
+                                            <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <select id="member-add-privileges" class="form-control">
+                                                <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
+                                                <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
+                                                <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
+                                                <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                            <h5 class="pb-2">{% trans %}Current Collaborators{% endtrans %}</h5>
+                            <form id="members-current">
+                                <!-- Existing collaborators -->
+                            </form>
+                            <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save members{% endtrans %}</button>
+                        </div>
+                    </div>
                 </div>
-
+            </div>
             {% endif %}
+
             <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
-
-
             <div class="dropdown mb-3">
                 <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-test-id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {% trans %}Export codebook{% endtrans %}

@@ -360,12 +360,15 @@ function getConditionText(condition) {
 function showTagSelection() {
     const tagsCriteria = $('#tag-selection-criteria');
 
-    let criteriaContent = selectedTags.length > 0 ?
-        '<span id="clear-selection" class="mx-2" onclick="emptyTagSelection(true)" style="cursor:pointer;">' +
-        '<i class="fa fa-times" aria-hidden="true" title="Clear selection"></i></span>' : '';
+    let criteriaContent = '';
 
     if (selectedTags.length > 0) {
-        criteriaContent += "<span style='font-size: 0.9rem'>" + gettext("Your selection") + " : <br/></span>";
+        criteriaContent += `<div class="d-flex justify-content-between">`;
+        criteriaContent += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
+        criteriaContent += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
+            `<i class="fa fa-times" aria-hidden="true" title="${gettext("Clear selection")}"></i></span>`;
+        criteriaContent += `</div>`;
+
         tagsCriteria.show();
         selectedTags.forEach((item, index) => {
             const tag = findTag(item.id);
@@ -374,7 +377,6 @@ function showTagSelection() {
     } else {
         tagsCriteria.hide();
     }
-
     tagsCriteria.html(criteriaContent);
 }
 
