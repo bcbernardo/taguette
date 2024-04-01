@@ -3,7 +3,7 @@
     <div style="width: 100%" class="d-flex align-items-center mx-3">
         <span class="text-label mr-2">{% trans %}Select the document{% endtrans %}</span>
         <div class="custom-select rounded-5 mx-3">
-            <button class="select-button" role="combobox" aria-labelledby="select button" aria-haspopup="listbox" aria-expanded="false" aria-controls="select-dropdown">
+            <button class="select-button" data-test-id="select-document-button" role="combobox" aria-labelledby="select button" aria-haspopup="listbox" aria-expanded="false" aria-controls="select-dropdown">
                 <span class="selected-value">{% trans %}...{% endtrans %}</span>
                 <span class="arrow"></span>
             </button>
@@ -13,20 +13,20 @@
 
     <div class="toolbar-action-buttons d-flex mx-2">
         <button class="btn btn-outline-primary mx-2" onclick="editDocument(current_document)" id="edit"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-outline-primary mx-2" id="zoom-in"><i class="fas fa-search-plus"></i></button>
-        <button class="btn btn-outline-primary mx-2" id="zoom-out"><i class="fas fa-search-minus"></i></button>
+<!--        <button class="btn btn-outline-primary mx-2" id="zoom-in"><i class="fas fa-search-plus"></i></button>-->
+<!--        <button class="btn btn-outline-primary mx-2" id="zoom-out"><i class="fas fa-search-minus"></i></button>-->
 
         <!-- Bouton Export -->
-        <div class="export-button dropdown mx-2">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-test-id="dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <div class="document-export-button dropdown mx-2">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="document-dropdown-export" data-test-id="document-dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-download"></i>
             </button>
-            <div class="dropdown-menu" aria-labelledby="dropdown-export">
-                <a href="#" class="dropdown-item" data-extension="html">HTML</a>
-                <a href="#" class="dropdown-item" data-extension="docx">DOCX</a>
-                <a href="#" class="dropdown-item" data-extension="pdf">PDF</a>
-                <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">Excel</a>
-                <a href="#" class="dropdown-item" data-extension="csv" data-document="false">CSV</a>
+            <div id='document-export-dropdown-menu' class="dropdown-menu" aria-labelledby="document-dropdown-export">
+                <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
             </div>
         </div>
         <div class="custom-checkbox mx-2 mt-2">

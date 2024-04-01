@@ -2,7 +2,7 @@
 let current_document = null;
 let current_tag = null;
 let last_added_tag = null;
-const documents_list = document.getElementById('documents-list');
+// const documents_list = document.getElementById('documents-list');
 
 function linkDocument(elem, doc_id, highlight_id=null) {
     let url = `${base_path}/project/${project_id}/document/${doc_id}`;
@@ -33,6 +33,7 @@ function updateDocumentsList() {
     // Ajouter l'option de création de document au début de la liste déroulante
     let createListItem = document.createElement('li');
     createListItem.setAttribute('role', 'option');
+    createListItem.setAttribute('data-test-id', 'create-document-link');
     createListItem.classList.add('create-document-option');
     createListItem.innerHTML = `<a href="javascript:createDocument()">Create New Document</a>`;
     dropdown.appendChild(createListItem);
@@ -68,6 +69,10 @@ function updateDocumentsList() {
     });
 
     console.log("Documents list in dropdown updated");
+
+    if(typeof addEventListenerToOption === "function") {
+        addEventListenerToOption()
+    }
 }
 
 updateDocumentsList();

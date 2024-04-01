@@ -46,7 +46,7 @@ PROM_REQUESTS = PromMeasureRequest(
 class Index(BaseHandler):
     """Index page, shows welcome message and user's projects.
     """
-    
+
     @PROM_REQUESTS.sync('index')
     def get(self):
         if self.current_user is not None:
@@ -76,7 +76,7 @@ class Index(BaseHandler):
             else:
                 return self.render('auth/token_needed.html')
         return self.render('welcome.html')
-    
+
     head = get
 
 
@@ -85,7 +85,7 @@ class CookiesPrompt(BaseHandler):
     def get(self):
         return self.render('cookies_prompt.html',
                            next=self.get_argument('next', ''))
-    
+
     @PROM_REQUESTS.sync('cookies_prompt')
     def post(self):
         self.set_cookie('cookies_accepted', 'yes', dont_check=True)
@@ -93,7 +93,7 @@ class CookiesPrompt(BaseHandler):
         if not next_:
             next_ = self.reverse_url('index')
         return self.redirect(next_)
-    
+
     def check_xsrf_cookie(self):
         pass
 
@@ -102,12 +102,12 @@ class BrokenBasePath(BaseHandler):
     def get(self):
         self.set_header('Content-Type', 'text/plain')
         return self.finish((
-                               "Error: BASE_PATH is set to {0} so you shouldn't be reaching this "
-                               + "page.\n"
-                               + "\n"
-                               + "You might need to fix your reverse proxy's configuration or "
-                               + "Taguette's BASE_PATH setting.\n"
-                           ).format(self.application.config['BASE_PATH']))
+            "Error: BASE_PATH is set to {0} so you shouldn't be reaching this "
+            + "page.\n"
+            + "\n"
+            + "You might need to fix your reverse proxy's configuration or "
+            + "Taguette's BASE_PATH setting.\n"
+        ).format(self.application.config['BASE_PATH']))
 
 
 class Login(BaseHandler):
@@ -127,7 +127,7 @@ class Login(BaseHandler):
                 return self.render('auth/cilogon.login.html',
                                    next=self.get_argument('next', ''),
                                    error=error, error_msg=error_msg)
-    
+
     @PROM_REQUESTS.async_('login')
     async def post(self):
         if not self.application.config['MULTIUSER']:
@@ -149,13 +149,13 @@ class Login(BaseHandler):
             else:
                 self.login(user.login)
                 return self._go_to_next()
-        
+
         return self.render(
             'auth/login.html', register=False,
             next=self.get_argument('next', ''),
             login_error=self.gettext("Invalid login or password"),
         )
-    
+
     def _go_to_next(self):
         next_ = self.get_argument('next', '')
         if not next_:
@@ -186,7 +186,7 @@ class Register(BaseHandler):
                 return self.render('auth/login.html', register=True)
             else:
                 return self.render('auth/cilogon.login.html')
-    
+
     @PROM_REQUESTS.async_('register')
     async def post(self):
         if not self.application.config['MULTIUSER']:
@@ -243,14 +243,14 @@ class Register(BaseHandler):
 
 class Cilogon(BaseHandler):
     flow_cilogon = None
-    
+
     def flow_func_cilogon(self):
         d = {}
-        
+
         def get_flow():
             if "FLOW" in d:
                 return d["FLOW"]
-            
+
             # Notes:
             # The first in the list of selected_idp will be the
             # default choice of idp
@@ -264,21 +264,21 @@ class Cilogon(BaseHandler):
             )
             f.params['access_type'] = 'offline'  # offline access
             f.params['include_granted_scopes'] = 'true'  # incremental auth
-            
+
             d["FLOW"] = f
             return f
-        
+
         return get_flow
-    
+
     def login_cilogon(self, appredirecturl='None'):
         state_encoded_str = (
             str(base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8")
         )
         auth_uri = (self.flow_cilogon()
                     .step1_get_authorize_url(state=state_encoded_str))
-        
+
         return self.redirect(auth_uri, status=301)
-    
+
     @PROM_REQUESTS.sync('cilogon')
     def get(self):
         logger.info("cilogon!")
@@ -304,19 +304,19 @@ class CilogonCallback(BaseHandler):
             logger.info("CILogon : Success")
             auth_code = self.get_argument('code', None)
             self.cilogon_callback(auth_code)
-    
+
     def get_ci_token(self, params):
         return requests.get(
             'https://cilogon.org/oauth2/token',
             params=params
         )
-    
+
     def get_ci_user_infos(self, access_token):
         return requests.get(
             'https://cilogon.org/oauth2/userinfo',
             params={'access_token': access_token}
         )
-    
+
     def cilogon_callback(self, auth_code=''):
         if not auth_code:
             login_url = self.reverse_url('login')
@@ -334,7 +334,7 @@ class CilogonCallback(BaseHandler):
         }
         error = False
         cil_user_infos = {}
-        
+
         tok = self.get_ci_token(params)
         if tok.status_code == 200:
             tok = tok.json()
@@ -347,14 +347,14 @@ class CilogonCallback(BaseHandler):
                 error = True
         else:
             error = True
-        
+
         if error:
             login_url = self.reverse_url('login')
             error_description = url_escape("Invalid CI Logon response")
             return self.redirect(
                 f"{login_url}?error=error&error_msg={error_description}"
             )
-        
+
         #######################################################################
         # Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
@@ -362,7 +362,7 @@ class CilogonCallback(BaseHandler):
                        .filter(database.EdugainIdps.entityid
                                == cil_user_infos['idp'])
                        .first())
-        
+
         # From Canadian Access Federation
         if edugain_idp is not None:
             if edugain_idp.code == 'CAF':
@@ -371,23 +371,23 @@ class CilogonCallback(BaseHandler):
                 user_from_caf = False
         else:
             user_from_caf = False
-        
+
         # From Google
         if cil_user_infos['idp_name'] == 'Google':
             user_from_google = True
         else:
             user_from_google = False
-        
+
         # For testing
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
-        
+
         if not user_from_caf and not user_from_google:
             error_msg = url_escape("Restricted access. Users must comes from "
                                    "Canadian Access Federation (CAF).")
             return self.redirect(self.reverse_url('login')
                                  + f"?error=error&error_msg={error_msg}")
-        
+
         if 'email' in cil_user_infos.keys():
             logger.info("OK CILogon provided email")
         else:
@@ -398,13 +398,13 @@ class CilogonCallback(BaseHandler):
             error_msg = url_escape("No email provided from CI Logon")
             return self.redirect(self.reverse_url('login')
                                  + f"?error=error&error_msg={error_msg}")
-        
+
         self.init_session(cil_user_infos)
-        
+
         # Log information
         logger.info(f"LOGIN SUCCESS : Using CILogon : "
                     f"email={cil_user_infos['email']}")
-    
+
     def init_session(self, user_info):
         login = user_info['email'].lower()
         user = self.db.query(database.User).get(login)
@@ -438,7 +438,7 @@ class CilogonCallback(BaseHandler):
             logger.info("CILogon Login: Logging in..")
             self.login(user.login)
             return self._go_to_next()
-    
+
     def _go_to_next(self):
         next_ = self.get_argument('next', '')
         if not next_:
@@ -468,7 +468,7 @@ class Account(BaseHandler):
         ]
         # locale_list.append(('en', self.gettext("English")))
         return locale_list
-    
+
     @authenticated
     @PROM_REQUESTS.sync('account')
     def get(self):
@@ -488,7 +488,7 @@ class Account(BaseHandler):
             return self.render('auth/external_account.html', user=user,
                                languages=self.get_languages(),
                                current_language=user.language)
-    
+
     @authenticated
     @PROM_REQUESTS.async_('account')
     async def post(self):
@@ -527,7 +527,7 @@ class Account(BaseHandler):
             template = 'auth/account.html'
             if self.application.config['ALLOW_EXTERNAL_LOGIN']:
                 template = 'auth/external_account.html'
-            
+
             return await self.render(
                 template,
                 user=user,
@@ -545,7 +545,7 @@ class AskResetPassword(BaseHandler):
         if self.application.config['ALLOW_EXTERNAL_LOGIN']:
             raise HTTPError(404)
         return self.render('auth/reset_password.html')
-    
+
     @PROM_REQUESTS.async_('reset_password')
     async def post(self):
         if not self.application.config['MULTIUSER']:
@@ -576,7 +576,7 @@ class AskResetPassword(BaseHandler):
             )
             reset_token = self.create_signed_value('reset_token', reset_token)
             reset_token = reset_token.decode('utf-8')
-            
+
             # Reset link
             path = self.request.path
             if path.endswith('/reset_password'):
@@ -588,7 +588,7 @@ class AskResetPassword(BaseHandler):
                                      '',
                                      'reset_token=' + reset_token,
                                      ''])
-            
+
             msg = EmailMessage()
             msg['Subject'] = self.gettext("Password reset for Taguette")
             msg['From'] = self.application.config['EMAIL']
@@ -606,7 +606,7 @@ class AskResetPassword(BaseHandler):
                 ),
                 subtype='html',
             )
-            
+
             logger.warning("Sending reset password email to %s %s",
                            user.login, user.email)
             await asyncio.get_event_loop().run_in_executor(
@@ -642,7 +642,7 @@ class SetNewPassword(BaseHandler):
             # Password has been changed after the reset token was created
             raise HTTPError(403, _f("Password has already been changed"))
         return user
-    
+
     @PROM_REQUESTS.sync('new_password')
     def get(self):
         if not self.application.config['MULTIUSER']:
@@ -659,7 +659,7 @@ class SetNewPassword(BaseHandler):
                 login_error=self.gettext(e.log_message),
             )
         return self.render('new_password.html', reset_token=reset_token)
-    
+
     @PROM_REQUESTS.async_('new_password')
     async def post(self):
         if not self.application.config['MULTIUSER']:
@@ -700,7 +700,7 @@ class ProjectAdd(BaseHandler):
     @PROM_REQUESTS.sync('new_project')
     def get(self):
         return self.render('project_new.html')
-    
+
     @authenticated
     @PROM_REQUESTS.sync('new_project')
     def post(self):
@@ -709,7 +709,7 @@ class ProjectAdd(BaseHandler):
         try:
             validate.project_name(name)
             validate.description(description)
-            
+
             # Create project
             project = database.Project(name=name, description=description)
             self.db.add(project)
@@ -730,7 +730,7 @@ class ProjectAdd(BaseHandler):
                 # TRANSLATORS: Default tag description
                 description=self.gettext("Further review required")),
             )
-            
+
             self.db.commit()
             return self.redirect(self.reverse_url('project', project.id))
         except validate.InvalidFormat as e:
@@ -738,7 +738,7 @@ class ProjectAdd(BaseHandler):
             return self.render('project_new.html',
                                name=name, description=description,
                                error=self.gettext(e.message))
-    
+
     def render(self, template_name, **kwargs):
         for name in ('name', 'description', 'error'):
             kwargs.setdefault(name, '')
@@ -749,7 +749,7 @@ class ProjectImport(BaseHandler):
     def prepare(self):
         if not self.application.config['SQLITE3_IMPORT_ENABLED']:
             raise HTTPError(403)
-    
+
     @authenticated
     @PROM_REQUESTS.sync('import_project')
     def get(self):
@@ -776,7 +776,7 @@ class ProjectDelete(BaseHandler):
                            documents=len(project.documents),
                            tags=len(project.tags),
                            highlights=highlights)
-    
+
     @authenticated
     @PROM_REQUESTS.sync('delete_project')
     def post(self, project_id):
@@ -801,20 +801,20 @@ class ImportCodebook(BaseHandler):
                 "You don't have permission to import a codebook",
             ))
         return self.render('project_import_codebook.html', project=project)
-    
+
     def _show_confirmation_form(self, project, tags, errors=[]):
         # Load tags from project, to set whether they exist
         project_tags = set(tag.path for tag in project.tags)
         for tag in tags:
             tag['exists'] = tag['path'] in project_tags
-        
+
         return self.render(
             'project_import_codebook_confirm.html',
             project=project,
             tags=tags,
             errors=errors,
         )
-    
+
     @authenticated
     @PROM_REQUESTS.sync('import_codebook')
     def post(self, project_id):
@@ -828,10 +828,10 @@ class ImportCodebook(BaseHandler):
                     "You don't have permission to import a codebook",
                 ),
             )
-        
+
         if 'file' in self.request.files and len(self.request.files) >= 1:
             uploaded_file = self.request.files['file'][0]
-            
+
             reader = io.BytesIO(uploaded_file.body)
             try:
                 tags = import_codebook.list_tags(reader)
@@ -850,16 +850,16 @@ class ImportCodebook(BaseHandler):
                     project=project,
                     error=msg,
                 )
-            
+
             # Disable duplicates
             seen_paths = set()
             for tag in tags:
                 tag['enabled'] = tag['path'] not in seen_paths
                 seen_paths.add(tag['path'])
-            
+
             # Sort by path, keeping the enabled one first
             tags = sorted(tags, key=lambda t: (t['path'], not t['enabled']))
-            
+
             return self._show_confirmation_form(project, tags)
         elif self.get_body_argument('tag0-path', None):
             # Accumulate validation errors
@@ -869,7 +869,7 @@ class ImportCodebook(BaseHandler):
             insert_tags = []
             # List of tags to show the confirmation form again on conflict
             tags = []
-            
+
             for i in itertools.count():
                 path = self.get_body_argument('tag%d-path' % i, None)
                 parent = self.get_body_argument('tag%d-parent' % i, None)
@@ -880,7 +880,7 @@ class ImportCodebook(BaseHandler):
                 )
                 if path is None:
                     break
-                
+
                 replace = enabled = True
                 if self.get_body_argument('tag%d-replace' % i, ''):
                     replace = True
@@ -888,7 +888,7 @@ class ImportCodebook(BaseHandler):
                     replace = False
                 else:
                     enabled = False
-                
+
                 try:
                     validate.tag_path(path)
                     validate.description(description)
@@ -896,7 +896,7 @@ class ImportCodebook(BaseHandler):
                 except validate.InvalidFormat as e:
                     errors.append(self.gettext(e.message))
                     continue
-                
+
                 tags.append({
                     'path': path,
                     'description': description,
@@ -906,7 +906,7 @@ class ImportCodebook(BaseHandler):
                 })
                 if not enabled:
                     continue
-                
+
                 if replace:
                     replace_tags[path] = {'description': description,
                                           'parent': parent,
@@ -918,7 +918,7 @@ class ImportCodebook(BaseHandler):
                         'color': color,
                         'parent': parent,
                     })
-            
+
             if errors:
                 self.set_status(400)
                 return self.render(
@@ -926,10 +926,10 @@ class ImportCodebook(BaseHandler):
                     project=project,
                     errors=errors,
                 )
-            
+
             try:
                 changed_tags = []
-                
+
                 # Do updates
                 for tag in project.tags:
                     try:
@@ -947,7 +947,7 @@ class ImportCodebook(BaseHandler):
                         changed_tags.append(tag)
                 if replace_tags:
                     raise KeyError
-                
+
                 # Do inserts
                 for tag_insert in insert_tags:
                     tag_parent = (self.db.query(database.Tag)
@@ -973,7 +973,7 @@ class ImportCodebook(BaseHandler):
                     self.db.add(cmd)
                     commands.append(cmd)
                 self.db.flush()
-                
+
                 self.db.commit()
                 for cmd in commands:
                     self.application.notify_project(project.id, cmd)
@@ -1005,14 +1005,14 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
-        
+
         # Group tags by their parent IDs
         grouped_tags = defaultdict(list)
-        
+
         for tag in project.tags:
             tag_parent_id = tag.parent.id if tag.parent else None
             grouped_tags[tag_parent_id].append(tag)
-        
+
         # Function to build the tree structure
         def build_tree(parent_id):
             children = []
@@ -1033,13 +1033,13 @@ class Project(BaseHandler):
                 }
                 children.append(child_info)
             return children
-        
+
         # Build the tree for tags with parent_id=None (root level)
         result_tree = build_tree(None)
-        
+
         # Convert the result to JSON
         tags_json = Markup(json.dumps(result_tree, sort_keys=True))
-        
+
         documents_json = Markup(json.dumps(
             {
                 str(doc.id): {'id': doc.id, 'name': doc.name,
@@ -1049,7 +1049,7 @@ class Project(BaseHandler):
             },
             sort_keys=True,
         ))
-        
+
         members = (
             self.db.query(database.ProjectMember)
             .filter(database.ProjectMember.project_id == project_id)

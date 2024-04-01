@@ -698,11 +698,12 @@ class Highlights(BaseHandler):
                                    .filter(tag.project == project)
                                    .filter(tag.path.in_(group))
                                    .group_by(hl_tag.c.highlight_id)
-                                   .having(func.count(distinct(tag.id)) == len(group))
+                                   .having(func.count(distinct(tag.id))
+                                           == len(group))
                                    .subquery())
-                    or_conditions.append(database.Highlight.id.in_(self.db.query(et_subquery.c.highlight_id)))
+                    or_conditions.append(database.Highlight.id.in_(
+                        self.db.query(et_subquery.c.highlight_id)))
             if or_conditions:
-                # print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
                 query = query.filter(or_(*or_conditions))
         else:
             # Special case to select all highlights: we also need to select

@@ -214,6 +214,7 @@ async function uploadFiles(files) {
         document.getElementById('document-add-form').reset();
         const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
         window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
+        updateDocumentsList();
         loadDocument(doc_to_load);
     }
     hideSpinner();
@@ -337,7 +338,7 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 let createTagFromHighlight;
-function createTag(from, selection) {
+function createTag(from, selection, parent) {
     createTagFromHighlight = false;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
@@ -358,6 +359,11 @@ function createTag(from, selection) {
     if(selection) {
         document.getElementById('tag-highlight-add-start').value = selection[0];
         document.getElementById('tag-highlight-add-end').value = selection[1];
+    }
+
+    if(parent) {
+        document.getElementById('tag-add-parent-id').value = parent;
+        document.getElementById('dropdownMenuButtonTag').innerText = findTag(parent).path
     }
 
     $(tag_add_modal).modal('show');
@@ -851,7 +857,6 @@ document.getElementById('members-current').addEventListener('submit', function (
  */
 
 const document_contents = document.getElementById('document-contents');
-const export_button = document.getElementById('export-button');
 
 function loadDocument(document_id, highlight_id=null) {
     if (document_id === null) {
@@ -913,18 +918,17 @@ function loadDocument(document_id, highlight_id=null) {
             }
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Update export button
-            // export_button.style.display = '';
-            // let items = export_button.getElementsByClassName('dropdown-item');
-            // for (let i = 0; i < items.length; ++i) {
-            //     const ext = items[i].getAttribute('data-extension');
-            //     if (items[i].getAttribute('data-document') !== 'false') {
-            //         items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
-            //         items[i].style.display = '';
-            //     } else {
-            //         items[i].style.display = 'none';
-            //     }
-            // }
+            // Update document export button
+            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
+            for (let i = 0; i < items.length; ++i) {
+                const ext = items[i].getAttribute('data-extension');
+                if (items[i].getAttribute('data-document') !== 'false') {
+                    items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
+                    items[i].style.display = '';
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
 
             // Scroll up
             window.setTimeout(function () {
@@ -1075,17 +1079,18 @@ function loadTag(tag_path, page) {
             }
 
             // Update export button
-            // export_button.style.display = '';
-            // let items = export_button.getElementsByClassName('dropdown-item');
-            // for (let i = 0; i < items.length; ++i) {
-            //     const ext = items[i].getAttribute('data-extension');
-            //     if (items[i].getAttribute('data-highlights') !== 'false') {
-            //         items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
-            //         items[i].style.display = '';
-            //     } else {
-            //         items[i].style.display = 'none';
-            //     }
-            // }
+            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
+            for (let i = 0; i < items.length; ++i) {
+                const ext = items[i].getAttribute('data-extension');
+                if (items[i].getAttribute('data-highlights') !== 'false') {
+                    items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
+                    items[i].style.display = '';
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
+
+            toggleToolbarActions(true)
 
             // Scroll up
             window.setTimeout(function () {

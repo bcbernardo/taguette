@@ -298,7 +298,6 @@ function loadTagsHighlights() {
             e.preventDefault();
             window.history.back();
             tags_return_link.hide();
-            toggleToolbarActions(false);
         });
     } else {
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';

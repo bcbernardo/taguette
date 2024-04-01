@@ -8,8 +8,10 @@ import json
 import logging
 import opentelemetry.trace
 import os
-from sqlalchemy import Column, func, ForeignKey, Index, TypeDecorator, MetaData, \
-    Table, UniqueConstraint, select, distinct
+from sqlalchemy import (Column, func, ForeignKey,
+                        Index, TypeDecorator, MetaData,
+                        Table, UniqueConstraint,
+                        select, distinct)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
@@ -590,6 +592,7 @@ Project.last_event = column_property(
     .as_scalar()
 )
 
+
 class Highlight(Base):
     __tablename__ = 'highlights'
     __table_args__ = ({'sqlite_autoincrement': True},)
@@ -698,6 +701,7 @@ Project.tag_count = column_property(
     .where(Tag.project_id == Project.id)
     .as_scalar()
 )
+
 
 class EdugainIdps(Base):
     __tablename__ = 'edigainidps'

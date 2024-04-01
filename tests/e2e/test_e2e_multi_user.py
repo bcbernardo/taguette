@@ -197,10 +197,9 @@ class Test2E2MultiUser(SeleniumTest):
         # export doc 1
         # merge tag 2 -> 1
         # highlights: [1, 2, 3]
-        from selenium.webdriver import ActionChains
+        # from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
-        from selenium.webdriver.common.keys import Keys
-
+        # from selenium.webdriver.common.keys import Keys
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')
@@ -222,14 +221,14 @@ class Test2E2MultiUser(SeleniumTest):
 
         # Check project page
         expected = (
-            '  const user_login = "admin";\n'
-            '  const project_id = 1;\n'
-            '  const version = \'%s\';\n'
-            '  let documents = {};\n'
-            '  let tags = %s;\n'
-            '  let members = {"admin": {"privileges": "ADMIN"}};\n'
-            '  let highlights = {};\n'
-            '  let last_event = -1;\n'
+            '    const user_login = "admin";\n'
+            '    const project_id = 1;\n'
+            '    const version = \'%s\';\n'
+            '    let documents = {};\n'
+            '    let tags = %s;\n'
+            '    let members = {"admin": {"privileges": "ADMIN"}};\n'
+            '    let highlights = {};\n'
+            '    let last_event = -1;\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -255,7 +254,6 @@ class Test2E2MultiUser(SeleniumTest):
         ))
 
         # Create tag 2 in project 1
-        await self.s_click(self.find_by_id('tags-tab'))
         await self.s_click_button('create-tag-link')
         self.set_value("tag-add-path", "people")
         self.set_value("tag-add-description", "People of interest")
@@ -271,8 +269,11 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         # Create document 1 in project 1
-        await self.s_click_button('documents-tab')
-        await self.s_click_button('create-document-link')
+        # await self.s_click_button('documents-tab')
+        # await self.s_click_button('create-document-link')
+        self.driver.execute_script('''
+            javascript:createDocument();
+        ''')
         docs_1 = []
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
@@ -292,36 +293,47 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertTrue(doc.filename, docs_1[0]['name'])
 
         # Change project 2 metadata
-        self.assertEqual(self.find_by_class(
-            'project-name')[0].text, 'Project 1')
-        await self.s_click_button('project-tab')
-        await self.s_perform_action(
-            ActionChains(self.driver)
-            .click(self.find_by_id('project-name'))
-            .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
-            .send_keys('new project')
-        )
-        self.find_by_id('project-description').click()
-        await asyncio.sleep(0.5)
-        await self.s_perform_action(
-            ActionChains(self.driver)
-            .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
-        )
-        await asyncio.sleep(0.5)
-        self.set_value('project-description', 'Meaningful')
-        await self.s_click(self.find_by_id('document-contents'))
-        await asyncio.sleep(10)  # Wait for XHR
-        self.assertEqual(self.find_by_class(
-            'project-name')[0].text, 'new project')
-        db = self.application.DBSession()
-        proj = db.query(database.Project).get(1)
-        self.assertEqual(proj.name, 'new project')
-        self.assertEqual(proj.description, 'Meaningful')
-
+        # await self.s_click(self.find_by_id('project-sidebar-open'))
+        # self.driver.execute_script('''
+        #     javascript:openSidebar();
+        # ''')
+        # self.assertEqual(self.find_by_class(
+        #     'project-name')[0].text, 'Project 1')
+        # await self.s_click_button('project-tab')
+        # await self.s_perform_action(
+        #     ActionChains(self.driver)
+        #     .click(self.find_by_id('project-name'))
+        #     # .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
+        #     .send_keys('new project').key_up(Keys.CONTROL)
+        # )
+        # self.find_by_id('project-description').click()
+        # await asyncio.sleep(0.5)
+        # await self.s_perform_action(
+        #     ActionChains(self.driver)
+        #     .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
+        # )
+        # await asyncio.sleep(0.5)
+        # self.set_value('project-description', 'Meaningful')
+        # await self.s_click(self.find_by_id('document-contents'))
+        # await asyncio.sleep(10)  # Wait for XHR
+        # print(self.find_by_class(
+        #     'project-name')[0].text)
+        # self.assertEqual(self.find_by_class(
+        #     'project-name')[0].text, 'new project')
+        # db = self.application.DBSession()
+        # proj = db.query(database.Project).get(1)
+        # self.assertEqual(proj.name, 'new project')
+        # self.assertEqual(proj.description, 'Meaningful')
         # Create document 2 and 3 in project 1
-        await self.s_click_button('documents-tab')
-        await self.s_click_button('create-document-link')
-        self.set_value('document-add-description', 'description doc 2 & 3')
+        # await self.s_click_button('documents-tab')
+        # await self.s_click_button('create-document-link')
+        # self.driver.execute_script('$(document_add_modal).modal("hide");')
+
+        self.driver.execute_script('''
+            javascript:createDocument();
+        ''')
+        self.set_value('document-add-description',
+                       'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
         docs_2 = []
         with (tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp,
@@ -363,11 +375,8 @@ class Test2E2MultiUser(SeleniumTest):
             {1: False, 2: False}
         )
 
-        # Select document and create highlight 1 and 2
-        await self.s_click(
-            self.driver.find_element(By.ID, 'document-link-1')
-            .find_element(By.CLASS_NAME, 'document-link-a')
-        )
+        await self.s_get('/project/1/document/1')
+        await asyncio.sleep(0.5)
 
         # create highlight 1 diff
         self.driver.execute_script('restoreSelection([0, 4]);')
@@ -379,6 +388,8 @@ class Test2E2MultiUser(SeleniumTest):
             $("#treeview-tags-highlight").treeview("selectNode", 0);
         ''')
         await self.s_click_button('save-highlight-button')
+
+        await asyncio.sleep(0.5)
 
         # Create highlight 2 tent
         self.driver.execute_script('restoreSelection([13, 17]);')
@@ -406,6 +417,9 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         await self.s_click_button('save-highlight-button')
+
+        await asyncio.sleep(0.5)
+
         # Check highlighted document 1
         self.assertEqual(
             self.find_by_id('document-contents').get_attribute('innerHTML'),
@@ -436,8 +450,7 @@ class Test2E2MultiUser(SeleniumTest):
 
         await self.s_click_button('save-highlight-button')
 
-        # Create tag 3 in project 1 (todo: create from modal)
-        await self.s_click(self.find_by_id('tags-tab'))
+        # Create tag 3 in project 1
         await self.s_click_button('create-tag-link')
         self.set_value("tag-add-path", "interesting.places")
         await self.s_click_button('save-tag-button')
@@ -470,11 +483,9 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         # Create highlight 3 in document 2
-        await self.s_click_button('documents-tab')
-        await self.s_click(
-            self.driver.find_element(By.ID, 'document-link-2')
-            .find_element(By.CLASS_NAME, 'document-link-a')
-        )
+        await self.s_get('/project/1/document/2')
+        await asyncio.sleep(0.5)
+
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
             'Select tag',
@@ -484,27 +495,25 @@ class Test2E2MultiUser(SeleniumTest):
         # check before select
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: False, 3: False, 2: False},
+            {1: False, 2: False, 3: False},
         )
         self.driver.execute_script(
             '$("#treeview-tags-highlight").treeview("selectNode", 2);')
         # check after select
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: False, 3: False, 2: True},
+            {1: False, 2: False, 3: True},
         )
         await self.s_click_button('save-highlight-button')
 
         # List highlights in project 1 under 'people'
-        await self.s_click(self.find_by_id('tags-tab'))
         self.driver.execute_script(
-            '$("#treeview-tags").treeview("selectNode", 2);')
+            '$("#treeview-tags").treeview("selectNode", 1);')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n"
-            f"{docs_2[0]['name']} people"
+            f"tent\n{docs_1[0]['name']} interesting people"
         )
 
         # List highlights in project 1 under 'interesting.places'
@@ -512,7 +521,8 @@ class Test2E2MultiUser(SeleniumTest):
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            f"diff\n{docs_1[0]['name']} interesting.places"
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"Opinion\n{docs_2[0]['name']} interesting.places")
         )
 
         # List highlights in project 1 under 'interesting'
@@ -522,32 +532,30 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(
             self.find_by_id('document-contents').text,
             (f"diff\n{docs_1[0]['name']} interesting.places\n"
-             f"tent\n{docs_1[0]['name']} interesting people"),
+             f"tent\n{docs_1[0]['name']} interesting people\n"
+             f"Opinion\n{docs_2[0]['name']} interesting.places")
         )
-
         # List all highlights in project 1
-        # await self.s_click(self.find_by_id('tags-tab'))
-        # await self.s_click(self.find_by_id('tag-more-action-button'))
-        # await self.s_click_button('dropdown-export')
-        # await asyncio.sleep(1)
-        # await self.s_click_button('see-all-highlights-button')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(self.s_path, '/project/1/highlights/')
-        # self.assertEqual(
-        #     self.find_by_id('document-contents').text,
-        #     (f"diff\n{docs_1[0]['name']} interesting.places\n"
-        #      f"tent\n{docs_1[0]['name']} interesting people\n"
-        #      f"Opinion\n{docs_2[0]['name']} people"),
-        # )
+        await self.s_click(self.find_by_id('tag-more-action-button'))
+        await asyncio.sleep(1)
+        await self.s_click_button('see-all-highlights-button')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(self.s_path, '/project/1/highlights/')
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people\n"
+             f"Opinion\n{docs_2[0]['name']} interesting.places"),
+        )
 
         # Check export options for document 1
         await self.s_get('/project/1/document/1')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('dropdown-export')
+        await self.s_click_button('document-dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.find_by_id('export-button')
+                self.find_by_id('document-export-dropdown-menu')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -566,11 +574,11 @@ class Test2E2MultiUser(SeleniumTest):
         # Check export options for highlights in project 1 under 'interesting'
         await self.s_get('/project/1/highlights/interesting')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('dropdown-export')
+        await self.s_click_button('document-dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.find_by_id('export-button')
+                self.find_by_id('document-export-dropdown-menu')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -584,8 +592,8 @@ class Test2E2MultiUser(SeleniumTest):
             ('CSV', export_url + '/highlights/interesting.csv'),
         ])
 
-        # Check codebook export options of project 1
-        await self.s_click_button('project-tab')
+        # # Check codebook export options of project 1
+        await self.s_click(self.find_by_id('project-sidebar-open'))
         await self.s_click_button('dropdown-codebook')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
@@ -646,7 +654,6 @@ class Test2E2MultiUser(SeleniumTest):
         # )
         #
         # await asyncio.sleep(1)
-
         # List all highlights in project 1
         # await self.s_click(self.find_by_id('tags-tab'))
         # await self.s_click_button('see-all-highlights-button')

@@ -452,9 +452,6 @@ Index project view custom
 =========================*/
 
 .main{
-    display: flex;
-    align-items: stretch;
-    justify-content: space-around;
     font-family: -apple-system,
     BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial,

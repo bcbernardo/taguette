@@ -85,6 +85,7 @@ class ConversionError(ValueError):
 class UnsupportedFormat(ConversionError):
     """This format is not supported.
     """
+
     def __init__(self, msg="Unsupported file format",):
         super(UnsupportedFormat, self).__init__(msg)
 

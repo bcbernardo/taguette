@@ -20,13 +20,13 @@ class DefaultMap(object):
     def __init__(self, default, mapping):
         self.__default = default
         self.mapping = mapping
-    
+
     def get(self, key):
         try:
             return self.mapping[key]
         except KeyError:
             return self.__default(key)
-    
+
     def __getitem__(self, key):
         return self.get(key)
 
@@ -40,7 +40,7 @@ async def log_and_wait_proc(logger, proc):
         if line[-1] == '\n':
             line = line[:-1]
         logger.info("%d: %s", proc.pid, line)
-    
+
     ret = await proc.wait()
     line = await proc.stdout.read()
     if line:
@@ -101,7 +101,7 @@ _background_future_references = {}
 def background_task(task, *, should_never_exit=False):
     future = asyncio.get_event_loop().create_task(task)
     ident = id(future)
-    
+
     def callback(future):
         _background_future_references.pop(ident, None)
         try:
@@ -113,9 +113,9 @@ def background_task(task, *, should_never_exit=False):
             logger.critical("Critical task died, exiting")
             asyncio.get_event_loop().stop()
             sys.exit(1)
-    
+
     future.add_done_callback(callback)
-    
+
     # Keep a strong reference to the future
     # https://bugs.python.org/issue21163
     _background_future_references[ident] = future
@@ -124,7 +124,7 @@ def background_task(task, *, should_never_exit=False):
 def check_operator_consistency(paths):
     has_and = '&' in paths
     has_or = '|' in paths
-    
+
     if has_and and has_or:
         return 'mixed'
     elif has_and:
@@ -150,32 +150,32 @@ def parse_paths_for_exclusion(paths):
 
 def get_path_informations(paths):
     exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
-    
+
     operator_type = check_operator_consistency(paths)
-    
+
     list_of_paths = []
-    
+
     if operator_type == 'and':
         list_of_paths = include_paths_string.split('&')
     elif operator_type == 'or':
         list_of_paths = include_paths_string.split('|')
     elif operator_type == 'mixed':
         list_of_paths = separate_and_group_tags(paths)
-    
+
     return list_of_paths, operator_type, exclude_paths
 
 
 def separate_and_group_tags(paths):
-    
+
     exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
-    
+
     or_groups = include_paths_string.split('|')
-    
+
     # deny or ignore ET when ! is between
-    
+
     grouped_tags = []
     for group in or_groups:
         and_tags = group.split('&')
         grouped_tags.append(and_tags)
-    
+
     return grouped_tags

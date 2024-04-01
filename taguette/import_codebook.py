@@ -8,6 +8,7 @@ from .utils import _f
 class InvalidCodebook(ValueError):
     """File can't be read as a codebook.
     """
+
     def __init__(self, message, row=None):
         super(InvalidCodebook, self).__init__(message)
         self.message = message
