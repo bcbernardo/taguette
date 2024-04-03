@@ -227,6 +227,9 @@ class Application(GracefulExitApplication):
             logger.exception("Error getting messages")
 
     def check_messages(self):
+        if ("CHECK_MESSAGES" in self.config
+                and not self.config["CHECK_MESSAGES"]):
+            return
         f_msg = self.io_loop.create_task(self._check_messages())
         f_msg.add_done_callback(self._check_messages_callback)
         self.io_loop.call_later(86400,  # 24 hours

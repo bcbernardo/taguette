@@ -121,6 +121,8 @@ MAIL_SERVER = {{
     "port": 25,
 }}
 
+CHECK_MESSAGES = False
+
 # Whether users must explicitly accept cookies before using the website
 COOKIES_PROMPT = False
 
@@ -245,6 +247,8 @@ def main():
                         version)
             if version.startswith('v'):
                 taguette._exact_version = version[1:]
+            if version.startswith('libreqda-v'):
+                taguette._exact_version = version[10:]
     else:
         logger.info("Not a Git repository, using version=%s", exact_version())
     PROM_VERSION.labels(exact_version()).set(1)
