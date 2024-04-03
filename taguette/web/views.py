@@ -107,7 +107,7 @@ class BrokenBasePath(BaseHandler):
             + "page.\n"
             + "\n"
             + "You might need to fix your reverse proxy's configuration or "
-            + "Taguette's BASE_PATH setting.\n"
+            + "LibreQDA's BASE_PATH setting.\n"
         ).format(self.application.config['BASE_PATH']))
 
 

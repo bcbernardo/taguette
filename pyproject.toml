@@ -7,12 +7,13 @@ license = "BSD-3-Clause"
 
 authors = [
     "Remi Rampin <remi@rampin.org>",
+    'Plateforme en humanité numériques <PHuN@usherbrooke.ca>'
 ]
 
 readme = "README.md"
 
-repository = "https://gitlab.com/remram44/taguette"
-homepage = "https://www.taguette.org/"
+repository = "https://gitlab.com/bin-cirst/libreqda/libre-qda"
+homepage = "https://www.libreqda.org/"
 
 keywords = ["qualitative", "document", "text", "tagging", "tags", "highlights", "notes"]
 
@@ -41,11 +42,8 @@ include = [
 ]
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://gitlab.com/remram44/taguette/-/issues"
-"Documentation" = "https://www.taguette.org/getting-started.html"
-"Chat" = "https://app.element.io/#/room/#taguette:matrix.org"
-"User Mailing List" = "https://groups.io/g/taguette"
-"Open Collective" = "https://opencollective.com/taguette"
+"Bug Tracker" = "https://gitlab.com/bin-cirst/libreqda/libre-qda/-/issues"
+"Documentation" = "https://aide.libreqda.org"
 
 [tool.poetry.dependencies]
 python = ">=3.7,<4"

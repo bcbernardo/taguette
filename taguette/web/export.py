@@ -112,7 +112,7 @@ class ExportHighlightsXlsx(BaseHandler):
         else:
             self.set_header('Content-Disposition', 'attachment')
 
-        tmp = tempfile.mkdtemp(prefix='taguette_xlsx_')
+        tmp = tempfile.mkdtemp(prefix='libreqda_xlsx_')
         try:
             filename = os.path.join(tmp, 'highlights.xlsx')
             export.highlights_xslx(self.db, project.id, path, filename)
@@ -234,7 +234,7 @@ class ExportCodebookXlsx(BaseHandler):
                          'spreadsheetml.sheet'))
         self.set_header('Content-Disposition',
                         'attachment; filename="codebook.xlsx"')
-        tmp = tempfile.mkdtemp(prefix='taguette_xlsx_')
+        tmp = tempfile.mkdtemp(prefix='libreqda_xlsx_')
         try:
             filename = os.path.join(tmp, 'codebook.xlsx')
 

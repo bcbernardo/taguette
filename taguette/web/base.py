@@ -216,7 +216,7 @@ class Application(GracefulExitApplication):
             for msg in obj['messages']
         ]
         for msg in self.messages:
-            logger.warning("Taguette message: %s", msg['text'])
+            logger.warning("LibreQDA message: %s", msg['text'])
         self.messages_event.set()
 
     @staticmethod
@@ -379,7 +379,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         self._gettext = None
 
     def set_default_headers(self):
-        self.set_header('Server', 'Taguette/%s' % exact_version())
+        self.set_header('Server', 'LibreQDA/%s' % exact_version())
         self.set_header('X-Frame-Options', 'DENY')
         self.set_header('Content-Security-Policy', "frame-ancestors 'none';")
 

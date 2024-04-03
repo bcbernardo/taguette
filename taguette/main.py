@@ -70,11 +70,11 @@ def default_config(output):
     else:
         out = open(output, 'w')
     out.write('''\
-# This is the configuration file for Taguette
+# This is the configuration file for LibreQDA
 # It is a Python file, so you can use the full Python syntax
 
 # Name of this server
-NAME = "Misconfigured Taguette Server"
+NAME = "Misconfigured LibreQDA Server"
 
 # Address and port to listen on
 BIND_ADDRESS = "0.0.0.0"
@@ -98,7 +98,7 @@ DATABASE = "sqlite:////non/existent/taguette/database.sqlite3"
 #REDIS_SERVER = 'redis://localhost:6379'
 
 # Address to send system emails from
-EMAIL = "Misconfigured Taguette Server <taguette@example.com>"
+EMAIL = "Misconfigured LibreQDA Server <LibreQDA@example.com>"
 
 # Terms of service (HTML file)
 TOS_FILE = 'tos.html'
@@ -107,7 +107,7 @@ TOS_FILE = 'tos.html'
 
 # Extra footer at the bottom of every page
 #EXTRA_FOOTER = """
-#  | This instance of Taguette is managed by Example University.
+#  | This instance of LibreQDA is managed by Example University.
 #  Please <a href="mailto:it@example.org">email IT</a> with any questions.
 #"""
 
@@ -132,12 +132,12 @@ SQLITE3_IMPORT_ENABLED = True
 
 # Set this to true if you are behind a reverse proxy that sets the
 # X-Forwarded-For header.
-# Leave this at False if users are connecting to Taguette directly
+# Leave this at False if users are connecting to LibreQDA directly
 X_HEADERS = False
 
 # Time limits for converting documents
-CONVERT_TO_HTML_TIMEOUT = 3 * 60  # 3min for importing document into Taguette
-CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
+CONVERT_TO_HTML_TIMEOUT = 3 * 60  # 3min for importing document into LibreQDA
+CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 
 # If you want to export metrics using Prometheus, set a port number here
 #PROMETHEUS_LISTEN = "0.0.0.0:9101"
@@ -275,7 +275,7 @@ def main():
         description="Document tagger for qualitative analysis",
     )
     parser.add_argument('--version', action='version',
-                        version='taguette version %s' % exact_version())
+                        version='LibreQDA version %s' % exact_version())
     parser.add_argument('-p', '--port', default='7465',
                         help=_("Port number on which to listen"))
     parser.add_argument('-b', '--bind', default='127.0.0.1',

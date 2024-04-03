@@ -330,7 +330,7 @@ msgstr "Delete highlight"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Taguette Codebook"
+msgstr "LibreQDA Codebook"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -355,6 +355,9 @@ msgid ""
 "href=\"https://www.taguette.org/\">TAGUETTE</a></span> is an open-source "
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
+"<span style=\"font-family:BadScript;\"><a "
+"href=\"https://www.LibreQDA.org/\">LibreQDA</a></span> is an open-source "
+"web-based document tagging tool for qualitative data analysis."
 
 #: taguette/templates/welcome.html:10
 msgid ""
@@ -426,7 +429,7 @@ msgstr "Home"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Taguette Guide %(external_icon)s"
+msgstr "LibreQDA Guide %(external_icon)s"
 
 #: taguette/templates/base.html:43
 msgid "Single-user mode"
@@ -466,10 +469,10 @@ msgid ""
 "href=\"https://www.taguette.org/getting-started.html\">User "
 "Documentation</a>"
 msgstr ""
-"Taguette %(version)s is released under a <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
-" license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
-"href=\"https://www.taguette.org/getting-started.html\">User "
+"LibreQDA %(version)s is released under a <a "
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda/blob/main/LICENSE.txt\">BSD-3-Clause"
+" license</a>, LibreQDA is an experimental flavour of Taguette &#169; Rémi Rampin, PHuN and Taguette contributors | <a "
+"href=\"https://aide.libreqda.org/\">User "
 "Documentation</a>"
 
 #: taguette/templates/project_import_codebook.html:8
@@ -511,13 +514,13 @@ msgstr "Terms of Service"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette highlights: %(path)s"
+msgstr "LibreQDA highlights: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette highlights"
+msgstr "LibreQDA highlights"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -568,7 +571,7 @@ msgid ""
 msgstr ""
 "Your browser did not supply a secret token to authenticate with the "
 "application. Please check the console for the correct URL to log in, or "
-"simply restart Taguette."
+"simply restart LibreQDA."
 
 #: taguette/templates/login.html:3
 msgctxt "page title"
@@ -635,7 +638,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Someone has requested to reset the password on the Taguette account "
+"Someone has requested to reset the password on the LibreQDA account "
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 
@@ -689,6 +692,12 @@ msgstr "Account settings"
 msgctxt "title"
 msgid "Account settings"
 msgstr "Account settings"
+
+#: taguette/templates/auth/account.html:20
+#: taguette/templates/auth/external_account.html:20
+msgctxt "form label for displayname"
+msgid "Display name"
+msgstr "Display name"
 
 #: taguette/templates/account.html:27
 msgctxt "form label for language selection"
@@ -807,8 +816,8 @@ msgid ""
 "href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
 msgstr ""
 " | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda/\">GitLab</a> or <a "
+"href=\"mailto:phun@usherbrooke.ca\">PHuN@usherbrooke.ca</a>!"
 
 #: taguette/web/__init__.py:60 taguette/web/base.py:576
 msgctxt "page title"
@@ -852,7 +861,7 @@ msgstr "This email address is not associated with any user"
 
 #: taguette/web/views.py:342
 msgid "Password reset for Taguette"
-msgstr "Password reset for Taguette"
+msgstr "Password reset for LibreQDA"
 
 #: taguette/web/views.py:384
 msgid "Invalid token"
@@ -936,7 +945,7 @@ msgid ""
 " recent version of Taguette, please check for updates"
 msgstr ""
 "This database is an unknown version. It might have been written by a more"
-" recent version of Taguette, please check for updates"
+" recent version of LibreQDA, please check for updates"
 
 #: taguette/web/api.py:845
 msgid "This database could not be updated to the current version"
@@ -944,7 +953,7 @@ msgstr "This database could not be updated to the current version"
 
 #: taguette/web/api.py:849 taguette/web/api.py:883
 msgid "This is not a Taguette project file"
-msgstr "This is not a Taguette project file"
+msgstr "This is not a LibreQDA project file"
 
 #: taguette/database/__init__.py:136
 msgid ""
@@ -953,7 +962,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    The database schema used by Taguette has changed! We will try to\n"
+"    The database schema used by LibreQDA has changed! We will try to\n"
 "    update your workspace automatically.\n"
 
 #: taguette/database/__init__.py:148
@@ -980,7 +989,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    The database schema used by Taguette has changed! Because you are not"
+"    The database schema used by LibreQDA has changed! Because you are not"
 " using\n"
 "    SQLite, we will not attempt a migration automatically; back up your "
 "data and\n"
@@ -1095,7 +1104,7 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s is now running. You can connect to it using this"
+"    LibreQDA %(version)s is now running. You can connect to it using this"
 " link:\n"
 "\n"
 "    %(url)s\n"
