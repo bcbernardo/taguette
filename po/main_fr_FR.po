@@ -45,8 +45,8 @@ msgid ""
 "tags</strong>. There is no way to undo."
 msgstr ""
 "Êtes-vous sûr de vouloir supprimer ce projet ? Il contient "
-"<strong>%(documents)s documents et %(highlights)s marques dans %(tags)s "
-"tags</strong>. Cette opération ne peut pas être annulée."
+"<strong>%(documents)s documents et %(highlights)s sélections dans %(tags)s "
+"codes</strong>. Cette opération ne peut pas être annulée."
 
 #: taguette/templates/project_delete.html:13
 msgctxt "submit button"
@@ -188,7 +188,7 @@ msgstr "Documents"
 #: taguette/templates/project.html:22
 msgctxt "tab"
 msgid "Highlights"
-msgstr "Marques"
+msgstr "Codes"
 
 #: taguette/templates/project.html:32
 msgctxt "project metadata form label"
@@ -210,7 +210,7 @@ msgstr "Exporter le project"
 
 #: taguette/templates/project.html:51
 msgid "Export codebook"
-msgstr "Exporter un codebook"
+msgstr "Exporter un arbre de codes"
 
 #: taguette/templates/project.html:54
 msgid "QDC (XML)"
@@ -238,7 +238,7 @@ msgstr "PDF"
 
 #: taguette/templates/project.html:64
 msgid "Import codebook"
-msgstr "Importer un codebook"
+msgstr "Importer un arbre de codes"
 
 #: taguette/templates/project.html:68
 msgid "Delete project"
@@ -259,7 +259,7 @@ msgstr "Rétroéclairage"
 
 #: taguette/templates/project.html:89
 msgid "See all highlights"
-msgstr "Voir toutes les marques"
+msgstr "Voir toutes les sélections"
 
 msgid "More actions"
 msgstr "Plus d'action"
@@ -275,7 +275,7 @@ msgstr "Filter par"
 
 #: taguette/templates/project.html:90 taguette/templates/project.html:272
 msgid "Create a tag"
-msgstr "Créer un tag"
+msgstr "Créer un code"
 
 #: taguette/templates/project.html:108
 msgid "Export this view"
@@ -283,7 +283,7 @@ msgstr "Exporter cette vue"
 
 #: taguette/templates/project.html:124
 msgid "Back to highlights"
-msgstr "Retour aux marques"
+msgstr "Retour aux sélections"
 
 #: taguette/templates/project.html:120
 msgid "Load a document on the left"
@@ -393,21 +393,21 @@ msgstr "Supprimer le document"
 #: taguette/templates/project.html:260
 msgctxt "modal window title"
 msgid "Highlight"
-msgstr "Marque"
+msgstr "Sélection"
 
 #: taguette/templates/project.html:278
 msgid "Delete highlight"
-msgstr "Supprimer la marque"
+msgstr "Supprimer la sélection"
 
 #: taguette/templates/project.html:289
 msgctxt "modal window title"
 msgid "New tag"
-msgstr "Nouveau tag"
+msgstr "Nouveau code"
 
 #: taguette/templates/project.html:290
 msgctxt "modal window title"
 msgid "Change tag"
-msgstr "Modifier le tag"
+msgstr "Modifier le code"
 
 #: taguette/templates/project.html:298
 msgctxt "tag change form placeholder"
@@ -431,15 +431,15 @@ msgstr "Fusionner..."
 
 #: taguette/templates/project.html:306
 msgid "Delete tag"
-msgstr "Supprimer le tag"
+msgstr "Supprimer le code"
 
 #: taguette/templates/project.html:194
 msgid "New highlight"
-msgstr "Nouvelle marque"
+msgstr "Créer un code"
 
 #: taguette/templates/project.html:199
 msgid "Select tag"
-msgstr "Sélectionner une marque"
+msgstr "Sélectionner un code"
 
 #: taguette/templates/index.html:10
 #, python-format
@@ -503,13 +503,13 @@ msgstr "Accepter les cookies"
 #: taguette/templates/project_import_codebook_confirm.html:3
 msgctxt "page title"
 msgid "Import codebook"
-msgstr "Importer un codebook"
+msgstr "Importer un arbre de codes"
 
 #: taguette/templates/project_import_codebook.html:6
 #: taguette/templates/project_import_codebook_confirm.html:6
 msgctxt "title"
 msgid "Import a codebook"
-msgstr "Importer un codebook"
+msgstr "Importer un arbre de codes"
 
 #: taguette/templates/project_import_codebook.html:7
 #: taguette/templates/project_import_codebook_confirm.html:7
@@ -517,13 +517,13 @@ msgid ""
 "Use this form to import an existing codebook into your project. Existing "
 "tags will not be deleted, new tags will be added alongside them."
 msgstr ""
-"Utilisez ce formulaire pour importer un dictionnaire de tags (codebook) "
-"existant dans votre projet. Les tags actuels ne seront pas supprimés, les "
-"nouveaux tags seront simplement rajoutés."
+"Utilisez ce formulaire pour importer un arbre de codes "
+"existant dans votre projet. Les codes actuels ne seront pas supprimés, les "
+"nouveaux codes seront simplement rajoutés."
 
 #: taguette/templates/project_import_codebook_confirm.html:11
 msgid "You are about to create the following tags:"
-msgstr "Vous êtes sur le point de créer les tags suivant :"
+msgstr "Vous êtes sur le point de créer les codes suivants :"
 
 #: taguette/templates/project_import_codebook_confirm.html:19
 msgctxt "codebook import tag option"
@@ -538,7 +538,7 @@ msgstr "Importer"
 #: taguette/templates/project_import_codebook_confirm.html:36
 msgctxt "form submit button"
 msgid "Create tags"
-msgstr "Créer les tags"
+msgstr "Créer les codes"
 
 #: taguette/templates/welcome.html:4
 msgctxt "page title"
@@ -567,8 +567,8 @@ msgid ""
 "that you can recall and organize later."
 msgstr ""
 "En utilisant ce logiciel, vous pouvez charger une collection de documents, "
-"créer une hiérarchie de tags et annoter des portions de documents avec des "
-"tags et des notes que vous pouvez rappeler et organiser plus tard."
+"créer un arbre de codes thématiques et encoder des passages de texte avec des "
+"codes et des notes que vous pouvez récupérer et organiser plus tard."
 
 #: taguette/templates/welcome.html:12
 #, python-format
@@ -678,9 +678,9 @@ msgstr "Taguette Codebook"
 #, python-format
 msgid "%(number)d highlight"
 msgid_plural "%(number)d highlights"
-msgstr[0] "%(number)d marque"
-msgstr[1] "%(number)d de marques"
-msgstr[2] "%(number)d marques"
+msgstr[0] "%(number)d sélection"
+msgstr[1] "%(number)d de sélections"
+msgstr[2] "%(number)d sélections"
 
 #: taguette/templates/token_needed.html:3
 msgctxt "page title"
@@ -767,13 +767,13 @@ msgstr "Examiner"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette : marques : %(path)s"
+msgstr "Taguette : sélections : %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette : marques"
+msgstr "Taguette : sélections"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -784,7 +784,7 @@ msgstr "<strong>Document :</strong> %(doc)s"
 #: taguette/templates/export_highlights.html:26
 msgctxt "exported highlight details"
 msgid "Tags:"
-msgstr "Tags :"
+msgstr "Codes :"
 
 #: taguette/templates/email_reset_password.html:1
 #, python-format
@@ -854,11 +854,11 @@ msgstr "Pas autorisé"
 #: taguette/web/api.py:346 taguette/web/api.py:380 taguette/web/api.py:412
 #: taguette/web/api.py:468 taguette/web/api.py:537
 msgid "No such tag"
-msgstr "Tag inconnu"
+msgstr "Code inconnu"
 
 #: taguette/web/api.py:511 taguette/web/api.py:585
 msgid "No such highlight"
-msgstr "Marque inconnue"
+msgstr "Sélection inconnue"
 
 #: taguette/web/api.py:751
 msgid "There must be one admin"
@@ -878,7 +878,7 @@ msgstr "Cette base de données n'a pas pu être convertie à la version actuelle
 
 #: taguette/web/api.py:816 taguette/web/api.py:850
 msgid "This is not a Taguette project file"
-msgstr "Ce fichier n'est pas un projet Taguette"
+msgstr "Ce fichier n'est pas un projet LibreQDA ou Taguette"
 
 #: taguette/web/views.py:138
 msgid "Invalid login or password"
@@ -911,11 +911,11 @@ msgstr "Réinitialisation de mot de passe pour Taguette"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
-msgstr "Code invalide"
+msgstr "Jeton invalide"
 
 #: taguette/web/views.py:387
 msgid "No user associated with that token"
-msgstr "Aucun utilisateur n'est associé avec ce code"
+msgstr "Aucun utilisateur n'est associé avec ce jeton"
 
 #: taguette/web/views.py:390
 msgid "Password has already been changed"
@@ -937,7 +937,7 @@ msgstr "Vous n'êtes pas autorisé à supprimer ce project"
 
 #: taguette/web/views.py:537 taguette/web/views.py:564
 msgid "You don't have permission to import a codebook"
-msgstr "Vous n'avez pas la permission d'importer de tags"
+msgstr "Vous n'avez pas la permission d'importer des codes"
 
 #: taguette/web/views.py:578
 #, python-format
@@ -947,7 +947,7 @@ msgstr "Ligne %d : %s"
 #: taguette/web/views.py:696
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr ""
-"Erreur à l'importation des tags, des changements simultanés ont causé un "
+"Erreur à l'importation des codes, des changements simultanés ont causé un "
 "conflit"
 
 #: taguette/web/views.py:711
@@ -1060,11 +1060,11 @@ msgstr "Le nom du document est trop long"
 
 #: taguette/validate.py:90
 msgid "Tag path cannot be empty"
-msgstr "Le tag ne peut pas être vide"
+msgstr "Le chemin du code ne peut pas être vide"
 
 #: taguette/validate.py:92
 msgid "Tag path is too long"
-msgstr "Le tag est trop long"
+msgstr "Le chemin du code est trop long"
 
 #: taguette/import_codebook.py:24
 msgid "Invalid file: CSV expected"
