@@ -56,35 +56,35 @@ msgstr "Impossible de supprimer le document !"
 
 #: taguette/static/js/taguette.js:838
 msgid "There are no tags in this project yet."
-msgstr "Il n'y a pas encore de tags dans ce projet."
+msgstr "Il n'y a pas encore de codes dans ce projet."
 
 #: taguette/static/js/taguette.js:878
 msgid "no tags"
-msgstr "pas de tags"
+msgstr "pas de codes"
 
 #: taguette/static/js/taguette.js:945
 msgid "Invalid tag name"
-msgstr "Nom de tag invalide"
+msgstr "Nom de code invalide"
 
 #: taguette/static/js/taguette.js:972
 msgid "Couldn't create tag!"
-msgstr "Impossible de créer le tag !"
+msgstr "Impossible de créer le code !"
 
 #: taguette/static/js/taguette.js:981
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
-msgstr "Êtes-vous sûr de vouloir supprimer le tag \"%(tag)s\" ?"
+msgstr "Êtes-vous sûr de vouloir supprimer le code \"%(tag)s\" ?"
 
 #: taguette/static/js/taguette.js:996
 msgid "Couldn't delete tag!"
-msgstr "Impossible de supprimer le tag !"
+msgstr "Impossible de supprimer le code !"
 
 #: taguette/static/js/taguette.js:1065
 msgid "Couldn't merge tags!"
-msgstr "Impossible de fusionner les tags !"
+msgstr "Impossible de fusionner les codes !"
 
 msgid "Impossible to define the same tag as parent"
-msgstr "Impossible de définir la même tag comme parent"
+msgstr "Impossible de définir la même code comme parent"
 
 #. Key used to create a new highlight
 #: taguette/static/js/taguette.js:1176
@@ -93,11 +93,11 @@ msgstr "n"
 
 #: taguette/static/js/taguette.js:1226
 msgid "Couldn't create highlight!"
-msgstr "Impossible de créer la marque !"
+msgstr "Impossible de créer cette sélection !"
 
 #: taguette/static/js/taguette.js:1246
 msgid "Couldn't delete highlight!"
-msgstr "Impossible de supprimer la marque !"
+msgstr "Impossible de supprimer cette sélection !"
 
 #: taguette/static/js/taguette.js:1277
 msgid "Full permissions"
@@ -137,11 +137,11 @@ msgstr "Impossible de charger le document !"
 
 #: taguette/static/js/taguette.js:1571
 msgid "No highlights with this tag yet."
-msgstr "Aucune marque avec ce tag."
+msgstr "Aucune marque avec ce code."
 
 #: taguette/static/js/taguette.js:1659
 msgid "Error loading tag highlights!"
-msgstr "Impossible de charger les marques du tag !"
+msgstr "Impossible de charger les sélections liées à ce code !"
 
 #: taguette/static/js/taguette.js:1812
 msgid "It appears that you have been logged out."
@@ -197,7 +197,7 @@ msgstr "Supprimer"
 
 #: taguette/static/js/tag/context-menu.js.js:73
 msgid "deleteParent"
-msgstr "Supprimer le parent"
+msgstr "Dissocier du parent"
 
 #: taguette/static/js/tag/treeview.js:359
 msgid "Documents"
@@ -205,7 +205,7 @@ msgstr "Documents"
 
 #: taguette/static/js/tag/treeview.js:360
 msgid "Highlights"
-msgstr "Marques"
+msgstr "Sélections"
 
 #: taguette/static/js/tag/manager.js:362
 msgid "Your selection"
