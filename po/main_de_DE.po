@@ -123,7 +123,7 @@ msgstr "Home"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Taguette-Hilfe %(external_icon)s"
+msgstr "LibreQDA-Hilfe %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -163,7 +163,7 @@ msgid ""
 "href=\"https://www.taguette.org/getting-started.html\">User "
 "Documentation</a> | Please report issues via <a "
 "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"mailto:phun@usherbrooke.ca\">phun@usherbrooke.ca</a>!"
 msgstr ""
 
 #. Left pane tab, keep short
@@ -560,7 +560,7 @@ msgstr "Neues Passwort eingeben"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Taguette-Codebook"
+msgstr "LibreQDA-Codebook"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -577,7 +577,7 @@ msgid ""
 msgstr ""
 "Ihr Browser hat kein secret token für die Authentifikation übermittelt. "
 "Bitte prüfen Sie in der Adresszeile, ob die korrekte URL eingegeben ist, um "
-"sich einzuloggen, oder starten Sie einfach Taguette erneut."
+"sich einzuloggen, oder starten Sie einfach LibreQDA erneut."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -631,13 +631,13 @@ msgstr "Erstellen"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette-Highlights: %(path)s"
+msgstr "LibreQDA-Highlights: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette Highlights"
+msgstr "LibreQDA Highlights"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -657,7 +657,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Jemand hat das Zurücksetzen des Passwortes angefordert für den Taguette-"
+"Jemand hat das Zurücksetzen des Passwortes angefordert für den LibreQDA-"
 "Account der mit dieser Email verknüpft ist. Wenn Sie das waren, folgen Sie "
 "bitte diesem Link: <a href=\"%(link)s\">%(link)s</a>"
 
@@ -721,7 +721,7 @@ msgstr "Diese E-Mail-Adresse ist nicht mit einem Benutzer verknüpft"
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Passwort für Taguette zurücksetzen"
+msgstr "Passwort für LibreQDA zurücksetzen"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -756,7 +756,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"Das von Taguette benutzte Datenbankschema wurde geändert! Wir werden versuchen \n"
+"Das von LibreQDA benutzte Datenbankschema wurde geändert! Wir werden versuchen \n"
 "Ihren Workspace automatisch zu aktualisieren.\n"
 
 #: taguette/database/__init__.py:147
@@ -781,7 +781,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    Das von Taguette verwendete Datenbankschema wurde verändert. Da Sie nicht \n"
+"    Das von LibreQDA verwendete Datenbankschema wurde verändert. Da Sie nicht \n"
 "    SQLite benutzen, werden wir keine automatische Migration versuchen; bitte sichern Sie Ihre Daten und \n"
 "   verwenden Sie `taguette --database=%(url)s migrate`, falls Sie fortfahren möchten."
 
@@ -925,6 +925,6 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s läuft nun. Sie können sich damit verbinden indem Sie folgenden Link verwenden:\n"
+"    LibreQDA %(version)s läuft nun. Sie können sich damit verbinden indem Sie folgenden Link verwenden:\n"
 "\n"
 "    %(url)s\n"

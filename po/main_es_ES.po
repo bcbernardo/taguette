@@ -122,7 +122,7 @@ msgstr "Inicio"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Guía de Taguette %(external_icon)s"
+msgstr "Guía de LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -463,7 +463,7 @@ msgid ""
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
 "El proyecto <span style=\\\"font-family:BadScript;\\\"><a "
-"href=\\\"https://www.taguette.org/\\\">TAGUETTE</a></span> es un intento de "
+"href=\\\"https://www.taguette.org/\\\">LibreQDA</a></span> es un intento de "
 "crear una herramienta open-source con interfase web para el análisis "
 "cualitativo de datos."
 
@@ -546,7 +546,7 @@ msgstr "Cambiar contraseña"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Libro de códigos Taguette"
+msgstr "Libro de códigos LibreQDA"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -563,7 +563,7 @@ msgid ""
 msgstr ""
 "Tu navegador no envió una clave secreta para identificarse con la "
 "aplicación. Favor de verificar en la consola el enlace correcto para iniciar"
-" sesión o simplemente reinicia Taguette."
+" sesión o simplemente reinicia LibreQDA."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -616,13 +616,13 @@ msgstr "Crear"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette resaltados: %(path)s"
+msgstr "LibreQDA resaltados: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette resaltados"
+msgstr "LibreQDA resaltados"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -642,7 +642,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Alguien ha pedido reestablecer la contraseña de la cuenta de Taguette "
+"Alguien ha pedido reestablecer la contraseña de la cuenta de LibreQDA "
 "asociada con este correo electrónico. Si has sido tú, favor de seguir este "
 "enlace: <a href=\"%(link)s\">%(link)s</a>"
 
@@ -706,7 +706,7 @@ msgstr ""
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Reestablecer contraseña en Taguette"
+msgstr "Reestablecer contraseña en LibreQDA"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -902,6 +902,6 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s está activo. Te puedes conectar con este enlace:\n"
+"    LibreQDA %(version)s está activo. Te puedes conectar con este enlace:\n"
 "\n"
 "    %(url)s\n"
