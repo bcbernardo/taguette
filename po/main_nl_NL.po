@@ -123,7 +123,7 @@ msgstr "Begin"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Taguette Gids %(external_icon)s"
+msgstr "LibreQDA Gids %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -161,9 +161,7 @@ msgid ""
 "href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
 "href=\"https://www.taguette.org/getting-started.html\">User "
-"Documentation</a> | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"Documentation</a>"
 msgstr ""
 
 #. Left pane tab, keep short
@@ -477,7 +475,7 @@ msgid ""
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
 "<span style=\\\"font-family:BadScript;\\\"><a "
-"href=\\\"https://www.taguette.org/\\\">TAGUETTE</a></span> is een open-"
+"href=\\\"https://www.taguette.org/\\\">LibreQDA</a></span> is een open-"
 "source, web-based tool voor documentmarkering ten behoeve van kwalitatieve "
 "data-analyse."
 
@@ -560,7 +558,7 @@ msgstr "Nieuw wachtwoord aanmaken"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Taguette codeboek"
+msgstr "LibreQDA codeboek"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -577,7 +575,7 @@ msgid ""
 msgstr ""
 "Je browser heeft geen geheim teken doorgegeven voor authentificatie met de "
 "applicatie. Check de console a.u.b. voor de correcte URL om in te loggen, of"
-" herstart  eenvoudigweg Taguette."
+" herstart  eenvoudigweg LibreQDA."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -630,13 +628,13 @@ msgstr "Aanmaken"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette markeringen: %(path)s"
+msgstr "LibreQDA markeringen: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette markeringen"
+msgstr "LibreQDA markeringen"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -657,7 +655,7 @@ msgid ""
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
 "Iemand heeft een verzoek ingediend om het wachtwoord te resetten voor de "
-"Taguette-account die aan dit email-adres verbonden is. Als jij dit was, volg"
+"LibreQDA-account die aan dit email-adres verbonden is. Als jij dit was, volg"
 " dan a.u.b. deze link: <a href=\"%(link)s\">%(link)s</a>"
 
 #: taguette/templates/email_reset_password.html:3
@@ -720,7 +718,7 @@ msgstr "Dit email-adres is niet gekoppeld aan een gebruiker"
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Wachtwoord resetten voor Taguette"
+msgstr "Wachtwoord resetten voor LibreQDA"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -755,7 +753,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"Het database-schema dat Taguette gebruikt is veranderd! \n"
+"Het database-schema dat LibreQDA gebruikt is veranderd! \n"
 "We proberen je werkblad automatisch te updaten.\n"
 
 #: taguette/database/__init__.py:147
@@ -781,7 +779,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"Het database-schema dat Taguette gebruikt is veranderd! \n"
+"Het database-schema dat LibreQDA gebruikt is veranderd! \n"
 "Omdat je geen SQLite gebruikt zullen we niet proberen om automatisch te migreren; maak een backup van je data en\n"
 "gebruik `taguette --database=%(url)s migrate` wanneer je door wilt gaan."
 
@@ -925,6 +923,6 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s wordt nu uitgevoerd. Je kunt deze link gebruiken om verbinding te maken\n"
+"    LibreQDA %(version)s wordt nu uitgevoerd. Je kunt deze link gebruiken om verbinding te maken\n"
 "\n"
 "    %(url)s\n"

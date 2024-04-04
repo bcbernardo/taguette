@@ -121,7 +121,7 @@ msgstr "Beranda"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Panduan Taguette %(external_icon)s"
+msgstr "Panduan LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -159,17 +159,15 @@ msgid ""
 "href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
 "href=\"https://www.taguette.org/getting-started.html\">User "
-"Documentation</a> | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"Documentation</a>"
 msgstr ""
-"Taguette %(version)s dirilis di bawah lisensi <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
+"LibreQDA %(version)s dirilis di bawah lisensi <a "
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda/blob/main/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
 "href=\"https://www.taguette.org/getting-started.html\">Dokumentasi "
 "Pengguna</a> | Mohon laporkan permasalahan melalui <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> atau <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda/\">GitLab</a> atau <a "
+"href=\"mailto:phun@usherbrooke.ca\">phun@usherbrooke.ca</a>!"
 
 #. Left pane tab, keep short
 #: taguette/templates/project.html:16
@@ -528,7 +526,7 @@ msgid ""
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
 "<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">TAGUETTE</a></span> adalah piranti penandaan "
+"href=\"https://www.taguette.org/\">LibreQDA</a></span> adalah piranti penandaan "
 "dokumen open-source berbasis web untuk analisis data kualitatif."
 
 #: taguette/templates/welcome.html:10
@@ -616,7 +614,7 @@ msgstr "Atur kata sandi baru"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Kode Buku Taguette"
+msgstr "Kode Buku LibreQDA"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -637,7 +635,7 @@ msgid ""
 msgstr ""
 "Browser Anda tidak mendukung token rahasia untuk otentikasi ke "
 "aplikasi. Silakan periksa konsol untuk URL yang benar untuk masuk, atau "
-"restart Taguette."
+"restart LibreQDA."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -709,13 +707,13 @@ msgstr "Periksa"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Sorotan Taguette: %(path)s"
+msgstr "Sorotan LibreQDA: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Sorotan Taguette"
+msgstr "Sorotan LibreQDA"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -735,7 +733,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Seseorang telah meminta reset kata sandi untuk akun Taguette "
+"Seseorang telah meminta reset kata sandi untuk akun LibreQDA "
 "yang menggunakan email ini.  Jika Anda yang melakukannya, mohon klik tautan ini: <a "
 "href=\"%(link)s\">%(link)s</a>"
 
@@ -812,7 +810,7 @@ msgid ""
 " recent version of Taguette, please check for updates"
 msgstr ""
 "Database ini tidak diketahui versinya. Kemungkinan telah diisi dengan versi "
-"Taguette yang lebih baru, mohon periksa perbaruan database."
+"LibreQDA yang lebih baru, mohon periksa perbaruan database."
 
 #: taguette/web/api.py:812
 msgid "This database could not be updated to the current version"
@@ -820,7 +818,7 @@ msgstr "Database ini tidak dapat diperbarui ke versi terkini"
 
 #: taguette/web/api.py:816 taguette/web/api.py:850
 msgid "This is not a Taguette project file"
-msgstr "Ini bukan berkas proyek Taguette"
+msgstr "Ini bukan berkas proyek LibreQDA"
 
 #: taguette/web/views.py:138
 msgid "Invalid login or password"
@@ -849,7 +847,7 @@ msgstr "Tidak ada pengguna yang sesuai dengan alamat email ini"
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Reset kata sandi Taguette"
+msgstr "Reset kata sandi LibreQDA"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -916,7 +914,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    Skema database yang digunakan Taguette telah berubah! Kami akan mencoba\n"
+"    Skema database yang digunakan LibreQDA telah berubah! Kami akan mencoba\n"
 "    memperbarui ruang kerja Anda secara otomatis.\n"
 
 #: taguette/database/__init__.py:156
@@ -943,7 +941,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    Skema database yang digunakan Taguette telah berubah! Karena Anda tidak"
+"    Skema database yang digunakan LibreQDA telah berubah! Karena Anda tidak"
 " menggunakan\n"
 "    SQLite, kami tidak akan melakukan migrasi otomatis; buat cadangan data "
 "Anda dan\n"
@@ -1118,7 +1116,7 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s telah berjalan. Anda dapat menggunakannya di"
+"    LibreQDA %(version)s telah berjalan. Anda dapat menggunakannya di"
 " tautan:\n"
 "\n"
 "    %(url)s\n"
