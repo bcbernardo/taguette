@@ -1,10 +1,14 @@
-Changelog
-=========
+LibreQDA Changelog
+==================
 
-1.5.0 (2024-03-11)
+0.9.0 (2024-04-03)
 ------------------
 
+- Based on Taguette 1.4.1
 - Add an option to pass the authentication process to [CI Logon](https://www.cilogon.org/)
+
+Taguette Changelog
+==================
 
 1.4.1 (2023-02-04)
 ------------------
