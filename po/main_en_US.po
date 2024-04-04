@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
@@ -153,7 +152,7 @@ msgstr "Backlight"
 #: taguette/templates/modal/create_highlight.html:23
 #: taguette/templates/project.html:94
 msgid "Create a tag"
-msgstr "Create a tag"
+msgstr "Create a code"
 
 #: taguette/templates/project.html:95
 msgid "See all highlights"
@@ -294,12 +293,12 @@ msgstr "Delete document"
 #: taguette/templates/modal/create_tag.html:6
 msgctxt "modal window title"
 msgid "New tag"
-msgstr "New tag"
+msgstr "New code"
 
 #: taguette/templates/modal/create_tag.html:8
 msgctxt "modal window title"
 msgid "Change tag"
-msgstr "Change tag"
+msgstr "Change code"
 
 #: taguette/templates/modal/create_tag.html:43
 msgctxt " tag change form placeholder"
@@ -315,7 +314,7 @@ msgstr "Merge..."
 
 #: taguette/templates/modal/create_tag.html:56
 msgid "Delete tag"
-msgstr "Delete tag"
+msgstr "Delete code"
 
 #: taguette/templates/modal/create_highlight.html:5
 msgctxt "modal window title"
@@ -330,7 +329,7 @@ msgstr "Delete highlight"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Taguette Codebook"
+msgstr "LibreQDA Codebook"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -355,13 +354,18 @@ msgid ""
 "href=\"https://www.taguette.org/\">TAGUETTE</a></span> is an open-source "
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
+"<span style=\"font-family:BadScript;\"><a "
+"href=\"https://www.LibreQDA.org/\">LibreQDA</a></span> is an open-source "
+"web-based document tagging tool for qualitative data analysis."
 
 #: taguette/templates/welcome.html:10
 msgid ""
 "Using this tool, you can upload a collection of documents, create a "
 "hierarchy of tags, and annotate portions of documents with tags and notes"
 " that you can recall and organize later."
-msgstr ""
+msgstr "Using this tool, you can upload a collection of documents, create a "
+"hierarchy of codes, and annotate portions of documents with codes and notes"
+" that you can recall and organize later."
 
 #: taguette/templates/welcome.html:12
 #, python-format
@@ -387,11 +391,11 @@ msgid ""
 "tags will not be deleted, new tags will be added alongside them."
 msgstr ""
 "Use this form to import an existing codebook into your project. Existing "
-"tags will not be deleted, new tags will be added alongside them."
+"codes will not be deleted, new codes will be added alongside them."
 
 #: taguette/templates/project_import_codebook_confirm.html:11
 msgid "You are about to create the following tags:"
-msgstr "You are about to create the following tags:"
+msgstr "You are about to create the following codes:"
 
 #: taguette/templates/project_import_codebook_confirm.html:19
 msgctxt "codebook import tag option"
@@ -406,7 +410,7 @@ msgstr "Import"
 #: taguette/templates/project_import_codebook_confirm.html:44
 msgctxt "form submit button"
 msgid "Create tags"
-msgstr "Create tags"
+msgstr "Create codes"
 
 #: taguette/templates/project_delete.html:14
 #: taguette/templates/project_import_codebook.html:30
@@ -424,7 +428,7 @@ msgstr "Home"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Taguette Guide %(external_icon)s"
+msgstr "LibreQDA Guide %(external_icon)s"
 
 #: taguette/templates/base.html:43
 msgid "Single-user mode"
@@ -464,10 +468,11 @@ msgid ""
 "href=\"https://www.taguette.org/getting-started.html\">User "
 "Documentation</a>"
 msgstr ""
-"Taguette %(version)s is released under a <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
-" license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
-"href=\"https://www.taguette.org/getting-started.html\">User "
+"LibreQDA %(version)s is released under a <a "
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda/blob/main/LICENSE.txt\">BSD-3-Clause"
+" license</a>, LibreQDA is an experimental flavour of Taguette<br/>&#169; Rémi Rampin, "
+"<a href=\"https://www.usherbrooke.ca/flsh/recherche/centres-groupes-et-equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> and Taguette contributors | <a "
+"href=\"https://aide.libreqda.org/\">User "
 "Documentation</a>"
 
 #: taguette/templates/project_import_codebook.html:8
@@ -509,13 +514,13 @@ msgstr "Terms of Service"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette highlights: %(path)s"
+msgstr "LibreQDA highlights: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette highlights"
+msgstr "LibreQDA highlights"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -526,7 +531,7 @@ msgstr "<strong>Document:</strong> %(doc)s"
 #: taguette/templates/export_highlights.html:26
 msgctxt "exported highlight details"
 msgid "Tags:"
-msgstr "Tags:"
+msgstr "Codes:"
 
 #: taguette/templates/project_new.html:3
 msgctxt "page title"
@@ -566,7 +571,7 @@ msgid ""
 msgstr ""
 "Your browser did not supply a secret token to authenticate with the "
 "application. Please check the console for the correct URL to log in, or "
-"simply restart Taguette."
+"simply restart LibreQDA."
 
 #: taguette/templates/login.html:3
 msgctxt "page title"
@@ -633,7 +638,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Someone has requested to reset the password on the Taguette account "
+"Someone has requested to reset the password on the LibreQDA account "
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 
@@ -671,7 +676,7 @@ msgid ""
 msgstr ""
 "Are you sure you want to delete this project? It currently has "
 "<strong>%(documents)s documents and %(highlights)s highlights in %(tags)s"
-" tags</strong>. There is no way to undo."
+" codes</strong>. There is no way to undo."
 
 #: taguette/templates/project_delete.html:13
 msgctxt "submit button"
@@ -687,6 +692,12 @@ msgstr "Account settings"
 msgctxt "title"
 msgid "Account settings"
 msgstr "Account settings"
+
+#: taguette/templates/auth/account.html:20
+#: taguette/templates/auth/external_account.html:20
+msgctxt "form label for displayname"
+msgid "Display name"
+msgstr "Display name"
 
 #: taguette/templates/account.html:27
 msgctxt "form label for language selection"
@@ -805,8 +816,8 @@ msgid ""
 "href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
 msgstr ""
 " | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda/\">GitLab</a> or <a "
+"href=\"mailto:phun@usherbrooke.ca\">PHuN@usherbrooke.ca</a>!"
 
 #: taguette/web/__init__.py:60 taguette/web/base.py:576
 msgctxt "page title"
@@ -850,7 +861,7 @@ msgstr "This email address is not associated with any user"
 
 #: taguette/web/views.py:342
 msgid "Password reset for Taguette"
-msgstr "Password reset for Taguette"
+msgstr "Password reset for LibreQDA"
 
 #: taguette/web/views.py:384
 msgid "Invalid token"
@@ -894,7 +905,7 @@ msgstr "Row %d: %s"
 
 #: taguette/web/views.py:718
 msgid "Error importing tags, concurrent changes caused a conflict"
-msgstr "Error importing tags, concurrent changes caused a conflict"
+msgstr "Error importing codes, concurrent changes caused a conflict"
 
 #: taguette/web/views.py:733
 msgid "No file provided"
@@ -914,7 +925,7 @@ msgstr "Unauthorized"
 #: taguette/web/api.py:353 taguette/web/api.py:392 taguette/web/api.py:424
 #: taguette/web/api.py:483 taguette/web/api.py:559
 msgid "No such tag"
-msgstr "No such tag"
+msgstr "No such code"
 
 #: taguette/web/api.py:487
 msgid "Empty highlight"
@@ -934,7 +945,7 @@ msgid ""
 " recent version of Taguette, please check for updates"
 msgstr ""
 "This database is an unknown version. It might have been written by a more"
-" recent version of Taguette, please check for updates"
+" recent version of LibreQDA, please check for updates"
 
 #: taguette/web/api.py:845
 msgid "This database could not be updated to the current version"
@@ -942,7 +953,7 @@ msgstr "This database could not be updated to the current version"
 
 #: taguette/web/api.py:849 taguette/web/api.py:883
 msgid "This is not a Taguette project file"
-msgstr "This is not a Taguette project file"
+msgstr "This is not a LibreQDA project file"
 
 #: taguette/database/__init__.py:136
 msgid ""
@@ -951,7 +962,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    The database schema used by Taguette has changed! We will try to\n"
+"    The database schema used by LibreQDA has changed! We will try to\n"
 "    update your workspace automatically.\n"
 
 #: taguette/database/__init__.py:148
@@ -978,7 +989,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    The database schema used by Taguette has changed! Because you are not"
+"    The database schema used by LibreQDA has changed! Because you are not"
 " using\n"
 "    SQLite, we will not attempt a migration automatically; back up your "
 "data and\n"
@@ -1093,7 +1104,7 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s is now running. You can connect to it using this"
+"    LibreQDA %(version)s is now running. You can connect to it using this"
 " link:\n"
 "\n"
 "    %(url)s\n"
@@ -1156,11 +1167,11 @@ msgstr "Document name is too long"
 
 #: taguette/validate.py:103
 msgid "Tag path cannot be empty"
-msgstr "Tag path cannot be empty"
+msgstr "Code path cannot be empty"
 
 #: taguette/validate.py:105
 msgid "Tag path is too long"
-msgstr "Tag path is too long"
+msgstr "Code path is too long"
 
 #: taguette/validate.py:115
 msgid "File name is too long"
