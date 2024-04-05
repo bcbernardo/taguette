@@ -63,6 +63,11 @@ function generateContextMenuItems(node) {
             visible: hasChildren,
             callback: (key, options) => contextMenuAction(isExpanded ? 'collapse' : 'expand', node.nodeId)
         },
+        "addChild": {
+            name: gettext('Add child'),
+            icon: "add",
+            callback: (key, options) => contextMenuAction('addChild', tagId)
+        },
         "edit": {
             name: gettext('edit'),
             icon: "edit",
@@ -107,6 +112,7 @@ const actions = {
     collapse: nodeId => collapseNode(treeviewTags, nodeId),
     unselect: nodeId => unselectNode(treeviewTags, nodeId),
     edit: tagId => editTag(tagId),
+    addChild: tagId => createTag(null, current_selection, tagId),
     merge: tagId => mergeTag(tagId),
     delete: tagId => deleteTag(tagId),
     deleteParent: tagId => removeTagParent(tagId)
