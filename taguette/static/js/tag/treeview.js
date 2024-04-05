@@ -195,9 +195,11 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     };
 
     treeview_tags.treeview(options);
+    treeview_tags.data('expanded', true);
 
     if (collapse) {
         treeview_tags.treeview('collapseAll');
+        treeview_tags.data('expanded', false);
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
