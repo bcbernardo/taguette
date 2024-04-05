@@ -14,6 +14,7 @@ import tornado.locale
 from tornado.web import authenticated, HTTPError
 from urllib.parse import urlunparse
 from collections import defaultdict
+import re
 
 from .. import database
 from .. import import_codebook
@@ -43,6 +44,26 @@ PROM_REQUESTS = PromMeasureRequest(
         ['name'],
     ),
 )
+
+
+def get_idps(db):
+    idps = [{'entityid': 'http://google.com/accounts/o8/id',
+             'name': 'Google'}]
+
+    idps_query = (db.query(database.EdugainIdps)
+                  .filter(database.EdugainIdps.code == 'CAF')
+                  .order_by(database.EdugainIdps.e_displayname)).all()
+    for idp in idps_query:
+        displayname = idp.e_displayname.split(';')
+        if len(displayname) > 1:
+            displayname = displayname[1]
+        else:
+            displayname = displayname[0]
+        displayname = re.sub(r'==[a-z]{2}$', '', displayname)
+        idps.append({'entityid': idp.entityid,
+                     'name': displayname})
+
+    return idps
 
 
 class Index(BaseHandler):
@@ -127,7 +148,8 @@ class Login(BaseHandler):
                 error_msg = self.get_argument('error_msg', '')
                 return self.render('auth/cilogon.login.html',
                                    next=self.get_argument('next', ''),
-                                   error=error, error_msg=error_msg)
+                                   error=error, error_msg=error_msg,
+                                   idps=get_idps(self.db))
 
     @PROM_REQUESTS.async_('login')
     async def post(self):
@@ -186,7 +208,8 @@ class Register(BaseHandler):
             if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
                 return self.render('auth/login.html', register=True)
             else:
-                return self.render('auth/cilogon.login.html')
+                return self.render('auth/cilogon.login.html',
+                                   idps=get_idps(self.db))
 
     @PROM_REQUESTS.async_('register')
     async def post(self):
@@ -271,20 +294,21 @@ class Cilogon(BaseHandler):
 
         return get_flow
 
-    def login_cilogon(self, appredirecturl='None'):
+    def login_cilogon(self, entity_id=None, appredirecturl='None'):
         state_encoded_str = (
             str(base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8")
         )
         auth_uri = (self.flow_cilogon()
                     .step1_get_authorize_url(state=state_encoded_str))
-
+        if entity_id is not None:
+            auth_uri += f"&idphint={entity_id}"
         return self.redirect(auth_uri, status=301)
 
     @PROM_REQUESTS.sync('cilogon')
     def get(self):
-        logger.info("cilogon!")
+        entity_id = self.get_argument('entity_id', None)
         self.flow_cilogon = self.flow_func_cilogon()
-        self.login_cilogon()
+        self.login_cilogon(entity_id=entity_id)
 
 
 class CilogonCallback(BaseHandler):
