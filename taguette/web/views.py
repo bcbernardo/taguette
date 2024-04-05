@@ -14,7 +14,6 @@ import tornado.locale
 from tornado.web import authenticated, HTTPError
 from urllib.parse import urlunparse
 from collections import defaultdict
-import urllib.parse
 import re
 
 from .. import database
@@ -55,7 +54,11 @@ def get_idps(db):
                   .filter(database.EdugainIdps.code == 'CAF')
                   .order_by(database.EdugainIdps.e_displayname)).all()
     for idp in idps_query:
-        displayname = idp.e_displayname.split(';')[1]
+        displayname = idp.e_displayname.split(';')
+        if len(displayname) > 1:
+            displayname = displayname[1]
+        else:
+            displayname = displayname[0]
         displayname = re.sub(r'==[a-z]{2}$', '', displayname)
         idps.append({'entityid': idp.entityid,
                      'name': displayname})
