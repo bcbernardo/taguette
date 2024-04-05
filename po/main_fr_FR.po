@@ -652,6 +652,10 @@ msgid ""
 msgstr "Après avoir appuyé sur le bouton \"Connexion avec CILogon\", sélectionnez votre institution et procédez avec "
 "l'authentification."
 
+#: taguette/templates/auth/cilogon.login.html:25
+msgid "Select from list"
+msgstr "Sélectionnez dans la liste"
+
 #: taguette/templates/auth/login.html:15
 msgid "Log in with"
 msgstr "Connexion avec"
