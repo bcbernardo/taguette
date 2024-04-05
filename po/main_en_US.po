@@ -454,6 +454,10 @@ msgctxt "navigation item"
 msgid "Log out"
 msgstr "Log out"
 
+#: taguette/templates/auth/cilogon.login.html:25
+msgid "Select from list"
+msgstr "Select from list"
+
 #: taguette/templates/base.html:58
 msgctxt "navigation item"
 msgid "Log in"

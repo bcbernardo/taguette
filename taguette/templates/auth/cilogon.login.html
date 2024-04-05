@@ -12,7 +12,27 @@
                 campuses around the world.{% endtrans %}</em></p>
             <p>{% trans %}After you click "Sign In with CILogon", simply SELECT your home institution and then proceed
                 with the authentication process at your institution.{% endtrans %}</p>
-            <p><a class="btn btn-primary" id="cilogon" href="/cilogon">{% trans %}Log in with{% endtrans %} CILogon</a></p>
+            <div class="input-group">
+                <div class='dropdown hierarchy-select' id='entity_id-select'>
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                            id="entity_idButtonTag" data-bs-toggle="dropdown"
+                            aria-expanded="false"></button>
+                    <ul class="dropdown-menu" aria-labelledby="entity_idButtonTag">
+                        <div class="hs-searchbox">
+                            <input type="text" class="form-control" autocomplete="off">
+                        </div>
+                        <div class='hs-menu-inner'>
+                            <a class="dropdown-item" data-value="" data-level="1" href="#">{% trans %}Select from list{% endtrans %}</a>
+                            {% for idp in idps %}
+                                <a class="dropdown-item" data-value="{{ idp['entityid'] }}" data-level="1" href="#">{{ idp['name'] }}</a>
+                            {% endfor %}
+                        </div>
+                    </ul>
+                    <input class="d-none" id="entity_id" name="entity_id" readonly="readonly" aria-hidden="true"
+                           type="text"/>
+                </div>
+                <a class="btn btn-primary" id="cilogon" href="/cilogon">{% trans %}Log in with{% endtrans %} CILogon</a>
+            </div>
         </div>
     </div>
 
@@ -32,4 +52,6 @@
 {% block morejs %}
 <!-- Utilities -->
 <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/hierarchy-select.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/login.js') }}"></script>
 {% endblock %}
