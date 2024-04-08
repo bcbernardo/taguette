@@ -2,25 +2,74 @@
 {% set active_page = "index" %}
 
 {% block contents %}
-<div id="messages-div"></div>
-{% if show_messages %}
-<script src="{{ reverse_url('messages.js') }}" async></script>
-{% endif %}
-{% if multiuser %}
-<h1>{% trans user_login=user.login %}Welcome {{ user_display_name }}{% endtrans %}</h1>
-{% else %}
-<h1>{% trans %}Welcome!{% endtrans %}</h1>
-{% endif %}
-<p>{% trans %}Here are your projects:{% endtrans %}</p>
-<ul class="list-group">
-{% for project in projects %}
-  <li class="list-group-item"><a href="{{ reverse_url('project', project.id) }}">{{ project.name }}</a></li>
-{% else %}
-  <li class="list-group-item disabled" style="font-style: oblique;">{% trans %}You have no projects yet.{% endtrans %}</li>
-{% endfor %}
-  <li class="list-group-item list-group-item-primary" style="font-weight: bold;"><a href="{{ reverse_url('new_project') }}">{% trans "button in project list" %}Create a new project{% endtrans %}</a></li>
-  {% if can_import_project -%}
-  <li class="list-group-item list-group-item-primary" style="font-weight: bold;"><a href="{{ reverse_url('import_project') }}">{% trans "button in project list" %}Import a project file{% endtrans %}</a></li>
-  {%- endif %}
-</ul>
+<div class="container py-4">
+    <div id="messages-div"></div>
+    {% if show_messages %}
+    <script src="{{ reverse_url('messages.js') }}" async></script>
+    {% endif %}
+    {% if multiuser %}
+    <h1>{% trans user_login=user.login %}Welcome {{ user_display_name }}{% endtrans %}</h1>
+    {% else %}
+    <h1>{% trans %}Welcome!{% endtrans %}</h1>
+    {% endif %}
+    <p>{% trans %}Here are your projects{% endtrans %}:</p>
+    <div class="main">
+        <div class="row">
+            {% for project in projects %}
+            <a href="{{ reverse_url('project', project.id) }}" class="col-md-3 no-underline">
+                <div class="project-card">
+                    <div class="d-flex justify-content-end px-3 pt-3">
+                    <!-- <i class="fas fa-edit" onclick=""></i>-->
+                    </div>
+                    <div class="px-3 d-flex align-items-center">
+                        <div class="project-icon mr-2 d-flex align-items-center justify-content-center">
+                            <span class="text">{{ project.name[0] }}</span>
+                        </div>
+                        <h3 class="name px-3">{{ project.name }}</h3>
+                    </div>
+                    <div class="px-3 pt-4">
+                        <p class="quote2 flexible">{{ project.description | truncate(100, true, '...') }}</p>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="d-flex justify-content-between px-3 pb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-file"></i>
+                            <span class="quote2 mx-2">{{ project.document_count }} documents</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-tag"></i>
+                            <span class="quote2 mx-2">{{ project.tag_count }} tags</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+            <a href="{{ reverse_url('new_project') }}" class="col-md-3 no-underline">
+                <div class="project-card action">
+                    <div class="px-3 py-4">
+                        <div class="icon-circle mx-auto">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <h4 class="project">{% trans "button in project list" %}Create a new project{% endtrans %}</h4>
+                        <p class="quote">{% trans "button in project list" %}Description add new project{% endtrans %}</p>
+                    </div>
+                </div>
+            </a>
+
+            {% if can_import_project %}
+            <a href="{{ reverse_url('import_project') }}" class="col-md-3 no-underline">
+                <div class="project-card action">
+                    <div class="px-3 py-4">
+                        <div class="icon-circle mx-auto">
+                            <i class="fas fa-file-download"></i>
+                        </div>
+                        <h4 class="project">{% trans "button in project list" %}Import a project file{% endtrans %}</h4>
+                        <p class="quote">{% trans "button in project list" %}Description import a project file{% endtrans %}</p>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -5,7 +5,7 @@ import jinja2
 import pkg_resources
 from markupsafe import Markup
 import opentelemetry.trace
-from sqlalchemy import not_, func, distinct
+from sqlalchemy import not_, func, distinct, or_
 from sqlalchemy import and_, select, exists
 from sqlalchemy.orm import joinedload
 import uuid
@@ -124,6 +124,29 @@ def _get_highlights_for_export(db, project_id, paths):
         query = query.join(highlight_ids_with_all_tags,
                            t_highlight.c.id ==
                            highlight_ids_with_all_tags.c.highlight_id)
+    elif operator_type == 'mixed' and any(list_of_paths):
+        or_conditions = []
+
+        for group in list_of_paths:
+            if len(group) == 1:
+                or_conditions.append(t_tag.c.path == group[0])
+            else:
+                highlight_ids_with_all_tags = select(
+                    [t_highlight_tag.c.highlight_id]) \
+                    .join(t_tag, t_tag.c.id == t_highlight_tag.c.tag_id) \
+                    .filter(
+                        t_tag.c.path.in_(group),
+                        t_tag.c.project_id == project_id) \
+                    .group_by(t_highlight_tag.c.highlight_id) \
+                    .having(func.count(distinct(t_tag.c.id)) == len(group)) \
+                    .alias("and_subquery_for_group")
+
+                or_conditions.append(
+                    t_highlight.c.id.in_(
+                        select([highlight_ids_with_all_tags.c.highlight_id])))
+
+        if or_conditions:
+            query = query.filter(or_(*or_conditions))
     else:
         # Special case to select all highlights: we also need to select
         # highlights that have no tag at all, so the startswith() condition
@@ -155,7 +178,6 @@ def _get_highlights_for_export(db, project_id, paths):
     highlights = []
     for row in db.execute(query).fetchall():
         highlight_id, snippet, document, tag_path = row
-        # Ensure no duplicate tags in the list
         if highlights and highlights[-1][0] == highlight_id:
             if tag_path not in highlights[-1][3]:
                 highlights[-1][3].append(tag_path)
@@ -167,12 +189,20 @@ def _get_highlights_for_export(db, project_id, paths):
 
 
 def get_filename_for_highlights_export(path):
-    """Get a suitable filename for exported highlights.
+    """Génère un nom de fichier approprié pour
+        l'exportation des surlignages basé sur les tags.
     """
     if path:
-        return None
+        filename = (path.replace('∪', '_or_')
+                    .replace('∩', '_and_')
+                    .replace('¬', '_not_'))
+        filename = filename.replace(' ', '').lower()
+        max_length = 255
+        if len(filename) > max_length:
+            filename = filename[:max_length]
+        return filename
     else:
-        return 'all_tags'
+        return 'all_tags.html'
 
 
 @tracer.start_as_current_span('taguette/export/highlights_csv')
@@ -224,16 +254,25 @@ def highlights_xslx(db, project_id, path, filename):
     workbook.close()
 
 
+def format_title(path):
+    formatted_path = (path.replace('∩', ' ∩ ')
+                      .replace('∪', ' ∪ ')
+                      .replace('¬', ' ! '))
+    return formatted_path
+
+
 @tracer.start_as_current_span('taguette/export/highlights_doc')
 def highlights_doc(db, project_id, path, ext, *, config, locale):
     """Export highlights to a text document.
     """
     highlights = _get_highlights_for_export(db, project_id, path)
-    # TODO : update path title and filename
+
+    formatted_path = format_title(path)
+
     html = _render_string(
         'export_highlights.html',
         locale,
-        path=path,
+        path=formatted_path,
         highlights=highlights,
     )
 
@@ -247,7 +286,6 @@ async def highlighted_document(db, document, ext, *, config, locale):
 
     Each highlight is followed by its tags in brackets.
     """
-    # TODO : update with tag color
     highlights = (
         db.query(database.Highlight)
         .filter(database.Highlight.document_id == document.id)
