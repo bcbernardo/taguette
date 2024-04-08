@@ -897,14 +897,14 @@ function loadDocument(document_id, highlight_id=null) {
 
             toggleToolbarActions(true);
 
-            // let document_links = document.getElementsByClassName('document-link-current');
-            // for (let i = document_links.length - 1; i >= 0; --i) {
-            //     document_links[i].classList.remove('document-link-current');
-            // }
-            // let document_link = document.getElementById('document-link-' + current_document);
-            // if (document_link) {
-            //     document_link.classList.add('document-link-current');
-            // }
+            let document_links = document.getElementsByClassName('document-link-current');
+            for (let i = document_links.length - 1; i >= 0; --i) {
+                document_links[i].classList.remove('document-link-current');
+            }
+            let document_link = document.getElementById('document-link-' + current_document);
+            if (document_link) {
+                document_link.classList.add('document-link-current');
+            }
 
             //current_tag = null;
             // let tag_links = document.getElementsByClassName('tag-current');

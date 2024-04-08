@@ -1,83 +1,112 @@
 <div id="project-sidebar" class="project-sidebar">
 
-    <a href="javascript:void(0)" class="close-project-navbar" onclick="closeSideBar()">&times;</a>
+    <a href="javascript:void(0)" data-test-id="close-sidebar-button" class="close-project-navbar" onclick="closeSideBar()">&times;</a>
 
     <div class="project-sidebar-content">
 
-        <div class="px-5">
-            <form id="project-metadata-form" >
-                <div class="form-group">
-                    <label for="project-name" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Name{% endtrans %}</label>
-                    <input type="text" class="form-control" id="project-name" name="project-name" value="{{ project.name }}" required />
-                </div>
-                <div class="form-group">
-                    <label for="project-description" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Description{% endtrans %}</label>
-                    <textarea class="form-control" id="project-description" name="project-description">{{ project.description }}</textarea>
-                </div>
-            </form>
+        <!-- Tab selector -->
+        <ul class="nav nav-tabs mx-3" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link" id="project-tab" data-test-id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" id="documents-tab" data-test-id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Documents{% endtrans %}</a>
+            </li>
+        </ul>
 
-            {% if multiuser %}
-            <div class="accordion py-5" id="accordionCollaborators">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingCollaborators">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollaborators" aria-expanded="false" aria-controls="collapseCollaborators">
-                            {% trans "modal window title" %}Add Collaborators{% endtrans %}
-                        </button>
-                    </h2>
-                    <div id="collapseCollaborators" class="accordion-collapse collapse" aria-labelledby="headingCollaborators" data-bs-parent="#accordionCollaborators">
-                        <div class="accordion-body mt-2">
-                            <form id="members-add">
-                                <fieldset id="members-add-fields">
-                                    <div class="row">
-                                        <div class="col-md-4 form-group">
-                                            <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
-                                        </div>
-                                        <div class="col-md-4 form-group">
-                                            <select id="member-add-privileges" class="form-control">
-                                                <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
-                                                <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
-                                                <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
-                                                <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
-                                            </select>
-                                        </div>
-                                        <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
-                                    </div>
-                                </fieldset>
-                            </form>
-                            <h5 class="pb-2">{% trans %}Current Collaborators{% endtrans %}</h5>
-                            <form id="members-current">
-                                <!-- Existing collaborators -->
-                            </form>
-                            <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save members{% endtrans %}</button>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade" id="project" role="tabpanel" aria-labelledby="project-tab">
+                <div class="px-5">
+                    <form id="project-metadata-form" >
+                        <div class="form-group">
+                            <label for="project-name" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Name{% endtrans %}</label>
+                            <input type="text" class="form-control" id="project-name" name="project-name" value="{{ project.name }}" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="project-description" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Description{% endtrans %}</label>
+                            <textarea class="form-control" id="project-description" name="project-description">{{ project.description }}</textarea>
+                        </div>
+                    </form>
+
+                    {% if multiuser %}
+                    <div class="accordion py-5" id="accordionCollaborators">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingCollaborators">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollaborators" aria-expanded="false" aria-controls="collapseCollaborators">
+                                    {% trans "modal window title" %}Add Collaborators{% endtrans %}
+                                </button>
+                            </h2>
+                            <div id="collapseCollaborators" class="accordion-collapse collapse" aria-labelledby="headingCollaborators" data-bs-parent="#accordionCollaborators">
+                                <div class="accordion-body mt-2">
+                                    <form id="members-add">
+                                        <fieldset id="members-add-fields">
+                                            <div class="row">
+                                                <div class="col-md-4 form-group">
+                                                    <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
+                                                </div>
+                                                <div class="col-md-4 form-group">
+                                                    <select id="member-add-privileges" class="form-control">
+                                                        <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
+                                                        <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
+                                                        <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
+                                                        <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                    <h5 class="pb-2">{% trans %}Current Collaborators{% endtrans %}</h5>
+                                    <form id="members-current">
+                                        <!-- Existing collaborators -->
+                                    </form>
+                                    <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save members{% endtrans %}</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    {% endif %}
+
+                    <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
+                    <div class="dropdown mb-3">
+                        <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-test-id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {% trans %}Export codebook{% endtrans %}
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdown-codebook">
+                            <a href="{{ reverse_url('export_codebook_qdc', project.id) }}" class="dropdown-item">{% trans %}QDC (XML){% endtrans %}</a>
+                            <a href="{{ reverse_url('export_codebook_xlsx', project.id) }}" class="dropdown-item">{% trans %}Excel{% endtrans %}</a>
+                            <a href="{{ reverse_url('export_codebook_csv', project.id) }}" class="dropdown-item">{% trans %}CSV{% endtrans %}</a>
+                            <a href="{{ reverse_url('export_codebook_doc', project.id, 'html') }}" class="dropdown-item">{% trans %}HTML{% endtrans %}</a>
+                            <a href="{{ reverse_url('export_codebook_doc', project.id, 'docx') }}" class="dropdown-item">{% trans %}DOCX{% endtrans %}</a>
+                            <a href="{{ reverse_url('export_codebook_doc', project.id, 'pdf') }}" class="dropdown-item">{% trans %}PDF{% endtrans %}</a>
+                        </ul>
+                    </div>
+
+                    {% if can_import_codebook %}
+                    <p><a href="{{ reverse_url('import_codebook', project.id) }}" class="w-100 btn btn-outline-primary" type="button">{% trans %}Import codebook{% endtrans %}</a></p>
+                    {% endif %}
+
+                    {% if can_delete_project %}
+                    <p><a href="{{ reverse_url('delete_project', project.id) }}" class="w-100 btn btn-outline-danger">{% trans %}Delete project{% endtrans %}</a></p>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
 
-            <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
-            <div class="dropdown mb-3">
-                <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-test-id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    {% trans %}Export codebook{% endtrans %}
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdown-codebook">
-                    <a href="{{ reverse_url('export_codebook_qdc', project.id) }}" class="dropdown-item">{% trans %}QDC (XML){% endtrans %}</a>
-                    <a href="{{ reverse_url('export_codebook_xlsx', project.id) }}" class="dropdown-item">{% trans %}Excel{% endtrans %}</a>
-                    <a href="{{ reverse_url('export_codebook_csv', project.id) }}" class="dropdown-item">{% trans %}CSV{% endtrans %}</a>
-                    <a href="{{ reverse_url('export_codebook_doc', project.id, 'html') }}" class="dropdown-item">{% trans %}HTML{% endtrans %}</a>
-                    <a href="{{ reverse_url('export_codebook_doc', project.id, 'docx') }}" class="dropdown-item">{% trans %}DOCX{% endtrans %}</a>
-                    <a href="{{ reverse_url('export_codebook_doc', project.id, 'pdf') }}" class="dropdown-item">{% trans %}PDF{% endtrans %}</a>
+            <!-- List of documents -->
+            <div class="tab-pane fade show active" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+                    </div>
+                </div>
+                <ul class="list-group list-group-flush" id="documents-list">
+                    <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
                 </ul>
             </div>
-
-            {% if can_import_codebook %}
-            <p><a href="{{ reverse_url('import_codebook', project.id) }}" class="w-100 btn btn-outline-primary" type="button">{% trans %}Import codebook{% endtrans %}</a></p>
-            {% endif %}
-
-            {% if can_delete_project %}
-            <p><a href="{{ reverse_url('delete_project', project.id) }}" class="w-100 btn btn-outline-danger">{% trans %}Delete project{% endtrans %}</a></p>
-            {% endif %}
         </div>
+
+
+
     </div>
 
 </div>

@@ -197,9 +197,10 @@ class Test2E2MultiUser(SeleniumTest):
         # export doc 1
         # merge tag 2 -> 1
         # highlights: [1, 2, 3]
-        # from selenium.webdriver import ActionChains
+        from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
-        # from selenium.webdriver.common.keys import Keys
+        from selenium.webdriver.common.keys import Keys
+
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')
@@ -253,6 +254,36 @@ class Test2E2MultiUser(SeleniumTest):
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
         ))
 
+        # Change project 2 metadata
+        await self.s_click(self.find_by_id('project-sidebar-open'))
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'Project 1')
+        await self.s_click_button('project-tab')
+        await self.s_perform_action(
+            ActionChains(self.driver)
+            .click(self.find_by_id('project-name'))
+            .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
+            .send_keys('new project').key_up(Keys.CONTROL)
+        )
+        self.find_by_id('project-description').click()
+        await asyncio.sleep(0.5)
+        await self.s_perform_action(
+            ActionChains(self.driver)
+            .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
+        )
+        await asyncio.sleep(0.5)
+        self.set_value('project-description', 'Meaningful')
+        await self.s_click(self.find_by_id('document-contents'))
+        await asyncio.sleep(10)  # Wait for XHR
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'new project')
+        db = self.application.DBSession()
+        proj = db.query(database.Project).get(1)
+        self.assertEqual(proj.name, 'new project')
+        self.assertEqual(proj.description, 'Meaningful')
+
+        await self.s_click(self.find_by_test_id('close-sidebar-button'))
+
         # Create tag 2 in project 1
         await self.s_click_button('create-tag-link')
         self.set_value("tag-add-path", "people")
@@ -269,8 +300,6 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         # Create document 1 in project 1
-        # await self.s_click_button('documents-tab')
-        # await self.s_click_button('create-document-link')
         self.driver.execute_script('''
             javascript:createDocument();
         ''')
@@ -291,47 +320,16 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
         self.assertTrue(doc.filename, docs_1[0]['name'])
+        self.driver.execute_script('$("#document-add-modal").modal("hide");')
 
-        # Change project 2 metadata
-        # await self.s_click(self.find_by_id('project-sidebar-open'))
-        # self.driver.execute_script('''
-        #     javascript:openSidebar();
-        # ''')
-        # self.assertEqual(self.find_by_class(
-        #     'project-name')[0].text, 'Project 1')
-        # await self.s_click_button('project-tab')
-        # await self.s_perform_action(
-        #     ActionChains(self.driver)
-        #     .click(self.find_by_id('project-name'))
-        #     # .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
-        #     .send_keys('new project').key_up(Keys.CONTROL)
-        # )
-        # self.find_by_id('project-description').click()
-        # await asyncio.sleep(0.5)
-        # await self.s_perform_action(
-        #     ActionChains(self.driver)
-        #     .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
-        # )
-        # await asyncio.sleep(0.5)
-        # self.set_value('project-description', 'Meaningful')
-        # await self.s_click(self.find_by_id('document-contents'))
-        # await asyncio.sleep(10)  # Wait for XHR
-        # print(self.find_by_class(
-        #     'project-name')[0].text)
-        # self.assertEqual(self.find_by_class(
-        #     'project-name')[0].text, 'new project')
-        # db = self.application.DBSession()
-        # proj = db.query(database.Project).get(1)
-        # self.assertEqual(proj.name, 'new project')
-        # self.assertEqual(proj.description, 'Meaningful')
+        await asyncio.sleep(0.5)
+        # await self.s_get('/project/new')
+
         # Create document 2 and 3 in project 1
-        # await self.s_click_button('documents-tab')
-        # await self.s_click_button('create-document-link')
-        # self.driver.execute_script('$(document_add_modal).modal("hide");')
-
-        self.driver.execute_script('''
-            javascript:createDocument();
-        ''')
+        await self.s_click(self.find_by_id('project-sidebar-open'))
+        await self.s_click_button('documents-tab')
+        await self.s_click_button('create-document-link')
+        await self.s_click(self.find_by_test_id('close-sidebar-button'))
         self.set_value('document-add-description',
                        'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
@@ -594,6 +592,7 @@ class Test2E2MultiUser(SeleniumTest):
 
         # # Check codebook export options of project 1
         await self.s_click(self.find_by_id('project-sidebar-open'))
+        await self.s_click_button('project-tab')
         await self.s_click_button('dropdown-codebook')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
