@@ -526,7 +526,7 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         # List highlights in project 1 under 'interesting'
-        await self.s_get('/project/1/highlights/interesting|'
+        await self.s_get('/project/1/highlights/interesting∪'
                          'interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(

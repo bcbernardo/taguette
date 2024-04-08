@@ -276,13 +276,7 @@ function loadTagsHighlights() {
     selectedTags.forEach((tag, index) => {
         let conditionSymbol = '';
         if (index > 0) {
-            if (tag.condition === 'and') {
-                conditionSymbol = '&';
-            } else if (tag.condition === 'or') {
-                conditionSymbol = '|';
-            } else if (tag.condition === 'not') {
-                conditionSymbol = '!';
-            }
+            conditionSymbol = getConditionalSymbol(tag.condition);
         }
         selectedTagPathsString += `${conditionSymbol}${tag.path}`;
     });
@@ -316,6 +310,17 @@ function selectWithCondition(treeview, nodeId, condition) {
     selectCondition = condition;
     selectNode(treeview, nodeId);
     selectCondition = 'or';
+}
+
+function getConditionalSymbol(condition) {
+    if (condition === 'and') {
+        return '∩';
+    } else if (condition === 'or') {
+        return '∪';
+    } else if (condition === 'not') {
+        return  '¬';
+    }
+    return '';
 }
 
 function getTagIdFromTreeviewNode(treeview, nodeId) {

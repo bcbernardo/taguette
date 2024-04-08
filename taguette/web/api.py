@@ -675,34 +675,33 @@ class Highlights(BaseHandler):
             subquery = (self.db.query(hl_tag.c.highlight_id)
                         .join(tag, hl_tag.c.tag_id == tag.id)
                         .filter(
-                            tag.path.in_(list_of_paths),
-                            tag.project == project
+                tag.path.in_(list_of_paths),
+                tag.project == project
             )
                 .group_by(hl_tag.c.highlight_id)
                 .having(
-                            func.count(distinct(tag.id)) == len(list_of_paths)
+                func.count(distinct(tag.id)) == len(list_of_paths)
             )
                 .subquery())
             query = query.join(
                 subquery, subquery.c.highlight_id == database.Highlight.id)
         elif any(list_of_paths) and operator_type == 'mixed':
-            print(list_of_paths)
             or_conditions = []
             # check to remove  ! if necessary
             for group in list_of_paths:
                 if len(group) == 1:
                     or_conditions.append(tag.path == group[0])
                 else:
-                    et_subquery = (self.db.query(hl_tag.c.highlight_id)
-                                   .join(tag, hl_tag.c.tag_id == tag.id)
-                                   .filter(tag.project == project)
-                                   .filter(tag.path.in_(group))
-                                   .group_by(hl_tag.c.highlight_id)
-                                   .having(func.count(distinct(tag.id))
-                                           == len(group))
-                                   .subquery())
+                    and_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                    .join(tag, hl_tag.c.tag_id == tag.id)
+                                    .filter(tag.project == project)
+                                    .filter(tag.path.in_(group))
+                                    .group_by(hl_tag.c.highlight_id)
+                                    .having(func.count(
+                                        distinct(tag.id)) == len(group))
+                                    .subquery())
                     or_conditions.append(database.Highlight.id.in_(
-                        self.db.query(et_subquery.c.highlight_id)))
+                        self.db.query(and_subquery.c.highlight_id)))
             if or_conditions:
                 query = query.filter(or_(*or_conditions))
         else:
