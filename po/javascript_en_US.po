@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
@@ -48,12 +47,12 @@ msgstr "Are you sure you want to delete the document '%(doc)s'?"
 
 #: taguette/static/js/taguette.js:394
 msgid "Invalid tag name"
-msgstr "Invalid tag name"
+msgstr "Invalid code name"
 
 #: taguette/static/js/taguette.js:446
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
-msgstr "Are you sure you want to delete the tag '%(tag)s'?"
+msgstr "Are you sure you want to delete the code '%(tag)s'?"
 
 #: taguette/static/js/taguette.js:640
 msgid "Full permissions"
@@ -85,7 +84,7 @@ msgstr "Load a document on the left"
 
 #: taguette/static/js/taguette.js:933
 msgid "No highlights with this tag yet."
-msgstr "No highlights with this tag yet."
+msgstr "No highlights with this code yet."
 
 #: taguette/static/js/tag/treeview.js:359
 msgid "Documents"

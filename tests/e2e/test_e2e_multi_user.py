@@ -61,7 +61,7 @@ class Test2E2MultiUser(SeleniumTest):
     async def test_login(self):
         # Fetch index, should have welcome message and register link
         await self.s_get('/')
-        self.assertEqual(self.driver.title, 'Welcome | Taguette')
+        self.assertEqual(self.driver.title, 'Welcome | LibreQDA')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
             ['Welcome'],

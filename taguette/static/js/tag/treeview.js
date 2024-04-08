@@ -286,13 +286,20 @@ function loadTagsHighlights() {
 
     const tags_return = $('#tag-selection-return'),
         tags_return_link = $('a', tags_return);
-    tags_return_link.unbind('click')
+    tags_return_link.unbind('click').hide();
     if (selectedTags.length > 0) {
         loadTag(selectedTagPathsString);
         tags_return_link.attr('href', url);
         tags_return_link.bind('click', function(e){
             e.preventDefault();
-            window.history.back();
+            console.log(window.history.state.tag_path);
+            if(window.history.state.tag_path === "") {
+                loadTag('');
+                selectAllTag();
+            } else {
+                console.log('ici2');
+                window.history.back();
+            }
             tags_return_link.hide();
         });
     } else {

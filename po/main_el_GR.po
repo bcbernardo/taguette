@@ -109,7 +109,7 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Η Taguette %(version)s εκτελείται τώρα. Μπορείτε να συνδεθείτε σε αυτό με τον σύνδεσμο:\n"
+"    Η LibreQDA %(version)s εκτελείται τώρα. Μπορείτε να συνδεθείτε σε αυτό με τον σύνδεσμο:\n"
 "\n"
 "    %(url)s\n"
 
@@ -217,7 +217,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την Taguette έχει αλλάξει! Θα προσπαθήσουμε να\n"
+"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την LibreQDA έχει αλλάξει! Θα προσπαθήσουμε να\n"
 "    ενημερώσουμε αυτόματα τον χώρο εργασίας σας.\n"
 
 #: taguette/database/__init__.py:148
@@ -242,7 +242,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την Taguette έχει αλλάξει! Επειδή δεν χρησιμοποιείτε\n"
+"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την LibreQDA έχει αλλάξει! Επειδή δεν χρησιμοποιείτε\n"
 "    το SQLite, δεν θα επιχειρήσουμε αυτόματη μετεγκατάσταση. Δημιουργήστε αντίγραφα ασφαλείας των δεδομένων σας\n"
 "    και χρησιμοποιήστε το `taguette --database=%(url)s migrate` αν θέλετε να συνεχίσετε."
 
@@ -279,8 +279,8 @@ msgid ""
 "This database is an unknown version. It might have been written by a more "
 "recent version of Taguette, please check for updates"
 msgstr ""
-"Αυτή η βάση δεδομένων είναι από μια άγνωστη έκδοση της Taguette. Μπορεί να "
-"έχει δημιουργηθεί από μια πιο πρόσφατη έκδοση του Taguette. Ελέγξτε για "
+"Αυτή η βάση δεδομένων είναι από μια άγνωστη έκδοση της LibreQDA. Μπορεί να "
+"έχει δημιουργηθεί από μια πιο πρόσφατη έκδοση του LibreQDA. Ελέγξτε για "
 "ενημερώσεις."
 
 #: taguette/web/api.py:835
@@ -290,7 +290,7 @@ msgstr ""
 
 #: taguette/web/api.py:839 taguette/web/api.py:873
 msgid "This is not a Taguette project file"
-msgstr "Αυτό δεν είναι ένα αρχείο έργου της Taguette"
+msgstr "Αυτό δεν είναι ένα αρχείο έργου της LibreQDA"
 
 #: taguette/web/__init__.py:60 taguette/web/base.py:566
 msgctxt "page title"
@@ -334,7 +334,7 @@ msgstr ""
 
 #: taguette/web/views.py:358
 msgid "Password reset for Taguette"
-msgstr "Επαναφορά κωδικού πρόσβασς για την Taguette"
+msgstr "Επαναφορά κωδικού πρόσβασς για την LibreQDA"
 
 #: taguette/web/views.py:400
 msgid "Invalid token"
@@ -387,8 +387,8 @@ msgid ""
 "href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
 msgstr ""
 " | Παρακαλώ αναφέρετε προβλήματα ή άλλα ζητήματα μέσω του <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> ή με μήνυμα στο <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda\">GitLab</a> ή με μήνυμα στο <a "
+"href=\"mailto:phun@usherbrooke.ca\">phun@usherbrooke.ca</a>!"
 
 #: taguette/web/base.py:573
 #, python-format
@@ -524,7 +524,7 @@ msgid ""
 msgstr ""
 "Το πρόγραμμα περιήγησής σας δεν παρείχε μυστικό κλειδάριθμο για "
 "εξουσιοδότηση με την εφαρμογή. Ελέγξτε την κονσόλα για να συνδεθείτε στη "
-"σωστή διεύθυνση URL, ή απλά επανεκκινήστε την Taguette."
+"σωστή διεύθυνση URL, ή απλά επανεκκινήστε την LibreQDA."
 
 #: taguette/templates/welcome.html:4
 msgctxt "page title"
@@ -543,7 +543,7 @@ msgid ""
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
 "<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">Η TAGUETTE</a></span> είναι μια ανοιχτού "
+"href=\"https://www.taguette.org/\">Η LibreQDA</a></span> είναι μια ανοιχτού "
 "κώδικα web-based εφαρμογή προσθήκης ετικετών για ποιοτική ανάλυση δεδομένων."
 
 #: taguette/templates/welcome.html:10
@@ -570,7 +570,7 @@ msgid ""
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
 "Κάποιος ζήτησε να επαναφέρει τον κωδικό πρόσβασης ενός λογαριασμού της "
-"Taguette, ο οποίος σχετίζεται με αυτό το email. Εάν ήσασταν εσείς, "
+"LibreQDA, ο οποίος σχετίζεται με αυτό το email. Εάν ήσασταν εσείς, "
 "ακολουθήστε αυτόν τον σύνδεσμο: <a href=\"%(link)s\">%(link)s</a>"
 
 #: taguette/templates/email_reset_password.html:3
@@ -863,7 +863,7 @@ msgstr "νέα επισήμανση (n)"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Βιβλίο Ετικετών Taguette"
+msgstr "Βιβλίο Ετικετών LibreQDA"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -1055,13 +1055,13 @@ msgstr "Ενημέρωση"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Επισημάνσεις Taguette: %(path)s"
+msgstr "Επισημάνσεις LibreQDA: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Επισημάνσεις Taguette"
+msgstr "Επισημάνσεις LibreQDA"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -1083,7 +1083,7 @@ msgstr "Αρχική"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Οδηγός Taguette %(external_icon)s"
+msgstr "Οδηγός LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -1123,8 +1123,8 @@ msgid ""
 "href=\"https://www.taguette.org/getting-started.html\">User "
 "Documentation</a>"
 msgstr ""
-"Η έκδοση Taguette %(version)s κυκλοφορεί με τους όρους της άδειας <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause</a>,"
+"Η έκδοση LibreQDA %(version)s κυκλοφορεί με τους όρους της άδειας <a "
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda/blob/main/LICENSE.txt\">BSD-3-Clause</a>,"
 " &#169; Rémi Rampin και συνεισφέροντες στη Taguette | <a "
 "href=\"https://www.taguette.org/getting-started.html\">Τεκμηρίωση χρήστη</a>"
 

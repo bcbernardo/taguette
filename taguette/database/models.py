@@ -708,7 +708,7 @@ class EdugainIdps(Base):
 
     id = Column(Integer, primary_key=True)
     entityid = Column(String(255), nullable=True)
-    e_displayname = Column(String(255), nullable=True)
+    e_displayname = Column(Text(), nullable=True)
     regauth = Column(String(255), nullable=True)
     entity_cat = Column(String(255), nullable=True)
     eccs_status = Column(Integer, nullable=True)

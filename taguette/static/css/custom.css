@@ -1,9 +1,9 @@
 /* Add Taguette font */
-/*@font-face {*/
-/*  font-family: BadScript;*/
-/*  font-display: swap;*/
-/*  src: url(../webfonts/BadScript.ttf);*/
-/*}
+@font-face {
+ font-family: BadScript;
+ font-display: swap;
+ src: url(../webfonts/BadScript.ttf);
+}
 
 /* Add body font */
 @font-face {
