@@ -28,9 +28,7 @@ import base64
 import requests
 from tornado.escape import url_escape
 
-
 logger = logging.getLogger(__name__)
-
 
 PROM_REQUESTS = PromMeasureRequest(
     count=prometheus_client.Counter(
@@ -69,6 +67,7 @@ def get_idps(db):
 class Index(BaseHandler):
     """Index page, shows welcome message and user's projects.
     """
+
     @PROM_REQUESTS.sync('index')
     def get(self):
         if self.current_user is not None:
@@ -286,7 +285,7 @@ class Cilogon(BaseHandler):
                 scope=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
                 redirect_uri=self.application.config['CI_LOGON_CALLBACK_URL'],
             )
-            f.params['access_type'] = 'offline'          # offline access
+            f.params['access_type'] = 'offline'  # offline access
             f.params['include_granted_scopes'] = 'true'  # incremental auth
 
             d["FLOW"] = f
@@ -933,7 +932,9 @@ class ImportCodebook(BaseHandler):
                     continue
 
                 if replace:
-                    replace_tags[path] = {'description': description}
+                    replace_tags[path] = {'description': description,
+                                          'parent': parent,
+                                          'color': color}
                 else:  # Insert
                     insert_tags.append({
                         'path': path,
@@ -961,6 +962,12 @@ class ImportCodebook(BaseHandler):
                         pass
                     else:
                         tag.description = tag_update['description']
+                        tag.color = tag_update['color']
+                        tag_parent = (self.db.query(database.Tag)
+                                      .filter_by(path=tag_update['parent'],
+                                                 project_id=project.id)
+                                      .first())
+                        tag.parent_id = tag_parent.id if tag_parent else None
                         changed_tags.append(tag)
                 if replace_tags:
                     raise KeyError
@@ -968,7 +975,8 @@ class ImportCodebook(BaseHandler):
                 # Do inserts
                 for tag_insert in insert_tags:
                     tag_parent = (self.db.query(database.Tag)
-                                  .filter_by(path=tag_insert['parent'])
+                                  .filter_by(path=tag_insert['parent'],
+                                             project_id=project.id)
                                   .first())
                     tag = database.Tag(
                         project_id=project.id,

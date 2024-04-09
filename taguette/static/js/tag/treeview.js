@@ -50,6 +50,16 @@ function unselectNode(treeview, nodeId) {
     }
 }
 
+function deselectAllNodes(treeview) {
+    const $treeview = $(`#${treeview}`);
+    const allNodes = getAllNodes(treeview);
+    allNodes.forEach(node => {
+        if (node.state.selected) {
+            $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        }
+    });
+}
+
 function toggleNodeSelection(treeview, nodeId, select = true) {
     const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
@@ -185,9 +195,11 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     };
 
     treeview_tags.treeview(options);
+    treeview_tags.data('expanded', true);
 
     if (collapse) {
         treeview_tags.treeview('collapseAll');
+        treeview_tags.data('expanded', false);
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
@@ -264,13 +276,7 @@ function loadTagsHighlights() {
     selectedTags.forEach((tag, index) => {
         let conditionSymbol = '';
         if (index > 0) {
-            if (tag.condition === 'and') {
-                conditionSymbol = '&';
-            } else if (tag.condition === 'or') {
-                conditionSymbol = '|';
-            } else if (tag.condition === 'not') {
-                conditionSymbol = '!';
-            }
+            conditionSymbol = getConditionalSymbol(tag.condition);
         }
         selectedTagPathsString += `${conditionSymbol}${tag.path}`;
     });
@@ -311,6 +317,17 @@ function selectWithCondition(treeview, nodeId, condition) {
     selectCondition = condition;
     selectNode(treeview, nodeId);
     selectCondition = 'or';
+}
+
+function getConditionalSymbol(condition) {
+    if (condition === 'and') {
+        return '∩';
+    } else if (condition === 'or') {
+        return '∪';
+    } else if (condition === 'not') {
+        return  '¬';
+    }
+    return '';
 }
 
 function getTagIdFromTreeviewNode(treeview, nodeId) {

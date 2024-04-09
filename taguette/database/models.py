@@ -8,8 +8,10 @@ import json
 import logging
 import opentelemetry.trace
 import os
-from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
-    Table, UniqueConstraint, select, distinct
+from sqlalchemy import (Column, func, ForeignKey,
+                        Index, TypeDecorator, MetaData,
+                        Table, UniqueConstraint,
+                        select, distinct)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship
 from sqlalchemy.sql import functions
@@ -684,6 +686,20 @@ Tag.documents_count = column_property(
     )
     .correlate_except(highlight_tags)
     .scalar_subquery()
+)
+
+# Property to count documents associate with projet
+Project.document_count = column_property(
+    select([func.count(Document.id)])
+    .where(Document.project_id == Project.id)
+    .as_scalar()
+)
+
+# Property to count tags associate with projet
+Project.tag_count = column_property(
+    select([func.count(Tag.id)])
+    .where(Tag.project_id == Project.id)
+    .as_scalar()
 )
 
 

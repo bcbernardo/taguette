@@ -173,7 +173,7 @@ msgstr "Inclure également (OU)"
 
 #: taguette/static/js/tag/context-menu.js.js:52
 msgid "NOT"
-msgstr "Exclure également (NOT)"
+msgstr "Exclure"
 
 #: taguette/static/js/tag/context-menu.js.js:61
 msgid "expand"
@@ -210,3 +210,19 @@ msgstr "Sélections"
 #: taguette/static/js/tag/manager.js:362
 msgid "Your selection"
 msgstr "Votre sélection"
+
+#: taguette/static/js/tag/context-menu.js:67
+msgid "Add child"
+msgstr "Ajouter un enfant"
+
+#: taguette/static/js/tag/context-menu.js:39
+msgid "Select With Condition"
+msgstr "Sélection conditionnelle"
+
+#: taguette/static/js/document/manager.js:40
+msgid "Remove from Favorites"
+msgstr "Retirer comme favori"
+
+#: taguette/static/js/document/manager.js:44
+msgid "Add to Favorites"
+msgstr "Ajouter comme favori"

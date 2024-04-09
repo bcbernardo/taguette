@@ -122,8 +122,8 @@ def background_task(task, *, should_never_exit=False):
 
 
 def check_operator_consistency(paths):
-    has_and = '&' in paths
-    has_or = '|' in paths
+    has_and = '∩' in paths
+    has_or = '∪' in paths
 
     if has_and and has_or:
         return 'mixed'
@@ -139,8 +139,8 @@ def parse_paths_for_exclusion(paths):
     import re
     exclude_paths = []
     include_paths = []
-    for path in re.findall(r'([&|!]?[^\|&!]+)', paths):
-        if path.startswith('!'):
+    for path in re.findall(r'([∩∪¬]?[^\∩∪¬]+)', paths):
+        if path.startswith('¬'):
             exclude_paths.append(path[1:])
         else:
             include_paths.append(path)
@@ -156,10 +156,24 @@ def get_path_informations(paths):
     list_of_paths = []
 
     if operator_type == 'and':
-        list_of_paths = include_paths_string.split('&')
+        list_of_paths = include_paths_string.split('∩')
     elif operator_type == 'or':
-        list_of_paths = include_paths_string.split('|')
+        list_of_paths = include_paths_string.split('∪')
     elif operator_type == 'mixed':
-        list_of_paths = include_paths_string.split('&')
+        list_of_paths = separate_and_group_tags(paths)
 
     return list_of_paths, operator_type, exclude_paths
+
+
+def separate_and_group_tags(paths):
+
+    exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
+
+    or_groups = include_paths_string.split('∪')
+
+    grouped_tags = []
+    for group in or_groups:
+        and_tags = group.split('∩')
+        grouped_tags.append(and_tags)
+
+    return grouped_tags

@@ -260,9 +260,11 @@ class TestMultiUserCodeBook(TestMultiUser):
                 'tag0-replace': 'on',
                 'tag0-path': 'interesting',
                 'tag0-description': 'yes replace',
+                'tag0-color': '#000000',
                 'tag1-import': 'on',
                 'tag1-path': 'people',
                 'tag1-description': 'new',
+                'tag1-color': '#000000',
                 # tag2-enabled not set
                 'tag2-path': 'other',
                 'tag2-description': 'disabled',
@@ -284,7 +286,7 @@ class TestMultiUserCodeBook(TestMultiUser):
                 textwrap.dedent('''\
                     tag,description,color,parent,number of highlights
                     interesting,yes replace,#000000,,0
-                    people,new,,,0
+                    people,new,#000000,,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -304,7 +306,7 @@ class TestMultiUserCodeBook(TestMultiUser):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'tag_parent': None,
-                    'tag_color': '', 'description': 'new',
+                    'tag_color': '#000000', 'description': 'new',
                 }),
             ],
         )

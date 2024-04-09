@@ -1,13 +1,18 @@
 /* Add Taguette font */
 @font-face {
-  font-family: BadScript;
-  font-display: swap;
-  src: url(../webfonts/BadScript.ttf);
+ font-family: BadScript;
+ font-display: swap;
+ src: url(../webfonts/BadScript.ttf);
 }
 
 /* Add body font */
 @font-face {
-  font-family: Montserrat;
+  font-family: -apple-system,
+  BlinkMacSystemFont, "Segoe UI",
+  Roboto, "Helvetica Neue", Arial,
+  "Noto Sans", sans-serif, "Apple Color Emoji",
+  "Segoe UI Emoji", "Segoe UI Symbol",
+  "Noto Color Emoji";;
   font-display: fallback;
   src: url(../webfonts/Montserrat-Light.ttf);
 }
@@ -266,7 +271,7 @@ li.document-link-current a.document-link-a {
 
 .document-view {
   border: 2px solid #dee2e6;
-  padding: 2.2em 0.3em 1.2em 0.3em;
+  padding: 0.5em 0.5em 0.5em 0.5em;
   position: relative;
   text-align: initial; /* Reset alignment so RTL works */
 }
@@ -279,11 +284,11 @@ li.tag-current {
   color: #bbb;
 }
 
-#export-button {
-  position: absolute;
-  top: .1em;
-  right: .5em;
-}
+/*#export-button {*/
+/*  position: absolute;*/
+/*  top: .1em;*/
+/*  right: .5em;*/
+/*}*/
 
 #export-button .dropdown-toggle {
   padding: 0.125rem 0.25rem;
@@ -349,9 +354,10 @@ a.dropdown-item:hover {
 }
 
 .highlight-entry {
-  border: 1px solid rgba(0,0,0,.125);
+  border: 3px dotted rgba(0,0,0,.125);
   margin: 1rem 0;
   padding: 1rem 0.6rem 1rem 0.6rem;
+    border-radius: 10px;
 }
 
 .draggable {
@@ -439,4 +445,380 @@ a.dropdown-item:hover {
     font-weight: 300;
     line-height: 1.0;
   }
+}
+
+/*========================
+Index project view custom
+=========================*/
+
+.main{
+    font-family: -apple-system,
+    BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: rgb(33, 37, 41);
+    text-align: left;
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 250px;
+    width: 300px;
+    background-color: #fff;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+.project-card .fas {
+    color: #125368;
+}
+
+.action {
+    background-color: #125368;
+}
+
+.project-card:hover {
+    transform: scale(1.05);
+    border : 2px solid #125368;
+}
+
+.icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.project{
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.star{
+    font-size: 20px !important;
+    color: #b1b4b7;
+}
+.dot{
+    font-size: 20px !important;
+    color: #b1b4b7;
+}
+.project-icon {
+    border-radius: 50%;
+    background-color: #125368;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: -10px;
+}
+
+.project-icon span {
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.project-card .name{
+    font-size: 22px;
+    color: #464e56;
+    font-weight: 600;
+    text-align: left;
+}
+
+.quote{
+    text-align: center;
+    font-size: 14px;
+    font-weight: 400;
+    color: #fff;
+
+}
+
+.quote2 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #868e94;
+    text-align: left;
+    overflow: auto;
+    max-height: 80px;
+    margin: 0 3px;
+}
+
+.custom-hr {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 3px dotted #ccc !important;
+    text-align: center;
+    justify-content: center;
+    height: 0;
+    width: 100%;
+    background: transparent;
+    margin: 8px 0;
+}
+
+.no-underline,
+.no-underline:hover,
+.no-underline:visited,
+.no-underline:active {
+    text-decoration: none;
+}
+
+.tags-container {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+}
+
+/*========================
+Document custom select
+=========================*/
+
+.custom-select {
+    position: relative;
+    width: 40%;
+    max-width: 100%;
+    font-size: 1.15rem;
+    color: #000;
+    z-index: 1;
+}
+
+.select-button {
+    width: 100%;
+    height: 40px;
+    font-size: 1.15rem;
+    background-color: #fff;
+    padding: 0.675em 1em;
+    border: 1px solid #caced1;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.selected-value {
+    text-align: left;
+}
+
+.arrow {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #000;
+    transition: transform ease-in-out 0.3s;
+}
+
+.select-dropdown {
+    position: absolute;
+    list-style: none;
+    width: 100%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    border: 1px solid #caced1;
+    border-radius: 0.5rem;
+    padding: 10px;
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    transition: 0.5s ease;
+
+    transform: scaleY(0);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.select-dropdown:focus-within {
+    box-shadow: 0 10px 25px rgba(94, 108, 233, 0.6);
+}
+
+.select-dropdown li {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.create-document-option a {
+    width: 100%;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.create-document-option a:hover {
+   color:white;
+}
+
+.select-dropdown li label {
+    width: 100%;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.select-dropdown::-webkit-scrollbar {
+    width: 7px;
+}
+.select-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 25px;
+}
+
+.select-dropdown::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 25px;
+}
+
+.select-dropdown li:hover,
+.select-dropdown input:checked ~ label {
+    background-color: #125368;
+    color: #f1f1f1;
+}
+
+.select-dropdown input:focus ~ label {
+    background-color: #dfdfdf;
+}
+
+.select-dropdown input[type="radio"] {
+    position: absolute;
+    left: 0;
+    opacity: 0;
+}
+
+/* interactivity */
+
+.custom-select.active .arrow {
+    transform: rotate(180deg);
+}
+
+.custom-select.active .select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: scaleY(1);
+}
+
+/* document toolbar */
+
+.toolbar-container {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* project sidebar */
+.project-sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    background-color: #fefefe;
+    overflow-x: hidden;
+    border: 3px solid #5a6268;
+    transition: 0.5s;
+}
+
+.project-sidebar-content {
+    position: relative;
+    top: 6%;
+    width: 100%;
+    text-align: left;
+}
+
+.close-project-navbar {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+/* Backlight checkbox */
+.custom-checkbox {
+    display: inline-block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    user-select: none;
+}
+
+
+.custom-checkbox .custom-control-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox .custom-control-label:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #125368;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label:after {
+    content: "✓";
+    position: absolute;
+    left: 4px;
+    top: -2px;
+    font-size: 18px;
+    color: #125368;
+}
+
+.custom-checkbox:hover .custom-control-input ~ .custom-control-label:before {
+    background-color: #f0f0f0;
+}
+
+#tag-selection-criteria {
+    display: none;
+    border: 1px solid #cccccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    margin: 10px 0;
+    width: 100%;
+}
+
+#clear-selection:hover i {
+    color: red;
+}
+
+#clear-selection {
+    display: block;
+    text-align: right;
 }
