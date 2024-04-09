@@ -210,8 +210,6 @@ msgstr "Sélections"
 #: taguette/static/js/tag/manager.js:362
 msgid "Your selection"
 msgstr "Votre sélection"
-<<<<<<< Updated upstream
-=======
 
 #: taguette/static/js/tag/context-menu.js:67
 msgid "Add child"
@@ -228,4 +226,3 @@ msgstr "Retirer comme favori"
 #: taguette/static/js/document/manager.js:44
 msgid "Add to Favorites"
 msgstr "Ajouter comme favori"
->>>>>>> Stashed changes
