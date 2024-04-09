@@ -206,7 +206,7 @@ msgstr "Gérer les collaborateurs"
 
 #: taguette/templates/project.html:47
 msgid "Export project"
-msgstr "Exporter le project"
+msgstr "Exporter le projet"
 
 #: taguette/templates/project.html:51
 msgid "Export codebook"

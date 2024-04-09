@@ -137,7 +137,7 @@ msgstr "Impossible de charger le document !"
 
 #: taguette/static/js/taguette.js:1571
 msgid "No highlights with this tag yet."
-msgstr "Aucune marque avec ce code."
+msgstr "Aucune sélection avec ce code."
 
 #: taguette/static/js/taguette.js:1659
 msgid "Error loading tag highlights!"
@@ -210,3 +210,22 @@ msgstr "Sélections"
 #: taguette/static/js/tag/manager.js:362
 msgid "Your selection"
 msgstr "Votre sélection"
+<<<<<<< Updated upstream
+=======
+
+#: taguette/static/js/tag/context-menu.js:67
+msgid "Add child"
+msgstr "Ajouter un enfant"
+
+#: taguette/static/js/tag/context-menu.js:39
+msgid "Select With Condition"
+msgstr "Sélection conditionnelle"
+
+#: taguette/static/js/document/manager.js:40
+msgid "Remove from Favorites"
+msgstr "Retirer comme favori"
+
+#: taguette/static/js/document/manager.js:44
+msgid "Add to Favorites"
+msgstr "Ajouter comme favori"
+>>>>>>> Stashed changes
