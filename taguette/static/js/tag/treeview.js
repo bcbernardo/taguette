@@ -163,6 +163,21 @@ function collapseAllNodes(treeviewId) {
 // custom treeview function
 
 function convertToTreeNode(data, includeTags) {
+
+    // sum each tag count + document count
+    function sumCounts(item) {
+        let totalCount = item.count || 0;
+        let totalDocumentCount = item.count_document || 0;
+        if (item.children) {
+            item.children.forEach(child => {
+                let childCounts = sumCounts(child);
+                totalCount += childCounts.totalCount;
+                totalDocumentCount += childCounts.totalDocumentCount;
+            });
+        }
+        return { totalCount, totalDocumentCount };
+    }
+
     return data.map(item => {
         const node = {
             id: item.id,
@@ -172,7 +187,8 @@ function convertToTreeNode(data, includeTags) {
         };
 
         if (includeTags) {
-            node.tags = [`${item.count_document}`, `${item.count}`];
+            let counts = sumCounts(item);
+            node.tags = [`${counts.totalDocumentCount}`, `${counts.totalCount}`];
         }
 
         return node;
