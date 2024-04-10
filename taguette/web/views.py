@@ -1068,6 +1068,7 @@ class Project(BaseHandler):
             {
                 str(doc.id): {'id': doc.id, 'name': doc.name,
                               'description': doc.description,
+                              'favorite': doc.favorite,
                               'text_direction': doc.text_direction.name}
                 for doc in project.documents
             },
