@@ -405,7 +405,10 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id', 'document_id'],
-        payload_fields=['document_name', 'description', 'favorite', 'text_direction'],
+        payload_fields=['document_name',
+                        'description',
+                        'favorite',
+                        'text_direction'],
     )
     def document_add(cls, user_login, document):
         assert isinstance(document.id, int)

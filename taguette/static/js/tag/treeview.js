@@ -319,7 +319,8 @@ function loadTagsHighlights() {
             tags_return_link.hide();
         });
     } else {
-        document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
+        // reload the last document
+       loadDocument(current_document)
     }
     setTimeout(function () {
         customizeNodeRow();

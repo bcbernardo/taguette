@@ -966,7 +966,7 @@ function loadTag(tag_path, page) {
             log(`Loaded highlights for tag ${tag_path}`);
             document_contents.style.direction = 'ltr';
             current_tag = tag_path;
-            current_document = null;
+            // current_document = null;
             let document_links = document.getElementsByClassName('document-link-current');
             for (let i = document_links.length - 1; i >= 0; --i) {
                 document_links[i].classList.remove('document-link-current');
