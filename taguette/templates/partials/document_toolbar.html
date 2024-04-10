@@ -12,13 +12,10 @@
     </div>
 
     <div class="toolbar-action-buttons d-flex mx-2">
-        <button class="btn btn-outline-primary mx-2" onclick="editDocument(current_document)" id="edit"><i class="fas fa-edit"></i></button>
-<!--        <button class="btn btn-outline-primary mx-2" id="zoom-in"><i class="fas fa-search-plus"></i></button>-->
-<!--        <button class="btn btn-outline-primary mx-2" id="zoom-out"><i class="fas fa-search-minus"></i></button>-->
-
+        <button class="btn btn-outline-primary mx-2" title="{% trans %}Edit document{% endtrans %}" onclick="editDocument(current_document)" id="edit"><i class="fas fa-edit"></i></button>
         <!-- Bouton Export -->
         <div class="document-export-button dropdown mx-2">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="document-dropdown-export" data-test-id="document-dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button class="btn btn-outline-primary dropdown-toggle" title="{% trans %}Export{% endtrans %}" type="button" id="document-dropdown-export" data-test-id="document-dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-download"></i>
             </button>
             <div id='document-export-dropdown-menu' class="dropdown-menu" aria-labelledby="document-dropdown-export">
