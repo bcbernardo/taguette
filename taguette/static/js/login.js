@@ -1,6 +1,9 @@
 $(document).ready(function() {
     $('#entity_id-select').hierarchySelect({
-        width: 'auto'
+        hierarchy: false,
+        search: true,
+        width: 'auto',
+        initialValueSet: true
     });
 
     $("#cilogon").click(function(){
