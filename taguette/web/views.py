@@ -149,7 +149,9 @@ class Login(BaseHandler):
                                    next=self.get_argument('next', ''),
                                    error=error, error_msg=error_msg,
                                    idps=get_idps(self.db),
-                                   entity_id=self.get_cookie('entity_id', None))
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('login')
     async def post(self):
@@ -210,7 +212,9 @@ class Register(BaseHandler):
             else:
                 return self.render('auth/cilogon.login.html',
                                    idps=get_idps(self.db),
-                                   entity_id=self.get_cookie('entity_id', None))
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('register')
     async def post(self):
