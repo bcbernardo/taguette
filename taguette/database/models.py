@@ -320,6 +320,7 @@ class Document(Base):
     contents = deferred(Column(Text, nullable=False))
     highlights = relationship('Highlight', cascade='all,delete-orphan',
                               passive_deletes=True)
+    favorite = Column(Boolean, nullable=True, default=False)
 
     def __repr__(self):
         return '<%s.%s %r %r project_id=%r>' % (
@@ -404,7 +405,10 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id', 'document_id'],
-        payload_fields=['document_name', 'description', 'text_direction'],
+        payload_fields=['document_name',
+                        'description',
+                        'favorite',
+                        'text_direction'],
     )
     def document_add(cls, user_login, document):
         assert isinstance(document.id, int)
@@ -415,6 +419,7 @@ class Command(Base):
             payload={'type': 'document_add',  # keep in sync above
                      'document_name': document.name,
                      'description': document.description,
+                     'favorite': document.favorite,
                      'text_direction': document.text_direction.name},
         )
 

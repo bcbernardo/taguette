@@ -500,18 +500,19 @@ class Test2E2MultiUser(SeleniumTest):
         # check after select
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: False, 2: False, 3: True},
+            {1: False, 3: False, 2: True},
         )
         await self.s_click_button('save-highlight-button')
 
         # List highlights in project 1 under 'people'
         self.driver.execute_script(
-            '$("#treeview-tags").treeview("selectNode", 1);')
+            '$("#treeview-tags").treeview("selectNode", 2);')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            f"tent\n{docs_1[0]['name']} interesting people"
+            f"tent\n{docs_1[0]['name']} interesting people\n"
+            f"Opinion\n{docs_2[0]['name']} people"
         )
 
         # List highlights in project 1 under 'interesting.places'
@@ -519,8 +520,7 @@ class Test2E2MultiUser(SeleniumTest):
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
             self.find_by_id('document-contents').text,
-            (f"diff\n{docs_1[0]['name']} interesting.places\n"
-             f"Opinion\n{docs_2[0]['name']} interesting.places")
+            f"diff\n{docs_1[0]['name']} interesting.places"
         )
 
         # List highlights in project 1 under 'interesting'
@@ -530,8 +530,7 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(
             self.find_by_id('document-contents').text,
             (f"diff\n{docs_1[0]['name']} interesting.places\n"
-             f"tent\n{docs_1[0]['name']} interesting people\n"
-             f"Opinion\n{docs_2[0]['name']} interesting.places")
+             f"tent\n{docs_1[0]['name']} interesting people")
         )
         # List all highlights in project 1
         await self.s_click(self.find_by_id('tag-more-action-button'))
@@ -543,7 +542,7 @@ class Test2E2MultiUser(SeleniumTest):
             self.find_by_id('document-contents').text,
             (f"diff\n{docs_1[0]['name']} interesting.places\n"
              f"tent\n{docs_1[0]['name']} interesting people\n"
-             f"Opinion\n{docs_2[0]['name']} interesting.places"),
+             f"Opinion\n{docs_2[0]['name']} people"),
         )
 
         # Check export options for document 1
