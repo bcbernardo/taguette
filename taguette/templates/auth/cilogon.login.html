@@ -24,12 +24,12 @@
                         <div class='hs-menu-inner'>
                             <a class="dropdown-item" data-value="" data-level="1" href="#">{% trans %}Select from list{% endtrans %}</a>
                             {% for idp in idps %}
-                                <a class="dropdown-item" data-value="{{ idp['entityid'] }}" data-level="1" href="#">{{ idp['name'] }}</a>
+                                <a class="dropdown-item" data-value="{{ idp['entityid'] }}" data-level="1" href="#" {%  if idp['entityid']==entity_id %}selected=""{% endif %}>{{ idp['name'] }}</a>
                             {% endfor %}
                         </div>
                     </ul>
                     <input class="d-none" id="entity_id" name="entity_id" readonly="readonly" aria-hidden="true"
-                           type="text"/>
+                           type="text" {%  if entity_id %}value="{{ entity_id }}"{% endif %}/>
                 </div>
                 <a class="btn btn-primary" id="cilogon" href="/cilogon">{% trans %}Log in with{% endtrans %} CILogon</a>
             </div>

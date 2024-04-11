@@ -292,12 +292,10 @@ function loadTagsHighlights() {
         tags_return_link.attr('href', url);
         tags_return_link.bind('click', function(e){
             e.preventDefault();
-            console.log(window.history.state.tag_path);
             if(window.history.state.tag_path === "") {
                 loadTag('');
                 selectAllTag();
             } else {
-                console.log('ici2');
                 window.history.back();
             }
             tags_return_link.hide();

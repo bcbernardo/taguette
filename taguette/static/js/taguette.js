@@ -932,10 +932,11 @@ function loadDocument(document_id, highlight_id=null) {
 
             // Scroll up
             window.setTimeout(function () {
-                let scroll_position = 0;
+                let scroll_position = 0,
+                    toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight()
                 if(highlight_id !== null && !isNaN(highlight_id)) {
                     log(`Go to highlight :  ${highlight_id}`);
-                    scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - 15;
+                    scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - toolbar_height - 15;
                     $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
                 }
                 window.scrollTo(0, scroll_position);

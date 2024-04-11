@@ -148,7 +148,10 @@ class Login(BaseHandler):
                 return self.render('auth/cilogon.login.html',
                                    next=self.get_argument('next', ''),
                                    error=error, error_msg=error_msg,
-                                   idps=get_idps(self.db))
+                                   idps=get_idps(self.db),
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('login')
     async def post(self):
@@ -208,7 +211,10 @@ class Register(BaseHandler):
                 return self.render('auth/login.html', register=True)
             else:
                 return self.render('auth/cilogon.login.html',
-                                   idps=get_idps(self.db))
+                                   idps=get_idps(self.db),
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('register')
     async def post(self):
@@ -306,6 +312,7 @@ class Cilogon(BaseHandler):
     @PROM_REQUESTS.sync('cilogon')
     def get(self):
         entity_id = self.get_argument('entity_id', None)
+        self.set_cookie('entity_id', entity_id)
         self.flow_cilogon = self.flow_func_cilogon()
         self.login_cilogon(entity_id=entity_id)
 
