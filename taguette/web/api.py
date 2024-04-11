@@ -123,6 +123,7 @@ class DocumentAdd(BaseHandler):
                 raise MissingArgumentError('file')
             content_type = file.content_type
             filename = validate.fix_filename(unquote(file.filename))
+            favorite = False
             direction = self.get_body_argument('text_direction',
                                                'LEFT_TO_RIGHT')
             try:
@@ -148,6 +149,7 @@ class DocumentAdd(BaseHandler):
                     name=name,
                     description=description,
                     filename=filename,
+                    favorite=favorite,
                     project=project,
                     text_direction=direction,
                     contents=body,
@@ -210,6 +212,8 @@ class Document(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     document.description = obj['description']
+                if 'favorite' in obj:
+                    document.favorite = obj['favorite']
                 if 'text_direction' in obj:
                     direction = obj['text_direction']
                     try:

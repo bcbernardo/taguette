@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-04-08 12:08-0400\n"
+"POT-Creation-Date: 2024-04-10 12:31-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -57,41 +57,41 @@ msgstr ""
 msgid "Not logged in"
 msgstr ""
 
-#: taguette/web/api.py:81 taguette/web/api.py:112 taguette/web/api.py:203
-#: taguette/web/api.py:242 taguette/web/api.py:307 taguette/web/api.py:347
-#: taguette/web/api.py:388 taguette/web/api.py:413 taguette/web/api.py:469
-#: taguette/web/api.py:528 taguette/web/api.py:614 taguette/web/api.py:769
+#: taguette/web/api.py:81 taguette/web/api.py:112 taguette/web/api.py:205
+#: taguette/web/api.py:246 taguette/web/api.py:311 taguette/web/api.py:351
+#: taguette/web/api.py:392 taguette/web/api.py:417 taguette/web/api.py:473
+#: taguette/web/api.py:532 taguette/web/api.py:618 taguette/web/api.py:773
 msgid "Unauthorized"
 msgstr ""
 
-#: taguette/web/api.py:352 taguette/web/api.py:391 taguette/web/api.py:423
-#: taguette/web/api.py:482 taguette/web/api.py:558
+#: taguette/web/api.py:356 taguette/web/api.py:395 taguette/web/api.py:427
+#: taguette/web/api.py:486 taguette/web/api.py:562
 msgid "No such tag"
 msgstr ""
 
-#: taguette/web/api.py:486
+#: taguette/web/api.py:490
 msgid "Empty highlight"
 msgstr ""
 
-#: taguette/web/api.py:532 taguette/web/api.py:617
+#: taguette/web/api.py:536 taguette/web/api.py:621
 msgid "No such highlight"
 msgstr ""
 
-#: taguette/web/api.py:832
+#: taguette/web/api.py:836
 msgid "There must be one admin"
 msgstr ""
 
-#: taguette/web/api.py:887
+#: taguette/web/api.py:891
 msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
 msgstr ""
 
-#: taguette/web/api.py:893
+#: taguette/web/api.py:897
 msgid "This database could not be updated to the current version"
 msgstr ""
 
-#: taguette/web/api.py:897 taguette/web/api.py:931
+#: taguette/web/api.py:901 taguette/web/api.py:935
 msgid "This is not a Taguette project file"
 msgstr ""
 
@@ -383,6 +383,10 @@ msgstr ""
 #: taguette/templates/base.html:28
 msgctxt "navigation item"
 msgid "Home"
+msgstr ""
+
+#: taguette/templates/base.html:35
+msgid "Edit project"
 msgstr ""
 
 #: taguette/templates/base.html:42
@@ -859,6 +863,11 @@ msgctxt "modal window title"
 msgid "Change tag"
 msgstr ""
 
+#: taguette/templates/modal/create_tag.html:18
+msgctxt "tag change form placeholder"
+msgid "Tag parent"
+msgstr ""
+
 #: taguette/templates/modal/create_tag.html:35
 #: taguette/templates/modal/create_tag.html:37
 msgctxt "tag change form placeholder"
@@ -1006,40 +1015,52 @@ msgid "Import"
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Select the document"
+msgid "Selected the document"
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:7
 msgid "..."
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:25
+#: taguette/templates/partials/document_toolbar.html:15
+msgid "Edit document"
+msgstr ""
+
+#: taguette/templates/partials/document_toolbar.html:18
+msgid "Export"
+msgstr ""
+
+#: taguette/templates/partials/document_toolbar.html:22
 #: taguette/templates/partials/project_sidebar.html:79
 msgid "HTML"
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:26
+#: taguette/templates/partials/document_toolbar.html:23
 #: taguette/templates/partials/project_sidebar.html:80
 msgid "DOCX"
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:27
+#: taguette/templates/partials/document_toolbar.html:24
 #: taguette/templates/partials/project_sidebar.html:81
 msgid "PDF"
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:28
+#: taguette/templates/partials/document_toolbar.html:25
 #: taguette/templates/partials/project_sidebar.html:77
 msgid "Excel"
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:29
+#: taguette/templates/partials/document_toolbar.html:26
 #: taguette/templates/partials/project_sidebar.html:78
 msgid "CSV"
 msgstr ""
 
-#: taguette/templates/partials/document_toolbar.html:34
+#: taguette/templates/partials/document_toolbar.html:31
 msgid "Backlight"
+msgstr ""
+
+#: taguette/templates/partials/project_sidebar.html:3
+msgid "Close"
 msgstr ""
 
 #. Left pane tab, keep short

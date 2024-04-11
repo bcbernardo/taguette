@@ -34,16 +34,11 @@ function updateDocumentsList() {
 
 function toggleFavorite(documentId) {
     const favoriteIcon = document.querySelector(`#favorite-icon-${documentId}`);
-    if (favoriteIcon.classList.contains('far')) {
-        favoriteIcon.classList.remove('far');
-        favoriteIcon.classList.add('fas');
-        favoriteIcon.title = gettext("Remove from Favorites");
-    } else {
-        favoriteIcon.classList.remove('fas');
-        favoriteIcon.classList.add('far');
-        favoriteIcon.title = gettext("Add to Favorites");
-    }
-    //Update document favorite status
+    const updatedDocument = {
+        id: parseInt(documentId),
+        favorite: favoriteIcon.classList.contains('far')
+    };
+    submitDocumentUpdate(updatedDocument, ()=>{}, ()=>{})
 }
 
 function generateDocumentList() {
@@ -70,14 +65,15 @@ function generateDocumentList() {
         if (doc.id === current_document) {
             elem.classList.add('document-link-current');
         }
+        let favoriteIconClass = doc.favorite === true ? 'fas fa-star' : 'far fa-star';
+        let favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
         elem.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <a class="document-link-a">${escapeHtml(doc.name)}</a>
-                 <a href="javascript:toggleFavorite(${doc.id});" class="favorite-icon"  gettext title="${gettext("Add to Favorites")}">
-                    <i id="favorite-icon-${doc.id}" class="far fa-star" aria-hidden="true"></i> 
-                </a>
-            </div>
-        `;
+        <div class="d-flex justify-content-between align-items-center">
+            <a class="document-link-a">${escapeHtml(doc.name)}</a>
+            <a href="javascript:toggleFavorite(${doc.id});" class="favorite-icon" title="${favoriteTitle}">
+                <i id="favorite-icon-${doc.id}" class="${favoriteIconClass}" aria-hidden="true"></i> 
+            </a>
+        </div>`;
         documents_list.insertBefore(elem, before);
         const links = elem.getElementsByTagName('a');
         linkDocument(links[0], doc.id);
@@ -105,7 +101,8 @@ function generateDocumentSelectPicker() {
     createListItem.setAttribute('role', 'option');
     createListItem.setAttribute('data-test-id', 'create-document-link');
     createListItem.classList.add('create-document-option');
-    createListItem.innerHTML = `<a href="javascript:createDocument()">Create New Document</a>`;
+    createListItem.innerHTML = `<a href="javascript:createDocument()">${gettext('Create New Document')}</a>`;
+
     dropdown.appendChild(createListItem);
 
     const entries = Object.entries(documents);
@@ -113,8 +110,13 @@ function generateDocumentSelectPicker() {
         return e[1].name;
     });
 
-    // kept only favorites
+    // keep only favorites
     entries.forEach(([key, doc]) => {
+
+        if (doc.favorite !== true) {
+            return;
+        }
+
         let listItem = document.createElement('li');
         listItem.setAttribute('role', 'option');
 
@@ -136,3 +138,23 @@ function generateDocumentSelectPicker() {
 }
 
 updateDocumentsList();
+
+
+function submitDocumentUpdate(document, callbackSuccess, callbackFail) {
+
+    const { id } = document;
+
+    let request;
+
+    if (id) {
+        console.log(`Posting update for document ${id}`);
+        request = postJSON(`/api/project/${project_id}/document/${id}`, document);
+    }
+
+    showSpinner();
+    request.then(function (response) {
+        callbackSuccess(response);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
+}

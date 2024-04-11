@@ -32,7 +32,7 @@
                   <a class="nav-link {{ 'active' if active_page == 'project' else '' }} project-name" href="{{ reverse_url('project', project.id) }}">
                       {{ project.name }}
                   </a>
-                  <i id="project-sidebar-open" class="fas fa-edit" style="color: white; cursor: pointer;"></i>
+                  <i id="project-sidebar-open" title="{% trans %}Edit project{% endtrans %}" class="fas fa-edit" style="color: white; cursor: pointer;"></i>
               </li>
             {% endif %}
           </ul>

@@ -246,29 +246,33 @@ document.getElementById('document-change-form').addEventListener('submit', funct
     e.preventDefault();
     log("Changing document...");
 
-    let update = {
+    const doc_id = document.getElementById('document-change-id').value
+
+    const updatedDocument = {
+        id: doc_id,
         name: document.getElementById('document-change-name').value,
         description: document.getElementById('document-change-description').value,
         text_direction: document.getElementById('document-change-form').elements['document-change-direction'].value
     };
-    if (!update.name || update.name.length === 0) {
+
+    if (!updatedDocument.name || updatedDocument.name.length === 0) {
         showAlert(gettext("Document name cannot be empty"));
         return;
     }
 
-    const doc_id = document.getElementById('document-change-id').value;
-    showSpinner();
-    postJSON(`/api/project/${project_id}/document/${doc_id}`, update)
-        .then(function () {
-            log("Document update posted");
-            $(document_change_modal).modal('hide');
-            document.getElementById('document-change-form').reset();
-        })
-        .catch(function (error) {
-            log("Document upload failed:", 'error', {error});
-            showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error})
-        })
-        .then(hideSpinner);
+    const callbackSuccess = (response) => {
+        log("Document update posted");
+        $(document_change_modal).modal('hide');
+        document.getElementById('document-change-form').reset();
+    }
+
+    const callbackFail = (error) => {
+        log("Document upload failed:", 'error', {error});
+        showAlert(`${gettext("Error uploading file!")} \n \n`, 'error', {error})
+    };
+
+    submitDocumentUpdate(updatedDocument, callbackSuccess, callbackFail)
+
 });
 
 document.getElementById('document-change-delete').addEventListener('click', function (e) {
@@ -963,7 +967,7 @@ function loadTag(tag_path, page) {
             log(`Loaded highlights for tag ${tag_path}`);
             document_contents.style.direction = 'ltr';
             current_tag = tag_path;
-            current_document = null;
+            // current_document = null;
             let document_links = document.getElementsByClassName('document-link-current');
             for (let i = document_links.length - 1; i >= 0; --i) {
                 document_links[i].classList.remove('document-link-current');
