@@ -86,6 +86,7 @@ class TestMultiUserExport(TestMultiUser):
                 (2, 'db1doc22.txt'),
             ],
         )
+
         self.assertRowsEqualsExceptDates(
             db2.execute(
                 database.Command.__table__.select()
@@ -97,19 +98,25 @@ class TestMultiUserExport(TestMultiUser):
                 # documents 4, 5, 6 exported as 1, 2, -6
                 # tags 4, 5, 6 exported as 1, 2, -6
                 # highlights 4, 5, 6 exported as 1, 2, -6
-                # commands 14-26 exported as 1-13
+                # commands 14-26 exported as 1-13 #db1doc2100.txt
                 (1, 'admin', 1, 1,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db1doc21.txt',
+                  'favorite': False,
                   'text_direction': 'LEFT_TO_RIGHT',
-                  'document_name': 'db1doc21.txt'}),
+                  'type': 'document_add'}),
                 (2, 'admin', 1, -6,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db1doc2100.txt',
+                  'favorite': False,
                   'text_direction': 'LEFT_TO_RIGHT',
-                  'document_name': 'db1doc2100.txt'}),
+                  'type': 'document_add'}),
                 (3, 'admin', 1, 2,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db1doc22.txt',
+                  'favorite': False,
                   'text_direction': 'RIGHT_TO_LEFT',
-                  'document_name': 'db1doc22.txt'}),
+                  'type': 'document_add', }),
                 (4, 'admin', 1, -6, {'type': 'document_delete'}),
                 (5, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
