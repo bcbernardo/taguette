@@ -172,7 +172,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj1,
             {'type': 'document_add', 'id': 3, 'document_id': 1,
              'text_direction': 'LEFT_TO_RIGHT',
-             'document_name': name, 'description': ''})
+             'document_name': name, 'favorite': False,
+             'description': ''})
         poll_proj1 = await self.poll_event(1, 3)
 
         # Create document 2 in project 2
@@ -195,7 +196,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'document_add', 'id': 4, 'document_id': 2,
              'text_direction': 'LEFT_TO_RIGHT',
-             'document_name': 'otherdoc', 'description': 'Other one'})
+             'document_name': 'otherdoc', 'favorite': False,
+             'description': 'Other one'})
         poll_proj2 = await self.poll_event(2, 4)
 
         # Create highlight 1 in document 1
@@ -281,7 +283,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'document_add', 'id': 9, 'document_id': 3,
              'text_direction': 'RIGHT_TO_LEFT',
-             'document_name': 'third', 'description': 'Last one'})
+             'document_name': 'third', 'favorite': False,
+             'description': 'Last one'})
         poll_proj2 = await self.poll_event(2, 9)
 
         # Create highlight in document 2, using wrong project id
@@ -298,7 +301,7 @@ class TestMultiUserProject(TestMultiUser):
         ) as response:
             self.assertEqual(response.status, 400)
             self.assertEqual(await response.json(),
-                             {"error": "No such tag"})
+                             {"error": "No such code"})
 
         # Create highlight in document 2, using tags from project 1
         async with self.apost(
@@ -307,7 +310,7 @@ class TestMultiUserProject(TestMultiUser):
         ) as response:
             self.assertEqual(response.status, 400)
             self.assertEqual(await response.json(),
-                             {"error": "No such tag"})
+                             {"error": "No such code"})
 
         # Create highlight 2 in document 2
         async with self.apost(
@@ -405,7 +408,7 @@ class TestMultiUserProject(TestMultiUser):
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/interesting|interesting.places',
+            '/api/project/2/highlights/interesting∪interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
@@ -434,7 +437,6 @@ class TestMultiUserProject(TestMultiUser):
                 'pages': 1,
             })
 
-        # TODO : add test with condition or and not
         # Get contents of document 2
         async with self.aget('/api/project/2/document/2') as response:
             self.assertEqual(response.status, 200)
@@ -515,7 +517,7 @@ class TestMultiUserProject(TestMultiUser):
                         <html>
                           <head>
                             <meta charset="UTF-8">
-                            <title>Taguette highlights: interesting</title>
+                            <title>LibreQDA highlights: interesting</title>
                             <style>
                               h1 {
                                 margin-bottom: 1em;
@@ -523,12 +525,12 @@ class TestMultiUserProject(TestMultiUser):
                             </style>
                           </head>
                           <body>
-                            <h1>Taguette highlights: interesting</h1>
+                            <h1>LibreQDA highlights: interesting</h1>
 
                             tent
                             <p>
                               <strong>Document:</strong> otherdoc
-                              <strong>Tags:</strong>
+                              <strong>Codes:</strong>
                                 interesting,
                                 people
                             </p>
@@ -549,7 +551,7 @@ class TestMultiUserProject(TestMultiUser):
                         <html>
                           <head>
                             <meta charset="UTF-8">
-                            <title>Taguette highlights</title>
+                            <title>LibreQDA highlights</title>
                             <style>
                               h1 {
                                 margin-bottom: 1em;
@@ -557,12 +559,12 @@ class TestMultiUserProject(TestMultiUser):
                             </style>
                           </head>
                           <body>
-                            <h1>Taguette highlights</h1>
+                            <h1>LibreQDA highlights</h1>
 
                             diff
                             <p>
                               <strong>Document:</strong> otherdoc
-                              <strong>Tags:</strong>
+                              <strong>Codes:</strong>
                                 interesting.places
                             </p>
                             <hr>
@@ -570,7 +572,7 @@ class TestMultiUserProject(TestMultiUser):
                             tent
                             <p>
                               <strong>Document:</strong> otherdoc
-                              <strong>Tags:</strong>
+                              <strong>Codes:</strong>
                                 interesting,
                                 people
                             </p>
@@ -579,7 +581,7 @@ class TestMultiUserProject(TestMultiUser):
                             <strong>Opinion</strong>
                             <p>
                               <strong>Document:</strong> third
-                              <strong>Tags:</strong>
+                              <strong>Codes:</strong>
                                 people
                             </p>
 
@@ -633,10 +635,10 @@ class TestMultiUserProject(TestMultiUser):
                                 background-color: #ff0;
                               }
                             </style>
-                            <title>Taguette Codebook</title>
+                            <title>LibreQDA Codebook</title>
                           </head>
                           <body>
-                            <h1>Taguette Codebook</h1>
+                            <h1>LibreQDA Codebook</h1>
 
                               <h2>interesting</h2>
                               <p class="number">1 highlight</p>

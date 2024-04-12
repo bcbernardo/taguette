@@ -23,6 +23,7 @@ class TestBasicDatabase(TestMultiUser):
             return database.Document(
                 name=text + '.txt',
                 description='',
+                favorite=False,
                 filename=text + '.txt',
                 project=project,
                 contents=text,
