@@ -40,6 +40,7 @@ if idps[0][0]['id'] is not None:
             new_idp = EdugainIdps()
             new_idp.id = idp[0]['id']
             new_idp.entityid = idp[0]['entityid']
+            new_idp.e_displayname = idp[0]['e_displayname']
             new_idp.regauth = idp[0]['regauth']
             new_idp.entity_cat = idp[0]['entity_cat']
             new_idp.eccs_status = idp[0]['eccs_status']
@@ -58,6 +59,7 @@ if idps[0][0]['id'] is not None:
         else:
             # Update existing entry
             idp_id.entityid = idp[0]['entityid']
+            idp_id.e_displayname = idp[0]['e_displayname']
             idp_id.regauth = idp[0]['regauth']
             idp_id.entity_cat = idp[0]['entity_cat']
             idp_id.eccs_status = idp[0]['eccs_status']

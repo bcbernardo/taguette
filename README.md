@@ -43,6 +43,6 @@ You can install from a local clone of this repository, which will allow you to e
 License
 -------
 
-* Copyright (C) 2018, Rémi Rampin and Taguette contributors
+* Copyright (C) 2018, Rémi Rampin, PHuN and Taguette contributors
 
 Licensed under a **BSD 3-clause "New" or "Revised" License**. See the `LICENSE.txt` file for details.

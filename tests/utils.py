@@ -44,14 +44,14 @@ def generate_initial_state_script(user_login,
 
     return (
         f'<script type="text/javascript">\n'
-        f'  const user_login = "{user_login}";\n'
-        f'  const project_id = {project_id};\n'
-        f'  const version = \'{version}\';\n'
-        f'  let documents = {documents_json};\n'
-        f'  let tags = {tags_json};\n'
-        f'  let members = {members_json};\n'
-        f'  let highlights = {{}};\n'
-        f'  let last_event = {last_event};\n'
+        f'    const user_login = "{user_login}";\n'
+        f'    const project_id = {project_id};\n'
+        f'    const version = \'{version}\';\n'
+        f'    let documents = {documents_json};\n'
+        f'    let tags = {tags_json};\n'
+        f'    let members = {members_json};\n'
+        f'    let highlights = {{}};\n'
+        f'    let last_event = {last_event};\n'
         f'</script>'
     )
 

@@ -173,7 +173,7 @@ msgstr "Inclure également (OU)"
 
 #: taguette/static/js/tag/context-menu.js.js:52
 msgid "NOT"
-msgstr "Exclure également (NOT)"
+msgstr "Exclure"
 
 #: taguette/static/js/tag/context-menu.js.js:61
 msgid "expand"

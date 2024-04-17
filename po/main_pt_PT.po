@@ -122,7 +122,7 @@ msgstr "Principal"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Guia do Taguette %(external_icon)s"
+msgstr "Guia do LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -160,17 +160,15 @@ msgid ""
 "href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
 "href=\"https://www.taguette.org/getting-started.html\">User "
-"Documentation</a> | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"Documentation</a>"
 msgstr ""
-"Taguette %(version)s  é licenciado sob a licença <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
+"LibreQDA %(version)s  é licenciado sob a licença <a "
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda/blob/main/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and  voluntários do Taguette | <a "
 "href=\"https://www.taguette.org/getting-started.html\">Documentação de "
 "usuário</a> | Por favor, relate problemas via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> ou <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"href=\"https://gitlab.cirst.ca/libreqda/libreqda/\">GitLab</a> ou <a "
+"href=\"mailto:phun@usherbrooke.ca\">phun@usherbrooke.ca</a>!"
 
 #. Left pane tab, keep short
 #: taguette/templates/project.html:16
@@ -483,7 +481,7 @@ msgid ""
 "web-based document tagging tool for qualitative data analysis."
 msgstr ""
 "<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">TAGUETTE</a></span> é um projeto de "
+"href=\"https://www.taguette.org/\">LibreQDA</a></span> é um projeto de "
 "código aberto de uma ferramenta de marcação de texto para análises "
 "qualitativas baseada na Web."
 
@@ -566,7 +564,7 @@ msgstr "Criar nova senha"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Caderno de códigos Taguette"
+msgstr "Caderno de códigos LibreQDA"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -583,7 +581,7 @@ msgid ""
 msgstr ""
 "Seu navegador não forneceu um token secreto para autenticação com o "
 "aplicativo. Verifique o console para obter o URL correto para fazer login ou"
-" simplesmente reinicie o Taguette."
+" simplesmente reinicie o LibreQDA."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -646,13 +644,13 @@ msgstr "Arquivo:"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Destaques Taguette: %(path)s"
+msgstr "Destaques LibreQDA: %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Destaques Taguette"
+msgstr "Destaques LibreQDA"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -672,7 +670,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Alguém solicitou a redefinição da senha da conta Taguette associada a este "
+"Alguém solicitou a redefinição da senha da conta LibreQDA associada a este "
 "e-mail. Se foi você, clique neste link: <a href=\"%(link)s\">%(link)s</a>"
 
 #: taguette/templates/email_reset_password.html:3
@@ -745,7 +743,7 @@ msgstr "Esse endereço de e-mail não está associado a nenhum usuário"
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Redefinir a senha do Taguette"
+msgstr "Redefinir a senha do LibreQDA"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -780,7 +778,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    O  esquema de banco de dados usado pelo Taguette foi modificado! Nós iremos tentar\n"
+"    O  esquema de banco de dados usado pelo LibreQDA foi modificado! Nós iremos tentar\n"
 "    atualizar o seu ambiente de trabalho automaticamente.\n"
 
 #: taguette/database/__init__.py:147
@@ -805,7 +803,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    O esquema de  banco de dados criado pelo Taguette foi modificado! Como você não está usando\n"
+"    O esquema de  banco de dados criado pelo LibreQDA foi modificado! Como você não está usando\n"
 "    SQLite, nós iremos tentar uma migração automática; faça uma cópia de segurança dos seu  dados e\n"
 "    use `taguette --database=%(url)s migrate` se quiser prosseguir."
 
@@ -950,6 +948,6 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s está executando. Você pode conectar-se usando esse endereço:\n"
+"    LibreQDA %(version)s está executando. Você pode conectar-se usando esse endereço:\n"
 "\n"
 "    %(url)s\n"

@@ -26,6 +26,17 @@ const project_description_input = document.getElementById('project-description')
 let project_description = project_description_input.value;
 let upload_canceled = false;
 
+function openSidebar() {
+    document.getElementById("project-sidebar").style.width = "600px";
+    showMembers();
+}
+
+function closeSideBar() {
+    document.getElementById("project-sidebar").style.width = "0";
+}
+
+document.getElementById('project-sidebar-open').addEventListener('click', openSidebar);
+
 function setProjectMetadata(metadata, form = true) {
     if (project_name === metadata.project_name && project_description === metadata.description) {
         return;
@@ -65,78 +76,16 @@ function projectMetadataChanged() {
     }
 }
 
-document.getElementById('project-metadata-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    projectMetadataChanged();
-});
-project_name_input.addEventListener('blur', projectMetadataChanged);
-project_description_input.addEventListener('blur', projectMetadataChanged);
-
+ document.getElementById('project-metadata-form').addEventListener('submit', function (e) {
+     e.preventDefault();
+     projectMetadataChanged();
+ });
+ project_name_input.addEventListener('blur', projectMetadataChanged);
+ project_description_input.addEventListener('blur', projectMetadataChanged);
 
 /*
  * Documents list
  */
-
-let current_document = null;
-let current_tag = null;
-let last_added_tag = null;
-const documents_list = document.getElementById('documents-list');
-
-function linkDocument(elem, doc_id, highlight_id=null) {
-    let url = `${base_path}/project/${project_id}/document/${doc_id}`;
-    if(highlight_id !== null && !isNaN(highlight_id)) {
-        url += `/highlight/${highlight_id}`;
-    }
-    elem.setAttribute('href', url);
-    elem.addEventListener('click', function (e) {
-        e.preventDefault();
-        window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
-        loadDocument(doc_id, highlight_id);
-        const tags_return = $('#tag-selection-return'),
-            tags_return_link = $('a', tags_return);
-        tags_return_link.show();
-    });
-}
-
-function updateDocumentsList() {
-    // Empty the list
-    while (documents_list.firstChild) {
-        const first = documents_list.firstChild;
-        if (first.classList && first.classList.contains('special-item-button')) {
-            break;
-        }
-        documents_list.removeChild(first);
-    }
-
-    // Fill up the list again
-    const before = documents_list.firstChild;
-    const entries = Object.entries(documents);
-    sortByKey(entries, function (e) {
-        return e[1].name;
-    });
-    for (let i = 0; i < entries.length; ++i) {
-        let doc = entries[i][1];
-        let elem = document.createElement('li');
-        elem.setAttribute('id', 'document-link-' + doc.id);
-        elem.className = 'list-group-item document-link';
-        if (doc.id === current_document) {
-            elem.classList.add('document-link-current');
-        }
-        elem.innerHTML = '<div class="d-flex justify-content-between align-items-center">' + '  <a class="document-link-a">' + escapeHtml(doc.name) + '</a>' + '  <a href="javascript:editDocument(' + doc.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' + '</div>';
-        documents_list.insertBefore(elem, before);
-        const links = elem.getElementsByTagName('a');
-        linkDocument(links[0], doc.id);
-    }
-    if (entries.length === 0) {
-        let elem = document.createElement('div');
-        elem.className = 'list-group-item disabled';
-        elem.textContent = gettext("There are no documents in this project yet.");
-        documents_list.insertBefore(elem, before);
-    }
-    log("Documents list updated");
-}
-
-updateDocumentsList();
 
 function addDocument(document) {
     documents['' + document.id] = document;
@@ -170,6 +119,7 @@ const document_add_modal = document.getElementById('document-add-modal');
 function createDocument() {
     document.getElementById('document-add-form').reset();
     $(document_add_modal).modal('show');
+    customSelect.classList.remove("active");
 }
 
 function basename(filename) {
@@ -264,6 +214,7 @@ async function uploadFiles(files) {
         document.getElementById('document-add-form').reset();
         const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
         window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
+        updateDocumentsList();
         loadDocument(doc_to_load);
     }
     hideSpinner();
@@ -387,7 +338,7 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 let createTagFromHighlight;
-function createTag(from, selection) {
+function createTag(from, selection, parent) {
     createTagFromHighlight = false;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
@@ -408,6 +359,11 @@ function createTag(from, selection) {
     if(selection) {
         document.getElementById('tag-highlight-add-start').value = selection[0];
         document.getElementById('tag-highlight-add-end').value = selection[1];
+    }
+
+    if(parent) {
+        document.getElementById('tag-add-parent-id').value = parent;
+        document.getElementById('dropdownMenuButtonTag').innerText = findTag(parent).path
     }
 
     $(tag_add_modal).modal('show');
@@ -583,11 +539,10 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
 
 
 // Backlight
-const backlight_checkbox = document.getElementById('backlight');
-backlight_checkbox.addEventListener('change', function () {
-    const documentView = document.getElementById('document-view');
-
-    documentView.classList.toggle('backlight', backlight_checkbox.checked);
+ const backlight_checkbox = document.getElementById('backlight');
+ backlight_checkbox.addEventListener('change', function () {
+     const documentView = document.getElementById('document-view');
+     documentView.classList.toggle('backlight', backlight_checkbox.checked);
 });
 
 
@@ -721,10 +676,43 @@ const members_modal = document.getElementById('members-modal');
 let members_initial = {};
 let members_displayed = {};
 
+// function _memberRow(login, user, can_edit, is_self) {
+//     let elem = document.createElement('div');
+//     elem.className = 'row members-item';
+//     elem.innerHTML = '<div class="col-md-4">' + '  <p class="members-item-login">' + login + '</p>' + '</div>' + '<div class="col-md-4 form-group">' + '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' + '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' + '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' + '    <option value="TAG">' + gettext("View & make changes") + '</option>' + '    <option value="READ">' + gettext("View only") + '</option>' + '  </select>' + '</div>' + (is_self ? '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>' : '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>');
+//
+//     [].forEach.call(elem.querySelectorAll('option'), function (e) {
+//         if (e.value === user.privileges) {
+//             e.selected = true;
+//         }
+//     });
+//
+//     elem.querySelector('button').addEventListener('click', function () {
+//         elem.parentNode.removeChild(elem);
+//         delete members_displayed[login];
+//     });
+//
+//     return elem;
+// }
+
 function _memberRow(login, user, can_edit, is_self) {
     let elem = document.createElement('div');
     elem.className = 'row members-item';
-    elem.innerHTML = '<div class="col-md-4">' + '  <p class="members-item-login">' + login + '</p>' + '</div>' + '<div class="col-md-4 form-group">' + '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' + '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' + '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' + '    <option value="TAG">' + gettext("View & make changes") + '</option>' + '    <option value="READ">' + gettext("View only") + '</option>' + '  </select>' + '</div>' + (is_self ? '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>' : '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>');
+    elem.innerHTML = '<div class="col-md-4 text-center">' +
+        '  <i class="fas fa-user fa-2x"></i>' +
+        '  <p class="members-item-login">' + login + '</p>' +
+        '</div>' +
+        '<div class="col-md-4 form-group">' +
+        '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' +
+        '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' +
+        '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' +
+        '    <option value="TAG">' + gettext("View & make changes") + '</option>' +
+        '    <option value="READ">' + gettext("View only") + '</option>' +
+        '  </select>' +
+        '</div>' +
+        (is_self ? '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group">Leave project</button>' :
+            '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>') +
+        '<hr class="custom-hr" />';
 
     [].forEach.call(elem.querySelectorAll('option'), function (e) {
         if (e.value === user.privileges) {
@@ -777,7 +765,7 @@ function showMembers() {
     members_initial = Object.assign({}, members);
     members_displayed = Object.assign({}, members);
 
-    $(members_modal).modal('show');
+     // $(members_modal).modal('show');
 }
 
 document.getElementById('members-add').addEventListener('submit', function (e) {
@@ -869,7 +857,6 @@ document.getElementById('members-current').addEventListener('submit', function (
  */
 
 const document_contents = document.getElementById('document-contents');
-const export_button = document.getElementById('export-button');
 
 function loadDocument(document_id, highlight_id=null) {
     if (document_id === null) {
@@ -905,9 +892,11 @@ function loadDocument(document_id, highlight_id=null) {
             } else {
                 document_contents.style.direction = 'ltr';
             }
+
             current_document = document_id;
 
-            // Update current document highlight in left panel
+            toggleToolbarActions(true);
+
             let document_links = document.getElementsByClassName('document-link-current');
             for (let i = document_links.length - 1; i >= 0; --i) {
                 document_links[i].classList.remove('document-link-current');
@@ -917,20 +906,20 @@ function loadDocument(document_id, highlight_id=null) {
                 document_link.classList.add('document-link-current');
             }
 
-            current_tag = null;
-            let tag_links = document.getElementsByClassName('tag-current');
-            for (let i = tag_links.length - 1; i >= 0; --i) {
-                tag_links[i].classList.remove('tag-current');
-            }
+            //current_tag = null;
+            // let tag_links = document.getElementsByClassName('tag-current');
+            // for (let i = tag_links.length - 1; i >= 0; --i) {
+            //     tag_links[i].classList.remove('tag-current');
+            // }
+
             log(`Loaded document ${document_id}`);
             for (let i = 0; i < info.highlights.length; ++i) {
                 setHighlight(info.highlights[i]);
             }
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Update export button
-            export_button.style.display = '';
-            let items = export_button.getElementsByClassName('dropdown-item');
+            // Update document export button
+            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
             for (let i = 0; i < items.length; ++i) {
                 const ext = items[i].getAttribute('data-extension');
                 if (items[i].getAttribute('data-document') !== 'false') {
@@ -1090,8 +1079,7 @@ function loadTag(tag_path, page) {
             }
 
             // Update export button
-            export_button.style.display = '';
-            let items = export_button.getElementsByClassName('dropdown-item');
+            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
             for (let i = 0; i < items.length; ++i) {
                 const ext = items[i].getAttribute('data-extension');
                 if (items[i].getAttribute('data-highlights') !== 'false') {
@@ -1101,6 +1089,8 @@ function loadTag(tag_path, page) {
                     items[i].style.display = 'none';
                 }
             }
+
+            toggleToolbarActions(true)
 
             // Scroll up
             window.setTimeout(function () {

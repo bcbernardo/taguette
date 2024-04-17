@@ -95,7 +95,6 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
             members, last_event)
-
         self.assertEqual(init_js, init_js_expected)
 
         # Start polling

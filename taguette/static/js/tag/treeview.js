@@ -50,6 +50,16 @@ function unselectNode(treeview, nodeId) {
     }
 }
 
+function deselectAllNodes(treeview) {
+    const $treeview = $(`#${treeview}`);
+    const allNodes = getAllNodes(treeview);
+    allNodes.forEach(node => {
+        if (node.state.selected) {
+            $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        }
+    });
+}
+
 function toggleNodeSelection(treeview, nodeId, select = true) {
     const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
@@ -185,9 +195,11 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     };
 
     treeview_tags.treeview(options);
+    treeview_tags.data('expanded', true);
 
     if (collapse) {
         treeview_tags.treeview('collapseAll');
+        treeview_tags.data('expanded', false);
     }
 
     treeview_tags.on('nodeSelected', function (event, data) {
@@ -264,13 +276,7 @@ function loadTagsHighlights() {
     selectedTags.forEach((tag, index) => {
         let conditionSymbol = '';
         if (index > 0) {
-            if (tag.condition === 'and') {
-                conditionSymbol = '&';
-            } else if (tag.condition === 'or') {
-                conditionSymbol = '|';
-            } else if (tag.condition === 'not') {
-                conditionSymbol = '!';
-            }
+            conditionSymbol = getConditionalSymbol(tag.condition);
         }
         selectedTagPathsString += `${conditionSymbol}${tag.path}`;
     });
@@ -280,13 +286,20 @@ function loadTagsHighlights() {
 
     const tags_return = $('#tag-selection-return'),
         tags_return_link = $('a', tags_return);
-    tags_return_link.unbind('click')
+    tags_return_link.unbind('click').hide();
     if (selectedTags.length > 0) {
         loadTag(selectedTagPathsString);
         tags_return_link.attr('href', url);
         tags_return_link.bind('click', function(e){
             e.preventDefault();
-            window.history.back();
+            console.log(window.history.state.tag_path);
+            if(window.history.state.tag_path === "") {
+                loadTag('');
+                selectAllTag();
+            } else {
+                console.log('ici2');
+                window.history.back();
+            }
             tags_return_link.hide();
         });
     } else {
@@ -304,6 +317,17 @@ function selectWithCondition(treeview, nodeId, condition) {
     selectCondition = condition;
     selectNode(treeview, nodeId);
     selectCondition = 'or';
+}
+
+function getConditionalSymbol(condition) {
+    if (condition === 'and') {
+        return '∩';
+    } else if (condition === 'or') {
+        return '∪';
+    } else if (condition === 'not') {
+        return  '¬';
+    }
+    return '';
 }
 
 function getTagIdFromTreeviewNode(treeview, nodeId) {

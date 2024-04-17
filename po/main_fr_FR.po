@@ -90,6 +90,12 @@ msgstr ""
 "Facultatif. <em>Nous ne partagerons votre adresse e-mail avec personne. Elle"
 " n'est utilisée que si vous oubliez votre mot de passe.</em>"
 
+#: taguette/templates/auth/account.html:20
+#: taguette/templates/auth/external_account.html:20
+msgctxt "form label for displayname"
+msgid "Display name"
+msgstr "Nom"
+
 #: taguette/templates/account.html:27
 msgctxt "form label for language selection"
 msgid "Language"
@@ -122,7 +128,7 @@ msgstr "Accueil"
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
-msgstr "Guide de Taguette %(external_icon)s"
+msgstr "Guide de LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
 msgid "Single-user mode"
@@ -160,17 +166,14 @@ msgid ""
 "href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
 " license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
 "href=\"https://www.taguette.org/getting-started.html\">User "
-"Documentation</a> | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+"Documentation</a>"
 msgstr ""
-"Taguette %(version)s est publié selon les termes de la <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">license"
-" BSD-3-Clause</a>, &#169; Rémi Rampin et contributeurs à Taguette | <a "
-"href=\"https://www.taguette.org/getting-started.html\">Documentation "
-"utilisateur</a> | Merci de signaler tout problème via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> ou <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a> !"
+"LibreQDA %(version)s est publié selon les termes de la <a "
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda//blob/master/LICENSE.txt\">license"
+" BSD-3-Clause</a>, LibreQDA est une saveur expérimentale de Taguette<br/>&#169; Rémi Rampin, "
+"<a href=\"https://www.usherbrooke.ca/flsh/recherche/centres-groupes-et-equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> et contributeurs à Taguette | <a "
+"href=\"https://aide.libreqda.org\">Documentation "
+"utilisateur</a>"
 
 #. Left pane tab, keep short
 #: taguette/templates/project.html:16
@@ -649,6 +652,10 @@ msgid ""
 msgstr "Après avoir appuyé sur le bouton \"Connexion avec CILogon\", sélectionnez votre institution et procédez avec "
 "l'authentification."
 
+#: taguette/templates/auth/cilogon.login.html:25
+msgid "Select from list"
+msgstr "Sélectionnez dans la liste"
+
 #: taguette/templates/auth/login.html:15
 msgid "Log in with"
 msgstr "Connexion avec"
@@ -672,7 +679,7 @@ msgstr "Changer le mot de passe"
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
 msgid "Taguette Codebook"
-msgstr "Taguette Codebook"
+msgstr "LibreQDA Codebook"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -695,7 +702,7 @@ msgid ""
 msgstr ""
 "Votre navigateur n'a pas fourni de code pour vous authentifier avec "
 "l'application. Merci de consulter la console pour l'URL correcte pour vous "
-"identifier, ou re-lancez simplement Taguette."
+"identifier, ou re-lancez simplement LibreQDA."
 
 #: taguette/templates/reset_password.html:13
 msgid ""
@@ -767,13 +774,13 @@ msgstr "Examiner"
 #, python-format
 msgctxt "exported highlights document title"
 msgid "Taguette highlights: %(path)s"
-msgstr "Taguette : sélections : %(path)s"
+msgstr "LibreQDA : sélections : %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
 msgid "Taguette highlights"
-msgstr "Taguette : sélections"
+msgstr "LibreQDA : sélections"
 
 #: taguette/templates/export_highlights.html:25
 #, python-format
@@ -793,7 +800,7 @@ msgid ""
 "associated with this email. If this was you, please follow this link: <a "
 "href=\"%(link)s\">%(link)s</a>"
 msgstr ""
-"Quelqu'un a demandé la réinitialisation du mot de passe du compte Taguette "
+"Quelqu'un a demandé la réinitialisation du mot de passe du compte LibreQDA "
 "associé à cette adresse e-mail. Si c'était vous, merci de suivre ce lien : "
 "<a href=\"%(link)s\">%(link)s</a>"
 
@@ -870,7 +877,7 @@ msgid ""
 "recent version of Taguette, please check for updates"
 msgstr ""
 "Cette base de données est une version inconnue. Elle a pu être créée par une"
-" version de Taguette plus récente, merci de chercher une mise à jour."
+" version de LibreQDA plus récente, merci de chercher une mise à jour."
 
 #: taguette/web/api.py:812
 msgid "This database could not be updated to the current version"
@@ -907,7 +914,7 @@ msgstr "Cette adresse email n'est associée à aucun utilisateur"
 
 #: taguette/web/views.py:341
 msgid "Password reset for Taguette"
-msgstr "Réinitialisation de mot de passe pour Taguette"
+msgstr "Réinitialisation de mot de passe pour LibreQDA"
 
 #: taguette/web/views.py:383
 msgid "Invalid token"
@@ -976,7 +983,7 @@ msgid ""
 "    update your workspace automatically.\n"
 msgstr ""
 "\n"
-"    Le schéma de la base de données utilisée par Taguette a changé ! Je vais\n"
+"    Le schéma de la base de données utilisée par LibreQDA a changé ! Je vais\n"
 "    tenter de mettre à jour votre espace de travail automatiquement.\n"
 
 #: taguette/database/__init__.py:156
@@ -1001,7 +1008,7 @@ msgid ""
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
 "\n"
-"    Le schéma de la base de données utilisée par Taguette a changé ! Parce que\n"
+"    Le schéma de la base de données utilisée par LibreQDA a changé ! Parce que\n"
 "    vous n'utilisez pas SQLite, je ne vais pas tenter de migration automatique.\n"
 "    Sauvegardez vos données et utilisez `taguette --database=%(url)s migrate`\n"
 "    quand vous êtes prêt(e)."
@@ -1177,6 +1184,6 @@ msgid ""
 "    %(url)s\n"
 msgstr ""
 "\n"
-"    Taguette %(version)s est maintenant lancée. Vous pouvez vous y connecter en utilisant ce lien :\n"
+"    LibreQDA %(version)s est maintenant lancée. Vous pouvez vous y connecter en utilisant ce lien :\n"
 "\n"
 "    %(url)s\n"

@@ -216,7 +216,7 @@ class Application(GracefulExitApplication):
             for msg in obj['messages']
         ]
         for msg in self.messages:
-            logger.warning("Taguette message: %s", msg['text'])
+            logger.warning("LibreQDA message: %s", msg['text'])
         self.messages_event.set()
 
     @staticmethod
@@ -227,6 +227,9 @@ class Application(GracefulExitApplication):
             logger.exception("Error getting messages")
 
     def check_messages(self):
+        if ("CHECK_MESSAGES" in self.config
+                and not self.config["CHECK_MESSAGES"]):
+            return
         f_msg = self.io_loop.create_task(self._check_messages())
         f_msg.add_done_callback(self._check_messages_callback)
         self.io_loop.call_later(86400,  # 24 hours
@@ -379,7 +382,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         self._gettext = None
 
     def set_default_headers(self):
-        self.set_header('Server', 'Taguette/%s' % exact_version())
+        self.set_header('Server', 'LibreQDA/%s' % exact_version())
         self.set_header('X-Frame-Options', 'DENY')
         self.set_header('Content-Security-Policy', "frame-ancestors 'none';")
 
