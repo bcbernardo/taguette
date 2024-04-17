@@ -124,6 +124,10 @@ msgctxt "navigation item"
 msgid "Home"
 msgstr "Accueil"
 
+#: taguette/templates/base.html:35
+msgid "Edit project"
+msgstr "Éditer le projet"
+
 #: taguette/templates/base.html:37
 #, python-format
 msgctxt "navigation item"
@@ -209,7 +213,7 @@ msgstr "Gérer les collaborateurs"
 
 #: taguette/templates/project.html:47
 msgid "Export project"
-msgstr "Exporter le project"
+msgstr "Exporter le projet"
 
 #: taguette/templates/project.html:51
 msgid "Export codebook"
@@ -276,6 +280,22 @@ msgstr "Réduire Tout"
 msgid "Filter by"
 msgstr "Filter par"
 
+#: taguette/templates/project.html:38
+msgid "Text [a&rarr;z]"
+msgstr "Texte"
+
+#: taguette/templates/project.html:39
+msgid "Text [z&rarr;a]"
+msgstr "Texte"
+
+#: taguette/templates/project.html:40
+msgid "Count [0&rarr;9]"
+msgstr "Compte"
+
+#: taguette/templates/project.html:41
+msgid "Count [9&rarr;0]"
+msgstr "Compte"
+
 #: taguette/templates/project.html:90 taguette/templates/project.html:272
 msgid "Create a tag"
 msgstr "Créer un code"
@@ -290,7 +310,7 @@ msgstr "Retour aux sélections"
 
 #: taguette/templates/project.html:120
 msgid "Load a document on the left"
-msgstr "Chargez un document sur la gauche"
+msgstr "Chargez un document depuis vos favoris ou le menu latéral"
 
 #: taguette/templates/project.html:132
 msgid "Manage Collaborators"
@@ -358,6 +378,27 @@ msgstr "De gauche à droite"
 #: taguette/templates/project.html:199 taguette/templates/project.html:240
 msgid "Right to left"
 msgstr "De droite à gauche"
+
+#: taguette/templates/modal/create_document.html:32
+msgctxt "submit button"
+msgid "Import"
+msgstr "Importer"
+
+#: taguette/templates/partials/document_toolbar.html:4
+msgid "Selected the document"
+msgstr "Documents favoris"
+
+#: taguette/templates/partials/document_toolbar.html:7
+msgid "..."
+msgstr ""
+
+#: taguette/templates/partials/document_toolbar.html:15
+msgid "Edit document"
+msgstr "Modifier le document"
+
+#: taguette/templates/partials/document_toolbar.html:18
+msgid "Export"
+msgstr "Exporter"
 
 #: taguette/templates/project.html:203
 msgctxt "document add form placeholder"
