@@ -276,6 +276,22 @@ msgstr "Réduire Tout"
 msgid "Filter by"
 msgstr "Filter par"
 
+#: taguette/templates/project.html:38
+msgid "Text [a&rarr;z]"
+msgstr "Texte"
+
+#: taguette/templates/project.html:39
+msgid "Text [z&rarr;a]"
+msgstr "Texte"
+
+#: taguette/templates/project.html:40
+msgid "Count [0&rarr;9]"
+msgstr "Compte"
+
+#: taguette/templates/project.html:41
+msgid "Count [9&rarr;0]"
+msgstr "Compte"
+
 #: taguette/templates/project.html:90 taguette/templates/project.html:272
 msgid "Create a tag"
 msgstr "Créer un code"

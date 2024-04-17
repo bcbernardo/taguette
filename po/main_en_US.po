@@ -158,6 +158,18 @@ msgstr "Create a code"
 msgid "See all highlights"
 msgstr "See all highlights"
 
+#: taguette/templates/project.html:29
+msgid "Expand all"
+msgstr "Expand all"
+
+#: taguette/templates/project.html:30
+msgid "Collapse all"
+msgstr "Collapse all"
+
+#: taguette/templates/project.html:35
+msgid "Filter by"
+msgstr "Filter by"
+
 #: taguette/templates/project.html:101
 msgid "Text [a&rarr;z]"
 msgstr "Text [a&rarr;z]"
