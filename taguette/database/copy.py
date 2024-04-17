@@ -161,6 +161,9 @@ def copy_project(
             tag_parent=lambda v: (
                 v is None or isinstance(v, int)
             ),
+            favorite=lambda v: (
+                v is None or isinstance(v, bool)
+            ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
             tag_color=validate.color,

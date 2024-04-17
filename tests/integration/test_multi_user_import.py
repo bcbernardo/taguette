@@ -115,6 +115,7 @@ class TestMultiUserImport(TestMultiUser):
                 (8, 'db2doc12.txt'),
             ],
         )
+
         self.assertRowsEqualsExceptDates(
             db1.execute(
                 database.Command.__table__.select()
@@ -129,17 +130,23 @@ class TestMultiUserImport(TestMultiUser):
                 # highlights 1, 2, 3 imported as 7, 8, -3
                 # commands 1-13 exported as 27-39
                 (27, 'db1user', 3, 7,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db2doc11.txt',
+                  'favorite': False,
                   'text_direction': 'LEFT_TO_RIGHT',
-                  'document_name': 'db2doc11.txt'}),
+                  'type': 'document_add'}),
                 (28, 'db1user', 3, -3,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db2doc1100.txt',
+                  'favorite': False,
                   'text_direction': 'LEFT_TO_RIGHT',
-                  'document_name': 'db2doc1100.txt'}),
+                  'type': 'document_add', }),
                 (29, 'db1user', 3, 8,
-                 {'type': 'document_add', 'description': '',
+                 {'description': '',
+                  'document_name': 'db2doc12.txt',
+                  'favorite': False,
                   'text_direction': 'RIGHT_TO_LEFT',
-                  'document_name': 'db2doc12.txt'}),
+                  'type': 'document_add', }),
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '',
