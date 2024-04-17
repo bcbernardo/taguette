@@ -290,7 +290,7 @@ msgstr "Retour aux sélections"
 
 #: taguette/templates/project.html:120
 msgid "Load a document on the left"
-msgstr "Chargez un document sur la gauche"
+msgstr "Chargez un document depuis vos favoris ou le menu latéral"
 
 #: taguette/templates/project.html:132
 msgid "Manage Collaborators"
