@@ -101,7 +101,8 @@ function generateDocumentSelectPicker() {
     createListItem.setAttribute('role', 'option');
     createListItem.setAttribute('data-test-id', 'create-document-link');
     createListItem.classList.add('create-document-option');
-    createListItem.innerHTML = `<a href="javascript:createDocument()">${gettext('Create New Document')}</a>`;
+    const labelImportNewDocument =gettext('Import new document')
+    createListItem.innerHTML = `<a href="javascript:createDocument()">${labelImportNewDocument}</a>`;
 
     dropdown.appendChild(createListItem);
 
