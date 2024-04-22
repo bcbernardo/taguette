@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-04-10 12:31-0400\n"
+"POT-Creation-Date: 2024-04-18 09:54-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,7 +71,7 @@ msgstr ""
 msgid "Load a document on the left"
 msgstr ""
 
-#: taguette/static/js/tag/treeview.js:306 taguette/static/js/taguette.js:1019
+#: taguette/static/js/taguette.js:1020
 msgid "No highlights with this tag yet."
 msgstr ""
 
@@ -87,6 +87,10 @@ msgstr ""
 msgid "There are no documents in this project yet."
 msgstr ""
 
+#: taguette/static/js/document/manager.js:104
+msgid "Import new document"
+msgstr ""
+
 #: taguette/static/js/polling-event.js:111
 msgid "It appears that you have been logged out."
 msgstr ""
@@ -95,11 +99,11 @@ msgstr ""
 msgid "You can no longer access this project."
 msgstr ""
 
-#: taguette/static/js/tag/treeview.js:383
+#: taguette/static/js/tag/treeview.js:392
 msgid "Documents"
 msgstr ""
 
-#: taguette/static/js/tag/treeview.js:384
+#: taguette/static/js/tag/treeview.js:393
 msgid "Highlights"
 msgstr ""
 

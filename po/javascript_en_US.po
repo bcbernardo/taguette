@@ -80,7 +80,7 @@ msgstr "This user doesn't exist!"
 
 #: taguette/static/js/taguette.js:790
 msgid "Load a document on the left"
-msgstr "Load a document on the left"
+msgstr "Load a document from you favorites or the side menu"
 
 #: taguette/static/js/taguette.js:933
 msgid "No highlights with this tag yet."

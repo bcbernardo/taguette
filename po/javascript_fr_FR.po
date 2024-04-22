@@ -137,7 +137,7 @@ msgstr "Impossible de charger le document !"
 
 #: taguette/static/js/taguette.js:1571
 msgid "No highlights with this tag yet."
-msgstr "Aucune marque avec ce code."
+msgstr "Aucune sélection avec ce code."
 
 #: taguette/static/js/taguette.js:1659
 msgid "Error loading tag highlights!"

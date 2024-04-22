@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-04-10 12:31-0400\n"
+"POT-Creation-Date: 2024-04-18 09:54-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -108,76 +108,76 @@ msgctxt "page title"
 msgid "Error %d"
 msgstr ""
 
-#: taguette/web/views.py:178
+#: taguette/web/views.py:181
 msgid "Invalid login or password"
 msgstr ""
 
-#: taguette/web/views.py:231 taguette/web/views.py:541
-#: taguette/web/views.py:707
+#: taguette/web/views.py:237 taguette/web/views.py:548
+#: taguette/web/views.py:714
 msgid "Passwords do not match"
 msgstr ""
 
-#: taguette/web/views.py:233
+#: taguette/web/views.py:239
 msgid "User name is taken"
 msgstr ""
 
-#: taguette/web/views.py:240
+#: taguette/web/views.py:246
 msgid "Email address is already used"
 msgstr ""
 
-#: taguette/web/views.py:250
+#: taguette/web/views.py:256
 msgid "Terms of Service must be accepted"
 msgstr ""
 
-#: taguette/web/views.py:588
+#: taguette/web/views.py:595
 msgid "This email address is not associated with any user"
 msgstr ""
 
-#: taguette/web/views.py:617
+#: taguette/web/views.py:624
 msgid "Password reset for Taguette"
 msgstr ""
 
-#: taguette/web/views.py:660
+#: taguette/web/views.py:667
 msgid "Invalid token"
 msgstr ""
 
-#: taguette/web/views.py:664
+#: taguette/web/views.py:671
 msgid "No user associated with that token"
 msgstr ""
 
-#: taguette/web/views.py:667
+#: taguette/web/views.py:674
 msgid "Password has already been changed"
 msgstr ""
 
 #. Default tag name
-#: taguette/web/views.py:751
+#: taguette/web/views.py:758
 msgid "interesting"
 msgstr ""
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:755
+#: taguette/web/views.py:762
 msgid "Further review required"
 msgstr ""
 
-#: taguette/web/views.py:790
+#: taguette/web/views.py:797
 msgid "You don't have permission to delete this project"
 msgstr ""
 
-#: taguette/web/views.py:824 taguette/web/views.py:851
+#: taguette/web/views.py:831 taguette/web/views.py:858
 msgid "You don't have permission to import a codebook"
 msgstr ""
 
-#: taguette/web/views.py:870
+#: taguette/web/views.py:877
 #, python-format
 msgid "Row %d: %s"
 msgstr ""
 
-#: taguette/web/views.py:1008
+#: taguette/web/views.py:1015
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr ""
 
-#: taguette/web/views.py:1023
+#: taguette/web/views.py:1030
 msgid "No file provided"
 msgstr ""
 
