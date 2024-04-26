@@ -282,19 +282,19 @@ msgstr "Filter par"
 
 #: taguette/templates/project.html:38
 msgid "Text [a&rarr;z]"
-msgstr "Texte"
+msgstr "Texte [a&rarr;z]"
 
 #: taguette/templates/project.html:39
 msgid "Text [z&rarr;a]"
-msgstr "Texte"
+msgstr "Texte [z&rarr;a]"
 
 #: taguette/templates/project.html:40
 msgid "Count [0&rarr;9]"
-msgstr "Compte"
+msgstr "Compte [0&rarr;9]"
 
 #: taguette/templates/project.html:41
 msgid "Count [9&rarr;0]"
-msgstr "Compte"
+msgstr "Compte [9&rarr;0]"
 
 #: taguette/templates/project.html:90 taguette/templates/project.html:272
 msgid "Create a tag"
