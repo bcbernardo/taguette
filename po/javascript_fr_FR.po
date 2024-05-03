@@ -1,0 +1,228 @@
+# Translations template for Taguette.
+# Copyright (C) 2018 Remi Rampin and Taguette contributors
+# This file is distributed under the same license as the Taguette project.
+# Remi Rampin <remi@rampin.org>, 2018.
+# 
+# Translators:
+# Rémi Rampin <remirampin@gmail.com>, 2021
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Taguette 1.1\n"
+"Report-Msgid-Bugs-To: hi@taguette.org\n"
+"POT-Creation-Date: 2021-10-12 19:00-0400\n"
+"PO-Revision-Date: 2019-05-08 22:49+0000\n"
+"Last-Translator: Rémi Rampin <remirampin@gmail.com>, 2021\n"
+"Language-Team: French (https://www.transifex.com/remram44/teams/98824/fr/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.9.1\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: taguette/static/js/taguette.js:500
+msgid "Couldn't update project metadata!"
+msgstr "Impossible de mettre à jour les métadonnées !"
+
+#: taguette/static/js/taguette.js:556 taguette/static/js/taguette.js:829
+msgid "Edit"
+msgstr "Éditer"
+
+#: taguette/static/js/taguette.js:565
+msgid "There are no documents in this project yet."
+msgstr "Il n'y a pas encore de documents dans ce projet."
+
+#: taguette/static/js/taguette.js:655 taguette/static/js/taguette.js:661
+msgid "Error uploading file!"
+msgstr "Impossible d'envoyer ce fichier !"
+
+#: taguette/static/js/taguette.js:693
+msgid "Document name cannot be empty"
+msgstr "Le nom du document ne peut pas être vide"
+
+#: taguette/static/js/taguette.js:710
+msgid "Couldn't update document!"
+msgstr "Impossible de mettre à jour le document !"
+
+#: taguette/static/js/taguette.js:719
+#, python-format
+msgid "Are you sure you want to delete the document '%(doc)s'?"
+msgstr "Êtes-vous sûr de vouloir supprimer le document \"%(doc)s\" ?"
+
+#: taguette/static/js/taguette.js:731
+msgid "Couldn't delete document!"
+msgstr "Impossible de supprimer le document !"
+
+#: taguette/static/js/taguette.js:838
+msgid "There are no tags in this project yet."
+msgstr "Il n'y a pas encore de codes dans ce projet."
+
+#: taguette/static/js/taguette.js:878
+msgid "no tags"
+msgstr "pas de codes"
+
+#: taguette/static/js/taguette.js:945
+msgid "Invalid tag name"
+msgstr "Nom de code invalide"
+
+#: taguette/static/js/taguette.js:972
+msgid "Couldn't create tag!"
+msgstr "Impossible de créer le code !"
+
+#: taguette/static/js/taguette.js:981
+#, python-format
+msgid "Are you sure you want to delete the tag '%(tag)s'?"
+msgstr "Êtes-vous sûr de vouloir supprimer le code \"%(tag)s\" ?"
+
+#: taguette/static/js/taguette.js:996
+msgid "Couldn't delete tag!"
+msgstr "Impossible de supprimer le code !"
+
+#: taguette/static/js/taguette.js:1065
+msgid "Couldn't merge tags!"
+msgstr "Impossible de fusionner les codes !"
+
+msgid "Impossible to define the same tag as parent"
+msgstr "Impossible de définir la même code comme parent"
+
+#. Key used to create a new highlight
+#: taguette/static/js/taguette.js:1176
+msgid "n"
+msgstr "n"
+
+#: taguette/static/js/taguette.js:1226
+msgid "Couldn't create highlight!"
+msgstr "Impossible de créer cette sélection !"
+
+#: taguette/static/js/taguette.js:1246
+msgid "Couldn't delete highlight!"
+msgstr "Impossible de supprimer cette sélection !"
+
+#: taguette/static/js/taguette.js:1277
+msgid "Full permissions"
+msgstr "Toutes les permissions"
+
+#: taguette/static/js/taguette.js:1278
+msgid "Can't change collaborators / delete project"
+msgstr "Ne peut pas changer les collaborateurs / supprimer le projet"
+
+#: taguette/static/js/taguette.js:1279
+msgid "View & make changes"
+msgstr "Voir & faire des changements"
+
+#: taguette/static/js/taguette.js:1280
+msgid "View only"
+msgstr "Voir seulement"
+
+#: taguette/static/js/taguette.js:1351
+msgid "Already a member!"
+msgstr "Déja membre de ce projet !"
+
+#: taguette/static/js/taguette.js:1369
+msgid "This user doesn't exist!"
+msgstr "Cet utilisateur n'existe pas !"
+
+#: taguette/static/js/taguette.js:1412
+msgid "Couldn't update collaborators!"
+msgstr "Impossible de mettre à jour les collaborateurs !"
+
+#: taguette/static/js/taguette.js:1440
+msgid "Load a document on the left"
+msgstr "Sélectionnez un document sur la gauche"
+
+#: taguette/static/js/taguette.js:1508
+msgid "Error loading document!"
+msgstr "Impossible de charger le document !"
+
+#: taguette/static/js/taguette.js:1571
+msgid "No highlights with this tag yet."
+msgstr "Aucune sélection avec ce code."
+
+#: taguette/static/js/taguette.js:1659
+msgid "Error loading tag highlights!"
+msgstr "Impossible de charger les sélections liées à ce code !"
+
+#: taguette/static/js/taguette.js:1812
+msgid "It appears that you have been logged out."
+msgstr "Il semble que vous vous soyez déconnecté de votre profil."
+
+#: taguette/static/js/taguette.js:1815
+msgid "You can no longer access this project."
+msgstr "Vous ne pouvez plus accéder à ce projet."
+
+#: taguette/static/js/tag/context-menu.js.js:25
+msgid "selectAll"
+msgstr "Sélectionner tout"
+
+#: taguette/static/js/tag/context-menu.js.js:25
+msgid "unselectAll"
+msgstr "Désélectionner tout"
+
+#: taguette/static/js/tag/context-menu.js.js:33
+msgid "Select"
+msgstr "Sélectionner"
+
+#: taguette/static/js/tag/context-menu.js.js:38
+msgid "AND"
+msgstr "Combiner avec (ET)"
+
+#: taguette/static/js/tag/context-menu.js.js:45
+msgid "OR"
+msgstr "Inclure également (OU)"
+
+#: taguette/static/js/tag/context-menu.js.js:52
+msgid "NOT"
+msgstr "Exclure"
+
+#: taguette/static/js/tag/context-menu.js.js:61
+msgid "expand"
+msgstr "Développer"
+
+#: taguette/static/js/tag/context-menu.js.js:61
+msgid "collapse"
+msgstr "Réduire"
+
+#: taguette/static/js/tag/context-menu.js.js:70
+msgid "edit"
+msgstr "Modifier"
+
+#: taguette/static/js/tag/context-menu.js.js:71
+msgid "merge"
+msgstr "Fusionner"
+
+#: taguette/static/js/tag/context-menu.js.js:77
+msgid "delete"
+msgstr "Supprimer"
+
+#: taguette/static/js/tag/context-menu.js.js:73
+msgid "deleteParent"
+msgstr "Dissocier du parent"
+
+#: taguette/static/js/tag/treeview.js:359
+msgid "Documents"
+msgstr "Documents"
+
+#: taguette/static/js/tag/treeview.js:360
+msgid "Highlights"
+msgstr "Sélections"
+
+#: taguette/static/js/tag/manager.js:362
+msgid "Your selection"
+msgstr "Votre sélection"
+
+#: taguette/static/js/tag/context-menu.js:67
+msgid "Add child"
+msgstr "Ajouter un enfant"
+
+#: taguette/static/js/tag/context-menu.js:39
+msgid "Select With Condition"
+msgstr "Sélection conditionnelle"
+
+#: taguette/static/js/document/manager.js:40
+msgid "Remove from Favorites"
+msgstr "Retirer comme favori"
+
+#: taguette/static/js/document/manager.js:44
+msgid "Add to Favorites"
+msgstr "Ajouter comme favori"

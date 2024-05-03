@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_
+from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -21,10 +21,9 @@ from .. import database
 from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
-
+from ..utils import get_path_informations
 
 logger = logging.getLogger(__name__)
-
 
 PROM_POLLING_CLIENTS = prometheus_client.Gauge(
     'polling_clients',
@@ -124,6 +123,7 @@ class DocumentAdd(BaseHandler):
                 raise MissingArgumentError('file')
             content_type = file.content_type
             filename = validate.fix_filename(unquote(file.filename))
+            favorite = False
             direction = self.get_body_argument('text_direction',
                                                'LEFT_TO_RIGHT')
             try:
@@ -149,6 +149,7 @@ class DocumentAdd(BaseHandler):
                     name=name,
                     description=description,
                     filename=filename,
+                    favorite=favorite,
                     project=project,
                     text_direction=direction,
                     contents=body,
@@ -211,6 +212,8 @@ class Document(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     document.description = obj['description']
+                if 'favorite' in obj:
+                    document.favorite = obj['favorite']
                 if 'text_direction' in obj:
                     direction = obj['text_direction']
                     try:
@@ -311,9 +314,11 @@ class TagAdd(BaseHandler):
 
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
-            # Todo: validate parent_id
+            validate.color(obj['color'])
+
             tag = database.Tag(project=project,
                                parent_id=obj['parent_id'],
+                               color=obj['color'],
                                path=obj['path'],
                                description=obj['description'])
             try:
@@ -358,6 +363,9 @@ class TagUpdate(BaseHandler):
                     tag.description = obj['description']
                 if 'parent_id' in obj:
                     tag.parent_id = obj['parent_id']
+                if 'color' in obj:
+                    validate.color(obj['color'])
+                    tag.color = obj['color']
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,
@@ -544,9 +552,9 @@ class HighlightUpdate(BaseHandler):
                 # Check the tags exist and are in this project
                 tags = (
                     self.db.query(database.Tag)
-                        .filter(database.Tag.id.in_(new_tags))
-                        .filter(database.Tag.project_id == document.project_id)
-                        .all()
+                    .filter(database.Tag.id.in_(new_tags))
+                    .filter(database.Tag.project_id == document.project_id)
+                    .all()
                 )
                 if set(tag.id for tag in tags) != new_tags:
                     return self.send_error_json(
@@ -638,7 +646,7 @@ class Highlights(BaseHandler):
 
     @api_auth
     @PROM_REQUESTS.sync('highlights')
-    def get(self, project_id, path):
+    def get(self, project_id, paths):
         project, _ = self.get_project(project_id)
         page = self.get_query_argument('page', '1')
         try:
@@ -648,33 +656,82 @@ class Highlights(BaseHandler):
         if page < 0:
             self.send_error_json(404, "Bad page number")
 
-        if path:
-            tag = aliased(database.Tag)
-            hltag = aliased(database.highlight_tags)
-            document = aliased(database.Document)
-            query = (
-                self.db.query(database.Highlight, document.text_direction)
-                .options(joinedload(database.Highlight.tags))
-                .join(hltag, hltag.c.highlight_id == database.Highlight.id)
-                .join(tag, hltag.c.tag_id == tag.id)
-                .join(document, document.id == database.Highlight.document_id)
-                .filter(tag.path.startswith(path))
-                .filter(tag.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
+        list_of_paths, operator_type, exclude_paths = get_path_informations(
+            paths)
+
+        tag = aliased(database.Tag)
+        hl_tag = aliased(database.highlight_tags)
+        document = aliased(database.Document)
+
+        # main query
+        query = (
+            self.db.query(database.Highlight, document.text_direction)
+            .options(joinedload(database.Highlight.tags))
+            .join(hl_tag, hl_tag.c.highlight_id == database.Highlight.id)
+            .join(tag, hl_tag.c.tag_id == tag.id)
+            .join(document, document.id == database.Highlight.document_id)
+            .filter(tag.project == project)
+        )
+
+        if any(list_of_paths) and operator_type == 'or':
+            query = query.filter(tag.path.in_(list_of_paths))
+        elif any(list_of_paths) and operator_type == 'and':
+            subquery = (self.db.query(hl_tag.c.highlight_id)
+                        .join(tag, hl_tag.c.tag_id == tag.id)
+                        .filter(
+                tag.path.in_(list_of_paths),
+                tag.project == project
             )
+                .group_by(hl_tag.c.highlight_id)
+                .having(
+                func.count(distinct(tag.id)) == len(list_of_paths)
+            )
+                .subquery())
+            query = query.join(
+                subquery, subquery.c.highlight_id == database.Highlight.id)
+        elif any(list_of_paths) and operator_type == 'mixed':
+            or_conditions = []
+            # check to remove  ! if necessary
+            for group in list_of_paths:
+                if len(group) == 1:
+                    or_conditions.append(tag.path == group[0])
+                else:
+                    and_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                    .join(tag, hl_tag.c.tag_id == tag.id)
+                                    .filter(tag.project == project)
+                                    .filter(tag.path.in_(group))
+                                    .group_by(hl_tag.c.highlight_id)
+                                    .having(func.count(
+                                        distinct(tag.id)) == len(group))
+                                    .subquery())
+                    or_conditions.append(database.Highlight.id.in_(
+                        self.db.query(and_subquery.c.highlight_id)))
+            if or_conditions:
+                query = query.filter(or_(*or_conditions))
         else:
             # Special case to select all highlights: we also need to select
             # highlights that have no tag at all
-            document = aliased(database.Document)
             query = (
                 self.db.query(database.Highlight, document.text_direction)
                 .options(joinedload(database.Highlight.tags))
                 .join(document, document.id == database.Highlight.document_id)
                 .filter(document.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
             )
+
+        # Handle exclusions
+        if any(exclude_paths):
+            exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                .join(tag, hl_tag.c.tag_id == tag.id)
+                                .filter(tag.path.in_(exclude_paths),
+                                        tag.project == project)
+                                .subquery())
+            query = query.filter(
+                not_(database.Highlight.id.in_(exclude_subquery)))
+
+        query = query.order_by(
+            database.Highlight.document_id,
+            database.Highlight.start_offset
+        )
 
         total = query.count()
         highlights = (

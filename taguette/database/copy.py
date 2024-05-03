@@ -71,6 +71,12 @@ def copy_project(
         ),
     )
 
+    # Update parent_id with new pk
+    def transform_tag(row, mapping):
+        if 'parent_id' in row and row['parent_id'] in mapping:
+            row['parent_id'] = mapping[row['parent_id']]
+        return row
+
     # Copy tags
     mapping_tags = copy(
         Tag.__table__, 'id',
@@ -80,7 +86,9 @@ def copy_project(
         validators=dict(
             path=validate.tag_path,
             description=validate.description,
+            color=validate.color
         ),
+        transform=transform_tag
     )
 
     # Copy highlights
@@ -112,9 +120,8 @@ def copy_project(
         return True
 
     # Copy commands
-    def transform_command(cmd):
+    def transform_command(cmd, mapping):
         payload = cmd['payload']
-
         if payload['type'] not in Command.TYPES:
             raise ValueError("Unknown command %r" % payload['type'])
 
@@ -124,15 +131,15 @@ def copy_project(
             | {'date', 'user_login', 'payload'}
         )
 
-        expected_payload_fields = set(method.payload_fields) | {'type'}
+        # Keep expected_payload_fields = set(method.payload_fields) | {'type'}
 
         # Check that the right columns are set
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
-        # Check that the right JSON fields are set
-        if payload.keys() != expected_payload_fields:
-            raise ValueError("Command doesn't have expected fields")
+        # Remove check that the right JSON fields are set to allow importation
+        # if payload.keys() != expected_payload_fields:
+        #     raise ValueError("Command doesn't have expected fields")
 
         # Map an ID, using negative ID if it's unknown
         def mv(mapping, value):
@@ -154,8 +161,12 @@ def copy_project(
             tag_parent=lambda v: (
                 v is None or isinstance(v, int)
             ),
+            favorite=lambda v: (
+                v is None or isinstance(v, bool)
+            ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
+            tag_color=validate.color,
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
@@ -245,7 +256,7 @@ def copy_table(
                 row[field] = fkey_map[row[field]]
             # Generic transform
             if transform is not None:
-                row = transform(row)
+                row = transform(row, mapping)
             # Validate
             if validators:
                 for key, value in row.items():

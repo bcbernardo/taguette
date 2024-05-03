@@ -1,0 +1,100 @@
+# Translations template for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-02-13 14:10-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: taguette/static/js/polling-event.js:110
+msgid "It appears that you have been logged out."
+msgstr "It appears that you have been logged out."
+
+#: taguette/static/js/polling-event.js:113
+msgid "You can no longer access this project."
+msgstr "You can no longer access this project."
+
+#: taguette/static/js/taguette.js:118
+msgid "Edit"
+msgstr "Edit"
+
+#: taguette/static/js/taguette.js:126
+msgid "There are no documents in this project yet."
+msgstr "There are no documents in this project yet."
+
+#: taguette/static/js/taguette.js:224
+msgid "Error uploading file!"
+msgstr "Error uploading file!"
+
+#: taguette/static/js/taguette.js:256
+msgid "Document name cannot be empty"
+msgstr "Document name cannot be empty"
+
+#: taguette/static/js/taguette.js:280
+#, python-format
+msgid "Are you sure you want to delete the document '%(doc)s'?"
+msgstr "Are you sure you want to delete the document '%(doc)s'?"
+
+#: taguette/static/js/taguette.js:394
+msgid "Invalid tag name"
+msgstr "Invalid code name"
+
+#: taguette/static/js/taguette.js:446
+#, python-format
+msgid "Are you sure you want to delete the tag '%(tag)s'?"
+msgstr "Are you sure you want to delete the code '%(tag)s'?"
+
+#: taguette/static/js/taguette.js:640
+msgid "Full permissions"
+msgstr "Full permissions"
+
+#: taguette/static/js/taguette.js:640
+msgid "Can't change collaborators / delete project"
+msgstr "Can't change collaborators / delete project"
+
+#: taguette/static/js/taguette.js:640
+msgid "View & make changes"
+msgstr "View & make changes"
+
+#: taguette/static/js/taguette.js:640
+msgid "View only"
+msgstr "View only"
+
+#: taguette/static/js/taguette.js:707
+msgid "Already a member!"
+msgstr "Already a member!"
+
+#: taguette/static/js/taguette.js:722
+msgid "This user doesn't exist!"
+msgstr "This user doesn't exist!"
+
+#: taguette/static/js/taguette.js:790
+msgid "Load a document on the left"
+msgstr "Load a document from you favorites or the side menu"
+
+#: taguette/static/js/taguette.js:933
+msgid "No highlights with this tag yet."
+msgstr "No highlights with this code yet."
+
+#: taguette/static/js/tag/treeview.js:359
+msgid "Documents"
+msgstr "Documents"
+
+#: taguette/static/js/tag/treeview.js:360
+msgid "Highlights"
+msgstr "Highlights"
+
+
+#: taguette/static/js/tag/manager.js:362
+msgid "Your selection"
+msgstr "Your selection"

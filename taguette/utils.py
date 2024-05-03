@@ -5,7 +5,6 @@ import re
 import sentry_sdk
 import sys
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +95,6 @@ def sanitize_filename(name):
 
 sanitize_filename.windows = os.name == 'nt'
 
-
 _background_future_references = {}
 
 
@@ -121,3 +119,61 @@ def background_task(task, *, should_never_exit=False):
     # Keep a strong reference to the future
     # https://bugs.python.org/issue21163
     _background_future_references[ident] = future
+
+
+def check_operator_consistency(paths):
+    has_and = '∩' in paths
+    has_or = '∪' in paths
+
+    if has_and and has_or:
+        return 'mixed'
+    elif has_and:
+        return 'and'
+    elif has_or:
+        return 'or'
+    else:
+        return 'or'
+
+
+def parse_paths_for_exclusion(paths):
+    import re
+    exclude_paths = []
+    include_paths = []
+    for path in re.findall(r'([∩∪¬]?[^\∩∪¬]+)', paths):
+        if path.startswith('¬'):
+            exclude_paths.append(path[1:])
+        else:
+            include_paths.append(path)
+    include_paths_string = ''.join(include_paths)
+    return exclude_paths, include_paths_string
+
+
+def get_path_informations(paths):
+    exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
+
+    operator_type = check_operator_consistency(paths)
+
+    list_of_paths = []
+
+    if operator_type == 'and':
+        list_of_paths = include_paths_string.split('∩')
+    elif operator_type == 'or':
+        list_of_paths = include_paths_string.split('∪')
+    elif operator_type == 'mixed':
+        list_of_paths = separate_and_group_tags(paths)
+
+    return list_of_paths, operator_type, exclude_paths
+
+
+def separate_and_group_tags(paths):
+
+    exclude_paths, include_paths_string = parse_paths_for_exclusion(paths)
+
+    or_groups = include_paths_string.split('∪')
+
+    grouped_tags = []
+    for group in or_groups:
+        and_tags = group.split('∩')
+        grouped_tags.append(and_tags)
+
+    return grouped_tags
