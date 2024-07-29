@@ -6,7 +6,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && /root/.local/bin/
 # Copy files
 WORKDIR /usr/src/app
 COPY po po
-COPY pyproject.toml poetry.lock README.rst tests.py ./
+COPY pyproject.toml poetry.lock README.md tests.py ./
 RUN mkdir scripts
 COPY scripts/update_translations.sh scripts/
 
@@ -28,7 +28,7 @@ RUN chmod +x /tini
 
 # Install Calibre from Ubuntu distro
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends calibre wv && \
+    apt-get install -y --no-install-recommends calibre wv libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
@@ -38,7 +38,7 @@ RUN pip --disable-pip-version-check install --no-cache-dir -r requirements.txt
 # Copy files
 WORKDIR /usr/src/app
 COPY taguette taguette
-COPY pyproject.toml poetry.lock README.rst tests.py ./
+COPY pyproject.toml poetry.lock README.md tests.py ./
 
 # Install app
 RUN pip --disable-pip-version-check install --no-deps -e .
