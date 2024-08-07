@@ -41,7 +41,7 @@ case "$1" in
                   -v /var/run/docker.sock:/var/run/docker.sock \
                   --workdir $PWD_RESOLVED \
                   -v /srv/gitlab-runner/config:/etc/gitlab-runner \
-                  gitlab/gitlab-runner:latest
+                  gitlab/gitlab-runner:v16.7.0
                 docker exec gitlab-runner git config --global --add safe.directory $PWD_RESOLVED
         ;;
 

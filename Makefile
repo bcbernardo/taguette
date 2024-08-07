@@ -35,3 +35,15 @@ test:
 		sleep 2; \
 	done
 	@echo "$(STEP) Finished! $(STEP)"
+
+test-main:
+	@echo "$(STEP) Start test by using local gitlab-runner ... $(STEP)"
+	./tests/rungit.sh job sqlite3; \
+	sleep 1; \
+	./tests/rungit.sh job sqlite3_redis; \
+	sleep 1; \
+	./tests/rungit.sh job frontend_firefox; \
+	sleep 1; \
+	./tests/rungit.sh job frontend_chromium_redis; \
+	sleep 1;
+	@echo "$(STEP) Finished! $(STEP)"
