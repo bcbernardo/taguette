@@ -232,9 +232,21 @@ def copy_table(
         foreign keys to a dictionary mapping the keys.
     :param transform: Function to apply on each row.
     """
-    query = table.select()
-    if pkey is not None:
-        query = query.order_by(pkey)
+    from .models import Tag
+    
+    if table == Tag.__table__:
+        # To avoid foreign key errors for tag hierarchy,
+        # order by parent_id such that parent tags (parent_id is None) come first,
+        # followed by child tags, and then by the primary key.
+        query = table.select().order_by(
+            table.c.parent_id.isnot(None),
+            table.c.parent_id,
+            pkey
+        )
+    else:
+        query = table.select()
+        if pkey is not None:
+            query = query.order_by(pkey)
     if condition is not None:
         query = query.where(condition)
     query = src_db.execute(query)
