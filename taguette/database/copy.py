@@ -236,7 +236,7 @@ def copy_table(
 
     if table == Tag.__table__:
         # To avoid foreign key errors for tag hierarchy,
-        # order by parent_id such that parent tags (parent_id is None) come first,
+        # order by parent_id such that parent tags come first,
         # followed by child tags, and then by the primary key.
         query = table.select().order_by(
             table.c.parent_id.isnot(None),
