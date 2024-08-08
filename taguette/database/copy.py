@@ -233,7 +233,7 @@ def copy_table(
     :param transform: Function to apply on each row.
     """
     from .models import Tag
-    
+
     if table == Tag.__table__:
         # To avoid foreign key errors for tag hierarchy,
         # order by parent_id such that parent tags (parent_id is None) come first,
