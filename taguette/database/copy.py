@@ -263,8 +263,16 @@ def copy_table(
         if table == Tag.__table__:
             roots, hierarchy = build_tag_hierarchy(rows)
             insert_tags_recursively(
-                dest_db, roots,  hierarchy, mapping,
-                table, pkey, fkeys, transform, validators)
+                dest_db,
+                roots,
+                hierarchy,
+                mapping,
+                table,
+                pkey,
+                fkeys,
+                transform,
+                validators
+            )
         else:
             insert_rows(dest_db, rows, table, pkey, fkeys,
                         transform, validators, mapping)
