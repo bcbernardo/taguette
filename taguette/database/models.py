@@ -13,7 +13,7 @@ from sqlalchemy import (Column, func, ForeignKey,
                         Table, UniqueConstraint,
                         select, distinct)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import column_property, deferred, relationship
+from sqlalchemy.orm import aliased, column_property, deferred, relationship
 from sqlalchemy.sql import functions
 from sqlalchemy.types import (Boolean, DateTime, Enum, Integer, String, Text,
                               BigInteger)
@@ -668,7 +668,7 @@ highlight_tags = Table(
            primary_key=True, index=True),
 )
 
-
+# Property to count highlight associate with tag
 Tag.highlights_count = column_property(
     select(
         [functions.count(highlight_tags.c.highlight_id)],
@@ -680,6 +680,7 @@ Tag.highlights_count = column_property(
     .scalar_subquery()
 )
 
+# Property to get documents count associate with tag
 Tag.documents_count = column_property(
     select(
         [functions.count(distinct(Document.id)).label('count')],
@@ -689,6 +690,19 @@ Tag.documents_count = column_property(
         highlight_tags.c.highlight_id == Highlight.id,
         Highlight.document_id == Document.id,
     )
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
+# Property to get documents associate with tag
+document_alias = aliased(Document)
+
+Tag.document_ids = column_property(
+    select([func.array_agg(func.distinct(document_alias.id))])
+    .select_from(highlight_tags)
+    .outerjoin(Highlight, Highlight.id == highlight_tags.c.highlight_id)
+    .outerjoin(document_alias, document_alias.id == Highlight.document_id)
+    .where(highlight_tags.c.tag_id == Tag.id)
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )

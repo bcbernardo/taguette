@@ -182,11 +182,12 @@ function updateTagCount(tagsId) {
 
     for (const key in tagsId) {
         const tagId = parseInt(key);
-        const value = parseInt(tagsId[key]);
+        const tagData = tagsId[key];
         const tagToUpdate = findTag(tagId);
 
         if (tagToUpdate) {
-            tagToUpdate.count = parseInt(tagToUpdate.count) + value;
+            tagToUpdate.count = tagData.highlights_count;
+            tagToUpdate.count_document = tagData.documents_count;
         }
     }
 
