@@ -461,6 +461,9 @@ function addTagDragDrop() {
 
     $(".node-treeview-tags").each(function (index, element) {
 
+        $(element).off('drop');
+        $(element).off('dragover');
+
         $(element).on('dragover', function (event) {
             event.preventDefault();
         });
