@@ -57,7 +57,10 @@ function highlightSelection(saved, id, clickedCallback, title) {
     let end = locatePos(saved[1]);
     end = splitAtPos(end, true);
 
-    const colors = title.split(',').map((path) => findTag(path.trim()).color);
+    const colors = title.split(',').map((path) => {
+        const tag = findTag(path.trim());
+        return tag ? tag.color : '#000000';
+    });
     const gradientString = `linear-gradient(90deg, ${colors.join(', ')})`;
 
     let node = start;
