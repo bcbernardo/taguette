@@ -36,9 +36,12 @@ function treeviewHasChildren(treeview) {
 
 function selectNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
-    if (!node.state.selected) {
+
+    if (node && node.state && !node.state.selected) {
         const $treeview = $(`#${treeview}`);
         $treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+    } else {
+        log(`Node with nodeId ${nodeId} not found or already selected.`);
     }
 }
 
@@ -259,7 +262,11 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
         treeview_tags_highlight.treeview('collapseAll');
     }
 
-    addTagUnderLineHighlightTreeview()
+    treeview_tags_highlight.on('nodeUnselected', function (event, data) {
+        savedSelections = savedSelections.filter(id => id !== data.id);
+    });
+
+    addTagUnderLineHighlightTreeview();
 
     treeview_tags_highlight.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, data) {
         // Add a delay to ensure the treeview recreation is finished
@@ -342,13 +349,23 @@ function getConditionalSymbol(condition) {
 function getTagIdFromTreeviewNode(treeview, nodeId) {
     const allNodes = getAllNodes(treeview);
     const node = allNodes.find(item => item.nodeId === parseInt(nodeId))
-    return node.id;
+    if (node) {
+        return node.id;
+    } else {
+        log(`Node with nodeId ${nodeId} not found in treeview.`);
+        return null;
+    }
 }
 
 function getNodeIdFromTreeviewByTagId(treeview, tagId) {
     const allNodes = getAllNodes(treeview);
     const node = allNodes.find((node) => node.id === parseInt(tagId));
-    return node.nodeId;
+    if (node) {
+        return node.nodeId;
+    } else {
+        log(`Node with tagId ${tagId} not found in treeview.`);
+        return null;
+    }
 }
 
 function addTagUnderLineHighlightTreeview() {

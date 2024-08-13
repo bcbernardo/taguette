@@ -332,6 +332,7 @@ linkTag(document.getElementById('load-all-tags'), '');
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
     hideSearchErrorMessage();
+    savedSelections = [];
     initTagsHighlightTreeview(false);
 }
 
@@ -1180,15 +1181,44 @@ document.getElementById('input-search-tags').addEventListener('input', function 
 });
 
 const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
+
+function saveSelectedNodes(treeview) {
+    const selectedNodes = treeview.treeview('getSelected');
+    return selectedNodes.map(node => node.id);
+}
+
+function restoreSelectedNodes(treeview, savedNodeIds) {
+    savedNodeIds.forEach(id => {
+        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', id)
+        selectNode('treeview-tags-highlight', nodeId);
+    });
+}
+
+let savedSelections = [];
+
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
-    const filterText = $('#input-search-tags-highlight').val().toLowerCase();
-    hideSearchErrorMessage();
-    const filteredTags = handleSearch(filterText);
-    initTagsHighlightTreeview(false, filteredTags);
-    if (filteredTags.length === 0) {
-        showSearchErrorMessage();
-        alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
-    }
+
+        const filterText = $('#input-search-tags-highlight').val().toLowerCase();
+        hideSearchErrorMessage();
+
+        // save selected tags
+        const tempSavedSelections = saveSelectedNodes(treeview_tags_highlight);
+
+        tempSavedSelections.forEach(id => {
+            if (!savedSelections.includes(id)) {
+                savedSelections.push(id);
+            }
+        });
+
+        const filteredTags = handleSearch(filterText);
+        initTagsHighlightTreeview(false, filteredTags);
+        if (filteredTags.length === 0) {
+            showSearchErrorMessage();
+            alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
+        }
+
+        // Restore tags selections
+        restoreSelectedNodes(treeview_tags_highlight, savedSelections);
 });
 
 function showSearchErrorMessage() {
