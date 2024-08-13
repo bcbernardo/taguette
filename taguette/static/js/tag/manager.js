@@ -244,23 +244,39 @@ function sortTagsByKey(array, key, reverse) {
 }
 
 function handleSearch(filterText) {
+    function searchInChildren(item) {
+        const filteredChildren = [];
 
-    return tags.filter(item => {
+        item.children.forEach(child => {
+            const childMatches = child.path.toLowerCase().includes(filterText);
+            const matchingChildren = searchInChildren(child);
 
-        if (item.path.toLowerCase().includes(filterText)) {
-            return true;
-        }
-
-        // Check in children too
-        if (item.children && item.children.length > 0) {
-            const filteredChildren = item.children.filter(child => child.path.toLowerCase().includes(filterText));
-            if (filteredChildren.length > 0) {
-                return true;
+            if (childMatches || matchingChildren.length > 0) {
+                filteredChildren.push({
+                    ...child,
+                    children: matchingChildren
+                });
             }
-        }
+        });
 
-        return false;
-    });
+        return filteredChildren;
+    }
+
+    return tags
+        .map(item => {
+            const matches = item.path.toLowerCase().includes(filterText);
+            const filteredChildren = searchInChildren(item);
+
+            if (matches || filteredChildren.length > 0) {
+                return {
+                    ...item,
+                    children: filteredChildren
+                };
+            }
+
+            return null;
+        })
+        .filter(item => item !== null);
 }
 
 function submitTagCreation(tag, callbackSuccess, callbackFail) {
