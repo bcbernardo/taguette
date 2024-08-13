@@ -884,9 +884,23 @@ function loadDocument(document_id, highlight_id=null) {
                 elem.setAttribute('id', 'doc-offset-' + chunk.offset);
                 elem.classList.add('draggable');
                 elem.setAttribute('contenteditable', 'true');
-                elem.addEventListener('dragstart', function (event) {
-                        event.dataTransfer.effectAllowed = 'move';
+
+                // Disable editing
+                elem.addEventListener('keydown', function (event) {
+                    event.preventDefault();
                 });
+                elem.addEventListener('paste', function (event) {
+                    event.preventDefault();
+                });
+                elem.addEventListener('input', function (event) {
+                    event.preventDefault();
+                });
+
+                // Drag and drop functionality
+                elem.addEventListener('dragstart', function (event) {
+                    event.dataTransfer.effectAllowed = 'move';
+                });
+
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
                 chunk_offsets.push(chunk.offset);
@@ -1151,7 +1165,7 @@ window.onpopstate = function (e) {
 /*
  * Attach input change for tag search event
  */
-const TAG_NOT_FOUND_MESSAGE = "No tag found";
+const TAG_NOT_FOUND_MESSAGE = gettext("No tag found");
 
 document.getElementById('input-search-tags').addEventListener('input', function () {
     const alert_tag_treeview = $('#alert-tag-treeview');
