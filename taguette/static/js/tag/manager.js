@@ -156,8 +156,6 @@ function mergeTags(tag_src, tag_dest) {
     findTagAndDelete(tag_src);
 
     updateTagsList();
-
-    selectTag(treeview_tags, tag_dest)
 }
 
 function selectTag(treeview, tag_id) {
