@@ -361,7 +361,7 @@ a.dropdown-item:hover {
 }
 
 .draggable {
-    cursor: grab;
+    /*cursor: grab;*/
     user-select: none;
 }
 

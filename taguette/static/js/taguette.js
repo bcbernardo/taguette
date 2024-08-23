@@ -681,25 +681,6 @@ const members_modal = document.getElementById('members-modal');
 let members_initial = {};
 let members_displayed = {};
 
-// function _memberRow(login, user, can_edit, is_self) {
-//     let elem = document.createElement('div');
-//     elem.className = 'row members-item';
-//     elem.innerHTML = '<div class="col-md-4">' + '  <p class="members-item-login">' + login + '</p>' + '</div>' + '<div class="col-md-4 form-group">' + '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' + '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' + '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' + '    <option value="TAG">' + gettext("View & make changes") + '</option>' + '    <option value="READ">' + gettext("View only") + '</option>' + '  </select>' + '</div>' + (is_self ? '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>' : '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>');
-//
-//     [].forEach.call(elem.querySelectorAll('option'), function (e) {
-//         if (e.value === user.privileges) {
-//             e.selected = true;
-//         }
-//     });
-//
-//     elem.querySelector('button').addEventListener('click', function () {
-//         elem.parentNode.removeChild(elem);
-//         delete members_displayed[login];
-//     });
-//
-//     return elem;
-// }
-
 function _memberRow(login, user, can_edit, is_self) {
     let elem = document.createElement('div');
     elem.className = 'row members-item';
@@ -863,7 +844,8 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-function loadDocument(document_id, highlight_id=null) {
+
+function loadDocument(document_id, highlight_id = null, splitParagraphs = true) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -879,6 +861,8 @@ function loadDocument(document_id, highlight_id=null) {
             document_contents.innerHTML = '';
             highlights = {};
             chunk_offsets = [];
+            const maxWidth = document_contents.offsetWidth / 2;
+
             for (let i = 0; i < contents.contents.length; ++i) {
                 let chunk = contents.contents[i];
                 let elem = document.createElement('div');
@@ -886,86 +870,126 @@ function loadDocument(document_id, highlight_id=null) {
                 elem.classList.add('draggable');
                 elem.setAttribute('contenteditable', 'true');
 
-                // Disable editing
-                elem.addEventListener('keydown', function (event) {
-                    event.preventDefault();
-                });
-                elem.addEventListener('paste', function (event) {
-                    event.preventDefault();
-                });
-                elem.addEventListener('input', function (event) {
-                    event.preventDefault();
-                });
+                disableEditing(elem);
+                addDragFunctionality(elem);
 
-                // Drag and drop functionality
-                elem.addEventListener('dragstart', function (event) {
-                    event.dataTransfer.effectAllowed = 'move';
-                });
+                if (splitParagraphs) {
+                    // Créer un élément temporaire pour manipuler le contenu HTML
+                    let tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = chunk.contents;
 
-                elem.innerHTML = chunk.contents;
+                    // Parcourir chaque élément <p> dans le chunk
+                    Array.from(tempDiv.querySelectorAll('p')).forEach(pElem => {
+                        const pText = pElem.textContent;
+                        const textWidth = calculateTextWidth(pText, elem);
+
+                        if (textWidth > maxWidth) {
+                            // Diviser le texte en lignes si sa largeur dépasse maxWidth
+                            const lines = splitTextIntoLines(pText, maxWidth, elem);
+                            lines.forEach(line => {
+                                const p = document.createElement('p');
+                                p.textContent = line;
+                                elem.appendChild(p);
+                            });
+                        } else {
+                            elem.appendChild(pElem);
+                        }
+                    });
+                } else {
+                    // Si splitParagraphs est false, on ajoute directement le contenu sans le diviser
+                    elem.innerHTML = chunk.contents;
+                }
+
                 document_contents.appendChild(elem);
                 chunk_offsets.push(chunk.offset);
             }
-            if (info.text_direction === 'RIGHT_TO_LEFT') {
-                document_contents.style.direction = 'rtl';
-            } else {
-                document_contents.style.direction = 'ltr';
-            }
 
+            setTextDirection(info.text_direction);
             current_document = document_id;
 
             toggleToolbarActions(true);
 
-            let document_links = document.getElementsByClassName('document-link-current');
-            for (let i = document_links.length - 1; i >= 0; --i) {
-                document_links[i].classList.remove('document-link-current');
-            }
-            let document_link = document.getElementById('document-link-' + current_document);
-            if (document_link) {
-                document_link.classList.add('document-link-current');
-            }
-
-            //current_tag = null;
-            // let tag_links = document.getElementsByClassName('tag-current');
-            // for (let i = tag_links.length - 1; i >= 0; --i) {
-            //     tag_links[i].classList.remove('tag-current');
-            // }
+            // Mettre à jour le lien du document sélectionné
+            updateDocumentLinkHighlight(current_document);
 
             log(`Loaded document ${document_id}`);
+
             for (let i = 0; i < info.highlights.length; ++i) {
                 setHighlight(info.highlights[i]);
             }
+
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Update document export button
-            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
-            for (let i = 0; i < items.length; ++i) {
-                const ext = items[i].getAttribute('data-extension');
-                if (items[i].getAttribute('data-document') !== 'false') {
-                    items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
-                    items[i].style.display = '';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
+            // Mettre à jour le bouton d'exportation du document
+            updateDocumentExportButton(project_id, document_id);
 
             // Scroll up
-            window.setTimeout(function () {
-                let scroll_position = 0,
-                    toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight()
-                if(highlight_id !== null && !isNaN(highlight_id)) {
-                    log(`Go to highlight :  ${highlight_id}`);
-                    scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - toolbar_height - 15;
-                    $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
-                }
-                window.scrollTo(0, scroll_position);
-            }, 0);
+            scrollToHighlight(highlight_id);
         })
         .catch(function (error) {
             log("Failed to load document", 'error', {error});
-            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error})
+            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error});
         })
         .then(hideSpinner);
+}
+
+function disableEditing(element) {
+    element.addEventListener('keydown', function (event) {
+        event.preventDefault();
+    });
+    element.addEventListener('paste', function (event) {
+        event.preventDefault();
+    });
+    element.addEventListener('input', function (event) {
+        event.preventDefault();
+    });
+}
+
+function addDragFunctionality(element) {
+    element.addEventListener('dragstart', function (event) {
+        event.dataTransfer.effectAllowed = 'move';
+    });
+}
+
+function setTextDirection(text_direction) {
+    document_contents.style.direction = text_direction === 'RIGHT_TO_LEFT' ? 'rtl' : 'ltr';
+}
+
+function scrollToHighlight(highlight_id) {
+    window.setTimeout(function () {
+        let scroll_position = 0,
+            toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
+        const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`)
+        if (highlight_id !== null && !isNaN(highlight_id)) {
+            scroll_position = data_highlight_selector.offset().top - toolbar_height - 15;
+            data_highlight_selector.addClass('flash-once');
+        }
+        window.scrollTo(0, scroll_position);
+    }, 0);
+}
+
+function updateDocumentExportButton(project_id, document_id) {
+    const items = document.querySelectorAll('#document-export-dropdown-menu a');
+    for (let i = 0; i < items.length; ++i) {
+        const ext = items[i].getAttribute('data-extension');
+        if (items[i].getAttribute('data-document') !== 'false') {
+            items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
+            items[i].style.display = '';
+        } else {
+            items[i].style.display = 'none';
+        }
+    }
+}
+
+function updateDocumentLinkHighlight(current_document) {
+    let document_links = document.getElementsByClassName('document-link-current');
+    for (let i = document_links.length - 1; i >= 0; --i) {
+        document_links[i].classList.remove('document-link-current');
+    }
+    let document_link = document.getElementById('document-link-' + current_document);
+    if (document_link) {
+        document_link.classList.add('document-link-current');
+    }
 }
 
 function loadTag(tag_path, page) {

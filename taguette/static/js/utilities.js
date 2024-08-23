@@ -471,20 +471,6 @@ function describeSelection() {
     return null;
 }
 
-// Restore a described selection
-function restoreSelection(saved) {
-    let sel = window.getSelection();
-    sel.removeAllRanges();
-    if (saved !== null) {
-        let range = document.createRange();
-        let start = locatePos(saved[0]);
-        let end = locatePos(saved[1]);
-        range.setStart(start[0], start[1]);
-        range.setEnd(end[0], end[1]);
-        sel.addRange(range);
-    }
-}
-
 function splitAtPos(pos, after) {
     let node = pos[0], idx = pos[1];
     if (idx === 0) {
@@ -511,4 +497,51 @@ function splitAtPos(pos, after) {
         // Split, return right node
         return node.splitText(idx_char);
     }
+}
+
+function calculateTextWidth(text, baseElement) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    // Récupérer le style de police de l'élément de base
+    const computedStyle = getComputedStyle(baseElement);
+    context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+
+    // Mesurer la largeur du texte complet
+    return context.measureText(text).width;
+}
+
+// Fonction pour diviser le texte en lignes
+function splitTextIntoLines(text, maxWidth, baseElement) {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+    let currentWidth = 0;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const computedStyle = getComputedStyle(baseElement);
+    context.font = `${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+
+    words.forEach((word, index) => {
+        const wordWidth = context.measureText(word).width;
+        const spaceWidth = context.measureText(' ').width;
+
+        // Si l'ajout du mot dépasse la largeur maximale
+        if (currentWidth + wordWidth > maxWidth) {
+            lines.push(currentLine.trim());
+            currentLine = word + ' ';
+            currentWidth = wordWidth + spaceWidth;
+        } else {
+            currentLine += word + ' ';
+            currentWidth += wordWidth + spaceWidth;
+        }
+
+        // Ajouter la dernière ligne
+        if (index === words.length - 1) {
+            lines.push(currentLine.trim());
+        }
+    });
+
+    return lines;
 }

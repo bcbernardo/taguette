@@ -507,7 +507,8 @@ class HighlightAdd(BaseHandler):
         obj = self.get_json()
         start, end = obj['start_offset'], obj['end_offset']
         new_tags = set(obj.get('tags', []))
-
+        snippet = obj.get('snippet')
+        
         # Check the tags exist and are in this project
         tags = (
             self.db.query(database.Tag)
@@ -518,7 +519,6 @@ class HighlightAdd(BaseHandler):
         if set(tag.id for tag in tags) != new_tags:
             return self.send_error_json(400, self.gettext("No such tag"))
 
-        snippet = extract.extract(document.contents, start, end)
         if all(c in '\r\n\t' for c in snippet):
             return self.send_error_json(400, self.gettext("Empty highlight"))
 
