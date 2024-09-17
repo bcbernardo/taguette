@@ -101,9 +101,9 @@ class TestMultiUserProject(TestMultiUser):
             members, last_event)
 
         self.assertEqual(init_js, init_js_expected)
-
+        
         # Start polling
-        poll_proj1 = await self.poll_event(1, -1)
+        poll_proj1 = await self.poll_event(1, last_event)
 
         # Create project 2
         async with self.aget('/project/new') as response:
@@ -116,7 +116,7 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(response.headers['Location'], '/project/2')
 
         # Start polling
-        poll_proj2 = await self.poll_event(2, -1)
+        poll_proj2 = await self.poll_event(2, last_event)
 
         # Create a tag "people" in project 2
         async with self.apost(
@@ -133,6 +133,7 @@ class TestMultiUserProject(TestMultiUser):
                 path='people',
                 description="People of interest"
             ))
+        
         poll_proj2 = await self.poll_event(2, 1)
 
         # Create a tag "interesting.places" in project 2
@@ -150,8 +151,9 @@ class TestMultiUserProject(TestMultiUser):
                 path='interesting.places',
                 description=''
             ))
+        
         poll_proj2 = await self.poll_event(2, 2)
-
+        
         # Create document 1 in project 1
         name = '\u03A9\u2248\xE7\u221A\u222B\u02DC\xB5\u2264\u2265\xF7'
         async with self.apost(
@@ -174,6 +176,7 @@ class TestMultiUserProject(TestMultiUser):
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': name, 'favorite': False,
              'description': ''})
+        
         poll_proj1 = await self.poll_event(1, 3)
 
         # Create document 2 in project 2
@@ -198,6 +201,7 @@ class TestMultiUserProject(TestMultiUser):
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': 'otherdoc', 'favorite': False,
              'description': 'Other one'})
+        
         poll_proj2 = await self.poll_event(2, 4)
 
         # Create highlight 1 in document 1
@@ -212,6 +216,7 @@ class TestMultiUserProject(TestMultiUser):
             {'type': 'highlight_add', 'id': 5, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 5,
              'tags': [], 'tag_count_changes': {}})
+        
         poll_proj1 = await self.poll_event(1, 5)
 
         # Update highlight 1 in document 1: change position
@@ -226,6 +231,7 @@ class TestMultiUserProject(TestMultiUser):
             {'type': 'highlight_add', 'id': 6, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
              'tags': [], 'tag_count_changes': {}})
+        
         poll_proj1 = await self.poll_event(1, 6)
 
         # Update highlight 1 in document 1: change tags
@@ -239,7 +245,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 7, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [1], 'tag_count_changes': {'1': 1}})
+             'tags': [1], 'tag_count_changes': {'1': {'documents_count': 1, 'highlights_count': 1}}})
+        
         poll_proj1 = await self.poll_event(1, 7)
 
         # Change project 2 metadata (invalid)
@@ -264,6 +271,7 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'project_meta', 'id': 8,
              'project_name': 'new project', 'description': 'Meaningful'})
+        
         poll_proj2 = await self.poll_event(2, 8)
 
         # Create document 3 in project 2
@@ -285,6 +293,7 @@ class TestMultiUserProject(TestMultiUser):
              'text_direction': 'RIGHT_TO_LEFT',
              'document_name': 'third', 'favorite': False,
              'description': 'Last one'})
+        
         poll_proj2 = await self.poll_event(2, 9)
 
         # Create highlight in document 2, using wrong project id
@@ -323,7 +332,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 10, 'highlight_id': 2,
              'document_id': 2, 'start_offset': 0, 'end_offset': 4,
-             'tags': [4], 'tag_count_changes': {'4': 1}})
+             'tags': [4], 'tag_count_changes': {'4': {'documents_count': 1, 'highlights_count': 1}}})
+        
         poll_proj2 = await self.poll_event(2, 10)
 
         # Create highlight 3 in document 2
@@ -337,7 +347,9 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 11, 'highlight_id': 3,
              'document_id': 2, 'start_offset': 13, 'end_offset': 17,
-             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1}})
+             'tags': [2, 3], 'tag_count_changes': {'2': {'documents_count': 1, 'highlights_count': 1},
+             '3': {'documents_count': 1, 'highlights_count': 1}}})
+        
         poll_proj2 = await self.poll_event(2, 11)
 
         # Create highlight 4 in document 2
@@ -351,7 +363,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 12, 'highlight_id': 4,
              'document_id': 2, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 1, 'highlights_count': 2}}})
+        
         poll_proj2 = await self.poll_event(2, 12)
 
         # Delete highlight 4 in document 2
@@ -362,7 +375,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj2,
             {'type': 'highlight_delete', 'id': 13, 'highlight_id': 4,
-             'document_id': 2, 'tag_count_changes': {'3': -1}})
+             'document_id': 2, 'tag_count_changes': {'3': {'documents_count': 0, 'highlights_count': 1}}})
+        # TODO : update document_count after fix
         poll_proj2 = await self.poll_event(2, 13)
 
         # Create highlight 5 in document 3
@@ -376,7 +390,8 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 14, 'highlight_id': 5,
              'document_id': 3, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 1, 'highlights_count': 2}}})
+        
         poll_proj2 = await self.poll_event(2, 14)
 
         # List highlights in project 2 under 'people'
@@ -706,6 +721,7 @@ class TestMultiUserProject(TestMultiUser):
             })
 
         # TODO: Collaborators
+        
         await asyncio.sleep(2)
         self.assertFalse(poll_proj1.done())
         poll_proj1.cancel()

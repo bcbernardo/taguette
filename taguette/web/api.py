@@ -1057,6 +1057,8 @@ class ProjectEvents(BaseHandler):
             return new
 
         cmds_json = [_change_cmd_json(cmd) for cmd in cmds_json]
+        
+        tornado.log.access_log.info(cmds_json)
 
         return await self.send_json({'events': cmds_json})
 

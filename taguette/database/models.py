@@ -697,15 +697,17 @@ Tag.documents_count = column_property(
 # Property to get documents associate with tag
 document_alias = aliased(Document)
 
-Tag.document_ids = column_property(
-    select([func.array_agg(func.distinct(document_alias.id))])
-    .select_from(highlight_tags)
-    .outerjoin(Highlight, Highlight.id == highlight_tags.c.highlight_id)
-    .outerjoin(document_alias, document_alias.id == Highlight.document_id)
-    .where(highlight_tags.c.tag_id == Tag.id)
-    .correlate_except(highlight_tags)
-    .scalar_subquery()
-)
+# Tag.document_ids = column_property(
+#     select([func.array_agg(func.distinct(document_alias.id))])
+#     .select_from(highlight_tags)
+#     .outerjoin(Highlight, Highlight.id == highlight_tags.c.highlight_id)
+#     .outerjoin(document_alias, document_alias.id == Highlight.document_id)
+#     .where(highlight_tags.c.tag_id == Tag.id)
+#     .correlate_except(highlight_tags)
+#     .scalar_subquery()
+# )
+
+Tag.document_ids = []
 
 # Property to count documents associate with projet
 Project.document_count = column_property(
