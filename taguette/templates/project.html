@@ -14,10 +14,15 @@
 {% block contents %}
 <div class="row">
     <!-- Left panel -->
-    <div class="col-md-3">
+    <div class="col-md-2-5" id="left-panel">
         {% include 'partials/project_sidebar.html' %}
-        <div class="sticky-top">
-            <div class="row py-1">
+        <div class="bordered-container sticky-top" >
+            <div class="d-flex justify-content-end">
+                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2 mx-3" title="Toggle Left Panel">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <div class="row py-1 panel-content">
                 <div class="col-md-12 mb-3 mx-1 d-flex justify-content-start">
                     <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
                     <div class="dropdown ms-2">
@@ -43,7 +48,7 @@
                     </div>
                 </div>
             </div>
-            <div class="container mb-2">
+            <div class="container mb-2 panel-content">
                 <div class="form-group">
                     <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search tags{% endtrans %}">
                 </div>
@@ -58,7 +63,7 @@
     </div>
 
     <!-- Right panel -->
-    <div class="col-md-9">
+    <div class="col-md-7-5" id="middle-panel">
 
         {% include 'partials/document_toolbar.html' %}
 
@@ -68,6 +73,21 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- List of documents -->
+    <div class="col-md-2-5 bordered-container sticky-top"  id="right-panel">
+        <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Right Panel">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="row  panel-content">
+            <div class="col-md-12">
+                <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+            </div>
+        </div>
+        <ul class="list-group list-group-flush  panel-content" id="documents-list">
+            <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
+        </ul>
     </div>
 </div>
 

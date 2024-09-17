@@ -560,6 +560,7 @@ const highlight_add_modal = document.getElementById('highlight-add-modal');
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
+    log('current selection offset : ' + current_selection);
     let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
         const current_range = window.getSelection().getRangeAt(0);
@@ -844,7 +845,6 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
@@ -861,46 +861,17 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true) 
             document_contents.innerHTML = '';
             highlights = {};
             chunk_offsets = [];
-            const maxWidth = document_contents.offsetWidth / 2;
 
             for (let i = 0; i < contents.contents.length; ++i) {
                 let chunk = contents.contents[i];
                 let elem = document.createElement('div');
                 elem.setAttribute('id', 'doc-offset-' + chunk.offset);
-                elem.classList.add('draggable');
-                elem.setAttribute('contenteditable', 'true');
-
                 disableEditing(elem);
                 addDragFunctionality(elem);
-
-                if (splitParagraphs) {
-                    // Créer un élément temporaire pour manipuler le contenu HTML
-                    let tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = chunk.contents;
-
-                    // Parcourir chaque élément <p> dans le chunk
-                    Array.from(tempDiv.querySelectorAll('p')).forEach(pElem => {
-                        const pText = pElem.textContent;
-                        const textWidth = calculateTextWidth(pText, elem);
-
-                        if (textWidth > maxWidth) {
-                            // Diviser le texte en lignes si sa largeur dépasse maxWidth
-                            const lines = splitTextIntoLines(pText, maxWidth, elem);
-                            lines.forEach(line => {
-                                const p = document.createElement('p');
-                                p.textContent = line;
-                                elem.appendChild(p);
-                            });
-                        } else {
-                            elem.appendChild(pElem);
-                        }
-                    });
-                } else {
-                    // Si splitParagraphs est false, on ajoute directement le contenu sans le diviser
-                    elem.innerHTML = chunk.contents;
-                }
-
+                elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
+                const cleanText = extractTextFromHtml(chunk.contents);
+                setHighlights(cleanText, elem, info.highlights);
                 chunk_offsets.push(chunk.offset);
             }
 
@@ -909,13 +880,13 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true) 
 
             toggleToolbarActions(true);
 
-            // Mettre à jour le lien du document sélectionné
             updateDocumentLinkHighlight(current_document);
 
             log(`Loaded document ${document_id}`);
 
             for (let i = 0; i < info.highlights.length; ++i) {
-                setHighlight(info.highlights[i]);
+                const id = '' + info.highlights[i].id;
+                highlights[id] = info.highlights[i];
             }
 
             log(`Loaded ${info.highlights.length} highlight`);
@@ -1251,4 +1222,31 @@ function showSearchErrorMessage() {
 
 function hideSearchErrorMessage() {
     alert_tag_highlight_treeview.addClass('d-none');
+}
+
+document.getElementById('toggle-left-panel').addEventListener('click', function() {
+    const leftPanel = document.getElementById('left-panel');
+    leftPanel.classList.toggle('reduced-col');
+    adjustMiddlePanelWidth();
+});
+
+document.getElementById('toggle-right-panel').addEventListener('click', function() {
+    const rightPanel = document.getElementById('right-panel');
+    rightPanel.classList.toggle('reduced-col');
+    adjustMiddlePanelWidth();
+});
+
+function adjustMiddlePanelWidth() {
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const middlePanel = document.getElementById('middle-panel');
+
+    let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+    let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+
+    let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
+
+    middlePanel.style.setProperty('width', middleWidth, 'important');
+
+    loadDocument(current_document);
 }
