@@ -128,6 +128,11 @@ msgstr "Accueil"
 msgid "Edit project"
 msgstr "Éditer le projet"
 
+#: taguette/templates/base.html:41
+msgctxt "search form placeholder"
+msgid "Search in documents"
+msgstr "Rechercher dans les documents"
+
 #: taguette/templates/base.html:37
 #, python-format
 msgctxt "navigation item"

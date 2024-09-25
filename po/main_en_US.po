@@ -196,7 +196,7 @@ msgstr "Back to highlights"
 
 #: taguette/templates/project.html:139
 msgid "Load a document on the left"
-msgstr "Load a document on the left"
+msgstr "Load a document from you favorites or the side menu"
 
 #: taguette/templates/project.html:191
 msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
@@ -226,6 +226,10 @@ msgstr "Description"
 msgctxt "submit button"
 msgid "Import"
 msgstr "Import"
+
+#: taguette/templates/partials/document_toolbar.html:4
+msgid "Selected the document"
+msgstr "Favorite documents"
 
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:53
