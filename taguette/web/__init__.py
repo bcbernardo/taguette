@@ -180,6 +180,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
             api.HighlightUpdate),
         UnbakedURLSpec('/api/project/([0-9]+)/highlights/(.*)',
                        api.Highlights),
+        UnbakedURLSpec('/api/project/([0-9]+)/search/(.*)',
+                       api.Search),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/new', api.TagAdd),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/([0-9]+)', api.TagUpdate),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/merge', api.TagMerge),

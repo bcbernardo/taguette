@@ -212,6 +212,61 @@ div.sticky-top {
   text-decoration: none !important;
 }
 
+/* Search in document form */
+form.search {
+    width: 40%;
+    position: relative;
+}
+
+form.search button {
+    color: #fff !important;
+    border: 1px solid #fff !important;
+}
+
+form.search button.btn-outline-primary:hover {
+    color: #85c1e9 !important;
+    border-color: #fff !important;
+}
+
+form.search button i.searching {
+    display: none;
+}
+
+form.search button i.search-icon {
+    display: inline-block;
+}
+
+form.search.searching button i.searching {
+    display: inline-block;
+    animation: spin 2s linear infinite;
+}
+
+form.search.searching button i.search-icon {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+ul.dropdown-menu {
+    z-index: 1030;
+}
+
+ul.dropdown-menu.show:empty {
+    display: none !important;
+}
+
+span.search-item {
+    color: #fff;
+    background-color: #3498DB;
+    display: inline-block;
+    border-radius: 0.375rem;
+    padding: 0 0.2rem;
+}
+
 /* Don't show the resize control on textareas */
 textarea.form-control {
   resize: none;
@@ -595,7 +650,7 @@ Document custom select
 
 .custom-select {
     position: relative;
-    width: 40%;
+    width: 90%;
     max-width: 100%;
     font-size: 1.15rem;
     color: #000;
@@ -738,7 +793,7 @@ Document custom select
     height: 100%;
     width: 0;
     position: fixed;
-    z-index: 9999;
+    z-index: 1025;
     top: 0;
     left: 0;
     background-color: #fefefe;

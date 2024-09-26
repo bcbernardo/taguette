@@ -1,3 +1,4 @@
+import re
 import alembic.util.exc
 import asyncio
 import functools
@@ -6,7 +7,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_, func, distinct, not_, or_
+from sqlalchemy import and_, func, distinct, not_, or_, text
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -753,6 +754,65 @@ class Highlights(BaseHandler):
                 for hl, direction in highlights
             ],
             'pages': math.ceil(total / self.PAGE_SIZE),
+        })
+
+
+class Search(BaseHandler):
+    PAGE_SIZE = 50
+
+    @api_auth
+    @PROM_REQUESTS.sync('search')
+    def get(self, project_id, search_text):
+        project, _ = self.get_project(project_id)
+        page = self.get_query_argument('page', '1')
+        try:
+            page = int(page, 10) - 1
+        except (ValueError, OverflowError):
+            page = -1
+        if page < 0:
+            self.send_error_json(404, self.gettext("Bad page number"))
+
+        search_text_escaped = f"%{search_text}%"
+        count_total = self.db.execute(
+            'SELECT count(d.id) as count '
+            'FROM documents as d '
+            'WHERE d.project_id = 1 AND '
+            'LOWER(d.contents) like :search_text_escaped',
+            {
+                'search_text_escaped': search_text_escaped,
+            })
+        total = (count_total.first())['count']
+        # TODO: find a way to do this within SQLALchemy
+        result = self.db.execute(
+            'SELECT d.id, d.name, d.contents, '
+            '((CHAR_LENGTH(d.contents) - '
+                'CHAR_LENGTH(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
+                '/ CHAR_LENGTH(:search_text)) as occurences '
+            'FROM documents as d '
+            'WHERE d.project_id = :project_id AND '
+            'LOWER(d.contents) like :search_text_escaped '
+            'ORDER BY occurences DESC '
+            'LIMIT :per_page OFFSET :start',
+             {
+                 'project_id': project_id,
+                 'search_text': search_text,
+                 'search_text_escaped': search_text_escaped,
+                 'start': page * self.PAGE_SIZE,
+                 'per_page': self.PAGE_SIZE
+             })
+        return self.send_json({
+            'documents': [
+                {
+                    'id': d['id'],
+                    'name': d['name'],
+                    'occurences': d['occurences'],
+                    'contents': re.sub('<[^<]+?>', '', d['contents']),
+                }
+                for d in result
+            ],
+            'nb_results': total,
+            'pages': math.ceil(total / self.PAGE_SIZE),
+            'search_text': search_text
         })
 
 

@@ -283,7 +283,7 @@ msgid "Collapse all"
 msgstr "Réduire Tout"
 
 msgid "Filter by"
-msgstr "Filter par"
+msgstr "Trier par"
 
 #: taguette/templates/project.html:38
 msgid "Text [a&rarr;z]"
