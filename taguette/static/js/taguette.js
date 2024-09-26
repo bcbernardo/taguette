@@ -1135,15 +1135,24 @@ function loadTag(tag_path, page) {
 
 // Load the document if the URL includes one
 setTimeout(function () {
-    const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))?`);
+    const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))+`),
+        _document_url_search_text = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/search/([^\/]+/[0-9]+))+`);
     // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
-    let m = window.location.pathname.match(_document_url);
+    let m = window.location.pathname.match(_document_url_highlight),
+        m2 = window.location.pathname.match(_document_url_search_text);
     if (m) {
         let h_id = null;
         if(typeof m[4] !== 'undefined') {
             h_id = parseInt(m[4]);
         }
         loadDocument(parseInt(m[2]), h_id);
+    // Or a search in document text
+    } else if (m2) {
+        let search_text = null;
+        if(typeof m2[4] !== 'undefined') {
+            search_text = m2[4];
+        }
+        loadDocument(parseInt(m2[2]), null, search_text);
     }
     // Or a tag
     const _tag_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/highlights/([^/]*)`);
@@ -1158,8 +1167,9 @@ setTimeout(function () {
 window.onpopstate = function (e) {
     if (e.state) {
         if (e.state.document_id !== undefined) {
-            let highlight_id = (e.state.highlight_id !== undefined ) ? e.state.highlight_id : null;
-            loadDocument(e.state.document_id, highlight_id);
+            let highlight_id = (e.state.highlight_id !== undefined ) ? e.state.highlight_id : null,
+                search_text = (e.state.search_text !== undefined ) ? e.state.search_text : null;
+            loadDocument(e.state.document_id, highlight_id, search_text);
         } else if (e.state.tag_path !== undefined) {
             loadTag(e.state.tag_path);
         } else {
