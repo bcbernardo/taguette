@@ -862,7 +862,7 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-function loadDocument(document_id, highlight_id=null) {
+function loadDocument(document_id, highlight_id=null, search_text = null) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -942,6 +942,28 @@ function loadDocument(document_id, highlight_id=null) {
                     log(`Go to highlight :  ${highlight_id}`);
                     scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - toolbar_height - 15;
                     $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
+                }
+                if(search_text !== null) {
+                    let lastIndex = search_text.lastIndexOf('/'),
+                        position = parseInt(search_text.substring(lastIndex+1));
+                    search_text = search_text.substring(0, lastIndex);
+                    log(`Go to ${position+1} occurence of ${search_text}`);
+
+                    let elements = $("*:contains_insensitive('" + search_text.replace("'", "\\'") + "')"),
+                        count= 0,
+                        goto = null;
+                    elements.each(function() {
+                        if($(this)[0].children.length === 0){
+                            if($(this).parents('#document-contents').length) {
+                                if(count === position){
+                                    goto = $(this);
+                                }
+                                count++;
+                            }
+                        }
+                    });
+                    scroll_position = goto.offset().top - toolbar_height - 15;
+                    goto.addClass('flash-once');
                 }
                 window.scrollTo(0, scroll_position);
             }, 0);

@@ -2,6 +2,12 @@
  * Utilities
  */
 
+// NEW selector
+jQuery.expr[':'].contains_insensitive = function(a, i, m) {
+    return jQuery(a).text().toUpperCase()
+        .indexOf(m[3].toUpperCase()) >= 0;
+};
+
 if (!Object.entries) {
     Object.entries = function (obj) {
         let ownProps = Object.keys(obj),

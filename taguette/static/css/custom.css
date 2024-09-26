@@ -253,6 +253,8 @@ form.search.searching button i.search-icon {
 
 ul.dropdown-menu {
     z-index: 1030;
+    max-height: 75vh;
+    overflow: scroll;
 }
 
 ul.dropdown-menu.show:empty {
@@ -359,7 +361,7 @@ a.dropdown-item:hover {
     text-decoration: none;
 }
 
-#document-view .highlight.flash-once {
+#document-view .flash-once {
   animation: flashOnceBackground 2s;
 }
 @keyframes flashOnceBackground{

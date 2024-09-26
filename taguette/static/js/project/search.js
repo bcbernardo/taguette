@@ -57,13 +57,12 @@ $(document).ready(function() {
                         let results = d['contents'].split(new RegExp(regEscape(result['search_text']), "ig"));
                         for(let i=0; i<results.length-1; i++) {
                             let start = results[i].slice(-40),
-                                end = results[i+1].slice(0, 40);
-                            $("<ul/>").append(
-                                $('<a/>', {
-                                    'class': "dropdown-item",
-                                    'html': `...${start}<span class="search-item">${result['search_text']}</span>${end}...`
-                                })
-                            ).appendTo($divSearchResults);
+                                end = results[i+1].slice(0, 40),
+                                a = document.createElement('a');
+                            a.className = "dropdown-item";
+                            a.innerHTML = `...${start}<span class="search-item">${result['search_text']}</span>${end}...`
+                            linkDocument(a, d['id'], null, `${result['search_text']}/${i}`);
+                            $("<ul/>").append(a).appendTo($divSearchResults);
                         }
                     }
                 })

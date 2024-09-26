@@ -4,16 +4,19 @@ let current_tag = null;
 let last_added_tag = null;
 const documents_list = document.getElementById('documents-list');
 
-function linkDocument(elem, doc_id, highlight_id=null) {
+function linkDocument(elem, doc_id, highlight_id=null, search_text=null) {
     let url = `${base_path}/project/${project_id}/document/${doc_id}`;
     if(highlight_id !== null && !isNaN(highlight_id)) {
         url += `/highlight/${highlight_id}`;
+    }
+    if(search_text !== null) {
+        url += `/search/${search_text}`;
     }
     elem.setAttribute('href', url);
     elem.addEventListener('click', function (e) {
         e.preventDefault();
         window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
-        loadDocument(doc_id, highlight_id);
+        loadDocument(doc_id, highlight_id, search_text);
         if(highlight_id !== null && !isNaN(highlight_id)) {
             const tags_return = $('#tag-selection-return'),
                 tags_return_link = $('a', tags_return);

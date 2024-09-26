@@ -138,6 +138,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
                        name='project_doc'),
         UnbakedURLSpec('/project/([0-9]+)/document/[0-9]+/highlight/'
                        '[0-9]+', views.Project, name='project_doc'),
+        UnbakedURLSpec('/project/([0-9]+)/document/[0-9]+/search/'
+                       '[^\/]+/[0-9]+', views.Project, name='project_doc'),
         UnbakedURLSpec('/project/([0-9]+)/highlights/.*', views.Project,
                        name='project_tag'),
 
