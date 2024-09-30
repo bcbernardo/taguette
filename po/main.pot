@@ -8,14 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-09-24 11:42-0400\n"
+"POT-Creation-Date: 2024-09-30 10:04-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.8.0\n"
 
 #: taguette/templates/auth/reset_password.html:3
 #: taguette/templates/new_password.html:3
@@ -476,47 +476,47 @@ msgstr ""
 msgid "Edit project"
 msgstr ""
 
-#: taguette/templates/base.html:41
+#: taguette/templates/base.html:42
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr ""
 
-#: taguette/templates/base.html:48
+#: taguette/templates/base.html:51
 #, python-format
 msgctxt "navigation item"
 msgid "Taguette Guide %(external_icon)s"
 msgstr ""
 
-#: taguette/templates/base.html:52
+#: taguette/templates/base.html:55
 msgid "Single-user mode"
 msgstr ""
 
-#: taguette/templates/base.html:56
+#: taguette/templates/base.html:59
 msgctxt "navigation dropdown menu"
 msgid "Account"
 msgstr ""
 
-#: taguette/templates/base.html:58
+#: taguette/templates/base.html:61
 msgctxt "navigation item"
 msgid "Settings"
 msgstr ""
 
-#: taguette/templates/base.html:60
+#: taguette/templates/base.html:63
 msgctxt "navigation item"
 msgid "Terms of Service"
 msgstr ""
 
-#: taguette/templates/base.html:62
+#: taguette/templates/base.html:65
 msgctxt "navigation item"
 msgid "Log out"
 msgstr ""
 
-#: taguette/templates/base.html:67
+#: taguette/templates/base.html:70
 msgctxt "navigation item"
 msgid "Log in"
 msgstr ""
 
-#: taguette/templates/base.html:82
+#: taguette/templates/base.html:85
 #, python-format
 msgid ""
 "Taguette %(version)s is released under a <a "
@@ -995,45 +995,49 @@ msgstr ""
 msgid "No file provided"
 msgstr ""
 
-#: taguette/web/api.py:51
+#: taguette/web/api.py:52
 msgid "Not logged in"
 msgstr ""
 
-#: taguette/web/api.py:81 taguette/web/api.py:112 taguette/web/api.py:205
-#: taguette/web/api.py:246 taguette/web/api.py:311 taguette/web/api.py:351
-#: taguette/web/api.py:392 taguette/web/api.py:417 taguette/web/api.py:473
-#: taguette/web/api.py:532 taguette/web/api.py:618 taguette/web/api.py:773
+#: taguette/web/api.py:82 taguette/web/api.py:113 taguette/web/api.py:206
+#: taguette/web/api.py:247 taguette/web/api.py:312 taguette/web/api.py:352
+#: taguette/web/api.py:393 taguette/web/api.py:418 taguette/web/api.py:474
+#: taguette/web/api.py:533 taguette/web/api.py:619 taguette/web/api.py:833
 msgid "Unauthorized"
 msgstr ""
 
-#: taguette/web/api.py:356 taguette/web/api.py:395 taguette/web/api.py:427
-#: taguette/web/api.py:486 taguette/web/api.py:562
+#: taguette/web/api.py:357 taguette/web/api.py:396 taguette/web/api.py:428
+#: taguette/web/api.py:487 taguette/web/api.py:563
 msgid "No such tag"
 msgstr ""
 
-#: taguette/web/api.py:490
+#: taguette/web/api.py:491
 msgid "Empty highlight"
 msgstr ""
 
-#: taguette/web/api.py:536 taguette/web/api.py:621
+#: taguette/web/api.py:537 taguette/web/api.py:622
 msgid "No such highlight"
 msgstr ""
 
-#: taguette/web/api.py:836
+#: taguette/web/api.py:773
+msgid "Bad page number"
+msgstr ""
+
+#: taguette/web/api.py:896
 msgid "There must be one admin"
 msgstr ""
 
-#: taguette/web/api.py:891
+#: taguette/web/api.py:951
 msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
 msgstr ""
 
-#: taguette/web/api.py:897
+#: taguette/web/api.py:957
 msgid "This database could not be updated to the current version"
 msgstr ""
 
-#: taguette/web/api.py:901 taguette/web/api.py:935
+#: taguette/web/api.py:961 taguette/web/api.py:995
 msgid "This is not a Taguette project file"
 msgstr ""
 

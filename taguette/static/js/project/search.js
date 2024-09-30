@@ -45,13 +45,17 @@ $(document).ready(function() {
                 `/api/project/${project_id}/search/${encodeURIComponent(searchText)}`
             )
                 .then(function (result) {
+                    $("<li/>", {
+                        'class': "dropdown-item disabled sticky",
+                        'text': gettext("Found in %(nb)s document(s)", {nb: result['nb_results']})
+                    }).appendTo($divSearchResults);
                     for(let k in result['documents']) {
                         let d = result['documents'][k];
                         // Add document title
-                        $("<ul/>", {
-                            'class': "dropdown-item disabled",
-                            'text': `${d['name']} (${d['occurences']})`
-                        }).appendTo($divSearchResults)
+                        $("<li/>", {
+                            'class': "dropdown-item disabled sticky",
+                            'text': `${d['name']} (${d['occurences']} occurences)`
+                        }).appendTo($divSearchResults);
 
                         // Find results and context
                         let results = d['contents'].split(new RegExp(regEscape(result['search_text']), "ig"));
@@ -62,13 +66,13 @@ $(document).ready(function() {
                             a.className = "dropdown-item";
                             a.innerHTML = `...${start}<span class="search-item">${result['search_text']}</span>${end}...`
                             linkDocument(a, d['id'], null, `${result['search_text']}/${i}`);
-                            $("<ul/>").append(a).appendTo($divSearchResults);
+                            $("<li/>").append(a).appendTo($divSearchResults);
                         }
                     }
                 })
                 .catch(function (error) {
                     log("Failed to search in documents", 'error', {error});
-                    showAlert(`${gettext("Error searching documents!")} \n \n`, 'error', {error})
+                    showAlert(gettext("Error searching documents!"), 'error', {error})
                 })
                 .then(function (result) {
                     hideSearchSpinner();

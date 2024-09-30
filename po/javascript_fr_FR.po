@@ -21,6 +21,15 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
+#: taguette/static/js/project/search.js:50
+#, python-format
+msgid "Found in %(nb)s document(s)"
+msgstr "Trouvé dans %(nb)s document(s)"
+
+#: taguette/static/js/project/search.js:75
+msgid "Error searching documents!"
+msgstr "Une erreur est survenue lors de la recherche dans les documents!"
+
 #: taguette/static/js/taguette.js:500
 msgid "Couldn't update project metadata!"
 msgstr "Impossible de mettre à jour les métadonnées !"

@@ -16,6 +16,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
+#: taguette/static/js/project/search.js:50
+#, python-format
+msgid "Found in %(nb)s document(s)"
+msgstr "Found in %(nb)s document(s)"
+
+#: taguette/static/js/project/search.js:75
+msgid "Error searching documents!"
+msgstr "Error searching documents!"
+
 #: taguette/static/js/polling-event.js:110
 msgid "It appears that you have been logged out."
 msgstr "It appears that you have been logged out."

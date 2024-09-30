@@ -326,6 +326,20 @@ li.document-link-current a.document-link-a {
   font-weight: bold;
 }
 
+#ul-search-results {
+    padding-top: 0;
+}
+
+li.disabled.sticky {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px dashed rgba(33, 37, 41, 0.5);
+    font-weight: bold;
+}
+
 .document-view {
   border: 2px solid #dee2e6;
   padding: 0.5em 0.5em 0.5em 0.5em;
