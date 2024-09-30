@@ -944,26 +944,34 @@ function loadDocument(document_id, highlight_id=null, search_text = null) {
                     $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
                 }
                 if(search_text !== null) {
+                    search_text = decodeURI(search_text.toLowerCase());
                     let lastIndex = search_text.lastIndexOf('/'),
                         position = parseInt(search_text.substring(lastIndex+1));
                     search_text = search_text.substring(0, lastIndex);
                     log(`Go to ${position+1} occurence of ${search_text}`);
 
-                    let elements = $("*:contains_insensitive('" + search_text.replace("'", "\\'") + "')"),
+                    let elements = $(`*:contains_insensitive("${search_text}")`),
                         count= 0,
+                        nb_occurences_in_container = 0,
                         goto = null;
                     elements.each(function() {
                         if($(this)[0].children.length === 0){
                             if($(this).parents('#document-contents').length) {
-                                if(count === position){
+                                nb_occurences_in_container = $(this).text().toLowerCase().split(search_text).length - 1;
+                                log(`nb: ${nb_occurences_in_container} count: ${count}`);
+                                if((position >= count) && (position <= (count + nb_occurences_in_container))) {
                                     goto = $(this);
                                 }
-                                count++;
+                                count += nb_occurences_in_container;
                             }
                         }
                     });
-                    scroll_position = goto.offset().top - toolbar_height - 15;
-                    goto.addClass('flash-once');
+                    if(goto) {
+                        scroll_position = goto.offset().top - toolbar_height - 15;
+                        goto.addClass('flash-once');
+                    } else {
+                        log('Text container not found..')
+                    }
                 }
                 window.scrollTo(0, scroll_position);
             }, 0);

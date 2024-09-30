@@ -3,7 +3,9 @@ $(document).ready(function() {
     const $formSearch = $("#form-search-documents");
     const $inputSearch = $("#input-search-documents");
     const $divSearchResults = $("#ul-search-results");
+    const minimumCharacters = 3;
     let searchTimeout = null;
+
 
     $inputSearch.keyup(function(){
         clearTimeout(searchTimeout);
@@ -14,6 +16,7 @@ $(document).ready(function() {
 
     $formSearch.submit(function(e){
         e.preventDefault();
+        clearTimeout(searchTimeout);
         doSearch();
 
         return false;
@@ -32,13 +35,15 @@ $(document).ready(function() {
     }
 
     function doSearch() {
-        const searchText = $inputSearch.val().toLowerCase(),
-            url = `${base_path}/project/${project_id}/search/${encodeURIComponent(searchText)}`;
-        // window.history.pushState({search_text: searchText}, `Search ${searchText}`, url);
+        const searchText = $inputSearch.val().toLowerCase();
+        if(searchText.length < minimumCharacters) {
+            log(`Not enough characters to search documents, ${minimumCharacters} or more characters are required`)
+            return;
+        }
         log(`Search in documents '${searchText}'`);
         $divSearchResults.html('');
 
-        if(searchText !== undefined && searchText !== '') {
+        if(searchText !== '') {
             showSearchSpinner();
 
             getJSON(
