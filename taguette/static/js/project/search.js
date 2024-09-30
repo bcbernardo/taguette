@@ -47,12 +47,13 @@ $(document).ready(function() {
         const searchText = $inputSearch.val().toLowerCase(),
             previousPage = page - 1,
             nextPage = page + 1;
+        log(`Search in documents '${searchText}'`);
+        $divSearchResults.html('');
+        $('button.page-selector').hide();
         if(searchText.length < minimumCharacters) {
             log(`Not enough characters to search documents, ${minimumCharacters} or more characters are required`)
             return;
         }
-        log(`Search in documents '${searchText}'`);
-        $divSearchResults.html('');
 
         if(searchText !== '') {
             showSearchSpinner();
