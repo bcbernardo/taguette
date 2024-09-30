@@ -89,6 +89,7 @@ class BaseTextLineSplitter {
     constructor(widthManager, font) {
         this.widthManager = widthManager;
         this.font = font;
+        this.wordWidthCache = new Map();
     }
 
     needsNewline(i, text, char) {
@@ -101,12 +102,33 @@ class BaseTextLineSplitter {
     }
 
     calculateWordLength(i, text) {
-        const word = text.slice(i).split(' ')[0];
+        const restOfText = text.slice(i);
+        const spaceIndex = restOfText.indexOf(' ');
+        const newlineIndex = restOfText.indexOf('\n');
+        const returnIndex = restOfText.indexOf('\r');
+
+        let endIndex = spaceIndex !== -1 ? spaceIndex : restOfText.length;
+        if (newlineIndex !== -1 && newlineIndex < endIndex) endIndex = newlineIndex;
+        if (returnIndex !== -1 && returnIndex < endIndex) endIndex = returnIndex;
+
+        const word = restOfText.slice(0, endIndex);
+
+        if (this.wordWidthCache.has(word)) {
+            return this.wordWidthCache.get(word);
+        }
+
         let totalWidth = 0;
         for (let j = 0; j < word.length; j++) {
             totalWidth += this.font.cachedWidthOf(word[j]);
         }
+
+        this.wordWidthCache.set(word, totalWidth);
+
         return totalWidth;
+    }
+
+    clearCache() {
+        this.wordWidthCache.clear();
     }
 }
 
@@ -115,51 +137,37 @@ class FullTextLineSplitter extends BaseTextLineSplitter {
         super(widthManager, font);
     }
 
-    split(text, container, highlights) {
+    split(text) {
+        this.clearCache();
+        document_lines.length = 0;
         this.widthManager.reset();
         let startOffsetUTF8 = 0;
         let currentUTF8Offset = 0;
-        let i = 0;
         const textLength = text.length;
+        const lines = [];
 
-        const processNextCharactersBatch = () => {
-            const batchSize = 10;
-            let batchCount = 0;
+        for (let i = 0; i < textLength; i++) {
+            const ch = text[i];
+            const charWidth = this.font.cachedWidthOf(ch);
+            const charUTF8Length = lengthUTF8(ch);
 
-            while (batchCount < batchSize && i < textLength) {
-                const ch = text[i];
-                const charWidth = this.font.cachedWidthOf(ch);
-                const charUTF8Length = lengthUTF8(ch);
-
-                if (this.needsNewline(i, text, ch)) {
-                    const newLine = new TextLine(startOffsetUTF8, currentUTF8Offset);
-                    log(newLine);
-                    applyHighlightsToLine(newLine, text, highlights, container);
-                    this.widthManager.reset();
-                    startOffsetUTF8 = currentUTF8Offset;
-                }
-
-                this.widthManager.add(charWidth);
-                currentUTF8Offset += charUTF8Length;
-                i++;
-                batchCount++;
+            if (this.needsNewline(i, text, ch)) {
+                lines.push(new TextLine(startOffsetUTF8, currentUTF8Offset));
+                this.widthManager.reset();
+                startOffsetUTF8 = currentUTF8Offset;
             }
 
-            if (i < textLength) {
-                requestAnimationFrame(processNextCharactersBatch);
-            } else {
-                if (!this.widthManager.isEmpty()) {
-                    const lastLine = new TextLine(startOffsetUTF8, currentUTF8Offset);
-                    applyHighlightsToLine(lastLine, text, highlights, container);
-                }
-            }
-        };
+            this.widthManager.add(charWidth);
+            currentUTF8Offset += charUTF8Length;
+        }
 
-        requestAnimationFrame(processNextCharactersBatch);
+        if (!this.widthManager.isEmpty()) {
+            lines.push(new TextLine(startOffsetUTF8, currentUTF8Offset));
+        }
+
+        return lines;
     }
-
 }
-
 class Range {
     constructor(x1, x2) {
         if (x1 > x2) {
@@ -265,7 +273,7 @@ function extractTextFromHtml(html) {
     return div.textContent.trim();
 }
 
-function setMaxWidth() {
+function getMaxWidth() {
     const computedStyle = window.getComputedStyle(document_contents);
     return parseFloat(computedStyle.width) -
         parseFloat(computedStyle.paddingLeft) -
@@ -276,31 +284,47 @@ function setMaxWidth() {
 
 function setHighlights(text, container, highlights) {
 
-    const maxWidth = setMaxWidth();
+    const maxWidth = getMaxWidth();
     const font = Font.create(container);
 
     displayTextWithHighlights(container, text, font, maxWidth, highlights);
 }
 
 function displayTextWithHighlights(container, text, font, maxWidth, highlights) {
+    const startTime = performance.now();
+    console.log('Début de displayTextWithHighlights');
 
     container.innerHTML = '';
-    container.setAttribute('style', 'overflow: auto !important; max-height: 1000px;');
 
-    splitTextIntoLines(container, highlights, text, font, maxWidth);
-}
+    const utf8IndexMap = createUTF8IndexMap(text);
 
-function splitTextIntoLines(container, highlights, text, font, maxWidth) {
     const lineWidthManager = new LineWidthManager(maxWidth, 50);
     const splitter = new FullTextLineSplitter(lineWidthManager, font);
-    return splitter.split(text, container, highlights);
+
+    const splitStartTime = performance.now();
+    const lines = splitter.split(text, container, highlights);
+
+    log('line total : ' + lines.length);
+
+    const splitEndTime = performance.now();
+    console.log(`split time : ${((splitEndTime - splitStartTime) / 1000).toFixed(3)} secondes`);
+
+    const highlightStartTime = performance.now();
+    lines.forEach(line => {
+        applyHighlightsToLine(line, text, highlights, container, utf8IndexMap);
+    });
+    const highlightEndTime = performance.now();
+    console.log(`applyHighlights time : ${((highlightEndTime - highlightStartTime) / 1000).toFixed(3)} secondes`);
+
+    const endTime = performance.now();
+    console.log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
 }
 
-function applyHighlightsToLine(line, text, highlights, container) {
+function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap) {
 
     document_lines.push(line);
 
-    const lineContent = getUTF8Substring(text, line.startOffset, line.endOffset);
+    const lineContent = getUTF8Substring(text, line.startOffset, line.endOffset, utf8IndexMap);
 
     if (lineContent === '') {
         return;
@@ -508,8 +532,6 @@ function removeHighlight(id, line = null) {
             adjustLineHeight(divContainer, group, lineCount);
         }
     });
-
-   // delete highlights[id];
 }
 
 function addHighlight(highlight) {
@@ -542,22 +564,22 @@ function addHighlight(highlight) {
     });
 }
 
-
 // Utils
-function getUTF8Substring(text, startUTF8, endUTF8) {
-    let currentUTF8 = 0;
-    let result = '';
+function createUTF8IndexMap(text) {
+    const map = [0];
+    let utf8Length = 0;
     for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const charUTF8Length = lengthUTF8(char);
-        if (currentUTF8 >= startUTF8 && currentUTF8 < endUTF8) {
-            result += char;
-        }
-        currentUTF8 += charUTF8Length;
-        if (currentUTF8 >= endUTF8) break;
+        utf8Length += lengthUTF8(text[i]);
+        map.push(utf8Length);
     }
-    return result;
+    return map;
 }
+function getUTF8Substring(text, startUTF8, endUTF8, utf8IndexMap) {
+    let startIndex = utf8IndexMap.findIndex(offset => offset > startUTF8) - 1;
+    let endIndex = utf8IndexMap.findIndex(offset => offset >= endUTF8);
+    return text.slice(startIndex, endIndex);
+}
+
 function getCharIndexFromUTF8Index(str, utf8Index) {
     let charIndex = 0;
     let currentUTF8Index = 0;
