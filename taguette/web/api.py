@@ -7,7 +7,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_, func, distinct, not_, or_, text
+from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -758,7 +758,7 @@ class Highlights(BaseHandler):
 
 
 class Search(BaseHandler):
-    PAGE_SIZE = 3
+    PAGE_SIZE = 5
 
     @api_auth
     @PROM_REQUESTS.sync('search')
@@ -786,8 +786,8 @@ class Search(BaseHandler):
         result = self.db.execute(
             'SELECT d.id, d.name, d.contents, '
             '((CHAR_LENGTH(d.contents) - '
-                'CHAR_LENGTH(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
-                '/ CHAR_LENGTH(:search_text)) as occurences '
+            'CHAR_LENGTH(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
+            '/ CHAR_LENGTH(:search_text)) as occurences '
             'FROM documents as d '
             'WHERE d.project_id = :project_id AND '
             'LOWER(d.contents) like :search_text_escaped '
