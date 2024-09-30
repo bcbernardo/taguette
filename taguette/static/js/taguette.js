@@ -958,7 +958,6 @@ function loadDocument(document_id, highlight_id=null, search_text = null) {
                         if($(this)[0].children.length === 0){
                             if($(this).parents('#document-contents').length) {
                                 nb_occurences_in_container = $(this).text().toLowerCase().split(search_text).length - 1;
-                                log(`nb: ${nb_occurences_in_container} count: ${count}`);
                                 if((position >= count) && (position <= (count + nb_occurences_in_container))) {
                                     goto = $(this);
                                 }

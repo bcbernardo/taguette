@@ -334,10 +334,28 @@ li.disabled.sticky {
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     position: sticky;
-    top: 0;
+    top: 30px;
     background: #fff;
     border-bottom: 1px dashed rgba(33, 37, 41, 0.5);
     font-weight: bold;
+}
+
+li.disabled.sticky.first {
+    top: 0;
+}
+
+span.pagination {
+    float: right;
+}
+
+button.page-selector {
+    display: none;
+}
+
+button.page-selector:disabled,
+button.page-selector[disabled]{
+    color: #F8F9FA !important;
+    background-color: rgba(245, 245, 245, 0.75) !important;
 }
 
 .document-view {

@@ -22,6 +22,15 @@ $(document).ready(function() {
         return false;
     });
 
+    $('button.page-selector').click(function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        doSearch($(this).data('page'));
+
+        return false;
+    });
+
     function showSearchSpinner() {
         $formSearch.addClass('searching');
     }
@@ -34,8 +43,10 @@ $(document).ready(function() {
         $divSearchResults.html('');
     }
 
-    function doSearch() {
-        const searchText = $inputSearch.val().toLowerCase();
+    function doSearch(page=1) {
+        const searchText = $inputSearch.val().toLowerCase(),
+            previousPage = page - 1,
+            nextPage = page + 1;
         if(searchText.length < minimumCharacters) {
             log(`Not enough characters to search documents, ${minimumCharacters} or more characters are required`)
             return;
@@ -47,13 +58,31 @@ $(document).ready(function() {
             showSearchSpinner();
 
             getJSON(
-                `/api/project/${project_id}/search/${encodeURIComponent(searchText)}`
+                `/api/project/${project_id}/search/${encodeURIComponent(searchText)}?page=${page}`
             )
                 .then(function (result) {
                     $("<li/>", {
-                        'class': "dropdown-item disabled sticky",
-                        'text': gettext("Found in %(nb)s document(s)", {nb: result['nb_results']})
+                        'class': "dropdown-item disabled sticky first",
+                        'html': gettext("Found in %(nb)s document(s)", {nb: result['nb_results']}) + `<span class='pagination'>${page} / ${result['pages']}</span>`
                     }).appendTo($divSearchResults);
+                    if(result['nb_results'] > 0) {
+                        $('#btn-search-previous-page').data('page', previousPage);
+                        $('#btn-search-next-page').data('page', nextPage);
+                        if(previousPage <= 0) {
+                            $('#btn-search-previous-page').prop('disabled', true);
+                        } else {
+                            $('#btn-search-previous-page').prop('disabled', false);
+                        }
+                        log(`nextpage: ${nextPage} >= ${result['pages']}`)
+                        if(nextPage > result['pages']) {
+                            $('#btn-search-next-page').prop('disabled', true);
+                        } else {
+                            $('#btn-search-next-page').prop('disabled', false);
+                        }
+                        $('button.page-selector').show();
+                    } else {
+                        $('button.page-selector').hide();
+                    }
                     for(let k in result['documents']) {
                         let d = result['documents'][k];
                         // Add document title
@@ -73,6 +102,11 @@ $(document).ready(function() {
                             linkDocument(a, d['id'], null, `${result['search_text']}/${i}`);
                             $("<li/>").append(a).appendTo($divSearchResults);
                         }
+                    }
+
+                    // Force show
+                    if(!$("#dropdown-trigger-search").hasClass('show')) {
+                        $("#dropdown-trigger-search").dropdown('toggle');
                     }
                 })
                 .catch(function (error) {

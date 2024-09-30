@@ -40,6 +40,8 @@
               <form class="navbar-nav search mr-auto" id="form-search-documents">
                   <div class="input-group" data-bs-toggle="dropdown" id="dropdown-trigger-search">
                       <input type="text" class="form-control" id="input-search-documents" placeholder="{% trans "search form placeholder" %}Search in documents{% endtrans %}">
+                      <button class="btn btn-outline-primary page-selector" type="button" id="btn-search-previous-page">&lt;</button>
+                      <button class="btn btn-outline-primary page-selector" type="button" id="btn-search-next-page">&gt;</button>
                       <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search search-icon"></i><i class="fas fa-spinner searching"></i></button>
                   </div>
                   <ul id="ul-search-results" class="dropdown-menu" role="menu" aria-labelledby="dropdown-trigger-search"></ul>

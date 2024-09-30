@@ -758,7 +758,7 @@ class Highlights(BaseHandler):
 
 
 class Search(BaseHandler):
-    PAGE_SIZE = 50
+    PAGE_SIZE = 3
 
     @api_auth
     @PROM_REQUESTS.sync('search')
