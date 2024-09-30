@@ -118,7 +118,7 @@ const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
-    $(document_add_modal).modal('show');
+    $(document_add_modal).modal('show').drags({handle: '.modal-header'});
     customSelect.classList.remove("active");
 }
 
@@ -239,7 +239,7 @@ function editDocument(doc_id) {
     document.getElementById('document-change-name').value = '' + documents['' + doc_id].name;
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
-    $(document_change_modal).modal('show');
+    $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
@@ -331,6 +331,8 @@ linkTag(document.getElementById('load-all-tags'), '');
 
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
+    highlightSelectedTags.length = 0;
+    showHighlightTagSelection();
     hideSearchErrorMessage();
     savedSelections = [];
     initTagsHighlightTreeview(false);
@@ -371,7 +373,7 @@ function createTag(from, selection, parent) {
         document.getElementById('dropdownMenuButtonTag').innerText = findTag(parent).path
     }
 
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editTag(tag_id) {
@@ -390,7 +392,7 @@ function editTag(tag_id) {
     document.getElementById('tag-add-cancel').style.display = 'none';
     document.getElementById('tag-add-delete').style.display = '';
     document.getElementById('tag-add-merge').style.display = '';
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 // Save tag button
@@ -591,8 +593,7 @@ function createHighlight(selection) {
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editHighlight() {
@@ -609,11 +610,12 @@ function editHighlight() {
     const hl_tags = highlights['' + id].tags;
     const allNodes = treeview_tags_highlight.treeview('getEnabled');
     for (let i = 0; i < hl_tags.length; ++i) {
+        highlightSelectedTags.push(hl_tags[i]);
         const node = allNodes.find((node) => node.id === hl_tags[i]);
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    showHighlightTagSelection();
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 $('#highlight-add-form').off().on('submit', (e) => {

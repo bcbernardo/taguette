@@ -595,7 +595,7 @@ function getCharIndexFromUTF8Index(str, utf8Index) {
 }
 function adjustLineHeight(divContainer, group, highlightCount) {
     const lineHeight = 40;
-    const extraHeightPerHighlight = 10;
+    const extraHeightPerHighlight = 12.5;
     const totalHeight = lineHeight + highlightCount * extraHeightPerHighlight;
     group.parentNode.setAttribute("height", `${totalHeight}px`);
     divContainer.style.height = `${totalHeight}px`;

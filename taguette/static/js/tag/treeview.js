@@ -4,6 +4,7 @@ const treeview_tags_highlight = $('#treeview-tags-highlight');
 const DEFAULT_LEVEL_OPTION = 5
 
 let selectedTags = []
+let highlightSelectedTags = []
 
 function getNode(treeview, nodeId) {
     const $treeview = $(`#${treeview}`);
@@ -262,8 +263,19 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
         treeview_tags_highlight.treeview('collapseAll');
     }
 
-    treeview_tags_highlight.on('nodeUnselected', function (event, data) {
-        savedSelections = savedSelections.filter(id => id !== data.id);
+    treeview_tags_highlight.on('nodeSelected', function (event, node) {
+        if (!highlightSelectedTags.some(item => item === node.id)) {
+            highlightSelectedTags.push(node.id);
+            showHighlightTagSelection();
+        }
+    });
+
+    treeview_tags_highlight.on('nodeUnselected', function (event, node) {
+        savedSelections = savedSelections.filter(id => id !== node.id);
+        highlightSelectedTags = highlightSelectedTags.filter(function (item) {
+            return item !== node.id;
+        });
+        showHighlightTagSelection();
     });
 
     addTagUnderLineHighlightTreeview();
