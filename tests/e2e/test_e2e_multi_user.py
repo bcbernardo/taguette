@@ -321,7 +321,7 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertTrue(doc.filename, docs_1[0]['name'])
         self.driver.execute_script('$("#document-add-modal").modal("hide");')
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         # await self.s_get('/project/new')
         # Create document 2 and 3 in project 1
         await self.s_click(self.find_by_id('project-sidebar-open'))
