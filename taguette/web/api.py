@@ -792,14 +792,13 @@ class Search(BaseHandler):
             'WHERE d.project_id = :project_id AND '
             'LOWER(d.contents) like :search_text_escaped '
             'ORDER BY occurences DESC '
-            'LIMIT :per_page OFFSET :start',
-             {
-                 'project_id': project_id,
-                 'search_text': search_text,
-                 'search_text_escaped': search_text_escaped,
-                 'start': page * self.PAGE_SIZE,
-                 'per_page': self.PAGE_SIZE
-             })
+            'LIMIT :per_page OFFSET :start', {
+                'project_id': project_id,
+                'search_text': search_text,
+                'search_text_escaped': search_text_escaped,
+                'start': page * self.PAGE_SIZE,
+                'per_page': self.PAGE_SIZE
+            })
         return self.send_json({
             'documents': [
                 {
