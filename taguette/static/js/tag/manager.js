@@ -384,8 +384,7 @@ function showTagSelection() {
     const tagsCriteria = $('#tag-selection-criteria-area');
 
     let content = '';
-
-    if (selectedTags.length > 0) {
+    if (selectedTags.length > 1) {
         content += `<div class="d-flex justify-content-between">`;
         content += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
         content += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
@@ -431,9 +430,10 @@ function emptyTagSelection(unSelectNode = false) {
     selectedTags = [];
     showTagSelection();
     hideTagReturnLink();
-
     if (unSelectNode) {
         deselectAllNodes('treeview-tags');
+        isExplorationMode = false;
+        initTagsTreeview(true);
     }
 }
 

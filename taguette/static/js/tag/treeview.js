@@ -6,6 +6,9 @@ const DEFAULT_LEVEL_OPTION = 5
 let selectedTags = []
 let highlightSelectedTags = []
 
+let isExplorationMode = false;
+let isProgrammaticSelection = false;
+
 function getNode(treeview, nodeId) {
     const $treeview = $(`#${treeview}`);
     return $treeview.treeview('getNode', parseInt(nodeId));
@@ -39,8 +42,10 @@ function selectNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
 
     if (node && node.state && !node.state.selected) {
+        isProgrammaticSelection = true;
         const $treeview = $(`#${treeview}`);
         $treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+        isProgrammaticSelection = false;
     } else {
         log(`Node with nodeId ${nodeId} not found or already selected.`);
     }
@@ -204,9 +209,12 @@ function initTagsTreeview(collapse = true, filterTags = null) {
         data: treeData,
         showBorder: true,
         levels: DEFAULT_LEVEL_OPTION,
-        multiSelect: true,
         showTags: true
     };
+
+    if (isExplorationMode) {
+        options.multiSelect = true;
+    }
 
     treeview_tags.treeview(options);
     treeview_tags.data('expanded', true);
@@ -216,8 +224,14 @@ function initTagsTreeview(collapse = true, filterTags = null) {
         treeview_tags.data('expanded', false);
     }
 
-    treeview_tags.on('nodeSelected', function (event, data) {
-        addTagsHighlightSelection(data);
+    treeview_tags.on('nodeSelected', function (event, node) {
+        if (isExplorationMode && !isProgrammaticSelection){
+            emptyTagSelection(true);
+            setTimeout(() => {
+                selectNode('treeview-tags', node.nodeId);
+            }, 10);
+        }
+        addTagsHighlightSelection(node);
         loadTagsHighlights();
     });
 
@@ -253,6 +267,7 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
     const options = {
         data: treeData,
         showBorder: true,
+        levels: DEFAULT_LEVEL_OPTION,
         showCheckbox: true,
         multiSelect: true,
     };
@@ -341,9 +356,22 @@ function loadTagsHighlights() {
 }
 
 let selectCondition = 'or';
+
 function selectWithCondition(treeview, nodeId, condition) {
     selectCondition = condition;
-    selectNode(treeview, nodeId);
+
+    if(isExplorationMode) {
+        selectNode(treeview, nodeId);
+    } else {
+        isExplorationMode = true;
+        const selectedNodes = getAllSelectedNodes(treeview);
+        initTagsTreeview(true);
+        selectedNodes.forEach(node => {
+            selectNode(treeview, node.nodeId);
+        });
+        selectNode(treeview, nodeId);
+    }
+
     selectCondition = 'or';
 }
 
