@@ -425,15 +425,14 @@ function showHighlightTagSelection() {
 
 }
 
-function emptyTagSelection(unSelectNode = false) {
-    //keep reselect instead of empty
+function emptyTagSelection(unSelectNode = false, collapse = true) {
     selectedTags = [];
     showTagSelection();
     hideTagReturnLink();
     if (unSelectNode) {
         deselectAllNodes('treeview-tags');
         isExplorationMode = false;
-        initTagsTreeview(true);
+        initTagsTreeview(collapse);
     }
 }
 

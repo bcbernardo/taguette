@@ -40,7 +40,6 @@ function treeviewHasChildren(treeview) {
 
 function selectNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
-
     if (node && node.state && !node.state.selected) {
         isProgrammaticSelection = true;
         const $treeview = $(`#${treeview}`);
@@ -81,19 +80,51 @@ function toggleNodeSelection(treeview, nodeId, select = true) {
 }
 
 function selectNodeAndChildren(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    expandNode(treeview, nodeId);
-    const node = getNode(treeview, nodeId);
-    selectSingleNodeAndChildren($treeview, node);
+    isExplorationMode = true;
+    isProgrammaticSelection = true;
+    initTagsTreeview(true);
+    setTimeout(() => {
+        const $treeview = $(`#${treeview}`);
+        expandNode(treeview, nodeId);
+        const node = getNode(treeview, nodeId);
+        selectSingleNodeAndChildren($treeview, node);
+    }, 10);
+
 }
 
 function unselectNodeAndChildren(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    const node = getNode(treeview, nodeId);
-    unselectSingleNodeAndChildren($treeview, node);
+    setTimeout(() => {
+        const $treeview = $(`#${treeview}`);
+        const node = getNode(treeview, nodeId);
+        unselectSingleNodeAndChildren($treeview, node);
+    }, 10);
 }
-function selectSingleNodeAndChildren(treeview, node) {
 
+function checkNodeHasSelectedChildren(node) {
+    if (node.nodes && node.nodes.length > 0) {
+        return node.nodes.some(function (childNode) {
+            if (childNode.state.selected) {
+                return true;
+            }
+            return checkNodeHasSelectedChildren(childNode);
+        });
+    }
+    return false;
+}
+
+function checkNodeHasUnselectedChildren(node) {
+    if (node.nodes && node.nodes.length > 0) {
+        return node.nodes.some(function (childNode) {
+            if (!childNode.state.selected) {
+                return true;
+            }
+            return checkNodeHasUnselectedChildren(childNode);
+        });
+    }
+    return false;
+}
+
+function selectSingleNodeAndChildren(treeview, node) {
     if (!node.state.selected) {
         treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
         if (node.nodes && node.nodes.length > 0) {
@@ -104,9 +135,7 @@ function selectSingleNodeAndChildren(treeview, node) {
     }
 }
 function unselectSingleNodeAndChildren(treeview, node) {
-
     if (node.state.selected) {
-
         treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
         if (node.nodes && node.nodes.length > 0) {
             node.nodes.forEach(function (childNode) {
@@ -117,9 +146,7 @@ function unselectSingleNodeAndChildren(treeview, node) {
 }
 
 function expandNode(treeview, nodeId) {
-
     const node = getNode(treeview, nodeId);
-
     if (!node.state.expanded) {
         const $treeview = $(`#${treeview}`);
         $treeview.treeview('expandNode', [parseInt(nodeId, 10),
@@ -129,9 +156,7 @@ function expandNode(treeview, nodeId) {
 }
 
 function collapseNode(treeview, nodeId) {
-
     const node = getNode(treeview, nodeId);
-
     if (node.state.expanded) {
         const $treeview = $(`#${treeview}`);
         $treeview.treeview('collapseNode', [parseInt(nodeId, 10),
@@ -226,7 +251,8 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
     treeview_tags.on('nodeSelected', function (event, node) {
         if (isExplorationMode && !isProgrammaticSelection){
-            emptyTagSelection(true);
+            const collapse = node.parentId;
+            emptyTagSelection(true, !collapse);
             setTimeout(() => {
                 selectNode('treeview-tags', node.nodeId);
             }, 10);
@@ -365,7 +391,12 @@ function selectWithCondition(treeview, nodeId, condition) {
     } else {
         isExplorationMode = true;
         const selectedNodes = getAllSelectedNodes(treeview);
-        initTagsTreeview(true);
+        const node = getNode(treeview, nodeId);
+        let collapse = true;
+        if (node.parentId) {
+            collapse = false;
+        }
+        initTagsTreeview(collapse);
         selectedNodes.forEach(node => {
             selectNode(treeview, node.nodeId);
         });
