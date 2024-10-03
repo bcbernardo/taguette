@@ -782,12 +782,15 @@ class Search(BaseHandler):
                 'search_text_escaped': search_text_escaped,
             })
         total = (count_total.first())['count']
-        # TODO: find a way to do this within SQLALchemy
+        # TODO: find a way to do this within SQLALchemy..
+        char_length = 'CHAR_LENGTH'
+        if self.application.config['DATABASE'].startswith('sqlite:'):
+            char_length = 'LENGTH'
         result = self.db.execute(
             'SELECT d.id, d.name, d.contents, '
-            '((CHAR_LENGTH(d.contents) - '
-            'CHAR_LENGTH(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
-            '/ CHAR_LENGTH(:search_text)) as occurences '
+            f'(({char_length}(d.contents) - '
+            f'{char_length}(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
+            f'/ {char_length}(:search_text)) as occurences '
             'FROM documents as d '
             'WHERE d.project_id = :project_id AND '
             'LOWER(d.contents) like :search_text_escaped '
