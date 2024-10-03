@@ -282,15 +282,15 @@ function getMaxWidth() {
         parseFloat(computedStyle.borderRightWidth);
 }
 
-function setHighlights(text, container, highlights) {
+function setHighlights(text, container, highlights, direction) {
 
     const maxWidth = getMaxWidth();
     const font = Font.create(container);
 
-    displayTextWithHighlights(container, text, font, maxWidth, highlights);
+    displayTextWithHighlights(container, text, font, maxWidth, highlights, direction);
 }
 
-function displayTextWithHighlights(container, text, font, maxWidth, highlights) {
+function displayTextWithHighlights(container, text, font, maxWidth, highlights, direction) {
     const startTime = performance.now();
     console.log('Début de displayTextWithHighlights');
 
@@ -311,7 +311,7 @@ function displayTextWithHighlights(container, text, font, maxWidth, highlights) 
 
     const highlightStartTime = performance.now();
     lines.forEach(line => {
-        applyHighlightsToLine(line, text, highlights, container, utf8IndexMap);
+        applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction);
     });
     const highlightEndTime = performance.now();
     console.log(`applyHighlights time : ${((highlightEndTime - highlightStartTime) / 1000).toFixed(3)} secondes`);
@@ -320,7 +320,7 @@ function displayTextWithHighlights(container, text, font, maxWidth, highlights) 
     console.log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
 }
 
-function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap) {
+function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction) {
 
     document_lines.push(line);
 
@@ -348,15 +348,18 @@ function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap) 
     divContainer.appendChild(svg);
     container.appendChild(divContainer);
 
-    // Add content
     const textElement = document.createElementNS(svgNamespace, "text");
-    textElement.setAttribute("x", "0");
+    let textXPosition = direction === 'RIGHT_TO_LEFT' ? "100%" : "0";
+    let textAnchor = direction === 'RIGHT_TO_LEFT' ? "end" : "start";
+    textElement.setAttribute("x", textXPosition);
     textElement.setAttribute("y", "0");
+    textElement.setAttribute("text-anchor", textAnchor);
     textElement.textContent = lineContent;
 
     group.appendChild(textElement);
 
     let highlightCount = 0;
+
     highlights.forEach((highlight, index) => {
 
         if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
@@ -382,20 +385,27 @@ function createSvgUnderline(svgParent, rect, highlight) {
     const colors = highlight.tags.map(id => findTag(id).color);
 
     if (colors.length === 1) {
-        return createSvgLine(svgNamespace, highlight, rect, colors[0]);
+        return createSvgLine(svgParent, svgNamespace, highlight, rect, colors[0], 'solid');
     }
 
     const gradient = createSvgGradient(svgNamespace, highlight, colors);
     svgParent.appendChild(gradient);
 
-    return createSvgLine(svgNamespace, highlight, rect, `url(#gradient-${highlight.id})`, 'gradient');
+    return createSvgLine(svgParent, svgNamespace, highlight, rect, `url(#gradient-${highlight.id})`, 'gradient');
 }
 
-function createSvgLine(svgNamespace, highlight, rect, color, strokeType = 'solid') {
+function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeType = 'solid') {
     const line = document.createElementNS(svgNamespace, "line");
     line.setAttribute("data-highlight-id", highlight.id);
-    line.setAttribute("x1", rect.x1 === 0 ? 4 : rect.x1);
-    line.setAttribute("x2", rect.x2);
+
+    const textElement = svgParent.querySelector('text');
+    const textBox = textElement.getBBox();
+
+    const x1 = textBox.x + (rect.x1 === 0 ? 4 : rect.x1);
+    const x2 = textBox.x + rect.x2;
+
+    line.setAttribute("x1", x1);
+    line.setAttribute("x2", x2);
     line.setAttribute("y1", rect.y);
     line.setAttribute("y2", rect.y + (strokeType === 'gradient' ? 0.1 : 0));
     line.setAttribute("stroke", color);

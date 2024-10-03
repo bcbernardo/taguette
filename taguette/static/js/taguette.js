@@ -89,14 +89,6 @@ function projectMetadataChanged() {
 
 function addDocument(document) {
     documents['' + document.id] = document;
-    if (document.id === current_document) {
-        // Text direction is the only meaningful thing that can be mutated
-        if (document.text_direction === 'RIGHT_TO_LEFT') {
-            document_contents.style.direction = 'rtl';
-        } else {
-            document_contents.style.direction = 'ltr';
-        }
-    }
     updateDocumentsList();
 }
 
@@ -264,6 +256,7 @@ document.getElementById('document-change-form').addEventListener('submit', funct
         log("Document update posted");
         $(document_change_modal).modal('hide');
         document.getElementById('document-change-form').reset();
+        loadDocument(current_document);
     }
 
     const callbackFail = (error) => {
@@ -873,11 +866,10 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true) 
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
                 const cleanText = extractTextFromHtml(chunk.contents);
-                setHighlights(cleanText, elem, info.highlights);
+                setHighlights(cleanText, elem, info.highlights, info.text_direction);
                 chunk_offsets.push(chunk.offset);
             }
 
-            setTextDirection(info.text_direction);
             current_document = document_id;
 
             toggleToolbarActions(true);
@@ -922,10 +914,6 @@ function addDragFunctionality(element) {
     element.addEventListener('dragstart', function (event) {
         event.dataTransfer.effectAllowed = 'move';
     });
-}
-
-function setTextDirection(text_direction) {
-    document_contents.style.direction = text_direction === 'RIGHT_TO_LEFT' ? 'rtl' : 'ltr';
 }
 
 function scrollToHighlight(highlight_id) {
