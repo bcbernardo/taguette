@@ -1,10 +1,10 @@
 const treeview_tags = $('#treeview-tags');
 const treeview_tags_highlight = $('#treeview-tags-highlight');
 
-const DEFAULT_LEVEL_OPTION = 5
+const DEFAULT_LEVEL_OPTION = 5;
 
-let selectedTags = []
-let highlightSelectedTags = []
+let selectedTags = [];
+let highlightSelectedTags = [];
 
 let isExplorationMode = false;
 let isProgrammaticSelection = false;
@@ -230,8 +230,28 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
+    const customNodeOptions = customNodeRow(true);
+
     const options = {
         data: treeData,
+        ...customNodeOptions,
+        customizeBadges: function(container, node, tree) {
+            container.addClass('d-flex align-items-center');
+            if (node.tags && node.tags.length > 0) {
+                container.append($('<span>', {
+                    class: 'badge badge-primary ms-1',
+                    title: 'Documents',
+                    text: node.tags[0]
+                }));
+                if (node.tags.length > 1) {
+                    container.append($('<span>', {
+                        class: 'badge badge-secondary ms-1 ms-2',
+                        title: 'Highlights',
+                        text: node.tags[1]
+                    }));
+                }
+            }
+        },
         showBorder: true,
         levels: DEFAULT_LEVEL_OPTION,
         showTags: true
@@ -272,12 +292,10 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
         // Add a delay to ensure the treeview recreation is finished
         setTimeout(function () {
-            customizeNodeRow();
             addTagDragDrop();
         }, 10);
     });
 
-    customizeNodeRow();
     addTagDragDrop();
     emptyTagSelection();
 }
@@ -290,11 +308,13 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
+    const customNodeOptions = customNodeRow();
+
     const options = {
         data: treeData,
+        ...customNodeOptions,
         showBorder: true,
         levels: DEFAULT_LEVEL_OPTION,
-        showCheckbox: true,
         multiSelect: true,
     };
 
@@ -317,15 +337,6 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
             return item !== node.id;
         });
         showHighlightTagSelection();
-    });
-
-    addTagUnderLineHighlightTreeview();
-
-    treeview_tags_highlight.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, data) {
-        // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function () {
-            addTagUnderLineHighlightTreeview();
-        }, 10);
     });
 }
 
@@ -375,7 +386,6 @@ function loadTagsHighlights() {
        loadDocument(current_document)
     }
     setTimeout(function () {
-        customizeNodeRow();
         addTagDragDrop();
         showTagSelection();
     }, 10);
@@ -439,107 +449,6 @@ function getNodeIdFromTreeviewByTagId(treeview, tagId) {
     }
 }
 
-function addTagUnderLineHighlightTreeview() {
-    $(".node-treeview-tags-highlight").each(function (index, element) {
-
-        const tagId = getTagIdFromTreeviewNode(
-            'treeview-tags-highlight',
-            $(element).data("nodeid"));
-
-        const hasChildren = findTag(tagId).children.length > 0;
-
-        if (!hasChildren) {
-            const $icon = $(element).find('.icon');
-            $icon.css('display', 'none');
-        }
-
-        addTagVerticalLine($(element), tagId);
-    })
-}
-
-function customizeNodeRow() {
-    $(".node-treeview-tags").each(function (index, element) {
-
-        const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
-
-        const hasChildren = findTag(tagId).children.length > 0;
-
-        if (!hasChildren) {
-            const $icon = $(element).find('.icon');
-            $icon.css('display', 'none');
-        }
-
-        $(this).attr('id', `${$(element).data("nodeid")}`)
-        $(this).addClass('tag-context-menu');
-
-        addTagVerticalLine($(element), tagId);
-
-        const secondDiv = $(element).find("div:eq(1)");
-
-        secondDiv.addClass('d-flex align-items-center');
-        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary').attr('title', gettext("Documents"));
-        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2').attr('title', gettext("Highlights"));
-
-    });
-}
-
-function addTagVerticalLine(selector, tagId) {
-    // Find the first div within .node-treeview-tags
-    const firstDiv = selector.find('div:first');
-
-    if (firstDiv.find('a').length === 0) {
-        // Get the text content
-        const tagText = firstDiv.contents().filter(function () {
-            return this.nodeType === 3; // Filter out text nodes
-        }).text().trim();
-
-        // Create an anchor element
-        const tagTextAnchor = $('<a>', {
-            href: '#',
-            class: 'tag-text',
-            style: 'text-decoration: none;',
-            text: tagText
-        });
-
-        // Prepend a span to act as the vertical line
-        $('<span>', {
-            class: `vertical-line-${tagId}`,
-            css: {
-                display: 'inline-block',
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                bottom: '0',
-                width: '3px',
-                backgroundColor: findTag(tagId).color,
-            }
-        }).prependTo(tagTextAnchor);
-
-        // Wrap the text in the anchor element
-        firstDiv.contents().filter(function () {
-            return this.nodeType === 3;
-        }).replaceWith(tagTextAnchor);
-    } else {
-        const existingLine = firstDiv.find(`.vertical-line-${tagId}`);
-        if (existingLine.length > 0) {
-            existingLine.css('backgroundColor', findTag(tagId).color);
-        } else {
-            $('<span>', {
-                class: `vertical-line-${tagId}`,
-                css: {
-                    display: 'inline-block',
-                    position: 'absolute',
-                    left: '0',
-                    top: '0',
-                    bottom: '0',
-                    width: '4px',
-                    backgroundColor: findTag(tagId).color,
-                }
-            }).prependTo(firstDiv.find('.tag-text'));
-        }
-    }
-}
-
 function addTagDragDrop() {
 
     $('.node-treeview-tags').on('dragstart', function (event) {
@@ -571,4 +480,38 @@ function addTagDragDrop() {
             }
         });
     });
+}
+
+function customNodeRow(isTagContextMenu = false) {
+
+    return {
+        customContent: true,
+        nodeContentSelector: 'a',
+        nodeContentAttributes: {
+            href: '#',
+            class: 'tag-text',
+            style: 'text-decoration: none;'
+        },
+        customizeNode: function(element, node, tree) {
+            element.attr('id', `${node.nodeId}`);
+            if (isTagContextMenu) {
+                element.addClass('tag-context-menu');
+            }
+        },
+        addVerticalLine: function(element, node, tree) {
+            const color = findTag(node.id).color;
+            $('<span>', {
+                class: `vertical-line-${node.id}`,
+                css: {
+                    display: 'inline-block',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    bottom: '0',
+                    width: '3px',
+                    backgroundColor: color,
+                }
+            }).prependTo(element);
+        }
+    }
 }
