@@ -168,6 +168,7 @@ def make_app(config, debug=False, xsrf_cookies=True):
 
         # API
         UnbakedURLSpec('/api/check_user', api.CheckUser),
+        UnbakedURLSpec('/api/create_demo_project', api.CreateDemoProject),
         UnbakedURLSpec('/api/import', api.ProjectImport),
         UnbakedURLSpec('/api/project/([0-9]+)', api.ProjectMeta),
         UnbakedURLSpec('/api/project/([0-9]+)/document/new', api.DocumentAdd),

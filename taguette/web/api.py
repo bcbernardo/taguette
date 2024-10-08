@@ -73,6 +73,35 @@ class CheckUser(BaseHandler):
         return self.send_json({'exists': False})
 
 
+class CreateDemoProject(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('create_demo_project')
+    def post(self):
+        # Create project
+        project = database.Project(
+            name=self.gettext("Tutorial - board game"),
+            description=self.gettext(
+                'A project to simulate an analysis approach'
+            ))
+        self.db.add(project)
+        # Add user as admin
+        membership = database.ProjectMember(
+            project=project,
+            user_login=self.current_user,
+            privileges=database.Privileges.ADMIN
+        )
+        self.db.add(membership)
+
+        self.db.commit()
+
+        return self.send_json(
+            {
+                'html': self.render_string('partials/project_card.html',
+                                           project=project,
+                                           demo=True)
+            })
+
+
 class ProjectMeta(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('project_meta')

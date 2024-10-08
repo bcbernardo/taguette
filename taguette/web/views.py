@@ -81,11 +81,15 @@ class Index(BaseHandler):
             return self.render(
                 'index.html',
                 user=user,
+                user_login=Markup(
+                    json.dumps(self.current_user)
+                ),
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
                 can_import_project=(
                     self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
+                demo=False
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)

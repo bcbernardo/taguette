@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="Description" content="Free and open source qualitative research tool">
-    <link rel="stylesheet" href="{{ static_url('css/custom.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/fa-all.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap.min.css') }}">
       <link rel="stylesheet" href="{{ static_url('css/vendor/introjs.min.css') }}">
+      <link rel="stylesheet" href="{{ static_url('css/custom.css') }}">
     {% block styles %}
     {% endblock %}
     <title>{% block title %}LibreQDA{% endblock %}</title>
@@ -51,7 +51,7 @@
           <ul class="navbar-nav">
             <li class="nav-item">
               {% set external_icon %}<i class="fas fa-external-link-alt"></i>{% endset %}
-              <a class="nav-link" href="https://aide.libreqda.org" target="_blank" rel="noopener">{% trans "navigation item" %}Taguette Guide {{ external_icon }}{% endtrans %}</a>
+              <a id="intro-documentation" class="nav-link" href="https://aide.libreqda.org" target="_blank" rel="noopener">{% trans "navigation item" %}Taguette Guide {{ external_icon }}{% endtrans %}</a>
             </li>
             {% if not multiuser %}
             <li class="nav-item">

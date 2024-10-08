@@ -911,3 +911,8 @@ Document custom select
     display: block;
     text-align: right;
 }
+
+.introjs-tooltip {
+    min-width: 30vw;
+    max-width: 30vw;
+}

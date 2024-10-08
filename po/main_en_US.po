@@ -16,6 +16,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
+#: taguette/static/js/project/intro.js:22
+msgid "Welcome to LibreQDA, an open source qualitative analysis application."
+msgstr "Welcome to LibreQDA, an open source qualitative analysis application."
+
+#: taguette/static/js/project/intro.js:23
+msgid ""
+"<p>To get the source code: <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda\" target=\"_blank\">Gitlab</a></p>"
+msgstr ""
+"<p>To get the source code: <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda\" target=\"_blank\">Gitlab</a></p>"
+
+#: taguette/static/js/project/intro.js:27
+msgid "<p>To consult documentation</p>"
+msgstr "<p>To consult documentation</p>"
+
+#: taguette/static/js/project/intro.js:32
+msgid ""
+"<p>A mini project has been added to your home screen to simulate an "
+"analysis approach.</p>"
+msgstr ""
+"<p>A mini project has been added to your home screen to simulate an "
+"analysis approach.</p>"
+
+#: taguette/static/js/project/intro.js:37
+msgid "Next"
+msgstr "Next"
+
+#: taguette/static/js/project/intro.js:38
+msgid "Back"
+msgstr "Back"
+
+#: taguette/static/js/project/intro.js:39
+msgid "Continue"
+msgstr "Continue"
+
+#: taguette/static/js/taguette.js:1049
+msgid "No highlights with this tag yet."
+msgstr "No highlights with this tag yet."
+
 #: taguette/templates/new_password.html:3
 #: taguette/templates/reset_password.html:3
 msgctxt "page title"
@@ -786,6 +826,16 @@ msgstr "Welcome!"
 msgid "Here are your projects:"
 msgstr "Here are your projects:"
 
+#: taguette/templates/index.html:53
+msgctxt "button in project list"
+msgid "Demo project"
+msgstr "Demo project"
+
+#: taguette/templates/index.html:54
+msgctxt "button in project list"
+msgid "Description demo project"
+msgstr "To learn how to use LibreQDA"
+
 #: taguette/templates/index.html:19
 msgid "You have no projects yet."
 msgstr "You have no projects yet."
@@ -794,6 +844,16 @@ msgstr "You have no projects yet."
 msgctxt "button in project list"
 msgid "Create a new project"
 msgstr "Create a new project"
+
+#: taguette/templates/index.html:65
+msgctxt "button in project list"
+msgid "Description add new project"
+msgstr "To start a new project from scratch"
+
+#: taguette/templates/index.html:78
+msgctxt "button in project list"
+msgid "Description import a project file"
+msgstr "To start from an existing project"
 
 #: taguette/templates/index.html:23
 msgctxt "button in project list"
@@ -934,6 +994,14 @@ msgstr "No file provided"
 #: taguette/web/api.py:52
 msgid "Not logged in"
 msgstr "Not logged in"
+
+#: taguette/web/api.py:82
+msgid "Tutorial - board game"
+msgstr "Tutorial - board game"
+
+#: taguette/web/api.py:83
+msgid "A project to simulate an analysis approach"
+msgstr "A project to simulate an analysis approach"
 
 #: taguette/web/api.py:82 taguette/web/api.py:113 taguette/web/api.py:204
 #: taguette/web/api.py:243 taguette/web/api.py:308 taguette/web/api.py:348
