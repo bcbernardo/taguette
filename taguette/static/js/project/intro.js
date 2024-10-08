@@ -12,44 +12,60 @@ $(document).ready(function() {
             })
     }
 
-    let showIntro = () => {
-        introJs().setOption("dontShowAgain", true).setOptions({
+    let showHomeIntro = () => {
+            introJs().setOptions({
+                exitOnOverlayClick: true,
+                exitOnEsc: true,
+                steps: [
+                    {
+                        title: gettext('Welcome to LibreQDA, an open source qualitative analysis application.'),
+                        intro: gettext('<p>To get the source code: <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
+                    },
+                    {
+                        element: document.querySelector('#intro-documentation'),
+                        intro: gettext('<p>To consult documentation</p>'),
+                        position: 'bottom'
+                    },
+                    {
+                        element: document.querySelectorAll("a.project")[0],
+                        intro: gettext('<p>A mini project has been added to your home screen to simulate an analysis approach.</p>'),
+                        position: 'top'
+                    },
+                ]
+            }).
+            setOption("nextLabel", gettext('Next')).
+            setOption("prevLabel", gettext('Back')).
+            setOption("doneLabel", gettext('Continue')).
+            onchange(function (targetElement) {
+                if(targetElement.classList.contains('project') &&
+                    demoElement === null) {
+                    createDemoProject();
+                }
+            }).oncomplete(function () {
+                if(demoElement !== null) {
+                    demoElement.trigger('click');
+                }
+            }).start();
+        },
+        showProjectIntro = introJs().setOptions({
             showProgress: true,
             exitOnOverlayClick: true,
             exitOnEsc: true,
             steps: [
-                {
-                    title: gettext('Welcome to LibreQDA, an open source qualitative analysis application.'),
-                    intro: gettext('<p>To get the source code: <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
-                },
-                {
-                    element: document.querySelector('#intro-documentation'),
-                    intro: gettext('<p>To consult documentation</p>'),
-                    position: 'bottom'
-                },
-                {
-                    element: document.querySelectorAll("a.project")[0],
-                    intro: gettext('<p>A mini project has been added to your home screen to simulate an analysis approach.</p>'),
-                    position: 'top'
-                },
+
             ]
         }).
         setOption("nextLabel", gettext('Next')).
         setOption("prevLabel", gettext('Back')).
-        setOption("doneLabel", gettext('Continue')).
+        setOption("doneLabel", gettext('Done')).
         onchange(function (targetElement) {
-            if(targetElement.classList.contains('project') &&
-                demoElement === null) {
-                createDemoProject();
-            }
+
         }).oncomplete(function () {
-            if(demoElement !== null) {
-                demoElement.trigger('click');
-            }
+
         }).start();
-    }
+
 
     $("#a-start-demo").click(function(){
-        showIntro();
+        showHomeIntro();
     });
 });

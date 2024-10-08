@@ -23,6 +23,7 @@ from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
 from ..utils import get_path_informations
+from ..demodata import DEMO_DATA
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,19 @@ class CreateDemoProject(BaseHandler):
             privileges=database.Privileges.ADMIN
         )
         self.db.add(membership)
+        self.db.commit()
+
+        for document in DEMO_DATA:
+            d = database.Document(
+                project_id=project.id,
+                name=document['name'],
+                description="",
+                filename=document['filename'],
+                text_direction=document['text_direction'],
+                contents=document['contents'],
+                favorite=document['favorite']
+            )
+            self.db.add(d)
 
         self.db.commit()
 
