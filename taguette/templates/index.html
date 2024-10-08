@@ -24,47 +24,35 @@
     {% else %}
     <h1>{% trans %}Welcome!{% endtrans %}</h1>
     {% endif %}
+
+    <!-- Actions list -->
+    <div class="d-flex justify-content-start mb-4 mt-4">
+        <a href="{{ reverse_url('new_project') }}" class="btn btn-primary me-3"> <!-- Utilisation de `me-2` pour ajouter une marge à droite -->
+            <i class="fas fa-plus"></i> {% trans %}Create a new project{% endtrans %}
+        </a>
+
+        {% if can_import_project %}
+        <a href="{{ reverse_url('import_project') }}" class="btn btn-secondary me-3">
+            <i class="fas fa-file-download"></i> {% trans %}Import a project file{% endtrans %}
+        </a>
+        {% endif %}
+        <a href="#" class="btn btn-secondary" id="a-start-demo">
+            <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
+        </a>
+    </div>
+
     <p>{% trans %}Here are your projects{% endtrans %}:</p>
+    <!-- Projects List -->
     <div class="main">
         <div class="row" id="demo-project-container">
-            {% for project in projects %}
-                {% include 'partials/project_card.html' %}
-            {% endfor %}
-            <a href="#" class="col-md-3 no-underline" id="a-start-demo">
-                <div class="project-card action">
-                    <div class="px-3 py-4">
-                        <div class="icon-circle mx-auto">
-                            <i class="fas fa-play"></i>
-                        </div>
-                        <h4 class="project">{% trans "button in project list" %}Demo project{% endtrans %}</h4>
-                        <p class="quote">{% trans "button in project list" %}Description demo project{% endtrans %}</p>
-                    </div>
+            {% if projects %}
+                {% for project in projects %}
+                    {% include 'partials/project_card.html' %}
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <p class="text-muted">{% trans %}No projects available at the moment. Create or import one to get started.{% endtrans %}</p>
                 </div>
-            </a>
-            <a href="{{ reverse_url('new_project') }}" class="col-md-3 no-underline">
-                <div class="project-card action">
-                    <div class="px-3 py-4">
-                        <div class="icon-circle mx-auto">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <h4 class="project">{% trans "button in project list" %}Create a new project{% endtrans %}</h4>
-                        <p class="quote">{% trans "button in project list" %}Description add new project{% endtrans %}</p>
-                    </div>
-                </div>
-            </a>
-
-            {% if can_import_project %}
-            <a href="{{ reverse_url('import_project') }}" class="col-md-3 no-underline">
-                <div class="project-card action">
-                    <div class="px-3 py-4">
-                        <div class="icon-circle mx-auto">
-                            <i class="fas fa-file-download"></i>
-                        </div>
-                        <h4 class="project">{% trans "button in project list" %}Import a project file{% endtrans %}</h4>
-                        <p class="quote">{% trans "button in project list" %}Description import a project file{% endtrans %}</p>
-                    </div>
-                </div>
-            </a>
             {% endif %}
         </div>
     </div>

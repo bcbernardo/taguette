@@ -27,13 +27,21 @@ function generateContextMenuItems(node) {
     const isSelected = node.state.selected;
 
     const selectedNodes = getAllSelectedNodes(treeviewTags).length > 0;
+    const hasSelectedChildren = checkNodeHasSelectedChildren(node);
+    const hasUnselectedChildren = checkNodeHasUnselectedChildren(node);
 
     return {
         "toggleSelectAll": {
-            name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
-            icon: isSelected ? 'fas fa-eye-slash' : 'fas fa-eye',
-            visible: hasChildren,
-            callback: (key, options) => contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', node.nodeId)
+            name: gettext('selectAll'),
+            icon: 'fas fa-eye',
+            visible: hasUnselectedChildren && hasChildren,
+            callback: (key, options) => contextMenuAction('selectAll', node.nodeId)
+        },
+        "toggleDeSelectAll": {
+            name: gettext('unselectAll'),
+            icon: 'fas fa-eye-slash',
+            visible: hasChildren && hasSelectedChildren,
+            callback: (key, options) => contextMenuAction('unselectAll', node.nodeId)
         },
         "toggleSelect": {
             name: gettext('Select With Condition'),

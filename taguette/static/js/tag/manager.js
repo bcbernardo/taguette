@@ -156,8 +156,6 @@ function mergeTags(tag_src, tag_dest) {
     findTagAndDelete(tag_src);
 
     updateTagsList();
-
-    selectTag(treeview_tags, tag_dest)
 }
 
 function selectTag(treeview, tag_id) {
@@ -184,11 +182,12 @@ function updateTagCount(tagsId) {
 
     for (const key in tagsId) {
         const tagId = parseInt(key);
-        const value = parseInt(tagsId[key]);
+        const tagData = tagsId[key];
         const tagToUpdate = findTag(tagId);
 
         if (tagToUpdate) {
-            tagToUpdate.count = parseInt(tagToUpdate.count) + value;
+            tagToUpdate.count = tagData.highlights_count;
+            tagToUpdate.count_document = tagData.documents_count;
         }
     }
 
@@ -244,23 +243,39 @@ function sortTagsByKey(array, key, reverse) {
 }
 
 function handleSearch(filterText) {
+    function searchInChildren(item) {
+        const filteredChildren = [];
 
-    return tags.filter(item => {
+        item.children.forEach(child => {
+            const childMatches = child.path.toLowerCase().includes(filterText);
+            const matchingChildren = searchInChildren(child);
 
-        if (item.path.toLowerCase().includes(filterText)) {
-            return true;
-        }
-
-        // Check in children too
-        if (item.children && item.children.length > 0) {
-            const filteredChildren = item.children.filter(child => child.path.toLowerCase().includes(filterText));
-            if (filteredChildren.length > 0) {
-                return true;
+            if (childMatches || matchingChildren.length > 0) {
+                filteredChildren.push({
+                    ...child,
+                    children: matchingChildren
+                });
             }
-        }
+        });
 
-        return false;
-    });
+        return filteredChildren;
+    }
+
+    return tags
+        .map(item => {
+            const matches = item.path.toLowerCase().includes(filterText);
+            const filteredChildren = searchInChildren(item);
+
+            if (matches || filteredChildren.length > 0) {
+                return {
+                    ...item,
+                    children: filteredChildren
+                };
+            }
+
+            return null;
+        })
+        .filter(item => item !== null);
 }
 
 function submitTagCreation(tag, callbackSuccess, callbackFail) {
@@ -340,9 +355,17 @@ function generateTagBadgeHtml(tag, index, condition) {
     if (index > 0) {
         conditionTextHtml = getConditionText(condition);
     }
-    return `${conditionTextHtml}<span title="${tag.path}" style="background-color: ${tag.color}; color: white; padding: 3px 8px; border-radius: 15px; margin-top: 15px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+    return `${conditionTextHtml}<span title="${tag.path}" class="tag-badge" style="background-color: ${tag.color};">
         ${abbreviation}
-        <button onclick="removeTagBadge(${tag.id})" style="background-color: transparent; border: none; color: white; cursor: pointer; margin-left: 5px;font-size: 1rem; font-weight: bold">x</button>
+        <button onclick="removeTagBadge(${tag.id})" class="tag-badge-button">x</button>
+    </span>`;
+}
+
+function generateTagBadgeForHighlight(tag) {
+    const abbreviation = abbreviateTag(tag.path);
+    return `<span class="tag-badge me-2 my-2" title="${tag.path}" style="background-color: ${tag.color};">
+        ${abbreviation}
+        <button onclick="removeHighLightSelectedTagBadge(${tag.id})" class="tag-badge-button">x</button>
     </span>`;
 }
 
@@ -358,36 +381,58 @@ function getConditionText(condition) {
 }
 
 function showTagSelection() {
-    const tagsCriteria = $('#tag-selection-criteria');
+    const tagsCriteria = $('#tag-selection-criteria-area');
 
-    let criteriaContent = '';
-
-    if (selectedTags.length > 0) {
-        criteriaContent += `<div class="d-flex justify-content-between">`;
-        criteriaContent += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
-        criteriaContent += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
+    let content = '';
+    if (selectedTags.length > 1) {
+        content += `<div class="d-flex justify-content-between">`;
+        content += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
+        content += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
             `<i class="fa fa-times" aria-hidden="true" title="${gettext("Clear selection")}"></i></span>`;
-        criteriaContent += `</div>`;
+        content += `</div>`;
 
         tagsCriteria.show();
         selectedTags.forEach((item, index) => {
             const tag = findTag(item.id);
-            criteriaContent += generateTagBadgeHtml(tag, index, item.condition);
+            content += generateTagBadgeHtml(tag, index, item.condition);
         });
     } else {
         tagsCriteria.hide();
     }
-    tagsCriteria.html(criteriaContent);
+    tagsCriteria.html(content);
 }
 
-function emptyTagSelection(unSelectNode = false) {
-    //keep reselect instead of empty
+function showHighlightTagSelection() {
+
+    const HighlightSelectedTagsArea = $('#highlight-selected-tag-area');
+
+    let content = '';
+
+    if (highlightSelectedTags.length > 0) {
+        content += `<div class="d-flex justify-content-between">`;
+        content += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
+        content += `</div>`;
+
+        HighlightSelectedTagsArea.show();
+        highlightSelectedTags.forEach((item, index) => {
+            const tag = findTag(item);
+            content += generateTagBadgeForHighlight(tag, index, item.condition);
+        });
+    } else {
+        HighlightSelectedTagsArea.hide();
+    }
+    HighlightSelectedTagsArea.html(content);
+
+}
+
+function emptyTagSelection(unSelectNode = false, collapse = true) {
     selectedTags = [];
     showTagSelection();
     hideTagReturnLink();
-
     if (unSelectNode) {
         deselectAllNodes('treeview-tags');
+        isExplorationMode = false;
+        initTagsTreeview(collapse);
     }
 }
 
@@ -402,6 +447,13 @@ function removeTagBadge(tagId) {
     showTagSelection();
     const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags', tagId);
     unselectNode('treeview-tags', nodeId);
+}
+
+function removeHighLightSelectedTagBadge(tagId) {
+    highlightSelectedTags = highlightSelectedTags.filter(item => item !== tagId);
+    showHighlightTagSelection();
+    const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', tagId);
+    unselectNode('treeview-tags-highlight', nodeId);
 }
 
 function abbreviateTag(tagPath) {

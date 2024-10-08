@@ -7,15 +7,12 @@
         <!-- Tab selector -->
         <ul class="nav nav-tabs mx-3" id="myTab" role="tablist">
             <li class="nav-item">
-                <a class="nav-link" id="project-tab" data-test-id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" id="documents-tab" data-test-id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Documents{% endtrans %}</a>
+                <a class="nav-link active" id="project-tab" data-test-id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
             </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade" id="project" role="tabpanel" aria-labelledby="project-tab">
+            <div class="tab-pane fade show active" id="project" role="tabpanel" aria-labelledby="project-tab">
                 <div class="px-5">
                     <form id="project-metadata-form" >
                         <div class="form-group">
@@ -92,20 +89,7 @@
                 </div>
             </div>
 
-            <!-- List of documents -->
-            <div class="tab-pane fade show active" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                <div class="row">
-                    <div class="col-md-12">
-                        <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
-                    </div>
-                </div>
-                <ul class="list-group list-group-flush" id="documents-list">
-                    <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-                </ul>
-            </div>
         </div>
-
-
 
     </div>
 

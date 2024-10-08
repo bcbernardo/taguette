@@ -408,6 +408,7 @@ a.dropdown-item:hover {
   background-color: white;
   border: 1px solid grey;
   padding: 0.2em;
+    z-index: 999;
 }
 
 #hlinfo em {
@@ -450,8 +451,69 @@ a.dropdown-item:hover {
 }
 
 .draggable {
-    cursor: grab;
+    /*cursor: grab;*/
     user-select: none;
+}
+
+.smooth-stroke {
+    transition: stroke-width 0.3s ease-in-out;
+}
+
+.col-md-2-5 {
+    width: 20.8333% !important;
+}
+
+.col-md-7-5 {
+    width: calc(100% - 41.6666%) !important;
+}
+
+.reduced-col {
+    width: 5% !important;
+}
+
+.full-width {
+    width: calc(100% - 10%) !important;
+}
+
+.hidden-col {
+    display: none !important;
+}
+
+.expanded-col {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+.reduced-col {
+    flex: 0 0 5% !important;
+    max-width: 5% !important;
+    overflow: hidden;
+}
+
+.reduced-col .panel-content {
+    display: none;
+}
+
+.reduced-col .btn-outline-secondary {
+    transform: rotate(180deg);
+    display: block;
+    margin: auto;
+}
+
+.reduced-col .btn-outline-secondary {
+    transform: rotate(180deg);
+}
+
+.expanded-col {
+    flex: 0 0 70% !important;
+    max-width: 70% !important;
+}
+
+.bordered-container {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 .dropdown-toggle {
@@ -892,7 +954,7 @@ Document custom select
     background-color: #f0f0f0;
 }
 
-#tag-selection-criteria {
+.tag-selection-box {
     display: none;
     border: 1px solid #cccccc;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -901,6 +963,26 @@ Document custom select
     background-color: #ffffff;
     margin: 10px 0;
     width: 100%;
+}
+
+.tag-badge {
+    color: white;
+    padding: 3px 8px;
+    border-radius: 15px;
+    margin-top: 15px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.tag-badge-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 1rem;
+    font-weight: bold;
 }
 
 #clear-selection:hover i {

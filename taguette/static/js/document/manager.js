@@ -16,7 +16,7 @@ function linkDocument(elem, doc_id, highlight_id=null, search_text=null) {
     elem.addEventListener('click', function (e) {
         e.preventDefault();
         window.history.pushState({document_id: doc_id, highlight_id: highlight_id, search_text: search_text}, "Document " + doc_id, url);
-        loadDocument(doc_id, highlight_id, search_text);
+        loadDocument(doc_id, highlight_id, true, search_text);
         if(highlight_id !== null && !isNaN(highlight_id)) {
             const tags_return = $('#tag-selection-return'),
                 tags_return_link = $('a', tags_return);

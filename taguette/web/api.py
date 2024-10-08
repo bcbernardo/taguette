@@ -276,7 +276,7 @@ class Document(BaseHandler):
                 self.db.commit()
                 self.db.refresh(cmd)
                 self.application.notify_project(document.project_id, cmd)
-
+            
             return self.send_json({'id': document.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating DocumentUpdate: %r", e)
@@ -508,6 +508,39 @@ class TagMerge(BaseHandler):
         return self.send_json({'id': tag_dest.id})
 
 
+def calculate_tag_counts(db_session, tag_in_db, document,  is_deletion=False):
+
+    # Increment or decrement the number of highlights associated with the tag
+    highlights_count = tag_in_db.highlights_count
+    
+    # Get the list of associated document IDs, or an empty list if None
+    document_ids = tag_in_db.document_ids if tag_in_db.document_ids is not None else []
+    documents_count = len(document_ids)
+    
+    if is_deletion:
+        highlights_count -= 1
+    else:
+        highlights_count += 1
+    
+    if is_deletion:
+        # Check if there are still any highlights associated with the document
+        remaining_highlights = db_session.query(database.Highlight).join(database.highlight_tags).filter(
+            database.highlight_tags.c.tag_id == tag_in_db.id,
+            database.Highlight.document_id == document.id
+        ).count()
+        
+        if remaining_highlights == 0:
+            documents_count -= 1
+    else:
+        if document.id not in document_ids:
+            documents_count += 1
+        
+    return {
+        'highlights_count': highlights_count,
+        'documents_count': documents_count
+    }
+
+
 class HighlightAdd(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('highlight_add')
@@ -518,7 +551,7 @@ class HighlightAdd(BaseHandler):
         obj = self.get_json()
         start, end = obj['start_offset'], obj['end_offset']
         new_tags = set(obj.get('tags', []))
-
+        
         # Check the tags exist and are in this project
         tags = (
             self.db.query(database.Tag)
@@ -526,10 +559,10 @@ class HighlightAdd(BaseHandler):
             .filter(database.Tag.project_id == document.project_id)
             .all()
         )
+        snippet = extract.extract(document.contents, start, end)
         if set(tag.id for tag in tags) != new_tags:
             return self.send_error_json(400, self.gettext("No such tag"))
 
-        snippet = extract.extract(document.contents, start, end)
         if all(c in '\r\n\t' for c in snippet):
             return self.send_error_json(400, self.gettext("Empty highlight"))
 
@@ -552,13 +585,19 @@ class HighlightAdd(BaseHandler):
                     for tag in sorted(new_tags)
                 ],
             )
+            
+        tag_count_changes = {}
+        for tag in tags:
+            tag_in_db = self.db.query(database.Tag).get(tag.id)
+            tag_count_changes[tag.id] = calculate_tag_counts(self.db, tag_in_db, document)
+        
         cmd = database.Command.highlight_add(
             self.current_user,
             document,
             hl,
             sorted(new_tags),
         )
-        cmd.tag_count_changes = {tag: 1 for tag in obj.get('tags')}
+        cmd.tag_count_changes = tag_count_changes
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -627,9 +666,17 @@ class HighlightUpdate(BaseHandler):
                 # Compute the change in tag counts
                 tag_count_changes = {}
                 for tag in old_tags - new_tags:
-                    tag_count_changes[tag] = -1
+                    tag_in_db = self.db.query(database.Tag).get(tag)
+                    tag_count_changes[tag] = {
+                        'highlights_count': tag_in_db.highlights_count,
+                        'documents_count': tag_in_db.documents_count
+                    }
+                
                 for tag in new_tags - old_tags:
-                    tag_count_changes[tag] = 1
+                    tag_in_db = self.db.query(database.Tag).get(tag)
+                    tag_count_changes[tag] = calculate_tag_counts(self.db,
+                                                                  tag_in_db,
+                                                                  document)
             else:
                 # Obtain old tags from database
                 new_tags = set(
@@ -670,12 +717,21 @@ class HighlightUpdate(BaseHandler):
             .all()
         ]
         self.db.delete(hl)
+        # Compute the change in tag counts for each old tag
+        tag_count_changes = {}
+        for tag in old_tags:
+            tag_in_db = self.db.query(database.Tag).get(tag)
+            tag_count_changes[tag] = calculate_tag_counts(self.db,
+                                                          tag_in_db,
+                                                          document,
+                                                          is_deletion=True)
+        
         cmd = database.Command.highlight_delete(
             self.current_user,
             document,
             hl.id,
         )
-        cmd.tag_count_changes = {tag: -1 for tag in old_tags}
+        cmd.tag_count_changes = tag_count_changes
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -746,7 +802,7 @@ class Highlights(BaseHandler):
                                     .filter(tag.path.in_(group))
                                     .group_by(hl_tag.c.highlight_id)
                                     .having(func.count(
-                                        distinct(tag.id)) == len(group))
+                        distinct(tag.id)) == len(group))
                                     .subquery())
                     or_conditions.append(database.Highlight.id.in_(
                         self.db.query(and_subquery.c.highlight_id)))
