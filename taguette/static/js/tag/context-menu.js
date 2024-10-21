@@ -1,10 +1,10 @@
-const treeviewTags = 'treeview-tags';
+
 function addContextMenu() {
     $.contextMenu({
         selector: '.tag-context-menu',
         build: function ($trigger) {
             const nodeId = $trigger.attr('id');
-            const node = getNode(treeviewTags, nodeId);
+            const node = getNode(treeview_tags, nodeId);
 
             let items = generateContextMenuItems(node);
 
@@ -18,7 +18,7 @@ function addContextMenu() {
 
 function generateContextMenuItems(node) {
 
-    const tagId = getTagIdFromTreeviewNode(treeviewTags, node.nodeId);
+    const tagId = getTagIdFromTreeviewNode(treeview_tags, node.nodeId);
     const tag = findTag(tagId);
 
     const hasChildren = tag.children.length > 0;
@@ -26,7 +26,7 @@ function generateContextMenuItems(node) {
     const isExpanded = node.state.expanded;
     const isSelected = node.state.selected;
 
-    const selectedNodes = getAllSelectedNodes(treeviewTags).length > 0;
+    const selectedNodes = getAllSelectedNodes(treeview_tags).length > 0;
     const hasSelectedChildren = checkNodeHasSelectedChildren(node);
     const hasUnselectedChildren = checkNodeHasUnselectedChildren(node);
 
@@ -111,14 +111,14 @@ function contextMenuAction(action, param) {
 }
 
 const actions = {
-    selectAll: nodeId => selectNodeAndChildren(treeviewTags, nodeId),
-    unselectAll: nodeId => unselectNodeAndChildren(treeviewTags, nodeId),
-    selectAnd: nodeId => selectWithCondition(treeviewTags, nodeId, 'and'),
-    selectOr: nodeId => selectWithCondition(treeviewTags, nodeId, 'or'),
-    selectNot: nodeId => selectWithCondition(treeviewTags, nodeId, 'not'),
-    expand: nodeId => expandNode(treeviewTags, nodeId),
-    collapse: nodeId => collapseNode(treeviewTags, nodeId),
-    unselect: nodeId => unselectNode(treeviewTags, nodeId),
+    selectAll: nodeId => selectNodeAndChildren(treeview_tags, nodeId),
+    unselectAll: nodeId => unselectNodeAndChildren(treeview_tags, nodeId),
+    selectAnd: nodeId => selectWithCondition(treeview_tags, nodeId, 'and'),
+    selectOr: nodeId => selectWithCondition(treeview_tags, nodeId, 'or'),
+    selectNot: nodeId => selectWithCondition(treeview_tags, nodeId, 'not'),
+    expand: nodeId => expandNode(treeview_tags, nodeId),
+    collapse: nodeId => collapseNode(treeview_tags, nodeId),
+    unselect: nodeId => unselectNode(treeview_tags, nodeId),
     edit: tagId => editTag(tagId),
     addChild: tagId => createTag(null, current_selection, tagId),
     merge: tagId => mergeTag(tagId),

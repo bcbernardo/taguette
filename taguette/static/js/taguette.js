@@ -328,7 +328,7 @@ function highlightModalReset() {
     showHighlightTagSelection();
     hideSearchErrorMessage();
     savedSelections = [];
-    initTagsHighlightTreeview(false);
+    initTagsHighlightTreeview();
 }
 
 
@@ -1152,20 +1152,25 @@ window.onpopstate = function (e) {
  * Attach input change for tag search event
  */
 const TAG_NOT_FOUND_MESSAGE = gettext("No tag found");
+const alert_tag_treeview = $('#alert-tag-treeview');
+const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 document.getElementById('input-search-tags').addEventListener('input', function () {
-    const alert_tag_treeview = $('#alert-tag-treeview');
-    const filterText = $('#input-search-tags').val().toLowerCase();
+    const filterText = $(this).val().toLowerCase();
     alert_tag_treeview.addClass('d-none')
+    if(filterText === '') {
+        initTagsTreeview();
+        collapseAllNodes(treeview_tags);
+        return;
+    }
     const filteredTags = handleSearch(filterText);
-    initTagsTreeview(false, filteredTags);
+    initTagsTreeview(filteredTags);
+    expandAllNodes(treeview_tags);
     if (filteredTags.length === 0) {
         alert_tag_treeview.removeClass('d-none')
         alert_tag_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
-
-const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 function saveSelectedNodes(treeview) {
     const selectedNodes = treeview.treeview('getSelected');
@@ -1174,8 +1179,8 @@ function saveSelectedNodes(treeview) {
 
 function restoreSelectedNodes(treeview, savedNodeIds) {
     savedNodeIds.forEach(id => {
-        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', id)
-        selectNode('treeview-tags-highlight', nodeId);
+        const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
+        selectNode(treeview_tags_highlight, nodeId);
     });
 }
 
@@ -1183,7 +1188,7 @@ let savedSelections = [];
 
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
 
-        const filterText = $('#input-search-tags-highlight').val().toLowerCase();
+        const filterText = $(this).val().toLowerCase();
         hideSearchErrorMessage();
 
         // save selected tags
@@ -1196,7 +1201,7 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         });
 
         const filteredTags = handleSearch(filterText);
-        initTagsHighlightTreeview(false, filteredTags);
+        initTagsHighlightTreeview(filteredTags);
         if (filteredTags.length === 0) {
             showSearchErrorMessage();
             alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)

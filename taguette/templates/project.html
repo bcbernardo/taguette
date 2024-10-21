@@ -31,8 +31,8 @@
                         </button>
                         <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
                             <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:expandAllNodes('treeview-tags')">{% trans %}Expand all{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:collapseAllNodes('treeview-tags')">{% trans %}Collapse all{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans %}Expand all{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans %}Collapse all{% endtrans %}</a>
                         </div>
                     </div>
                     <div class="dropdown ms-2">
@@ -186,8 +186,8 @@
     $(document).ready(function(){
 
         sortTagsBy('path', 'asc')
-        initTagsTreeview(true);
-        initTagsHighlightTreeview(false);
+        initTagsTreeview();
+        initTagsHighlightTreeview();
         initTagHierarchySelect();
         initMergeTagHierarchySelect();
         addContextMenu();
