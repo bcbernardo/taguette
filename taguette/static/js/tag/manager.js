@@ -1,11 +1,16 @@
 const SPLICE_DEFAULT_INDEX = 1;
 const DEFAULT_COUNT = 0;
+
+// Find a tag by its ID or path in the tag tree
 const findTag = (id) => {
+    // Recursive function to search for a tag
     const recursiveSearch = (tag) => {
+        // Check if current tag matches the search criteria
         if (tag.id === parseInt(id) || tag.path === id) {
             return tag;
         }
 
+        // Search in children if present
         if (tag.children) {
             for (const child of tag.children) {
                 const found = recursiveSearch(child);
@@ -18,6 +23,7 @@ const findTag = (id) => {
         return null;
     };
 
+    // Iterate through all top-level tags
     for (const tag of tags) {
         const found = recursiveSearch(tag);
         if (found) {
@@ -27,6 +33,25 @@ const findTag = (id) => {
 
     return null;
 }
+
+// Find the root parent of tag
+function findRootParent(tagId) {
+    const tag = findTag(tagId);
+    if (tag && tag.parent) {
+        return findRootParent(tag.parent);
+    }
+    return tagId;
+}
+
+function highlightNewTag(tagId) {
+    const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
+    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    nodeElement.addClass('highlight-new-tag');
+    setTimeout(() => {
+        nodeElement.addClass('fade-out');
+    }, 3000);
+}
+
 
 const findTagAndDelete = (id) => {
 
@@ -42,84 +67,111 @@ const findTagAndDelete = (id) => {
     }
 }
 
-/*
-  addTag
- */
+// Main function to add or update a tag
 function addTag(tag) {
     // Check if the tag with the same id already exists
     let existingTag = findTag(tag.id);
     const existingTagColor =  existingTag?.color ?? '';
 
     if (existingTag) {
-        if (tag.parent) {
-            // Tag has a parent
-
-            if (!existingTag.parent) {
-                // Existing tag had no parent
-                const parentTag = findTag(tag.parent);
-                findTagAndDelete(tag.id);
-
-                // Update existing tag and move it to the new parent
-                Object.assign(existingTag, tag);
-                parentTag.children = parentTag.children || [];
-                parentTag.children.push(existingTag);
-            } else {
-                // Existing tag already had a parent
-
-                if (tag.parent === existingTag.parent) {
-                    // Same parent, update existing tag
-                    Object.assign(existingTag, tag);
-                } else {
-                    // Different parent, move the tag to the new parent
-                    const parentTag = findTag(tag.parent);
-                    const existingParent = findTag(existingTag.parent);
-
-                    Object.assign(existingTag, tag);
-                    parentTag.children = parentTag.children || [];
-                    parentTag.children.push(existingTag);
-
-                    // Remove from the previous parent
-                    const indexToDelete = existingParent.children.findIndex(item => item.id === existingTag.id);
-                    existingParent.children.splice(indexToDelete, SPLICE_DEFAULT_INDEX);
-                }
-            }
-        } else {
-            // Existing tag has parent, but the new tag has no parent
-            if (existingTag.parent) {
-                const parentTag = findTag(existingTag.parent);
-                const indexToDelete = parentTag.children.findIndex(item => item.id === existingTag.id);
-                parentTag.children.splice(indexToDelete, SPLICE_DEFAULT_INDEX);
-                tags.push(existingTag);
-            }
-
-            // Update existing tag
-            Object.assign(existingTag, tag);
-
-        }
+        updateExistingTag(existingTag, tag);
     } else {
-        // Tag with the same id does not exist
-        if (tag.parent) {
-            // Find parent and add the new tag
-            const parentTag = findTag(tag.parent);
-            parentTag.children = parentTag.children || [];
-            parentTag.children.push(Object.assign({count: DEFAULT_COUNT,
-                count_document: DEFAULT_COUNT,
-                children: []}, tag));
-        } else {
-            // Add new tag with default values
-            tags.push(Object.assign({count: DEFAULT_COUNT,
-                count_document: DEFAULT_COUNT,
-                children: []}, tag));
-        }
+        addNewTag(tag);
     }
 
-    // Check if the tag color has changed
-    if(existingTagColor !== '' && (existingTagColor !== tag.color)) {
-        // Todo: check if tag is in highlight before update doc
-        updateAndLoadDocument()
-    }
-
+    checkColorChangeAndUpdate(existingTagColor, tag.color);
     updateTagsList();
+    if(!tag.parent) {
+        highlightNewTag(tag.id);
+        return;
+    }
+    expandNodeParent(tag.parent);
+    highlightNewTag(tag.id);
+}
+
+// Function to add a new tag to the tag tree
+function addNewTag(tag) {
+    const newTag = {
+        ...tag,
+        count: DEFAULT_COUNT,
+        count_document: DEFAULT_COUNT,
+        children: []
+    };
+
+    if (tag.parent) {
+        const parentTag = findTag(tag.parent);
+        if (!parentTag) {
+            return;
+        }
+        parentTag.children = parentTag.children || [];
+        parentTag.children.push(newTag);
+    } else {
+        tags.push(newTag);
+    }
+}
+
+// Function to update an existing tag
+function updateExistingTag(existingTag, newTag) {
+    if (newTag.parent) {
+        handleExistingTagWithParent(existingTag, newTag);
+    } else {
+        handleExistingTagWithoutParent(existingTag, newTag);
+    }
+}
+
+// Handle updating an existing a tag that has a parent
+function handleExistingTagWithParent(existingTag, newTag) {
+    const newParent = findTag(newTag.parent);
+    if (!newParent) {
+        return;
+    }
+
+    if (!existingTag.parent) {
+        // If the existing tag had no parent, move it to the new parent
+        findTagAndDelete(newTag.id);
+        moveTagToNewParent(existingTag, newParent);
+    } else if (newTag.parent !== existingTag.parent) {
+        // If the tag is moving to a different parent
+        const oldParent = findTag(existingTag.parent);
+        removeTagFromParent(existingTag, oldParent);
+        moveTagToNewParent(existingTag, newParent);
+    }
+
+    // Update the existing tag with new properties
+    Object.assign(existingTag, newTag);
+}
+
+// Handle updating an existing tag that has no parent
+function handleExistingTagWithoutParent(existingTag, newTag) {
+    if (existingTag.parent) {
+        // If the existing tag had a parent, remove it from the parent and add to top level
+        const oldParent = findTag(existingTag.parent);
+        removeTagFromParent(existingTag, oldParent);
+        tags.push(existingTag);
+    }
+    // Update the existing tag with new properties
+    Object.assign(existingTag, newTag);
+}
+
+// Move a tag to a new parent
+function moveTagToNewParent(tag, newParent) {
+    newParent.children = newParent.children || [];
+    newParent.children.push(tag);
+}
+
+// Remove a tag from its parent
+function removeTagFromParent(tag, parent) {
+    if (!parent || !parent.children) return;
+    const index = parent.children.findIndex(child => child.id === tag.id);
+    if (index !== -1) {
+        parent.children.splice(index, 1);
+    }
+}
+
+function checkColorChangeAndUpdate(oldColor, newColor) {
+    if (oldColor !== '' && oldColor !== newColor) {
+        updateAndLoadDocument();
+    }
 }
 
 function updateAndLoadDocument() {
@@ -135,11 +187,15 @@ function updateAndLoadDocument() {
 }
 
 function removeTag(id) {
-
     // Remove from list of tags
-    findTagAndDelete(id)
+    const tagToDelete = findTag(id);
+    findTagAndDelete(id);
 
     updateTagsList();
+    if(!tagToDelete.parent) {
+        return;
+    }
+    expandNodeParent(tagToDelete.parent);
 }
 
 /*
@@ -156,6 +212,10 @@ function mergeTags(tag_src, tag_dest) {
     findTagAndDelete(tag_src);
 
     updateTagsList();
+    if(!tagToUpdate.parent) {
+        return;
+    }
+    expandNodeParent(tagToUpdate.parent);
 }
 
 function selectTag(treeview, tag_id) {
@@ -191,7 +251,7 @@ function updateTagCount(tagsId) {
         }
     }
 
-    initTagsTreeview(false);
+    initTagsTreeview();
 }
 
 /*
@@ -203,9 +263,9 @@ function updateTagsList() {
     sortTagsByKey(tags, sortTags[0], isReverse);
 
     // update all treeview and select tags
-    initTagsTreeview(false);
+    initTagsTreeview();
 
-    initTagsHighlightTreeview(false);
+    initTagsHighlightTreeview();
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
     hideSearchErrorMessage();
@@ -213,7 +273,7 @@ function updateTagsList() {
     //check if create from highlight modal
     if(createTagFromHighlight) {
         console.log('tag from id');
-        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', last_added_tag)
+        const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, last_added_tag)
         treeview_tags_highlight.treeview('selectNode', nodeId);
     }
 }
@@ -355,9 +415,17 @@ function generateTagBadgeHtml(tag, index, condition) {
     if (index > 0) {
         conditionTextHtml = getConditionText(condition);
     }
-    return `${conditionTextHtml}<span title="${tag.path}" style="background-color: ${tag.color}; color: white; padding: 3px 8px; border-radius: 15px; margin-top: 15px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+    return `${conditionTextHtml}<span title="${tag.path}" class="tag-badge" style="background-color: ${tag.color};">
         ${abbreviation}
-        <button onclick="removeTagBadge(${tag.id})" style="background-color: transparent; border: none; color: white; cursor: pointer; margin-left: 5px;font-size: 1rem; font-weight: bold">x</button>
+        <button onclick="removeTagBadge(${tag.id})" class="tag-badge-button">x</button>
+    </span>`;
+}
+
+function generateTagBadgeForHighlight(tag) {
+    const abbreviation = abbreviateTag(tag.path);
+    return `<span class="tag-badge me-2 my-2" title="${tag.path}" style="background-color: ${tag.color};">
+        ${abbreviation}
+        <button onclick="removeHighLightSelectedTagBadge(${tag.id})" class="tag-badge-button">x</button>
     </span>`;
 }
 
@@ -373,36 +441,58 @@ function getConditionText(condition) {
 }
 
 function showTagSelection() {
-    const tagsCriteria = $('#tag-selection-criteria');
+    const tagsCriteria = $('#tag-selection-criteria-area');
 
-    let criteriaContent = '';
-
-    if (selectedTags.length > 0) {
-        criteriaContent += `<div class="d-flex justify-content-between">`;
-        criteriaContent += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
-        criteriaContent += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
+    let content = '';
+    if (selectedTags.length > 1) {
+        content += `<div class="d-flex justify-content-between">`;
+        content += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
+        content += `<span id="clear-selection" onclick="emptyTagSelection(true)" style="cursor:pointer;">` +
             `<i class="fa fa-times" aria-hidden="true" title="${gettext("Clear selection")}"></i></span>`;
-        criteriaContent += `</div>`;
+        content += `</div>`;
 
         tagsCriteria.show();
         selectedTags.forEach((item, index) => {
             const tag = findTag(item.id);
-            criteriaContent += generateTagBadgeHtml(tag, index, item.condition);
+            content += generateTagBadgeHtml(tag, index, item.condition);
         });
     } else {
         tagsCriteria.hide();
     }
-    tagsCriteria.html(criteriaContent);
+    tagsCriteria.html(content);
 }
 
-function emptyTagSelection(unSelectNode = false) {
-    //keep reselect instead of empty
+function showHighlightTagSelection() {
+
+    const HighlightSelectedTagsArea = $('#highlight-selected-tag-area');
+
+    let content = '';
+
+    if (highlightSelectedTags.length > 0) {
+        content += `<div class="d-flex justify-content-between">`;
+        content += `<span style='font-size: 0.9rem'>${gettext("Your selection")} :</span>`;
+        content += `</div>`;
+
+        HighlightSelectedTagsArea.show();
+        highlightSelectedTags.forEach((item, index) => {
+            const tag = findTag(item);
+            content += generateTagBadgeForHighlight(tag, index, item.condition);
+        });
+    } else {
+        HighlightSelectedTagsArea.hide();
+    }
+    HighlightSelectedTagsArea.html(content);
+
+}
+
+function emptyTagSelection(unSelectNode = false, collapse = true) {
     selectedTags = [];
     showTagSelection();
     hideTagReturnLink();
-
     if (unSelectNode) {
-        deselectAllNodes('treeview-tags');
+        deselectAllNodes(treeview_tags);
+        isExplorationMode = false;
+        initTagsTreeview();
     }
 }
 
@@ -415,8 +505,15 @@ function hideTagReturnLink() {
 function removeTagBadge(tagId) {
     selectedTags = selectedTags.filter(tag => tag.id !== tagId);
     showTagSelection();
-    const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags', tagId);
-    unselectNode('treeview-tags', nodeId);
+    const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
+    unselectNode(treeview_tags, nodeId);
+}
+
+function removeHighLightSelectedTagBadge(tagId) {
+    highlightSelectedTags = highlightSelectedTags.filter(item => item !== tagId);
+    showHighlightTagSelection();
+    const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, tagId);
+    unselectNode(treeview_tags_highlight, nodeId);
 }
 
 function abbreviateTag(tagPath) {

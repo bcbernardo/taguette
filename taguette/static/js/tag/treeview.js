@@ -1,23 +1,25 @@
 const treeview_tags = $('#treeview-tags');
 const treeview_tags_highlight = $('#treeview-tags-highlight');
 
-const DEFAULT_LEVEL_OPTION = 5
+const DEFAULT_LEVEL_OPTION = 5;
+const CUSTOM_LEVEL_OPTION = 3;
 
-let selectedTags = []
+let selectedTags = [];
+let highlightSelectedTags = [];
+
+let isExplorationMode = false;
+let isProgrammaticSelection = false;
 
 function getNode(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getNode', parseInt(nodeId));
+    return treeview.treeview('getNode', parseInt(nodeId));
 }
 
 function getAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getEnabled');
+    return treeview.treeview('getEnabled');
 }
 
 function getAllSelectedNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getSelected');
+    return treeview.treeview('getSelected');
 }
 
 function treeviewHasChildren(treeview) {
@@ -36,58 +38,84 @@ function treeviewHasChildren(treeview) {
 
 function selectNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
-
     if (node && node.state && !node.state.selected) {
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+        isProgrammaticSelection = true;
+        treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+        isProgrammaticSelection = false;
     } else {
         log(`Node with nodeId ${nodeId} not found or already selected.`);
     }
 }
 
 function unselectNode(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
     if (node.state.selected) {
-        $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
     }
 }
 
 function deselectAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
     const allNodes = getAllNodes(treeview);
     allNodes.forEach(node => {
         if (node.state.selected) {
-            $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+            treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
         }
     });
 }
 
 function toggleNodeSelection(treeview, nodeId, select = true) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
-
     //check if change is needed
     if (node.state.selected !== select) {
         const action = select ? 'selectNode' : 'unselectNode';
-        $treeview.treeview(action, [node.nodeId, {silent: false}]);
+        treeview.treeview(action, [node.nodeId, {silent: false}]);
     }
 }
 
 function selectNodeAndChildren(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    expandNode(treeview, nodeId);
-    const node = getNode(treeview, nodeId);
-    selectSingleNodeAndChildren($treeview, node);
+    isExplorationMode = true;
+    isProgrammaticSelection = true;
+    initTagsTreeview();
+    setTimeout(() => {
+        expandNode(treeview, nodeId);
+        const node = getNode(treeview, nodeId);
+        selectSingleNodeAndChildren(treeview, node);
+    }, 10);
+
 }
 
 function unselectNodeAndChildren(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    const node = getNode(treeview, nodeId);
-    unselectSingleNodeAndChildren($treeview, node);
+    setTimeout(() => {
+        const node = getNode(treeview, nodeId);
+        unselectSingleNodeAndChildren(treeview, node);
+    }, 10);
 }
-function selectSingleNodeAndChildren(treeview, node) {
 
+function checkNodeHasSelectedChildren(node) {
+    if (node.nodes && node.nodes.length > 0) {
+        return node.nodes.some(function (childNode) {
+            if (childNode.state.selected) {
+                return true;
+            }
+            return checkNodeHasSelectedChildren(childNode);
+        });
+    }
+    return false;
+}
+
+function checkNodeHasUnselectedChildren(node) {
+    if (node.nodes && node.nodes.length > 0) {
+        return node.nodes.some(function (childNode) {
+            if (!childNode.state.selected) {
+                return true;
+            }
+            return checkNodeHasUnselectedChildren(childNode);
+        });
+    }
+    return false;
+}
+
+function selectSingleNodeAndChildren(treeview, node) {
     if (!node.state.selected) {
         treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
         if (node.nodes && node.nodes.length > 0) {
@@ -98,9 +126,7 @@ function selectSingleNodeAndChildren(treeview, node) {
     }
 }
 function unselectSingleNodeAndChildren(treeview, node) {
-
     if (node.state.selected) {
-
         treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
         if (node.nodes && node.nodes.length > 0) {
             node.nodes.forEach(function (childNode) {
@@ -110,61 +136,56 @@ function unselectSingleNodeAndChildren(treeview, node) {
     }
 }
 
+
+function expandNodeParent(tagParent) {
+    const rootParentId = findRootParent(tagParent);
+    const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, rootParentId);
+    expandNode(treeview_tags, nodeId);
+}
+
 function expandNode(treeview, nodeId) {
-
     const node = getNode(treeview, nodeId);
-
     if (!node.state.expanded) {
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('expandNode', [parseInt(nodeId, 10),
+        treeview.treeview('expandNode', [parseInt(nodeId, 10),
             {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
-        $treeview.data('expanded', true);
+        treeview.data('expanded', true);
     }
 }
 
 function collapseNode(treeview, nodeId) {
-
     const node = getNode(treeview, nodeId);
-
     if (node.state.expanded) {
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('collapseNode', [parseInt(nodeId, 10),
+        treeview.treeview('collapseNode', [parseInt(nodeId, 10),
             {silent: false}]);
     }
 }
 
 function toggleNodeExpansion(treeview, nodeId, expand = true) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
-
     // check action is expand or collapse
     const actionNeeded = expand ? !node.state.expanded : node.state.expanded;
-
     if (actionNeeded) {
         const action = expand ? 'expandNode' : 'collapseNode';
-        $treeview.treeview(action, [node.nodeId, {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
+        treeview.treeview(action, [node.nodeId, {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
     }
 }
 
 function expandAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    if (treeviewHasChildren(treeview) && !$treeview.data('expanded')) {
-        $treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
-        $treeview.data('expanded', true);
+    if (treeviewHasChildren(treeview) && !treeview.data('expanded')) {
+        treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
+        treeview.data('expanded', true);
     }
 }
 
-function collapseAllNodes(treeviewId) {
-    const $treeview = $(`#${treeviewId}`);
-    if ($treeview.length && $treeview.data('expanded')) {
-        $treeview.treeview('collapseAll', {silent: false});
-        $treeview.data('expanded', false);
+function collapseAllNodes(treeview) {
+    if (treeview.length && treeview.data('expanded')) {
+        treeview.treeview('collapseAll', {silent: false});
+        treeview.data('expanded', false);
     }
 }
 
 
 // custom treeview function
-
 function convertToTreeNode(data, includeTags) {
 
     function getNodeCount(item) {
@@ -191,7 +212,7 @@ function convertToTreeNode(data, includeTags) {
         return node;
     });
 }
-function initTagsTreeview(collapse = true, filterTags = null) {
+function initTagsTreeview(filterTags = null) {
 
     if (filterTags == null) {
         filterTags = tags
@@ -199,24 +220,50 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
+    const customNodeOptions = customNodeRow(true);
+
     const options = {
         data: treeData,
+        ...customNodeOptions,
+        customizeBadges: function(container, node, tree) {
+            container.addClass('d-flex align-items-center');
+            if (node.tags && node.tags.length > 0) {
+                container.append($('<span>', {
+                    class: 'badge badge-primary ms-1',
+                    title: 'Documents',
+                    text: node.tags[0]
+                }));
+                if (node.tags.length > 1) {
+                    container.append($('<span>', {
+                        class: 'badge badge-secondary ms-1 ms-2',
+                        title: 'Highlights',
+                        text: node.tags[1]
+                    }));
+                }
+            }
+        },
         showBorder: true,
         levels: DEFAULT_LEVEL_OPTION,
-        multiSelect: true,
         showTags: true
     };
 
-    treeview_tags.treeview(options);
-    treeview_tags.data('expanded', true);
-
-    if (collapse) {
-        treeview_tags.treeview('collapseAll');
-        treeview_tags.data('expanded', false);
+    if (isExplorationMode) {
+        options.multiSelect = true;
     }
 
-    treeview_tags.on('nodeSelected', function (event, data) {
-        addTagsHighlightSelection(data);
+    treeview_tags.treeview(options);
+    treeview_tags.treeview('collapseAll');
+    treeview_tags.data('expanded', false);
+
+    treeview_tags.on('nodeSelected', function (event, node) {
+        if (isExplorationMode && !isProgrammaticSelection){
+            const collapse = node.parentId;
+            emptyTagSelection(true, !collapse);
+            setTimeout(() => {
+                selectNode(treeview_tags, node.nodeId);
+            }, 10);
+        }
+        addTagsHighlightSelection(node);
         loadTagsHighlights();
     });
 
@@ -231,17 +278,15 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
         // Add a delay to ensure the treeview recreation is finished
         setTimeout(function () {
-            customizeNodeRow();
             addTagDragDrop();
         }, 10);
     });
 
-    customizeNodeRow();
     addTagDragDrop();
     emptyTagSelection();
 }
 
-function initTagsHighlightTreeview(collapse = true, filterTags = null) {
+function initTagsHighlightTreeview(filterTags = null) {
 
     if (filterTags == null) {
         filterTags = tags
@@ -249,30 +294,31 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
+    const customNodeOptions = customNodeRow();
+
     const options = {
         data: treeData,
+        ...customNodeOptions,
         showBorder: true,
-        showCheckbox: true,
+        levels: CUSTOM_LEVEL_OPTION,
         multiSelect: true,
     };
 
     treeview_tags_highlight.treeview(options);
 
-    if (collapse) {
-        treeview_tags_highlight.treeview('collapseAll');
-    }
-
-    treeview_tags_highlight.on('nodeUnselected', function (event, data) {
-        savedSelections = savedSelections.filter(id => id !== data.id);
+    treeview_tags_highlight.on('nodeSelected', function (event, node) {
+        if (!highlightSelectedTags.some(item => item === node.id)) {
+            highlightSelectedTags.push(node.id);
+            showHighlightTagSelection();
+        }
     });
 
-    addTagUnderLineHighlightTreeview();
-
-    treeview_tags_highlight.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, data) {
-        // Add a delay to ensure the treeview recreation is finished
-        setTimeout(function () {
-            addTagUnderLineHighlightTreeview();
-        }, 10);
+    treeview_tags_highlight.on('nodeUnselected', function (event, node) {
+        savedSelections = savedSelections.filter(id => id !== node.id);
+        highlightSelectedTags = highlightSelectedTags.filter(function (item) {
+            return item !== node.id;
+        });
+        showHighlightTagSelection();
     });
 }
 
@@ -322,16 +368,33 @@ function loadTagsHighlights() {
        loadDocument(current_document)
     }
     setTimeout(function () {
-        customizeNodeRow();
         addTagDragDrop();
         showTagSelection();
     }, 10);
 }
 
 let selectCondition = 'or';
+
 function selectWithCondition(treeview, nodeId, condition) {
     selectCondition = condition;
-    selectNode(treeview, nodeId);
+
+    if(isExplorationMode) {
+        selectNode(treeview, nodeId);
+    } else {
+        isExplorationMode = true;
+        const selectedNodes = getAllSelectedNodes(treeview);
+        const node = getNode(treeview, nodeId);
+        initTagsTreeview();
+        if (node.parentId) {
+            const tag = findTag(node.id);
+            expandNodeParent(tag.parent);
+        }
+        selectedNodes.forEach(node => {
+            selectNode(treeview, node.nodeId);
+        });
+        selectNode(treeview, nodeId);
+    }
+
     selectCondition = 'or';
 }
 
@@ -368,107 +431,6 @@ function getNodeIdFromTreeviewByTagId(treeview, tagId) {
     }
 }
 
-function addTagUnderLineHighlightTreeview() {
-    $(".node-treeview-tags-highlight").each(function (index, element) {
-
-        const tagId = getTagIdFromTreeviewNode(
-            'treeview-tags-highlight',
-            $(element).data("nodeid"));
-
-        const hasChildren = findTag(tagId).children.length > 0;
-
-        if (!hasChildren) {
-            const $icon = $(element).find('.icon');
-            $icon.css('display', 'none');
-        }
-
-        addTagVerticalLine($(element), tagId);
-    })
-}
-
-function customizeNodeRow() {
-    $(".node-treeview-tags").each(function (index, element) {
-
-        const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
-
-        const hasChildren = findTag(tagId).children.length > 0;
-
-        if (!hasChildren) {
-            const $icon = $(element).find('.icon');
-            $icon.css('display', 'none');
-        }
-
-        $(this).attr('id', `${$(element).data("nodeid")}`)
-        $(this).addClass('tag-context-menu');
-
-        addTagVerticalLine($(element), tagId);
-
-        const secondDiv = $(element).find("div:eq(1)");
-
-        secondDiv.addClass('d-flex align-items-center');
-        secondDiv.find('.badge:first').removeClass().addClass('ms-1 badge badge-primary').attr('title', gettext("Documents"));
-        secondDiv.find('.badge:eq(1)').removeClass().addClass('ms-1 badge badge-secondary ms-2').attr('title', gettext("Highlights"));
-
-    });
-}
-
-function addTagVerticalLine(selector, tagId) {
-    // Find the first div within .node-treeview-tags
-    const firstDiv = selector.find('div:first');
-
-    if (firstDiv.find('a').length === 0) {
-        // Get the text content
-        const tagText = firstDiv.contents().filter(function () {
-            return this.nodeType === 3; // Filter out text nodes
-        }).text().trim();
-
-        // Create an anchor element
-        const tagTextAnchor = $('<a>', {
-            href: '#',
-            class: 'tag-text',
-            style: 'text-decoration: none;',
-            text: tagText
-        });
-
-        // Prepend a span to act as the vertical line
-        $('<span>', {
-            class: `vertical-line-${tagId}`,
-            css: {
-                display: 'inline-block',
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                bottom: '0',
-                width: '3px',
-                backgroundColor: findTag(tagId).color,
-            }
-        }).prependTo(tagTextAnchor);
-
-        // Wrap the text in the anchor element
-        firstDiv.contents().filter(function () {
-            return this.nodeType === 3;
-        }).replaceWith(tagTextAnchor);
-    } else {
-        const existingLine = firstDiv.find(`.vertical-line-${tagId}`);
-        if (existingLine.length > 0) {
-            existingLine.css('backgroundColor', findTag(tagId).color);
-        } else {
-            $('<span>', {
-                class: `vertical-line-${tagId}`,
-                css: {
-                    display: 'inline-block',
-                    position: 'absolute',
-                    left: '0',
-                    top: '0',
-                    bottom: '0',
-                    width: '4px',
-                    backgroundColor: findTag(tagId).color,
-                }
-            }).prependTo(firstDiv.find('.tag-text'));
-        }
-    }
-}
-
 function addTagDragDrop() {
 
     $('.node-treeview-tags').on('dragstart', function (event) {
@@ -488,11 +450,11 @@ function addTagDragDrop() {
         $(element).on('drop', function (event) {
             event.preventDefault();
 
-            const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+            const tagId = getTagIdFromTreeviewNode(treeview_tags, $(element).data("nodeid"));
             const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
 
             if (!isNaN(parseInt(draggedElementNodeId))) {
-                const tagChildId = getTagIdFromTreeviewNode('treeview-tags', draggedElementNodeId);
+                const tagChildId = getTagIdFromTreeviewNode(treeview_tags, draggedElementNodeId);
                 if (tagId === tagChildId) return;
                 updateTagParent(tagChildId, tagId);
             } else {
@@ -500,4 +462,38 @@ function addTagDragDrop() {
             }
         });
     });
+}
+
+function customNodeRow(isTagContextMenu = false) {
+
+    return {
+        customContent: true,
+        nodeContentSelector: 'a',
+        nodeContentAttributes: {
+            href: '#',
+            class: 'tag-text',
+            style: 'text-decoration: none;'
+        },
+        customizeNode: function(element, node, tree) {
+            element.attr('id', `${node.nodeId}`);
+            if (isTagContextMenu) {
+                element.addClass('tag-context-menu');
+            }
+        },
+        addVerticalLine: function(element, node, tree) {
+            const color = findTag(node.id).color;
+            $('<span>', {
+                class: `vertical-line-${node.id}`,
+                css: {
+                    display: 'inline-block',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    bottom: '0',
+                    width: '3px',
+                    backgroundColor: color,
+                }
+            }).prependTo(element);
+        }
+    }
 }

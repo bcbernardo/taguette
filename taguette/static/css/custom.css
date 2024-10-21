@@ -865,7 +865,7 @@ Document custom select
     background-color: #f0f0f0;
 }
 
-#tag-selection-criteria {
+.tag-selection-box {
     display: none;
     border: 1px solid #cccccc;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -876,6 +876,26 @@ Document custom select
     width: 100%;
 }
 
+.tag-badge {
+    color: white;
+    padding: 3px 8px;
+    border-radius: 15px;
+    margin-top: 15px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.tag-badge-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
 #clear-selection:hover i {
     color: red;
 }
@@ -883,4 +903,14 @@ Document custom select
 #clear-selection {
     display: block;
     text-align: right;
+}
+
+/* new tag highlight */
+.highlight-new-tag {
+    background-color: #E7F2FF !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-new-tag.fade-out {
+    background-color: transparent !important;
 }

@@ -89,14 +89,6 @@ function projectMetadataChanged() {
 
 function addDocument(document) {
     documents['' + document.id] = document;
-    if (document.id === current_document) {
-        // Text direction is the only meaningful thing that can be mutated
-        if (document.text_direction === 'RIGHT_TO_LEFT') {
-            document_contents.style.direction = 'rtl';
-        } else {
-            document_contents.style.direction = 'ltr';
-        }
-    }
     updateDocumentsList();
 }
 
@@ -118,7 +110,7 @@ const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
-    $(document_add_modal).modal('show');
+    $(document_add_modal).modal('show').drags({handle: '.modal-header'});
     customSelect.classList.remove("active");
 }
 
@@ -239,7 +231,7 @@ function editDocument(doc_id) {
     document.getElementById('document-change-name').value = '' + documents['' + doc_id].name;
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
-    $(document_change_modal).modal('show');
+    $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
@@ -264,6 +256,7 @@ document.getElementById('document-change-form').addEventListener('submit', funct
         log("Document update posted");
         $(document_change_modal).modal('hide');
         document.getElementById('document-change-form').reset();
+        loadDocument(current_document);
     }
 
     const callbackFail = (error) => {
@@ -331,9 +324,11 @@ linkTag(document.getElementById('load-all-tags'), '');
 
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
+    highlightSelectedTags.length = 0;
+    showHighlightTagSelection();
     hideSearchErrorMessage();
     savedSelections = [];
-    initTagsHighlightTreeview(false);
+    initTagsHighlightTreeview();
 }
 
 
@@ -371,7 +366,7 @@ function createTag(from, selection, parent) {
         document.getElementById('dropdownMenuButtonTag').innerText = findTag(parent).path
     }
 
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editTag(tag_id) {
@@ -390,7 +385,7 @@ function editTag(tag_id) {
     document.getElementById('tag-add-cancel').style.display = 'none';
     document.getElementById('tag-add-delete').style.display = '';
     document.getElementById('tag-add-merge').style.display = '';
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 // Save tag button
@@ -591,8 +586,7 @@ function createHighlight(selection) {
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editHighlight() {
@@ -609,11 +603,12 @@ function editHighlight() {
     const hl_tags = highlights['' + id].tags;
     const allNodes = treeview_tags_highlight.treeview('getEnabled');
     for (let i = 0; i < hl_tags.length; ++i) {
+        highlightSelectedTags.push(hl_tags[i]);
         const node = allNodes.find((node) => node.id === hl_tags[i]);
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    showHighlightTagSelection();
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 $('#highlight-add-form').off().on('submit', (e) => {
@@ -871,11 +866,10 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true) 
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
                 const cleanText = extractTextFromHtml(chunk.contents);
-                setHighlights(cleanText, elem, info.highlights);
+                setHighlights(cleanText, elem, info.highlights, info.text_direction);
                 chunk_offsets.push(chunk.offset);
             }
 
-            setTextDirection(info.text_direction);
             current_document = document_id;
 
             toggleToolbarActions(true);
@@ -920,10 +914,6 @@ function addDragFunctionality(element) {
     element.addEventListener('dragstart', function (event) {
         event.dataTransfer.effectAllowed = 'move';
     });
-}
-
-function setTextDirection(text_direction) {
-    document_contents.style.direction = text_direction === 'RIGHT_TO_LEFT' ? 'rtl' : 'ltr';
 }
 
 function scrollToHighlight(highlight_id) {
@@ -1162,20 +1152,25 @@ window.onpopstate = function (e) {
  * Attach input change for tag search event
  */
 const TAG_NOT_FOUND_MESSAGE = gettext("No tag found");
+const alert_tag_treeview = $('#alert-tag-treeview');
+const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 document.getElementById('input-search-tags').addEventListener('input', function () {
-    const alert_tag_treeview = $('#alert-tag-treeview');
-    const filterText = $('#input-search-tags').val().toLowerCase();
+    const filterText = $(this).val().toLowerCase();
     alert_tag_treeview.addClass('d-none')
+    if(filterText === '') {
+        initTagsTreeview();
+        collapseAllNodes(treeview_tags);
+        return;
+    }
     const filteredTags = handleSearch(filterText);
-    initTagsTreeview(false, filteredTags);
+    initTagsTreeview(filteredTags);
+    expandAllNodes(treeview_tags);
     if (filteredTags.length === 0) {
         alert_tag_treeview.removeClass('d-none')
         alert_tag_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
-
-const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 function saveSelectedNodes(treeview) {
     const selectedNodes = treeview.treeview('getSelected');
@@ -1184,8 +1179,8 @@ function saveSelectedNodes(treeview) {
 
 function restoreSelectedNodes(treeview, savedNodeIds) {
     savedNodeIds.forEach(id => {
-        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', id)
-        selectNode('treeview-tags-highlight', nodeId);
+        const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
+        selectNode(treeview_tags_highlight, nodeId);
     });
 }
 
@@ -1193,7 +1188,7 @@ let savedSelections = [];
 
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
 
-        const filterText = $('#input-search-tags-highlight').val().toLowerCase();
+        const filterText = $(this).val().toLowerCase();
         hideSearchErrorMessage();
 
         // save selected tags
@@ -1206,7 +1201,7 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         });
 
         const filteredTags = handleSearch(filterText);
-        initTagsHighlightTreeview(false, filteredTags);
+        initTagsHighlightTreeview(filteredTags);
         if (filteredTags.length === 0) {
             showSearchErrorMessage();
             alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
