@@ -69,10 +69,15 @@ function generateDocumentList() {
         let favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
         elem.innerHTML = `
         <div class="d-flex justify-content-between align-items-center">
-            <a class="document-link-a">${escapeHtml(doc.name)}</a>
-            <a href="javascript:toggleFavorite(${doc.id});" class="favorite-icon" title="${favoriteTitle}">
-                <i id="favorite-icon-${doc.id}" class="${favoriteIconClass}" aria-hidden="true"></i> 
-            </a>
+           <a class="document-link-a">${escapeHtml(doc.name)}</a>
+           <div>
+               <a href="javascript:editDocument(${doc.id});" class="btn btn-primary btn-sm rounded-3 me-2">
+                   <i class="fas fa-edit" aria-hidden="true"></i>
+               </a>
+               <a href="javascript:toggleFavorite(${doc.id});" class="favorite-icon" title="${favoriteTitle}">
+                   <i id="favorite-icon-${doc.id}" class="${favoriteIconClass}" aria-hidden="true"></i> 
+               </a>
+           </div>
         </div>`;
         documents_list.insertBefore(elem, before);
         const links = elem.getElementsByTagName('a');

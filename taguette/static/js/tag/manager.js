@@ -46,7 +46,7 @@ function findRootParent(tagId) {
 function highlightNewTag(tagId) {
     const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
     const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
-    nodeElement.addClass('highlight-new-tag');
+    nodeElement.addClass('highlight-tag');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
     }, 3000);
@@ -82,11 +82,16 @@ function addTag(tag) {
     checkColorChangeAndUpdate(existingTagColor, tag.color);
     updateTagsList();
     if(!tag.parent) {
-        highlightNewTag(tag.id);
+        if(!createTagFromHighlight) {
+            highlightNewTag(tag.id);
+        }
         return;
     }
     expandNodeParent(tag.parent);
-    highlightNewTag(tag.id);
+    if(!createTagFromHighlight) {
+        highlightNewTag(tag.id);
+    }
+
 }
 
 // Function to add a new tag to the tag tree
@@ -218,20 +223,13 @@ function mergeTags(tag_src, tag_dest) {
     expandNodeParent(tagToUpdate.parent);
 }
 
-function selectTag(treeview, tag_id) {
-    const allNodes = treeview.treeview('getEnabled');
-    const node = allNodes.find(item => item.id === tag_id)
-    const nodeId = node.nodeId;
-    treeview.treeview('selectNode', nodeId);
-}
-
 function selectAllTag() {
+    expandAllNodes(treeview_tags);
     const allNodes = treeview_tags.treeview('getEnabled');
     for(const node of allNodes) {
         const nodeId = node.nodeId;
         const nodeSelector = $('li[data-nodeid="' + nodeId + '"]');
-        nodeSelector.addClass("node-selected")
-        nodeSelector.css({ color: "#3498DB", backgroundColor: "#e7f2ff" });
+        nodeSelector.addClass("highlight-tag")
     }
 }
 
@@ -261,10 +259,14 @@ function updateTagsList() {
 
     const isReverse = sortTags[1] === 'desc';
     sortTagsByKey(tags, sortTags[0], isReverse);
+    let selectedHighLightTags = [];
+
+    if(createTagFromHighlight) {
+        selectedHighLightTags = getAllSelectedNodes(treeview_tags_highlight).map(node => node.id)
+    }
 
     // update all treeview and select tags
     initTagsTreeview();
-
     initTagsHighlightTreeview();
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
@@ -272,9 +274,12 @@ function updateTagsList() {
 
     //check if create from highlight modal
     if(createTagFromHighlight) {
-        console.log('tag from id');
+        selectedHighLightTags.forEach(id => {
+            const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
+            selectNode(treeview_tags_highlight, nodeId);
+        });
         const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, last_added_tag)
-        treeview_tags_highlight.treeview('selectNode', nodeId);
+        selectNode(treeview_tags_highlight, nodeId);
     }
 }
 

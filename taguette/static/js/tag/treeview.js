@@ -220,7 +220,7 @@ function initTagsTreeview(filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
-    const customNodeOptions = customNodeRow(true);
+    const customNodeOptions = customNodeRow(true, false);
 
     const options = {
         data: treeData,
@@ -294,7 +294,7 @@ function initTagsHighlightTreeview(filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
-    const customNodeOptions = customNodeRow();
+    const customNodeOptions = customNodeRow(false, true);
 
     const options = {
         data: treeData,
@@ -464,7 +464,7 @@ function addTagDragDrop() {
     });
 }
 
-function customNodeRow(isTagContextMenu = false) {
+function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
 
     return {
         customContent: true,
@@ -476,6 +476,8 @@ function customNodeRow(isTagContextMenu = false) {
         },
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
+            element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
+                : `tag-node-${node.id}`);
             if (isTagContextMenu) {
                 element.addClass('tag-context-menu');
             }

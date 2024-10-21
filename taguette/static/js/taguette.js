@@ -306,7 +306,6 @@ function sortTagsBy(field, dir) {
             options[i].classList.remove('active');
         }
     }
-    updateTagsList();
 }
 
 function linkTag(elem, tag_path, selectAll = true) {
@@ -338,8 +337,8 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 let createTagFromHighlight;
-function createTag(from, selection, parent) {
-    createTagFromHighlight = false;
+function createTag(fromHighlight, selection, parent) {
+    createTagFromHighlight = fromHighlight;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
@@ -351,9 +350,8 @@ function createTag(from, selection, parent) {
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
-    if (from === 2) {
+    if (fromHighlight) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
-        createTagFromHighlight = true;
     }
 
     if(selection) {
@@ -535,14 +533,6 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     };
 
     submitTagMerge(tag_src, tag_dest, callbackSuccess, callbackFail);
-});
-
-
-// Backlight
- const backlight_checkbox = document.getElementById('backlight');
- backlight_checkbox.addEventListener('change', function () {
-     const documentView = document.getElementById('document-view');
-     documentView.classList.toggle('backlight', backlight_checkbox.checked);
 });
 
 

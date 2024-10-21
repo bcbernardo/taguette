@@ -138,7 +138,7 @@
 <!-- "New highlight" button shown after selecting text -->
 <div id="hlinfo" style="display: block; text-align: center;">
     <div class="mb-2" style="padding: 0 15px;">
-        <a class="btn btn-outline-primary" href="javascript:createTag(0,current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
+        <a class="btn btn-outline-primary" href="javascript:createTag(false,current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
             {% trans %}New highlight{% endtrans %}
         </a>
     </div>
@@ -185,11 +185,8 @@
 <script type="text/javascript">
     $(document).ready(function(){
 
-        sortTagsBy('path', 'asc')
-        initTagsTreeview();
-        initTagsHighlightTreeview();
-        initTagHierarchySelect();
-        initMergeTagHierarchySelect();
+        sortTagsBy('path', 'asc');
+        updateTagsList();
         addContextMenu();
 
     });

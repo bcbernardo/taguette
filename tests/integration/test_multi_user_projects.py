@@ -363,7 +363,7 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 12, 'highlight_id': 4,
              'document_id': 2, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 1, 'highlights_count': 2}}})
+             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 2, 'highlights_count': 2}}})
         
         poll_proj2 = await self.poll_event(2, 12)
 
@@ -375,8 +375,7 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj2,
             {'type': 'highlight_delete', 'id': 13, 'highlight_id': 4,
-             'document_id': 2, 'tag_count_changes': {'3': {'documents_count': 0, 'highlights_count': 1}}})
-        # TODO : update document_count after fix
+             'document_id': 2, 'tag_count_changes': {'3': {'documents_count': 1, 'highlights_count': 1}}})
         poll_proj2 = await self.poll_event(2, 13)
 
         # Create highlight 5 in document 3
@@ -390,7 +389,7 @@ class TestMultiUserProject(TestMultiUser):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 14, 'highlight_id': 5,
              'document_id': 3, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 1, 'highlights_count': 2}}})
+             'tags': [3], 'tag_count_changes': {'3': {'documents_count': 2, 'highlights_count': 2}}})
         
         poll_proj2 = await self.poll_event(2, 14)
 
