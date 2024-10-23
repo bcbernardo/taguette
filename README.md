@@ -47,7 +47,7 @@ You can install from a local clone of this repository, which will allow you to e
 
 License
 -------
-* Copyright (c) 2024, Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+* Copyright (c) 2023, Plateforme en humanités numériques (Université de Sherbrooke) and contributors
 * Copyright (c) 2018, Remi Rampin and Taguette contributors
 
 Licensed under a **BSD 3-clause "New" or "Revised" License**. See the `LICENSE.txt` file for details.
