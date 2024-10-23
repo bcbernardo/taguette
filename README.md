@@ -1,5 +1,6 @@
 
-_We are building on the work of [Taguette](https://www.taguette.org/), go check them out! You will actually find close alignments between our code base or the installation instructions._
+_We are building on the work of [Taguette](https://www.taguette.org/) — go check them out! You will find close alignments between our code bases and even the installation instructions._
+
 
 LibreQDA
 ========
@@ -9,14 +10,14 @@ LibreQDA is developed by the [Plateforme en humanités numériques (PhuN)](https
 This qualitative data analysis software (QDA) allows you to:
 
 + Import PDFs, Word documents (`.docx`), text files (`.txt`), HTML, EPUB, MOBI, Open Documents (`.odt`), and Rich Text Files (`.rtf`).
-+ Highlight words, sentences, or paragraphs and tag them with codes you create.
++ Highlight words, sentences or paragraphs and tag them with codes you create.
 + Create hierarchical relations between your codes.
 + Retrieve your tagged documents and lists of encoded sentences.
-+ Export you material in various formats for diffusion or post-processing using other tools
++ Export you material in various formats for diffusion or post-processing with other tools.
 
 [Visit our website to consult the documentation.](https://aide.libreqda.org/)
 
-Motivation and goal
+Motivation and Goal
 -------------------
 
 Through its collaborations with research teams and non-profit organizations across various fields, the team at PHuN has come to recognize the crucial need for developing rich, resilient and responsive ecosystem of open-source QDA software. Numerous testimonies highlight the disconnect between the commercial incentives of proprietary software and the core theories of substantive qualitative analysis. Today, users of QDA are subjected to forced obsolescence, costly licenses, black box features and restrictions that prevent them from fully owning with their intellectual product.
