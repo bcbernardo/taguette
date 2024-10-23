@@ -1,7 +1,8 @@
+
+_We are building on the work of [Taguette](https://www.taguette.org/), go check them out! You will actually find close alignments between our code base or the installation instructions._
+
 LibreQDA
 ========
-
-We are building on the work of [Taguette](https://www.taguette.org/), go check them out! You will actually find close alignments between our code base or the installation instructions.
 
 LibreQDA is developed by the [Plateforme en humanités numériques (PhuN)](https://www.usherbrooke.ca/flsh/recherche/centres-groupes-et-equipes-de-recherche/phun) at Université de Sherbrooke. 
 
