@@ -306,6 +306,7 @@ function sortTagsBy(field, dir) {
             options[i].classList.remove('active');
         }
     }
+    updateTagsList();
 }
 
 function linkTag(elem, tag_path, selectAll = true) {
