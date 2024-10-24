@@ -531,7 +531,7 @@ Index project view custom
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 250px;
+    height: 230px;
     width: 300px;
     background-color: #fff;
     text-align: center;
@@ -679,7 +679,16 @@ Document custom select
 }
 
 .selected-value {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
     text-align: left;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.custom-select.active .selected-value {
+    white-space: normal;
 }
 
 .arrow {
