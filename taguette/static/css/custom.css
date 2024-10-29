@@ -408,7 +408,7 @@ a.dropdown-item:hover {
   background-color: white;
   border: 1px solid grey;
   padding: 0.2em;
-    z-index: 999;
+  z-index: 9999999;
 }
 
 #hlinfo em {

@@ -78,6 +78,8 @@ class CreateDemoProject(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('create_demo_project')
     def post(self):
+        documents = []
+        tags = []
         # Create project
         project = database.Project(
             name=self.gettext("Tutorial - board game"),
@@ -92,9 +94,9 @@ class CreateDemoProject(BaseHandler):
             privileges=database.Privileges.ADMIN
         )
         self.db.add(membership)
-        self.db.commit()
+        self.db.flush()
 
-        for document in DEMO_DATA:
+        for document in DEMO_DATA['documents']:
             d = database.Document(
                 project_id=project.id,
                 name=document['name'],
@@ -105,6 +107,27 @@ class CreateDemoProject(BaseHandler):
                 favorite=document['favorite']
             )
             self.db.add(d)
+            self.db.flush()
+            documents.append(d)
+
+        for tag in DEMO_DATA['tags']:
+            t = database.Tag(project=project,
+                             color=tag['color'],
+                             path=tag['path'],
+                             description=tag['description'])
+            self.db.add(t)
+            self.db.flush()
+            tags.append(t)
+            if tag['childrens']:
+                for tag2 in tag['childrens']:
+                    t2 = database.Tag(project=project,
+                                      color=tag2['color'],
+                                      path=tag2['path'],
+                                      description=tag2['description'],
+                                      parent=t)
+                    self.db.add(t2)
+                    self.db.flush()
+                    tags.append(t2)
 
         self.db.commit()
 

@@ -1040,6 +1040,11 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
+        is_demo = self.get_argument('demo', None)
+        if is_demo is not None:
+            is_demo = "true"
+        else:
+            is_demo = "false"
 
         # Group tags by their parent IDs
         grouped_tags = defaultdict(list)
@@ -1111,5 +1116,6 @@ class Project(BaseHandler):
             members=members_json,
             can_import_codebook=can_import_codebook,
             can_delete_project=can_delete_project,
-            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN']
+            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN'],
+            is_demo=Markup(is_demo)
         )

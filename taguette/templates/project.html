@@ -24,7 +24,7 @@
             </div>
             <div class="row py-1 panel-content">
                 <div class="col-md-12 mb-3 mx-1 d-flex justify-content-start">
-                    <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
+                    <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
                     <div class="dropdown ms-2">
                         <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
@@ -131,6 +131,7 @@
     let members = {{ members }};
     let highlights = {};
     let last_event = {{ last_event }};
+    let is_demo = {{ is_demo }};
 </script>
 
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
