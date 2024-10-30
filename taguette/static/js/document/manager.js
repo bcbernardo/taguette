@@ -146,9 +146,6 @@ function generateDocumentSelectPicker() {
     console.log("Documents list in dropdown updated");
 }
 
-updateDocumentsList();
-
-
 function submitDocumentUpdate(document, callbackSuccess, callbackFail) {
 
     const { id } = document;
@@ -167,3 +164,5 @@ function submitDocumentUpdate(document, callbackSuccess, callbackFail) {
         callbackFail(error);
     }).finally(hideSpinner);
 }
+
+updateDocumentsList();

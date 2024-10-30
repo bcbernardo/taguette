@@ -7,9 +7,6 @@ const selectBtn = document.querySelector(".select-button");
 const selectedValue = document.querySelector(".selected-value");
 const toolbarActionButtons = document.querySelector(".toolbar-action-buttons");
 
-// Initialize
-toggleToolbarActions(false);
-
 // Toggle dropdown on button click
 selectBtn.addEventListener("click", () => {
     customSelect.classList.toggle("active");
@@ -78,3 +75,5 @@ function toggleToolbarActions(show = false) {
 
 // Initialize event listeners
 addEventListenerToOption();
+// Toggle Toolbars actions
+toggleToolbarActions(false);

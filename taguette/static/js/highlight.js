@@ -1,7 +1,6 @@
 // Inspired by https://github.com/doccano/v-annotator
 
 // important classes for highlight documents
-
 class Font {
     constructor(fontSize, fontFamily, fontWeight) {
         this.fontSize = fontSize;
@@ -107,6 +106,7 @@ class BaseTextLineSplitter {
         const newlineIndex = restOfText.indexOf('\n');
         const returnIndex = restOfText.indexOf('\r');
 
+        //  check no word is split at the end of line
         let endIndex = spaceIndex !== -1 ? spaceIndex : restOfText.length;
         if (newlineIndex !== -1 && newlineIndex < endIndex) endIndex = newlineIndex;
         if (returnIndex !== -1 && returnIndex < endIndex) endIndex = returnIndex;
@@ -292,7 +292,7 @@ function setHighlights(text, container, highlights, direction) {
 
 function displayTextWithHighlights(container, text, font, maxWidth, highlights, direction) {
     const startTime = performance.now();
-    console.log('Début de displayTextWithHighlights');
+    log('start displayTextWithHighlights');
 
     container.innerHTML = '';
 
@@ -307,17 +307,17 @@ function displayTextWithHighlights(container, text, font, maxWidth, highlights, 
     log('line total : ' + lines.length);
 
     const splitEndTime = performance.now();
-    console.log(`split time : ${((splitEndTime - splitStartTime) / 1000).toFixed(3)} secondes`);
+    log(`split time : ${((splitEndTime - splitStartTime) / 1000).toFixed(3)} secondes`);
 
     const highlightStartTime = performance.now();
     lines.forEach(line => {
         applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction);
     });
     const highlightEndTime = performance.now();
-    console.log(`applyHighlights time : ${((highlightEndTime - highlightStartTime) / 1000).toFixed(3)} secondes`);
+    log(`applyHighlights time : ${((highlightEndTime - highlightStartTime) / 1000).toFixed(3)} secondes`);
 
     const endTime = performance.now();
-    console.log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
+    log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
 }
 
 function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction) {
@@ -349,6 +349,8 @@ function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, 
     container.appendChild(divContainer);
 
     const textElement = document.createElementNS(svgNamespace, "text");
+
+    //Handle text direction
     let textXPosition = direction === 'RIGHT_TO_LEFT' ? "100%" : "0";
     let textAnchor = direction === 'RIGHT_TO_LEFT' ? "end" : "start";
     textElement.setAttribute("x", textXPosition);
@@ -447,63 +449,6 @@ function createSvgGradient(svgNamespace, highlight, colors) {
     return gradient;
 }
 
-
-// Save highlight drag drop
-function saveHighlightDragDrop(tag_id) {
-
-    const selection = current_selection;
-
-    const hl_tags = [tag_id];
-
-    const highlight = {
-        selection,
-        tags: hl_tags
-    }
-
-    const callbackSuccess = () => {
-        log("Highlight posted");
-    };
-    const callbackFail = (error) => {
-        log("Failed to create highlight", 'error', {error})
-        showAlert(`${gettext("Couldn't create highlight!")} \n\n`,'error');
-    };
-
-    //call submit
-    submitHighLightCreation(highlight, callbackSuccess, callbackFail);
-
-}
-
-function submitHighLightCreation(highlight, callbackSuccess, callbackFail) {
-
-    let request;
-    const { id, selection, tags} = highlight;
-    let requestData = {
-        start_offset: selection[0],
-        end_offset: selection[1],
-        tags: tags,
-    };
-
-    if (highlight.id) {
-        log(`Posting update for highlight ${id}`);
-        request = postJSON(
-            `/api/project/${project_id}/document/${current_document}/highlight/${id}`,
-            requestData
-        );
-    } else {
-        log("Posting new highlight");
-        request = postJSON(
-            `/api/project/${project_id}/document/${current_document}/highlight/new`,
-            requestData
-        );
-    }
-    showSpinner();
-    request.then(function (reply) {
-        callbackSuccess(reply);
-    }).catch(function (error) {
-        callbackFail(error);
-    }).finally(hideSpinner);
-}
-
 // Add , Update, and remove one highlight
 function removeHighlight(id, line = null) {
     id = '' + id;
@@ -584,6 +529,7 @@ function createUTF8IndexMap(text) {
     }
     return map;
 }
+
 function getUTF8Substring(text, startUTF8, endUTF8, utf8IndexMap) {
     let startIndex = utf8IndexMap.findIndex(offset => offset > startUTF8) - 1;
     let endIndex = utf8IndexMap.findIndex(offset => offset >= endUTF8);
@@ -603,6 +549,7 @@ function getCharIndexFromUTF8Index(str, utf8Index) {
 
     return charIndex;
 }
+
 function adjustLineHeight(divContainer, group, highlightCount) {
     const lineHeight = 40;
     const extraHeightPerHighlight = 12.5;
@@ -610,10 +557,67 @@ function adjustLineHeight(divContainer, group, highlightCount) {
     group.parentNode.setAttribute("height", `${totalHeight}px`);
     divContainer.style.height = `${totalHeight}px`;
 }
+
 function calculateYPosition(itemsCount) {
     const baseY = 10;
     const spacing = 10;
     const additionalSpacing = 5;
 
     return baseY + (itemsCount * spacing) + (itemsCount * additionalSpacing);
+}
+
+// Save highlight drag drop
+function saveHighlightDragDrop(tagId) {
+
+    const selection = current_selection;
+
+    const hl_tags = [tagId];
+
+    const highlight = {
+        selection,
+        tags: hl_tags
+    }
+
+    const callbackSuccess = () => {
+        log("Highlight posted");
+    };
+    const callbackFail = (error) => {
+        log("Failed to create highlight", 'error', {error})
+        showAlert(`${gettext("Couldn't create highlight!")} \n\n`,'error');
+    };
+
+    //call submit
+    submitHighLightCreation(highlight, callbackSuccess, callbackFail);
+
+}
+
+function submitHighLightCreation(highlight, callbackSuccess, callbackFail) {
+
+    let request;
+    const { id, selection, tags} = highlight;
+    let requestData = {
+        start_offset: selection[0],
+        end_offset: selection[1],
+        tags: tags,
+    };
+
+    if (highlight.id) {
+        log(`Posting update for highlight ${id}`);
+        request = postJSON(
+            `/api/project/${project_id}/document/${current_document}/highlight/${id}`,
+            requestData
+        );
+    } else {
+        log("Posting new highlight");
+        request = postJSON(
+            `/api/project/${project_id}/document/${current_document}/highlight/new`,
+            requestData
+        );
+    }
+    showSpinner();
+    request.then(function (reply) {
+        callbackSuccess(reply);
+    }).catch(function (error) {
+        callbackFail(error);
+    }).finally(hideSpinner);
 }

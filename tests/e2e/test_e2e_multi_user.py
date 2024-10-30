@@ -201,6 +201,9 @@ class Test2E2MultiUser(SeleniumTest):
         from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
+        
+        self.driver.execute_script("window.SELENIUM_TEST = true;")
+        
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')

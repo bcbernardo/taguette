@@ -27,7 +27,13 @@ let project_description = project_description_input.value;
 let upload_canceled = false;
 
 function openSidebar() {
-    document.getElementById("project-sidebar").style.width = "600px";
+
+    // Desktop behavior
+    if (window.innerWidth > 768) {
+        document.getElementById("project-sidebar").style.width = "600px";
+    } else {
+        document.getElementById("project-sidebar").style.width = "100%";
+    }
     showMembers();
 }
 
@@ -1338,5 +1344,7 @@ function debounce(func, wait) {
 }
 
 window.addEventListener('resize', debounce(() => {
-    window.location.reload();
+    if (!window.SELENIUM_TEST) {
+        window.location.reload();
+    }
 }, 250));

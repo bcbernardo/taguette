@@ -1,10 +1,11 @@
-const tag_hierarchy_select = $('#tag-hierarchy-select')
-const tag_hierarchy_merge_select = $('#tag-hierarchy-merge-select')
-const hs_menu_inner = $('.hs-menu-inner')
-const hs_menu_inner_merge = $('.hs-menu-inner-merge')
+const tag_hierarchy_select = $('#tag-hierarchy-select');
+const tag_hierarchy_merge_select = $('#tag-hierarchy-merge-select');
+const hs_menu_inner = $('.hs-menu-inner');
+const hs_menu_inner_merge = $('.hs-menu-inner-merge');
 
-const DEFAULT_LEVEL = 1
+const DEFAULT_LEVEL = 1;
 
+// Creates a default 'None' option
 function addDefaultValue(parentContainer) {
     const li = $("<li>");
     const a = $("<a>").addClass("dropdown-item")
@@ -17,6 +18,8 @@ function addDefaultValue(parentContainer) {
     parentContainer.append(li);
 }
 
+
+// Recursively generates items from tag hierarchy data
 function generateTagHierarchyItem(data, parentContainer, level) {
 
     $.each(data, function (index, item) {
@@ -37,16 +40,19 @@ function generateTagHierarchyItem(data, parentContainer, level) {
     });
 }
 
+// Init tag hierarchy select dropdown for create tag
 function initTagHierarchySelect() {
 
     initHierarchySelect(hs_menu_inner, tag_hierarchy_select, true);
 }
 
+// Init tag hierarchy select dropdown for the merge form
 function initMergeTagHierarchySelect() {
 
     initHierarchySelect(hs_menu_inner_merge, tag_hierarchy_merge_select, true);
 }
 
+// Sets up a hierarchy select dropdown
 function initHierarchySelect(menu, select, withDefault = true) {
 
     menu.html('');
