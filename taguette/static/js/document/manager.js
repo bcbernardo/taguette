@@ -71,7 +71,7 @@ function generateDocumentList() {
         <div class="d-flex justify-content-between align-items-center">
             <a class="document-link-a text-truncate" style="flex: 1; margin-right: 10px;" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</a>
             <div class="d-flex flex-shrink-0">
-                <a href="javascript:editDocument(${doc.id});" class="btn btn-primary btn-sm rounded-circle me-2">
+                <a href="javascript:editDocument(${doc.id});" class="btn btn-primary btn-sm rounded-1 me-2">
                     <i class="fas fa-edit" aria-hidden="true"></i>
                 </a>
                 <a href="javascript:toggleFavorite(${doc.id});" class="favorite-icon" title="${favoriteTitle}">

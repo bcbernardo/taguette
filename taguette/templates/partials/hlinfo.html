@@ -1,0 +1,13 @@
+<!-- "New highlight" button shown after selecting text -->
+<div id="hlinfo" style="display: none; text-align: center;">
+    <div class="mb-2" style="padding: 0 15px;">
+        <a class="btn btn-outline-primary" href="javascript:createTag(false,current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
+            {% trans %}New highlight{% endtrans %}
+        </a>
+    </div>
+    <div style="padding: 0 15px;">
+        <a class="btn btn-outline-secondary" href="javascript:createHighlight(current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
+            {% trans %}Select tag{% endtrans %}
+        </a>
+    </div>
+</div>

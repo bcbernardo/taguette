@@ -12,43 +12,45 @@
 {% block containerclass %}container-fluid{% endblock %}
 
 {% block contents %}
-<div class="row">
+<div class="row flex-column flex-md-row">
     <!-- Left panel -->
-    <div class="col-md-2-5" id="left-panel">
+    <div class="col-12 col-md-2-5 order-2 order-md-1" id="left-panel">
         {% include 'partials/project_sidebar.html' %}
-        <div class="bordered-container sticky-top" >
-            <div class="d-flex justify-content-end">
-                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2 mx-3" title="Toggle Left Panel">
+        <div class="bordered-container sticky-top">
+            <div class="d-flex justify-content-start justify-content-md-end">
+                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2" title="Toggle Panel">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
             <div class="row py-1 panel-content">
-                <div class="col-md-12 mb-3 mx-1 d-flex justify-content-start">
-                    <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
-                    <div class="dropdown ms-2">
-                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
-                        </button>
-                        <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
-                            <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans %}Expand all{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans %}Collapse all{% endtrans %}</a>
+                <div class="col-md-12 mb-3 mx-1">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
+                            </button>
+                            <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
+                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans %}Expand all{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans %}Collapse all{% endtrans %}</a>
+                            </div>
                         </div>
-                    </div>
-                    <div class="dropdown ms-2">
-                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
-                        </button>
-                        <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
-                            <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
-                            <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
+                            </button>
+                            <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
+                                <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
+                            </div>
                         </div>
-                    </div>
+                   </div>
                 </div>
             </div>
-            <div class="container mb-2 panel-content">
+            <div class="mb-2 panel-content">
                 <div class="form-group">
                     <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search tags{% endtrans %}">
                 </div>
@@ -63,7 +65,7 @@
     </div>
 
     <!-- Right panel -->
-    <div class="col-md-7-5" id="middle-panel">
+    <div class="col-12 col-md-7-5 order-3 order-md-2" id="middle-panel">
 
         {% include 'partials/document_toolbar.html' %}
 
@@ -73,21 +75,27 @@
             </div>
         </div>
 
+        <button id="scroll-to-top-button" class="btn btn-primary rounded-circle scroll-btn d-none" title="Scroll to top">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+
     </div>
 
     <!-- List of documents -->
-    <div class="col-md-2-5 bordered-container sticky-top"  id="right-panel">
-        <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Right Panel">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-        <div class="row  panel-content">
-            <div class="col-md-12">
-                <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+    <div class="col-12 col-md-2-5 order-1 order-md-3"  id="right-panel">
+        <div class="bordered-container sticky-top">
+            <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Panel">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="row  panel-content">
+                <div class="col-md-12">
+                    <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+                </div>
             </div>
+            <ul class="list-group list-group-flush  panel-content" id="documents-list">
+                <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
+            </ul>
         </div>
-        <ul class="list-group list-group-flush  panel-content" id="documents-list">
-            <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-        </ul>
     </div>
 </div>
 
@@ -136,18 +144,7 @@
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
 
 <!-- "New highlight" button shown after selecting text -->
-<div id="hlinfo" style="display: block; text-align: center;">
-    <div class="mb-2" style="padding: 0 15px;">
-        <a class="btn btn-outline-primary" href="javascript:createTag(false,current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
-            {% trans %}New highlight{% endtrans %}
-        </a>
-    </div>
-    <div style="padding: 0 15px;">
-        <a class="btn btn-outline-secondary" href="javascript:createHighlight(current_selection);" style="display: block; width: 100%; box-sizing: border-box;">
-            {% trans %}Select tag{% endtrans %}
-        </a>
-    </div>
-</div>
+{% include 'partials/hlinfo.html' %}
 
 {% endblock %}
 

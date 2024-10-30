@@ -1210,16 +1210,35 @@ function hideSearchErrorMessage() {
     alert_tag_highlight_treeview.addClass('d-none');
 }
 
+function updateToggleButtons() {
+    const isDesktop = window.innerWidth > 768;
+
+    const leftButton = document.getElementById('toggle-left-panel');
+    const rightButton = document.getElementById('toggle-right-panel');
+
+    if (isDesktop) {
+        leftButton.querySelector('i').className = 'fas fa-chevron-left';
+        rightButton.querySelector('i').className = 'fas fa-chevron-right';
+    } else {
+        leftButton.querySelector('i').className = 'fas fa-chevron-down';
+        rightButton.querySelector('i').className = 'fas fa-chevron-down';
+    }
+}
+
 document.getElementById('toggle-left-panel').addEventListener('click', function() {
     const leftPanel = document.getElementById('left-panel');
     leftPanel.classList.toggle('reduced-col');
-    adjustMiddlePanelWidth();
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
 });
 
 document.getElementById('toggle-right-panel').addEventListener('click', function() {
     const rightPanel = document.getElementById('right-panel');
     rightPanel.classList.toggle('reduced-col');
-    adjustMiddlePanelWidth();
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
 });
 
 function adjustMiddlePanelWidth() {
@@ -1227,12 +1246,54 @@ function adjustMiddlePanelWidth() {
     const rightPanel = document.getElementById('right-panel');
     const middlePanel = document.getElementById('middle-panel');
 
-    let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
-    let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
-
-    let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
-
-    middlePanel.style.setProperty('width', middleWidth, 'important');
+    // Desktop behavior
+    if (window.innerWidth > 768) {
+        let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
+        middlePanel.style.setProperty('width', middleWidth, 'important');
+    } else {
+        // Mobile behavior
+        middlePanel.style.setProperty('width', '100%', 'important');
+    }
 
     loadDocument(current_document);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    updateToggleButtons();
+
+    const scrollBtn = document.getElementById('scroll-to-top-button');
+
+    window.addEventListener('scroll', function() {
+        if ((window.pageYOffset || document.documentElement.scrollTop) > 300) {
+            scrollBtn.classList.remove('d-none');
+        } else {
+            scrollBtn.classList.add('d-none');
+        }
+    });
+
+    scrollBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+});
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+window.addEventListener('resize', debounce(() => {
+    window.location.reload();
+}, 250));
