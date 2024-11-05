@@ -132,6 +132,7 @@ $(document).ready(function() {
                         title: gettext('Children codes'),
                         intro: gettext('<p>If you click on a parent code you can seel all childrens.</p>'),
                         position: 'right',
+                        doAction: 'expand-tag-childrens'
                     },
                     {
                         element: $("#documents-list > li:first-child")[0],
@@ -395,20 +396,6 @@ $(document).ready(function() {
                     }
 
                     switch(targetElement.id) {
-                        case '1':
-                            $("[data-nodeid='1'] .expand-icon").trigger('click');
-                            for(let i=1; i<=3; i++) {
-                                $("[data-nodeid='" + i + "']").addClass('intro-js-tags-child')
-                            }
-                            $( ".intro-js-tags-child" ).wrapAll( "<div id='intro-js-wrapped' />");
-                            // Fix duplicate elements
-                            $("#intro-js-wrapped > li:lt(3)").each(function(){
-                                $(this).remove();
-                            });
-                            // Force refresh dynamic element
-                            this._introItems[this._currentStep].element = $("#intro-js-wrapped")[0];
-                            break;
-
                         case 'tag-selection-return':
                             $('#document-contents .highlight-entry:first .badge')[0].click();
                             this._introItems[this._currentStep].element = $("#tag-selection-return")[0];
@@ -434,6 +421,20 @@ $(document).ready(function() {
                     }
                     if(this._introItems[this._currentStep].doAction) {
                         switch(this._introItems[this._currentStep].doAction) {
+                            case 'expand-tag-childrens':
+                                $("[data-nodeid='1'] .expand-icon").trigger('click');
+                                for(let i=1; i<=3; i++) {
+                                    $("[data-nodeid='" + i + "']").addClass('intro-js-tags-child')
+                                }
+                                $( ".intro-js-tags-child" ).wrapAll( "<div id='intro-js-wrapped' />");
+                                // Fix duplicate elements
+                                $("#intro-js-wrapped > li:eq(3)").remove();
+                                // $("#intro-js-wrapped > li:lt(3)").each(function(){
+                                //     $(this).remove();
+                                // });
+                                // Force refresh dynamic element
+                                this._introItems[this._currentStep].element = $("#intro-js-wrapped")[0];
+                                break;
                             case 'document-highlight':
                                 //Find where is the text to do the highlight
                                 let start_str = this._introItems[this._currentStep].highlight[0],
