@@ -382,7 +382,7 @@ function log(message, status = 'info', context = {}) {
     const timestamp = new Date().toLocaleString();
     const logMessage = `${timestamp} [${status.toUpperCase()}]: ${message}`;
     if (status.toLowerCase() === 'error') {
-        console.error(logMessage, context);
+        // console.error(logMessage, context);
     } else {
         console.log(logMessage, context);
     }
@@ -502,5 +502,19 @@ function splitAtPos(pos, after) {
         }
         // Split, return right node
         return node.splitText(idx_char);
+    }
+}
+
+// Restore a described selection
+function restoreSelection(saved) {
+    let sel = window.getSelection();
+    sel.removeAllRanges();
+    if (saved !== null) {
+        let range = document.createRange();
+        let start = locatePos(saved[0]);
+        let end = locatePos(saved[1]);
+        range.setStart(start[0], start[1]);
+        range.setEnd(end[0], end[1]);
+        sel.addRange(range);
     }
 }

@@ -2,6 +2,7 @@ const treeview_tags = $('#treeview-tags');
 const treeview_tags_highlight = $('#treeview-tags-highlight');
 
 const DEFAULT_LEVEL_OPTION = 5;
+const CUSTOM_LEVEL_OPTION = 3;
 
 let selectedTags = [];
 let highlightSelectedTags = [];
@@ -10,18 +11,15 @@ let isExplorationMode = false;
 let isProgrammaticSelection = false;
 
 function getNode(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getNode', parseInt(nodeId));
+    return treeview.treeview('getNode', parseInt(nodeId));
 }
 
 function getAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getEnabled');
+    return treeview.treeview('getEnabled');
 }
 
 function getAllSelectedNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    return $treeview.treeview('getSelected');
+    return treeview.treeview('getSelected');
 }
 
 function treeviewHasChildren(treeview) {
@@ -42,8 +40,7 @@ function selectNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
     if (node && node.state && !node.state.selected) {
         isProgrammaticSelection = true;
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
+        treeview.treeview('selectNode', [node.nodeId, {silent: false}]);
         isProgrammaticSelection = false;
     } else {
         log(`Node with nodeId ${nodeId} not found or already selected.`);
@@ -51,52 +48,46 @@ function selectNode(treeview, nodeId) {
 }
 
 function unselectNode(treeview, nodeId) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
     if (node.state.selected) {
-        $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
     }
 }
 
 function deselectAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
     const allNodes = getAllNodes(treeview);
     allNodes.forEach(node => {
         if (node.state.selected) {
-            $treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
+            treeview.treeview('unselectNode', [node.nodeId, {silent: false}]);
         }
     });
 }
 
 function toggleNodeSelection(treeview, nodeId, select = true) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
-
     //check if change is needed
     if (node.state.selected !== select) {
         const action = select ? 'selectNode' : 'unselectNode';
-        $treeview.treeview(action, [node.nodeId, {silent: false}]);
+        treeview.treeview(action, [node.nodeId, {silent: false}]);
     }
 }
 
 function selectNodeAndChildren(treeview, nodeId) {
     isExplorationMode = true;
     isProgrammaticSelection = true;
-    initTagsTreeview(true);
+    initTagsTreeview();
     setTimeout(() => {
-        const $treeview = $(`#${treeview}`);
         expandNode(treeview, nodeId);
         const node = getNode(treeview, nodeId);
-        selectSingleNodeAndChildren($treeview, node);
+        selectSingleNodeAndChildren(treeview, node);
     }, 10);
 
 }
 
 function unselectNodeAndChildren(treeview, nodeId) {
     setTimeout(() => {
-        const $treeview = $(`#${treeview}`);
         const node = getNode(treeview, nodeId);
-        unselectSingleNodeAndChildren($treeview, node);
+        unselectSingleNodeAndChildren(treeview, node);
     }, 10);
 }
 
@@ -145,57 +136,56 @@ function unselectSingleNodeAndChildren(treeview, node) {
     }
 }
 
+
+function expandNodeParent(tagParent) {
+    const rootParentId = findRootParent(tagParent);
+    const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, rootParentId);
+    expandNode(treeview_tags, nodeId);
+}
+
 function expandNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
     if (!node.state.expanded) {
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('expandNode', [parseInt(nodeId, 10),
+        treeview.treeview('expandNode', [parseInt(nodeId, 10),
             {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
-        $treeview.data('expanded', true);
+        treeview.data('expanded', true);
     }
 }
 
 function collapseNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
     if (node.state.expanded) {
-        const $treeview = $(`#${treeview}`);
-        $treeview.treeview('collapseNode', [parseInt(nodeId, 10),
+        treeview.treeview('collapseNode', [parseInt(nodeId, 10),
             {silent: false}]);
     }
 }
 
 function toggleNodeExpansion(treeview, nodeId, expand = true) {
-    const $treeview = $(`#${treeview}`);
     const node = getNode(treeview, nodeId);
-
     // check action is expand or collapse
     const actionNeeded = expand ? !node.state.expanded : node.state.expanded;
-
     if (actionNeeded) {
         const action = expand ? 'expandNode' : 'collapseNode';
-        $treeview.treeview(action, [node.nodeId, {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
+        treeview.treeview(action, [node.nodeId, {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
     }
 }
 
 function expandAllNodes(treeview) {
-    const $treeview = $(`#${treeview}`);
-    if (treeviewHasChildren(treeview) && !$treeview.data('expanded')) {
-        $treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
-        $treeview.data('expanded', true);
+    if (treeviewHasChildren(treeview) && !treeview.data('expanded')) {
+        treeview.treeview('expandAll', {levels: DEFAULT_LEVEL_OPTION, silent: false});
+        treeview.data('expanded', true);
     }
 }
 
-function collapseAllNodes(treeviewId) {
-    const $treeview = $(`#${treeviewId}`);
-    if ($treeview.length && $treeview.data('expanded')) {
-        $treeview.treeview('collapseAll', {silent: false});
-        $treeview.data('expanded', false);
+function collapseAllNodes(treeview) {
+    if (treeview.length && treeview.data('expanded')) {
+        treeview.treeview('collapseAll', {silent: false});
+        treeview.data('expanded', false);
     }
 }
 
 
 // custom treeview function
-
 function convertToTreeNode(data, includeTags) {
 
     function getNodeCount(item) {
@@ -222,7 +212,7 @@ function convertToTreeNode(data, includeTags) {
         return node;
     });
 }
-function initTagsTreeview(collapse = true, filterTags = null) {
+function initTagsTreeview(filterTags = null) {
 
     if (filterTags == null) {
         filterTags = tags
@@ -230,7 +220,7 @@ function initTagsTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
-    const customNodeOptions = customNodeRow(true);
+    const customNodeOptions = customNodeRow(true, false);
 
     const options = {
         data: treeData,
@@ -262,19 +252,15 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     }
 
     treeview_tags.treeview(options);
-    treeview_tags.data('expanded', true);
-
-    if (collapse) {
-        treeview_tags.treeview('collapseAll');
-        treeview_tags.data('expanded', false);
-    }
+    treeview_tags.treeview('collapseAll');
+    treeview_tags.data('expanded', false);
 
     treeview_tags.on('nodeSelected', function (event, node) {
         if (isExplorationMode && !isProgrammaticSelection){
             const collapse = node.parentId;
             emptyTagSelection(true, !collapse);
             setTimeout(() => {
-                selectNode('treeview-tags', node.nodeId);
+                selectNode(treeview_tags, node.nodeId);
             }, 10);
         }
         addTagsHighlightSelection(node);
@@ -300,7 +286,7 @@ function initTagsTreeview(collapse = true, filterTags = null) {
     emptyTagSelection();
 }
 
-function initTagsHighlightTreeview(collapse = true, filterTags = null) {
+function initTagsHighlightTreeview(filterTags = null) {
 
     if (filterTags == null) {
         filterTags = tags
@@ -308,21 +294,17 @@ function initTagsHighlightTreeview(collapse = true, filterTags = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
-    const customNodeOptions = customNodeRow();
+    const customNodeOptions = customNodeRow(false, true);
 
     const options = {
         data: treeData,
         ...customNodeOptions,
         showBorder: true,
-        levels: DEFAULT_LEVEL_OPTION,
+        levels: CUSTOM_LEVEL_OPTION,
         multiSelect: true,
     };
 
     treeview_tags_highlight.treeview(options);
-
-    if (collapse) {
-        treeview_tags_highlight.treeview('collapseAll');
-    }
 
     treeview_tags_highlight.on('nodeSelected', function (event, node) {
         if (!highlightSelectedTags.some(item => item === node.id)) {
@@ -402,11 +384,11 @@ function selectWithCondition(treeview, nodeId, condition) {
         isExplorationMode = true;
         const selectedNodes = getAllSelectedNodes(treeview);
         const node = getNode(treeview, nodeId);
-        let collapse = true;
+        initTagsTreeview();
         if (node.parentId) {
-            collapse = false;
+            const tag = findTag(node.id);
+            expandNodeParent(tag.parent);
         }
-        initTagsTreeview(collapse);
         selectedNodes.forEach(node => {
             selectNode(treeview, node.nodeId);
         });
@@ -468,11 +450,11 @@ function addTagDragDrop() {
         $(element).on('drop', function (event) {
             event.preventDefault();
 
-            const tagId = getTagIdFromTreeviewNode('treeview-tags', $(element).data("nodeid"));
+            const tagId = getTagIdFromTreeviewNode(treeview_tags, $(element).data("nodeid"));
             const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
 
             if (!isNaN(parseInt(draggedElementNodeId))) {
-                const tagChildId = getTagIdFromTreeviewNode('treeview-tags', draggedElementNodeId);
+                const tagChildId = getTagIdFromTreeviewNode(treeview_tags, draggedElementNodeId);
                 if (tagId === tagChildId) return;
                 updateTagParent(tagChildId, tagId);
             } else {
@@ -482,7 +464,7 @@ function addTagDragDrop() {
     });
 }
 
-function customNodeRow(isTagContextMenu = false) {
+function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
 
     return {
         customContent: true,
@@ -495,6 +477,8 @@ function customNodeRow(isTagContextMenu = false) {
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
+            element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
+                : `tag-node-${node.id}`);
             if (isTagContextMenu) {
                 element.addClass('tag-context-menu');
             }

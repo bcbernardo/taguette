@@ -425,11 +425,8 @@ a.dropdown-item:hover {
 
 .list-group .sublist {
   padding-left: 0;
-  margin-top: 5px;
-  margin-right: -20px;
-  margin-left: 5px;
-  margin-bottom: -12px;
-  border-top: 1px solid #dee2e6;
+    margin: 5px -20px -12px 5px;
+    border-top: 1px solid #dee2e6;
   display: flex;
   flex-direction: column;
 }
@@ -462,30 +459,55 @@ a.dropdown-item:hover {
     transition: stroke-width 0.3s ease-in-out;
 }
 
+/* Left middle right panel styles */
+
 .col-md-2-5 {
     width: 20.8333% !important;
+    transition: all 0.3s ease-in-out;
 }
 
 .col-md-7-5 {
     width: calc(100% - 41.6666%) !important;
 }
 
-.reduced-col {
-    width: 5% !important;
+@media (max-width: 768px) {
+
+    .col-md-2-5, .col-md-7-5 {
+        width: 100% !important;
+        margin-bottom: 1rem;
+    }
+
+    .order-1 {
+        margin-bottom: 2rem;
+    }
+
+    .row .reduced-col,
+    div.reduced-col {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        height: 50px !important;
+        width: 100% !important;
+    }
+
+    .bordered-container {
+        height: auto !important;
+    }
+
+    .btn-outline-secondary i {
+        transform: rotate(180deg);
+    }
+
+    .reduced-col .btn-outline-secondary i {
+        transform: rotate(-360deg) !important;
+    }
 }
 
-.full-width {
-    width: calc(100% - 10%) !important;
+.btn-outline-secondary i {
+    transition: transform 0.3s;
 }
 
-.hidden-col {
-    display: none !important;
-}
-
-.expanded-col {
-    width: 100% !important;
-    flex: 0 0 100% !important;
-    max-width: 100% !important;
+.reduced-col .btn-outline-secondary i {
+    transform: rotate(180deg);
 }
 
 .reduced-col {
@@ -498,16 +520,6 @@ a.dropdown-item:hover {
     display: none;
 }
 
-.reduced-col .btn-outline-secondary {
-    transform: rotate(180deg);
-    display: block;
-    margin: auto;
-}
-
-.reduced-col .btn-outline-secondary {
-    transform: rotate(180deg);
-}
-
 .expanded-col {
     flex: 0 0 70% !important;
     max-width: 70% !important;
@@ -517,6 +529,7 @@ a.dropdown-item:hover {
     border: 1px solid #ddd;
     padding: 10px;
     border-radius: 5px;
+    z-index: 0;
 }
 
 .dropdown-toggle {
@@ -619,18 +632,42 @@ Index project view custom
     text-align: left;
 }
 
+/*========================
+ Home - Project card
+=========================*/
+
 .project-card {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 250px;
-    width: 300px;
+    height: 230px;
+    width: 100%;
     background-color: #fff;
     text-align: center;
     border-radius: 10px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     margin-bottom: 20px;
     transition: transform 0.3s ease;
+}
+
+.description-container {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.stats-container {
+    background-color: white;
+    z-index: 1;
 }
 
 .project-card .fas {
@@ -670,10 +707,12 @@ Index project view custom
     font-size: 20px !important;
     color: #b1b4b7;
 }
-.dot{
+
+.dot {
     font-size: 20px !important;
     color: #b1b4b7;
 }
+
 .project-icon {
     border-radius: 50%;
     background-color: #125368;
@@ -756,6 +795,12 @@ Document custom select
     z-index: 1;
 }
 
+@media (max-width: 768px) {
+    .custom-select {
+        width: 80%;
+    }
+}
+
 .select-button {
     width: 100%;
     height: 40px;
@@ -771,7 +816,16 @@ Document custom select
 }
 
 .selected-value {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
     text-align: left;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.custom-select.active .selected-value {
+    white-space: normal;
 }
 
 .arrow {
@@ -1004,4 +1058,29 @@ Document custom select
 
 .introjs-prevbutton {
     display: none;
+}
+
+/* new tag highlight */
+.highlight-tag {
+    background-color: #E7F2FF !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-tag.fade-out {
+    background-color: transparent !important;
+}
+
+
+.scroll-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.scroll-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    z-index: 9999;
+    width: 40px;
+    height: 40px;
 }

@@ -1,8 +1,8 @@
-<div class="toolbar-container py-3 d-flex justify-content-between align-items-center">
+<div class="toolbar-container py-3 d-flex flex-column flex-md-row align-items-center">
 
-    <div style="width: 100%" class="d-flex align-items-center mx-3">
-        <span class="text-label mr-2">{% trans %}Selected the document{% endtrans %}</span>
-        <div class="custom-select rounded-5 mx-3">
+    <div class="w-100 d-flex flex-column flex-md-row align-items-center mx-3 mb-3 mb-md-0">
+        <span class="text-label mb-2 mb-md-0">{% trans %}Selected the document{% endtrans %}</span>
+        <div class="custom-select rounded-5 mx-md-3">
             <button class="select-button" data-test-id="select-document-button" role="combobox" aria-labelledby="select button" aria-haspopup="listbox" aria-expanded="false" aria-controls="select-dropdown">
                 <span class="selected-value">{% trans %}...{% endtrans %}</span>
                 <span class="arrow"></span>
@@ -12,7 +12,6 @@
     </div>
 
     <div class="toolbar-action-buttons d-flex mx-2">
-        <button class="btn btn-outline-primary mx-2" title="{% trans %}Edit document{% endtrans %}" onclick="editDocument(current_document)" id="edit"><i class="fas fa-edit"></i></button>
         <!-- Bouton Export -->
         <div class="document-export-button dropdown mx-2">
             <button class="btn btn-outline-primary dropdown-toggle" title="{% trans %}Export{% endtrans %}" type="button" id="document-dropdown-export" data-test-id="document-dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -25,10 +24,6 @@
                 <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
                 <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
             </div>
-        </div>
-        <div class="custom-checkbox mx-2 mt-2">
-            <input type="checkbox" id="backlight" class="custom-control-input" />
-            <label for="backlight" class="custom-control-label">{% trans %}Backlight{% endtrans %}</label>
         </div>
     </div>
 </div>

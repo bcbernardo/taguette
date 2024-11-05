@@ -44,7 +44,7 @@
     <p>{% trans %}Here are your projects{% endtrans %}:</p>
     <!-- Projects List -->
     <div class="main">
-        <div class="row" id="demo-project-container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-4 g-4" id="demo-project-container">
             {% if projects %}
                 {% for project in projects %}
                     {% include 'partials/project_card.html' %}

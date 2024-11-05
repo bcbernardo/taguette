@@ -328,7 +328,7 @@ function highlightModalReset() {
     showHighlightTagSelection();
     hideSearchErrorMessage();
     savedSelections = [];
-    initTagsHighlightTreeview(false);
+    initTagsHighlightTreeview();
 }
 
 
@@ -338,8 +338,8 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 let createTagFromHighlight;
-function createTag(from, selection, parent) {
-    createTagFromHighlight = false;
+function createTag(fromHighlight, selection, parent) {
+    createTagFromHighlight = fromHighlight;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
@@ -351,9 +351,8 @@ function createTag(from, selection, parent) {
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
-    if (from === 2) {
+    if (fromHighlight) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
-        createTagFromHighlight = true;
     }
 
     if(selection) {
@@ -535,14 +534,6 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
     };
 
     submitTagMerge(tag_src, tag_dest, callbackSuccess, callbackFail);
-});
-
-
-// Backlight
- const backlight_checkbox = document.getElementById('backlight');
- backlight_checkbox.addEventListener('change', function () {
-     const documentView = document.getElementById('document-view');
-     documentView.classList.toggle('backlight', backlight_checkbox.checked);
 });
 
 
@@ -1195,20 +1186,25 @@ window.onpopstate = function (e) {
  * Attach input change for tag search event
  */
 const TAG_NOT_FOUND_MESSAGE = gettext("No tag found");
+const alert_tag_treeview = $('#alert-tag-treeview');
+const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 document.getElementById('input-search-tags').addEventListener('input', function () {
-    const alert_tag_treeview = $('#alert-tag-treeview');
-    const filterText = $('#input-search-tags').val().toLowerCase();
+    const filterText = $(this).val().toLowerCase();
     alert_tag_treeview.addClass('d-none')
+    if(filterText === '') {
+        initTagsTreeview();
+        collapseAllNodes(treeview_tags);
+        return;
+    }
     const filteredTags = handleSearch(filterText);
-    initTagsTreeview(false, filteredTags);
+    initTagsTreeview(filteredTags);
+    expandAllNodes(treeview_tags);
     if (filteredTags.length === 0) {
         alert_tag_treeview.removeClass('d-none')
         alert_tag_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
-
-const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 function saveSelectedNodes(treeview) {
     const selectedNodes = treeview.treeview('getSelected');
@@ -1217,8 +1213,8 @@ function saveSelectedNodes(treeview) {
 
 function restoreSelectedNodes(treeview, savedNodeIds) {
     savedNodeIds.forEach(id => {
-        const nodeId = getNodeIdFromTreeviewByTagId('treeview-tags-highlight', id)
-        selectNode('treeview-tags-highlight', nodeId);
+        const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
+        selectNode(treeview_tags_highlight, nodeId);
     });
 }
 
@@ -1226,7 +1222,7 @@ let savedSelections = [];
 
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
 
-        const filterText = $('#input-search-tags-highlight').val().toLowerCase();
+        const filterText = $(this).val().toLowerCase();
         hideSearchErrorMessage();
 
         // save selected tags
@@ -1239,7 +1235,7 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         });
 
         const filteredTags = handleSearch(filterText);
-        initTagsHighlightTreeview(false, filteredTags);
+        initTagsHighlightTreeview(filteredTags);
         if (filteredTags.length === 0) {
             showSearchErrorMessage();
             alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
@@ -1257,16 +1253,35 @@ function hideSearchErrorMessage() {
     alert_tag_highlight_treeview.addClass('d-none');
 }
 
+function updateToggleButtons() {
+    const isDesktop = window.innerWidth > 768;
+
+    const leftButton = document.getElementById('toggle-left-panel');
+    const rightButton = document.getElementById('toggle-right-panel');
+
+    if (isDesktop) {
+        leftButton.querySelector('i').className = 'fas fa-chevron-left';
+        rightButton.querySelector('i').className = 'fas fa-chevron-right';
+    } else {
+        leftButton.querySelector('i').className = 'fas fa-chevron-down';
+        rightButton.querySelector('i').className = 'fas fa-chevron-down';
+    }
+}
+
 document.getElementById('toggle-left-panel').addEventListener('click', function() {
     const leftPanel = document.getElementById('left-panel');
     leftPanel.classList.toggle('reduced-col');
-    adjustMiddlePanelWidth();
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
 });
 
 document.getElementById('toggle-right-panel').addEventListener('click', function() {
     const rightPanel = document.getElementById('right-panel');
     rightPanel.classList.toggle('reduced-col');
-    adjustMiddlePanelWidth();
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
 });
 
 function adjustMiddlePanelWidth() {
@@ -1274,12 +1289,54 @@ function adjustMiddlePanelWidth() {
     const rightPanel = document.getElementById('right-panel');
     const middlePanel = document.getElementById('middle-panel');
 
-    let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
-    let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
-
-    let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
-
-    middlePanel.style.setProperty('width', middleWidth, 'important');
+    // Desktop behavior
+    if (window.innerWidth > 768) {
+        let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
+        middlePanel.style.setProperty('width', middleWidth, 'important');
+    } else {
+        // Mobile behavior
+        middlePanel.style.setProperty('width', '100%', 'important');
+    }
 
     loadDocument(current_document);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    updateToggleButtons();
+
+    const scrollBtn = document.getElementById('scroll-to-top-button');
+
+    window.addEventListener('scroll', function() {
+        if ((window.pageYOffset || document.documentElement.scrollTop) > 300) {
+            scrollBtn.classList.remove('d-none');
+        } else {
+            scrollBtn.classList.add('d-none');
+        }
+    });
+
+    scrollBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+});
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+window.addEventListener('resize', debounce(() => {
+    window.location.reload();
+}, 250));

@@ -39,12 +39,12 @@ function generateTagHierarchyItem(data, parentContainer, level) {
 
 function initTagHierarchySelect() {
 
-    initHierarchySelect(hs_menu_inner, tag_hierarchy_select)
+    initHierarchySelect(hs_menu_inner, tag_hierarchy_select, true);
 }
 
 function initMergeTagHierarchySelect() {
 
-    initHierarchySelect(hs_menu_inner_merge, tag_hierarchy_merge_select, false);
+    initHierarchySelect(hs_menu_inner_merge, tag_hierarchy_merge_select, true);
 }
 
 function initHierarchySelect(menu, select, withDefault = true) {
