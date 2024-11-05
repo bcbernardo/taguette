@@ -530,33 +530,35 @@ class TagMerge(BaseHandler):
         return self.send_json({'id': tag_dest.id})
 
 
-def calculate_tag_counts(db_session, tag_in_db, document,  is_deletion=False):
+def calculate_tag_counts(db_session, tag_in_db, document, is_deletion=False):
 
     # Increment or decrement the number of highlights associated with the tag
     highlights_count = tag_in_db.highlights_count
-    
+
     # Get the list of associated document IDs, or an empty list if None
-    document_ids = tag_in_db.document_ids if tag_in_db.document_ids is not None else []
+    document_ids = tag_in_db.document_ids \
+        if tag_in_db.document_ids is not None else []
     documents_count = len(document_ids)
-    
+
     if is_deletion:
         highlights_count -= 1
     else:
         highlights_count += 1
-    
+
     if is_deletion:
         # Check if there are still any highlights associated with the document
-        remaining_highlights = db_session.query(database.Highlight).join(database.highlight_tags).filter(
-            database.highlight_tags.c.tag_id == tag_in_db.id,
-            database.Highlight.document_id == document.id
-        ).count()
-        
+        remaining_highlights = (
+            db_session.query(database.Highlight).join(
+                database.highlight_tags).filter(
+                database.highlight_tags.c.tag_id == tag_in_db.id,
+                database.Highlight.document_id == document.id
+            ).count())
         if remaining_highlights == 0:
             documents_count -= 1
     else:
         if document.id not in document_ids:
             documents_count += 1
-        
+
     return {
         'highlights_count': highlights_count,
         'documents_count': documents_count
@@ -573,7 +575,7 @@ class HighlightAdd(BaseHandler):
         obj = self.get_json()
         start, end = obj['start_offset'], obj['end_offset']
         new_tags = set(obj.get('tags', []))
-        
+
         # Check the tags exist and are in this project
         tags = (
             self.db.query(database.Tag)
@@ -607,12 +609,14 @@ class HighlightAdd(BaseHandler):
                     for tag in sorted(new_tags)
                 ],
             )
-            
+
         tag_count_changes = {}
         for tag in tags:
             tag_in_db = self.db.query(database.Tag).get(tag.id)
-            tag_count_changes[tag.id] = calculate_tag_counts(self.db, tag_in_db, document)
-        
+            tag_count_changes[tag.id] = calculate_tag_counts(self.db,
+                                                             tag_in_db,
+                                                             document)
+
         cmd = database.Command.highlight_add(
             self.current_user,
             document,
@@ -693,7 +697,7 @@ class HighlightUpdate(BaseHandler):
                         'highlights_count': tag_in_db.highlights_count,
                         'documents_count': tag_in_db.documents_count
                     }
-                
+
                 for tag in new_tags - old_tags:
                     tag_in_db = self.db.query(database.Tag).get(tag)
                     tag_count_changes[tag] = calculate_tag_counts(self.db,
@@ -747,7 +751,7 @@ class HighlightUpdate(BaseHandler):
                                                           tag_in_db,
                                                           document,
                                                           is_deletion=True)
-        
+
         cmd = database.Command.highlight_delete(
             self.current_user,
             document,
@@ -823,8 +827,9 @@ class Highlights(BaseHandler):
                                     .filter(tag.project == project)
                                     .filter(tag.path.in_(group))
                                     .group_by(hl_tag.c.highlight_id)
-                                    .having(func.count(
-                        distinct(tag.id)) == len(group))
+                                    .having(
+                                        func.count(
+                                            distinct(tag.id)) == len(group))
                                     .subquery())
                     or_conditions.append(database.Highlight.id.in_(
                         self.db.query(and_subquery.c.highlight_id)))
