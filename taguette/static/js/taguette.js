@@ -955,7 +955,10 @@ function scrollToHighlight(highlight_id, search_text=null) {
                 log('Text container not found..')
             }
         }
-        window.scrollTo(0, scroll_position);
+        window.scrollTo({
+            top: scroll_position,
+            behavior: 'instant'
+        });
     }, 0);
 }
 

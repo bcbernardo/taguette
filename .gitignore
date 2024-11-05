@@ -63,3 +63,7 @@ edugain_idps.json
 
 # Vagrant
 .vagrant
+
+# Venv
+venv
+taguette3.10

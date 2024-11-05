@@ -998,3 +998,7 @@ Document custom select
     min-width: 30vw;
     max-width: 30vw;
 }
+
+.introjs-prevbutton {
+    display: none;
+}

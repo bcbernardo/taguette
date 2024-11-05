@@ -494,6 +494,7 @@ function customNodeRow(isTagContextMenu = false) {
         },
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
+            element.attr('data-tag-id', `${node.id}`);
             if (isTagContextMenu) {
                 element.addClass('tag-context-menu');
             }
