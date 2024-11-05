@@ -897,9 +897,10 @@ class Search(BaseHandler):
         count_total = self.db.execute(
             'SELECT count(d.id) as count '
             'FROM documents as d '
-            'WHERE d.project_id = 1 AND '
+            'WHERE d.project_id = :project_id AND '
             'LOWER(d.contents) like :search_text_escaped',
             {
+                'project_id': project_id,
                 'search_text_escaped': search_text_escaped,
             })
         total = (count_total.first())['count']

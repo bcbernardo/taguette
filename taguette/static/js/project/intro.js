@@ -109,7 +109,7 @@ $(document).ready(function() {
                 exitOnEsc: true,
                 hidePrev: true,
                 keyboardNavigation: false,
-                showBullets: true,
+                showBullets: false,
                 steps: [
                     {
                         element: document.querySelector("#right-panel"),
