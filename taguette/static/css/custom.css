@@ -335,8 +335,11 @@ li.disabled.sticky {
     padding-bottom: 0.5rem;
     position: sticky;
     top: 30px;
-    background: #fff;
-    border-bottom: 1px dashed rgba(33, 37, 41, 0.5);
+    background-color: #e7f2ff;
+    color: #3498DB;
+}
+
+li.disabled.sticky.first {
     font-weight: bold;
 }
 

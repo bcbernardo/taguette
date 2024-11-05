@@ -86,7 +86,8 @@ DEMO_DATA = {'documents': [
                     "particulièrement excitantes ?</p>\n<p>Élise : Je suis "
                     "vraiment excitée par les jeux qui intègrent des éléments "
                     "de réalité augmentée et virtuelle, car ils offrent une "
-                    "nouvelle dimension à l’expérience traditionnelle des jeux "
+                    "nouvelle dimension à l’expérience traditionnelle des "
+                    "jeux "
                     "de société. Ce genre d’innovations ouvrent des "
                     "possibilités intéressantes pour l’immersion et "
                     "l’interaction dans le jeu.</p>\n<p>Intervieweur : Merci "
@@ -117,8 +118,8 @@ DEMO_DATA = {'documents': [
                     "garde tout le monde engagé et ça ne prend pas toute la "
                     "soirée.</p>\n<p>Intervieweur : As-tu des souvenirs de "
                     "parties qui t’ont particulièrement marqué ?</p>\n"
-                    "<p>Marc : Oui, absolument. Il y a quelques semaines, on a "
-                    "joué aux Aventuriers du Rail lors d’une soirée chez un "
+                    "<p>Marc : Oui, absolument. Il y a quelques semaines, on "
+                    "a joué aux Aventuriers du Rail lors d’une soirée chez un "
                     "ami. C’était très compétitif et amusant parce que chacun "
                     "essayait de trouver les meilleures routes pour accumuler "
                     "des points. Ce que j’apprécie, c’est que ça peut devenir "
@@ -249,53 +250,51 @@ DEMO_DATA = {'documents': [
                     "explorer cette méthode.</p>",
         "favorite": False
     }
-],
-    'tags': [
-        {
-            'color': '#26A269',
-            'path': 'benefices',
-            'description': '',
-            'childrens': [
-                {
-                    'color': '#57E389',
-                    'path': 'developpement_competences',
-                    'description': '',
-                },
-                {
-                    'color': '#99c1f1',
-                    'path': 'renforcement_relations',
-                    'description': '',
-                }
-            ]
-        },
-        {
-            'color': '#ff0600',
-            'path': 'barrieres',
-            'description': '',
-            'childrens': []
-        }
-    ],
-    'highlights': [
-        {
-            'document': None,
-            'start_offset': 732,
-            'end_offset': 764,
-            'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
-            'tags': None
-        },
-        {
-            'document': None,
-            'start_offset': 924,
-            'end_offset': 933,
-            'snippet': '<p>Pandémie</p>',
-            'tags': None
-        },
-        {
-            'document': None,
-            'start_offset': 1210,
-            'end_offset': 1218,
-            'snippet': '<p>Daybreak</p>',
-            'tags': None
-        },
-    ]
+], 'tags': [
+    {
+        'color': '#26A269',
+        'path': 'benefices',
+        'description': '',
+        'childrens': [
+            {
+                'color': '#57E389',
+                'path': 'developpement_competences',
+                'description': '',
+            },
+            {
+                'color': '#99c1f1',
+                'path': 'renforcement_relations',
+                'description': '',
+            }
+        ]
+    },
+    {
+        'color': '#ff0600',
+        'path': 'barrieres',
+        'description': '',
+        'childrens': []
+    }
+], 'highlights': [
+    {
+        'document': None,
+        'start_offset': 732,
+        'end_offset': 764,
+        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
+        'tags': None
+    },
+    {
+        'document': None,
+        'start_offset': 924,
+        'end_offset': 933,
+        'snippet': '<p>Pandémie</p>',
+        'tags': None
+    },
+    {
+        'document': None,
+        'start_offset': 1210,
+        'end_offset': 1218,
+        'snippet': '<p>Daybreak</p>',
+        'tags': None
+    },
+]
 }

@@ -299,7 +299,6 @@ class Document(BaseHandler):
                 self.db.commit()
                 self.db.refresh(cmd)
                 self.application.notify_project(document.project_id, cmd)
-            
             return self.send_json({'id': document.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating DocumentUpdate: %r", e)
