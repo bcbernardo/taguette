@@ -50,10 +50,12 @@ $(document).ready(function() {
             }).start();
         },
         selectRange = (nodes, positions) => {
-            let range=document.createRange();
+            let range=document.createRange(),
+                selection = window.getSelection();
             range.setStart(nodes[0], positions[0]);
             range.setEnd(nodes[1], positions[1]);
-            window.getSelection().addRange(range);
+            selection.removeAllRanges();
+            selection.addRange(range);
 
             introjs_selection = describeSelection();
         },
@@ -429,9 +431,6 @@ $(document).ready(function() {
                                 $( ".intro-js-tags-child" ).wrapAll( "<div id='intro-js-wrapped' />");
                                 // Fix duplicate elements
                                 $("#intro-js-wrapped > li:eq(3)").remove();
-                                // $("#intro-js-wrapped > li:lt(3)").each(function(){
-                                //     $(this).remove();
-                                // });
                                 // Force refresh dynamic element
                                 this._introItems[this._currentStep].element = $("#intro-js-wrapped")[0];
                                 break;
@@ -481,6 +480,7 @@ $(document).ready(function() {
                                 }
                                 $(window).trigger('click');
                                 $('#highlight-add-modal').removeClass('fade');
+                                console.log(introjs_selection);
                                 createHighlight(introjs_selection);
 
                                 for(let i in tag_position) {
@@ -568,6 +568,7 @@ $(document).ready(function() {
                             node_end = this._introItems[this._currentStep].nodes[1],
                             text_start = this._introItems[this._currentStep].highlight_context[0],
                             text_end = this._introItems[this._currentStep].highlight_context[1];
+                        console.log([[node_start, node_end], [text_start, text_end]])
                         setTimeout(function(){
                             selectRange([node_start, node_end], [text_start, text_end]);
                             repositionIntroJS('top');
