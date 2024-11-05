@@ -230,6 +230,7 @@ class Test2E2MultiUser(SeleniumTest):
             '    let members = {"admin": {"privileges": "ADMIN"}};\n'
             '    let highlights = {};\n'
             '    let last_event = -1;\n'
+            '    let is_demo = false;\n'
         ) % (
             exact_version(),
             json.dumps(

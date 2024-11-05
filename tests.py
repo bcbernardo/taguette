@@ -697,6 +697,7 @@ class TestMultiuser(MyHTTPTestCase):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
+            '  let is_demo = false;\n'
             '</script>' % (
                 exact_version(),
                 json.dumps(
@@ -2674,6 +2675,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             '  let members = {"admin": {"privileges": "ADMIN"}};\n'
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
+            '  let is_demo = false;\n'
         ) % (
             exact_version(),
             json.dumps(
