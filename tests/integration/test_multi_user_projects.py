@@ -86,7 +86,7 @@ class TestMultiUserProject(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
 
         tags = [
             build_tag_response(

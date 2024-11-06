@@ -82,7 +82,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
 
         tags = [
             build_tag_response(
@@ -94,7 +94,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
         last_event = -1
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
-            members, last_event)
+            members, last_event, 'false')
         self.assertEqual(init_js, init_js_expected)
 
         # Start polling
@@ -142,7 +142,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
 
         tags = [
             build_tag_response(
