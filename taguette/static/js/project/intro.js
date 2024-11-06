@@ -9,57 +9,12 @@ $(document).ready(function() {
                 if (result.html) {
                     $('#demo-project-container').prepend(result.html);
                     demoElement = $('#demo-project-container .project:first .project-card');
+                    $('#demo-project-container .project.empty').remove();
                 }
             })
     }
 
-    let showHomeIntro = () => {
-            introJs().setOptions({
-                exitOnOverlayClick: true,
-                exitOnEsc: true,
-                steps: [
-                    {
-                        title: gettext('Welcome to LibreQDA, an open source qualitative analysis application.'),
-                        intro: gettext('<p>To get the source code: <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
-                    },
-                    {
-                        element: document.querySelector('#intro-documentation'),
-                        intro: gettext('<p>To consult documentation</p>'),
-                        position: 'bottom'
-                    },
-                    {
-                        element: document.querySelectorAll("a.project")[0],
-                        intro: gettext('<p>A mini project has been added to your home screen to simulate an analysis approach.</p>'),
-                        position: 'top'
-                    },
-                ]
-            }).
-            setOption('disableInteraction', true).
-            setOption("nextLabel", gettext('Next')).
-            setOption("prevLabel", gettext('Back')).
-            setOption("doneLabel", gettext('Continue')).
-            onchange(function (targetElement) {
-                if(targetElement.classList.contains('project') &&
-                    demoElement === null) {
-                    createDemoProject();
-                }
-            }).oncomplete(function () {
-                if(demoElement !== null) {
-                    demoElement.trigger('click');
-                }
-            }).start();
-        },
-        selectRange = (nodes, positions) => {
-            let range=document.createRange(),
-                selection = window.getSelection();
-            range.setStart(nodes[0], positions[0]);
-            range.setEnd(nodes[1], positions[1]);
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            introjs_selection = describeSelection();
-        },
-        repositionIntroJS = (where='top', offset=0) => {
+    let repositionIntroJS = (where='top', offset=0) => {
             //Remove position classes from tooltip
             let cls = $('.introjs-arrow').attr("class").split(/\s+/);
             for(let c in cls) {
@@ -99,8 +54,71 @@ $(document).ready(function() {
                     $('.introjs-arrow').css('display', 'inherit').addClass('left');
                     $('.introjs-disableInteraction').css('width', ($('.introjs-tooltip').offset().left - $('.introjs-disableInteraction').offset().left) + 'px');
                     break;
-                    break;
             }
+        },
+        showHomeIntro = () => {
+            introJs().setOptions({
+                exitOnOverlayClick: true,
+                exitOnEsc: true,
+                steps: [
+                    {
+                        title: gettext('Welcome to LibreQDA, an open source qualitative analysis application.'),
+                        intro: gettext('<p>To get the source code: <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
+                    },
+                    {
+                        element: document.querySelector('#intro-documentation'),
+                        intro: gettext('<p>To consult documentation</p>'),
+                        position: 'bottom'
+                    },
+                    {
+                        element: $('#demo-project-container .col:first')[0],
+                        intro: gettext('<p>A mini project has been added to your home screen to simulate an analysis approach.</p>'),
+                        position: 'top',
+                        doAction: 'create-demo-project'
+                    },
+                ]
+            }).
+            setOption('disableInteraction', true).
+            setOption("nextLabel", gettext('Next')).
+            setOption("prevLabel", gettext('Back')).
+            setOption("doneLabel", gettext('Continue')).
+            onbeforechange(function (targetElement) {
+                if(this._introItems[this._currentStep].doAction) {
+                    switch (this._introItems[this._currentStep].doAction) {
+                        case 'create-demo-project':
+                            if(demoElement === null) {
+                                createDemoProject();
+                            }
+                            break;
+                    }
+                }
+            }).
+            onafterchange(function(targetElement) {
+                if(this._introItems[this._currentStep].doAction) {
+                    switch (this._introItems[this._currentStep].doAction) {
+                        case 'create-demo-project':
+                            setTimeout(function(){
+                                repositionIntroJS('right');
+                            }, 500);
+                            break;
+                    }
+                }
+            }).
+            oncomplete(function () {
+                if(demoElement !== null) {
+                    demoElement.trigger('click');
+                }
+            }).start();
+        },
+        selectRange = (nodes, positions) => {
+            let range=document.createRange(),
+                selection = window.getSelection();
+            range.setStart(nodes[0], positions[0]);
+            range.setEnd(nodes[1], positions[1]);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            introjs_selection = describeSelection();
         },
         showProjectIntro = () => {
             introJs().setOptions({
@@ -619,11 +637,11 @@ $(document).ready(function() {
                     }
                 }
             }).
-            oncomplete(function () {
+            onexit(function () {
                 //Make sure everything is back as it was
                 $( ".intro-js-tags-child" ).unwrap();
                 $( ".intro-js-highlight" ).unwrap();
-                // $( ".document-highlight" ).unwrap();
+                $( ".document-highlight" ).unwrap();
                 $(window).unbind('click');
             }).start();
         }
@@ -632,8 +650,11 @@ $(document).ready(function() {
         showHomeIntro();
     });
 
-    // In project.html template
-    if(is_demo) {
+    if($("#a-start-demo").length && is_demo) {
+        // In index.html template
+        showHomeIntro();
+    } else if(is_demo) {
+        // In project.html template
         showProjectIntro();
     }
 });

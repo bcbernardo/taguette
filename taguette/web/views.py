@@ -78,6 +78,8 @@ class Index(BaseHandler):
             user_display_name = user.login
             if user.displayname is not None and user.displayname != "":
                 user_display_name = user.displayname
+
+            is_demo = 'false' if len(user.project_memberships) else 'true'
             return self.render(
                 'index.html',
                 user=user,
@@ -89,7 +91,8 @@ class Index(BaseHandler):
                 can_import_project=(
                     self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
-                demo=False
+                demo=False,
+                is_demo=Markup(is_demo)
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)

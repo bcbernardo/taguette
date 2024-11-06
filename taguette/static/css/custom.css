@@ -666,7 +666,6 @@ Index project view custom
 }
 
 .stats-container {
-    background-color: white;
     z-index: 1;
 }
 
@@ -735,6 +734,11 @@ Index project view custom
     color: #464e56;
     font-weight: 600;
     text-align: left;
+}
+
+.empty i.fas,
+.empty .project-icon {
+    visibility: hidden;
 }
 
 .quote{
