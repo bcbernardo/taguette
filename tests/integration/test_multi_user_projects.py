@@ -719,6 +719,27 @@ class TestMultiUserProject(TestMultiUser):
                 'pages': 1,
             })
 
+        # Test search with no results
+        async with self.aget('/api/project/1/search/nothing-found?page=1') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {
+                "documents": [],
+                "nb_results": 0,
+                "pages": 0,
+                "search_text": "nothing-found"
+            })
+
+        # Test search with results
+        async with self.aget('/api/project/1/search/content?page=1') as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertIn('nb_results', response_json)
+            self.assertIn('pages', response_json)
+            self.assertIn('documents', response_json)
+            self.assertTrue(response_json['nb_results'] > 0)
+            self.assertTrue(response_json['pages'] > 0)
+            self.assertTrue(len(response_json['documents']) > 0)
+
         # TODO: Collaborators
         
         await asyncio.sleep(2)
