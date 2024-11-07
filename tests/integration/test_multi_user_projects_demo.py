@@ -30,5 +30,6 @@ class TestMultiUserProjectDemo(TestMultiUser):
                 '/api/create_demo_project'
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertIn('html', response.json())
+            json_response = response.json()
+            self.assertIn('html', json_response.keys())
 
