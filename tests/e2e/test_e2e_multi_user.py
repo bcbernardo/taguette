@@ -105,7 +105,7 @@ class Test2E2MultiUser(SeleniumTest):
         await self.s_get('/')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
-            ['Welcome tester'],
+            ['Welcome tester', 'Welcome to LibreQDA, an open source qualitative analysis application.'],
         )
         self.assertIn(
             'Here are your projects:',
