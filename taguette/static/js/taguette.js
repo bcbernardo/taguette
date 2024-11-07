@@ -1143,8 +1143,9 @@ function loadTag(tag_path, page) {
 
 // Load the document if the URL includes one
 setTimeout(function () {
-    const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))+`),
-        _document_url_search_text = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/search/([^\/]+/[0-9]+))+`);
+    const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))?`);
+  //  const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))+`),
+    const _document_url_search_text = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/search/([^\/]+/[0-9]+))+`);
     // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
     let m = window.location.pathname.match(_document_url_highlight),
         m2 = window.location.pathname.match(_document_url_search_text);
@@ -1344,7 +1345,5 @@ function debounce(func, wait) {
 }
 
 window.addEventListener('resize', debounce(() => {
-    if (!window.SELENIUM_TEST) {
-        window.location.reload();
-    }
+    // loadDocument(current_document);
 }, 250));

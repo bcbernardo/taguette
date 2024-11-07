@@ -202,8 +202,6 @@ class Test2E2MultiUser(SeleniumTest):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
         
-        self.driver.execute_script("window.SELENIUM_TEST = true;")
-        
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')
@@ -257,6 +255,12 @@ class Test2E2MultiUser(SeleniumTest):
             expected.strip() == script.get_property('textContent').strip()
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
         ))
+        
+        # Remove event listeners in your test setup
+        self.driver.execute_script("""
+            window.removeEventListener('resize', window.onresize);
+            window.onresize = null;
+        """)
         
         # Change project 1 metadata
         await self.s_click(self.find_by_id('project-sidebar-open'))
