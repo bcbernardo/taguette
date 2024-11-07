@@ -129,6 +129,7 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
 
 .btn.btn-primary {
   background-color: #018849 !important;
+    border-color: #018849 !important;
 }
 
 .btn.btn-outline-primary {

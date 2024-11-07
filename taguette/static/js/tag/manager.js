@@ -238,10 +238,12 @@ function selectAllTag() {
  */
 function updateTagCount(tagsId) {
 
+    let updateTagList = [];
     for (const key in tagsId) {
         const tagId = parseInt(key);
         const tagData = tagsId[key];
         const tagToUpdate = findTag(tagId);
+        updateTagList.push(tagToUpdate);
 
         if (tagToUpdate) {
             tagToUpdate.count = tagData.highlights_count;
@@ -250,6 +252,15 @@ function updateTagCount(tagsId) {
     }
 
     initTagsTreeview();
+
+    for (const tag of updateTagList) {
+        if(!tag.parent) {
+            highlightNewTag(tag.id);
+            continue;
+        }
+        expandNodeParent(tag.parent);
+        highlightNewTag(tag.id);
+    }
 }
 
 /*
