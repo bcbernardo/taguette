@@ -63,6 +63,15 @@ div.sticky-top {
 
 .navbar.navbar-expand-lg.navbar-dark.bg-primary {
   background-color: #018849 !important;
+  margin-bottom: 2em;
+}
+
+body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
+  margin-bottom: 1em;
+}
+
+#navbar {
+    padding-left: 115px;
 }
 
 .navbar-dark .navbar-nav .nav-link {
@@ -93,6 +102,17 @@ div.sticky-top {
 /* Make icon lighter */
 .navbar-dark .navbar-nav .nav-link .fas {
   opacity: 0.7;
+}
+
+.navbar-brand {
+    position: absolute;
+    background: #fff;
+    display: block;
+    top: 0.5em;
+}
+
+.navbar-brand img {
+    max-width: 100px;
 }
 
 .mr-auto {
