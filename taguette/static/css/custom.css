@@ -19,7 +19,7 @@
 
 /* Change link colors */
 .container-body a:not(.btn) {
-  color: #3498DB;
+  color: #005a20;
 }
 
 /* Disabled links */
@@ -62,7 +62,7 @@ div.sticky-top {
 /* Navigation */
 
 .navbar.navbar-expand-lg.navbar-dark.bg-primary {
-  background-color: #125368 !important;
+  background-color: #018849 !important;
 }
 
 .navbar-dark .navbar-nav .nav-link {
@@ -74,7 +74,7 @@ div.sticky-top {
 }
 
 .navbar-dark .navbar-nav .nav-link.active {
-  color: #85c1e9 !important;
+  color: #BCC3AC !important;
 }
 
 .navbar-dark .navbar-nav .nav-link.disabled:hover, .navbar-dark .navbar-nav .nav-link.disabled:focus {
@@ -82,7 +82,7 @@ div.sticky-top {
 }
 
 .navbar-dark .navbar-nav .nav-link:hover, .navbar-dark .navbar-nav .nav-link:focus {
-  color: #85c1e9 !important;
+  color: #3a3a3a !important;
 }
 
 .navbar-dark .navbar-nav .dropdown-item.active {
@@ -108,20 +108,20 @@ div.sticky-top {
 /* Colors for button primary */
 
 .btn.btn-primary {
-  background-color: #125368 !important;
+  background-color: #018849 !important;
 }
 
 .btn.btn-outline-primary {
-  color: #125368;
+  color: #018849;
   background-color: transparent;
   background-image: none;
-  border-color: #125368;
+  border-color: #018849;
 }
 
 .btn.btn-outline-primary:hover {
   color: #fff !important;
-  background-color: #125368 !important;
-  border-color: #125368 !important;
+  background-color: #018849 !important;
+  border-color: #018849 !important;
 }
 
 .btn.btn-outline-primary:focus, .btn-outline-primary.focus {
@@ -138,20 +138,20 @@ div.sticky-top {
 
 .btn.btn-outline-primary:not(:disabled):not(.disabled).active:focus, .btn-outline-primary:not(:disabled):not(.disabled):active:focus, .show > .btn-outline-primary.dropdown-toggle:focus {
   color: #fff !important;
-  background-color: #125368 !important;
-  border-color: #125368 !important;
+  background-color: #018849 !important;
+  border-color: #018849 !important;
 }
 
 .btn.btn-outline-primary.disabled, .btn-outline-primary:disabled {
-  color: #125368 !important;
+  color: #018849 !important;
   background-color: transparent !important;
 }
 
 .btn.btn-outline-primary:not(:disabled):not(.disabled):active, .btn-outline-primary:not(:disabled):not(.disabled).active,
 .show > .btn-outline-primary.dropdown-toggle {
   color: #fff !important;
-  background-color: #125368 !important;
-  border-color: #125368 !important;
+  background-color: #018849 !important;
+  border-color: #018849 !important;
 }
 
 .btn.btn-outline-primary:not(:disabled):not(.disabled):active:focus, .btn-outline-primary:not(:disabled):not(.disabled).active:focus,
@@ -161,13 +161,13 @@ div.sticky-top {
 
 .dropdown-item:focus, .dropdown-item:hover {
   color: #fff !important;
-  background-color: #125368 !important;
-  border-color: #125368 !important;
+  background-color: #018849 !important;
+  border-color: #018849 !important;
 }
 
 /* Colors for button info */
 .btn.btn-info {
-  background-color: #1d87a9 !important;
+  background-color: #BCC3AC !important;
 }
 
 /* Colors for badges */
@@ -193,12 +193,12 @@ div.sticky-top {
 
 .badge-secondary {
   color: #fff !important;
-  background-color: #3498DB !important;
+  background-color: #005a20 !important;
 }
 
 .badge-primary {
   color: #fff !important;
-  background-color: #125368 !important;
+  background-color: #018849 !important;
 }
 
 .badge-primary[href]:hover, .badge-primary[href]:focus {
@@ -548,7 +548,7 @@ a.dropdown-item:hover {
 /* Spinner animation */
 #spinner {
   border: 3vh solid #dcdcdc;
-  border-top: 3vh solid #125368;
+  border-top: 3vh solid #018849;
   border-radius: 50%;
   width: 30vh;
   height: 30vh;
@@ -670,16 +670,16 @@ Index project view custom
 }
 
 .project-card .fas {
-    color: #125368;
+    color: #018849;
 }
 
 .action {
-    background-color: #125368;
+    background-color: #018849;
 }
 
 .project-card:hover {
     transform: scale(1.05);
-    border : 2px solid #125368;
+    border : 2px solid #018849;
 }
 
 .icon-circle {
@@ -714,7 +714,7 @@ Index project view custom
 
 .project-icon {
     border-radius: 50%;
-    background-color: #125368;
+    background-color: #018849;
     width: 70px;
     height: 70px;
     display: flex;
@@ -907,7 +907,7 @@ Document custom select
 
 .select-dropdown li:hover,
 .select-dropdown input:checked ~ label {
-    background-color: #125368;
+    background-color: #018849;
     color: #f1f1f1;
 }
 
@@ -997,7 +997,7 @@ Document custom select
     top: 0;
     width: 18px;
     height: 18px;
-    border: 2px solid #125368;
+    border: 2px solid #018849;
     border-radius: 4px;
     background-color: white;
 }
@@ -1008,7 +1008,7 @@ Document custom select
     left: 4px;
     top: -2px;
     font-size: 18px;
-    color: #125368;
+    color: #018849;
 }
 
 .custom-checkbox:hover .custom-control-input ~ .custom-control-label:before {
