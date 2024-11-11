@@ -43,7 +43,7 @@ function findRootParent(tagId) {
     return tagId;
 }
 
-function highlightNewTag(tagId) {
+function highlightTag(tagId) {
     const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
     const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
     nodeElement.addClass('highlight-tag');
@@ -83,13 +83,13 @@ function addTag(tag) {
     updateTagsList();
     if(!tag.parent) {
         if(!createTagFromHighlight) {
-            highlightNewTag(tag.id);
+            highlightTag(tag.id);
         }
         return;
     }
     expandNodeParent(tag.parent);
     if(!createTagFromHighlight) {
-        highlightNewTag(tag.id);
+        highlightTag(tag.id);
     }
 
 }
@@ -255,11 +255,12 @@ function updateTagCount(tagsId) {
 
     for (const tag of updateTagList) {
         if(!tag.parent) {
-            highlightNewTag(tag.id);
+            highlightTag(tag.id);
             continue;
         }
-        expandNodeParent(tag.parent);
-        highlightNewTag(tag.id);
+        const parentRoot = findRootParent(tag.id);
+        expandNodeParent(parentRoot);
+        highlightTag(tag.id);
     }
 }
 

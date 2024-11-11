@@ -33,34 +33,34 @@ function generateContextMenuItems(node) {
     return {
         "toggleSelectAll": {
             name: gettext('selectAll'),
-            icon: 'fas fa-eye',
+            icon: 'fas fa-check-square',
             visible: hasUnselectedChildren && hasChildren,
             callback: (key, options) => contextMenuAction('selectAll', node.nodeId)
         },
         "toggleDeSelectAll": {
             name: gettext('unselectAll'),
-            icon: 'fas fa-eye-slash',
+            icon: 'fas fa-square',
             visible: hasChildren && hasSelectedChildren,
             callback: (key, options) => contextMenuAction('unselectAll', node.nodeId)
         },
         "toggleSelect": {
             name: gettext('Select With Condition'),
-            icon: 'fas fa-check',
+            icon: 'fas fa-filter',
             visible: !isSelected && selectedNodes,
             items: {
                 "andSelect": {
                     name: gettext('AND'),
-                    icon: '',
+                    icon: 'fas fa-plus',
                     callback: (key, options) => contextMenuAction('selectAnd', node.nodeId)
                 },
                 "orSelect": {
                     name: gettext('OR'),
-                    icon: 'fas fa-union',
+                    icon: 'fas fa-exchange-alt',
                     callback: (key, options) => contextMenuAction('selectOr', node.nodeId)
                 },
                 "notSelect": {
                     name: gettext('NOT'),
-                    icon: 'fas fa-remove',
+                    icon: 'fas fa-ban',
                     callback: (key, options) => contextMenuAction('selectNot', node.nodeId)
                 }
             }
@@ -73,28 +73,28 @@ function generateContextMenuItems(node) {
         },
         "addChild": {
             name: gettext('Add child'),
-            icon: "add",
+            icon: "fas fa-plus-circle",
             callback: (key, options) => contextMenuAction('addChild', tagId)
         },
         "edit": {
             name: gettext('edit'),
-            icon: "edit",
+            icon: "fas fa-pen",
             callback: (key, options) => contextMenuAction('edit', tagId)
         },
         "merge": {
             name: gettext('merge'),
-            icon: "copy",
+            icon: "fas fa-copy",
             callback: (key, options) => contextMenuAction('merge', tagId)
         },
         "deleteParent": {
             name: gettext('deleteParent'),
-            icon: "delete",
+            icon: "fas fa-folder-minus",
             visible: hasParent,
             callback: (key, options) => contextMenuAction('deleteParent', tagId)
         },
         "delete": {
             name: gettext('delete'),
-            icon: "delete",
+            icon: "fas fa-trash",
             callback: (key, options) => contextMenuAction('delete', tagId)
         }
     };

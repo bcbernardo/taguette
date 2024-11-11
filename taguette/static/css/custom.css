@@ -1085,9 +1085,9 @@ Document custom select
     display: none;
 }
 
-/* new tag highlight */
+/* Tag highlight */
 .highlight-tag {
-    background-color: #E7F2FF !important;
+    background-color: #EDEFE9 !important;
     transition: background-color 1s ease;
 }
 
@@ -1108,4 +1108,10 @@ Document custom select
     z-index: 9999;
     width: 40px;
     height: 40px;
+}
+
+.badge-fixed-width {
+    width: 40px;
+    text-align: center;
+    display: inline-block;
 }

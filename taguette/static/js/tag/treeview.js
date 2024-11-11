@@ -184,7 +184,6 @@ function collapseAllNodes(treeview) {
     }
 }
 
-
 // custom treeview function
 function convertToTreeNode(data, includeTags) {
 
@@ -192,7 +191,10 @@ function convertToTreeNode(data, includeTags) {
         if (item.children.length > 0 && item.count === 0 && item.count_document === 0) {
             return { totalCount: '-', totalDocumentCount: '-' };
         } else {
-            return { totalCount: item.count, totalDocumentCount: item.count_document };
+            return {
+                totalCount: item.count > 100 ? '+100' : item.count.toString(),
+                totalDocumentCount: item.count_document > 100 ? '+100' : item.count_document.toString()
+            };
         }
     }
 
@@ -229,13 +231,13 @@ function initTagsTreeview(filterTags = null) {
             container.addClass('d-flex align-items-center');
             if (node.tags && node.tags.length > 0) {
                 container.append($('<span>', {
-                    class: 'badge badge-primary ms-1',
+                    class: 'badge badge-primary ms-1 badge-fixed-width',
                     title: 'Documents',
                     text: node.tags[0]
                 }));
                 if (node.tags.length > 1) {
                     container.append($('<span>', {
-                        class: 'badge badge-secondary ms-1 ms-2',
+                        class: 'badge badge-secondary ms-1 ms-2 badge-fixed-width',
                         title: 'Highlights',
                         text: node.tags[1]
                     }));
