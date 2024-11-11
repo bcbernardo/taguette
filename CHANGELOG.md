@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Unreleased (???)
+----------------
+
+Bugfixes:
+* Use another region of the requested language if it exists instead of falling back to English
+* Fix `project_import` metric
+* Don't use heuristics when importing .txt files
+* Fix sending emails to names starting or ending with a dot
+* Fix highlights appearing when created in another document
+
+Enhancements:
+* Automatically detect the character encoding of codebooks
+* Add a metric for emails sent
+* Add sort option for tags
+* Add ability to search for tags in highlight modal
+* Add scrolling to left panel
+* Add validation to registration form
+* Automatically pick a random password if prompting fails (no terminal)
+
 1.4.1 (2023-02-04)
 ------------------
 
