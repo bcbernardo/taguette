@@ -7,7 +7,7 @@ Create Date: 2024-10-12 15:20:57.692684
 """
 from alembic import op
 import sqlalchemy as sa
-
+import sys
 
 # revision identifiers, used by Alembic.
 revision = '63d7ca28fc0c'
@@ -28,6 +28,78 @@ def upgrade():
         batch_op.create_foreign_key(batch_op.f('fk_tags_parent_id_tags'),
                                     'tags', ['parent_id'], ['id'],
                                     ondelete='CASCADE')
+
+    # Migrate existing tag to new hierarchy feature
+    conn = op.get_bind()
+
+    '''Fetch all tags, sorted by path length to
+    process parents before children '''
+    tags = conn.execute(
+        sa.text('''
+           SELECT id, path
+           FROM tags
+           ORDER BY LENGTH(path)
+       ''')
+    ).fetchall()
+
+    print(f"Total tags fetched: {len(tags)}", file=sys.stderr)
+
+    # Store paths mapped to their IDs
+    path_dico = {tag.path: tag.id for tag in tags}
+    updates = []
+
+    # Find parents and collect updates
+    for tag in tags:
+        found_parent = None
+        print(
+            f"Processing tag id={tag.id}, path={tag.path}",
+            file=sys.stderr
+        )
+
+        for path, parent_id in path_dico.items():
+            # Skip long path
+            if len(path) >= len(tag.path):
+                continue
+
+            # Check if path has parent
+            is_parent = tag.path.startswith(path)
+            should_update_parent = (
+                found_parent is None
+                or len(path) > len(found_parent[0])
+            )
+
+            if is_parent and should_update_parent:
+                found_parent = (path, parent_id)
+
+        if found_parent:
+            updates.append({
+                "parent_id": found_parent[1],
+                "id": tag.id
+            })
+            print(
+                f"save update for tag id={tag.id} "
+                f"with parent_id={found_parent[1]}",
+                file=sys.stderr
+            )
+
+    # Execute updates in a single batch
+    if updates:
+        print(
+            f"Executing batch update for {len(updates)} "
+            f"tags with parents...",
+            file=sys.stderr
+        )
+        conn.execute(
+            sa.text('''
+               UPDATE tags
+               SET parent_id = :parent_id
+               WHERE id = :id
+           '''),
+            updates
+        )
+        print("Batch update completed.", file=sys.stderr)
+    else:
+        print("No updates to execute.", file=sys.stderr)
 
     # ### end Alembic commands ###
 

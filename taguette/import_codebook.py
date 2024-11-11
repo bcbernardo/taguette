@@ -15,6 +15,29 @@ class InvalidCodebook(ValueError):
         self.row = row
 
 
+def find_hierarchy_from_paths(tags):
+    paths = {tag['path'] for tag in tags}
+
+    for tag in tags:
+        found_parent = None
+        for path in paths:
+
+            # Skip long path
+            if len(path) >= len(tag['path']):
+                continue
+
+            # Check if path has parent
+            is_parent = tag['path'].startswith(path)
+            should_update_parent = (found_parent is None
+                                    or len(path) > len(found_parent))
+
+            if is_parent and should_update_parent:
+                found_parent = path
+
+        if found_parent:
+            tag['parent'] = found_parent
+
+
 def list_tags_csv(reader):
     detector = chardet.UniversalDetector()
     chunk = reader.read(4096)
@@ -89,9 +112,11 @@ def list_tags_csv(reader):
             else:
                 parent = ''
             tags.append({'path': path, 'parent': parent,
-                        'description': description})
+                         'description': description})
     except (csv.Error, UnicodeDecodeError):
         raise InvalidCodebook(_f("Invalid CSV file"))
+
+    find_hierarchy_from_paths(tags)
 
     return tags
 

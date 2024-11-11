@@ -8,7 +8,7 @@ const SPLICE_DEFAULT_INDEX = 1;
 const DEFAULT_COUNT = 0;
 
 // Highlight new tag after creation, edit, merge, etc.
-function highlightNewTag(tagId) {
+function highlightTag(tagId) {
     const nodeElement = $(`#tag-node-${tagId}`);
     nodeElement.addClass('highlight-tag');
     setTimeout(() => {
@@ -121,14 +121,14 @@ function addTag(tag) {
     // Update the list of tags
     updateTagsList();
     if(!tag.parent) {
-        highlightNewTag(tag.id);
+        highlightTag(tag.id);
         return;
     }
 
     // Expand node if necessary
     const rootParentId = findRootParent(tag.parent);
     expandNode(treeview_tags, rootParentId);
-    highlightNewTag(tag.id);
+    highlightTag(tag.id);
 }
 
 // Add a new tag to the tag tree
@@ -298,6 +298,10 @@ function initTagsTreeview(filterTags = null) {
         event.preventDefault();
         window.history.pushState({tag_path: tag_path}, `Tag ${tag_path}`, url);
         loadTag(tag_path);
+        setTimeout(function () {
+            highlightTagChildren(data, treeview_tags);
+        }, 10);
+
     });
 }
 
@@ -352,3 +356,25 @@ function collapseAllNodes(treeview) {
 }
 
 
+// Highlight selected tag children recursively
+function highlightTagChildren(node, treeview) {
+
+    if (node.nodes && node.nodes.length > 0) {
+        treeview.treeview('expandNode', [node.nodeId,
+            {levels: DEFAULT_LEVEL_OPTION, silent: false}]);
+    }
+
+    function highlightAllNodes(node) {
+        if (node.nodes && node.nodes.length > 0) {
+            // Highlight all children
+            node.nodes.forEach(childNode => {
+                $(`#tag-node-${childNode.id}`).addClass('highlight-tag');
+                highlightAllNodes(childNode);
+            });
+        } else {
+            $(`#tag-node-${node.id}`).addClass('highlight-tag');
+        }
+    }
+
+    highlightAllNodes(node);
+}

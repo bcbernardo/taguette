@@ -938,10 +938,12 @@ function highlightModalReset() {
  */
 function updateTagCount(tagsId) {
 
+    let updateTagList = [];
     for (const key in tagsId) {
         const tagId = parseInt(key);
         const value = parseInt(tagsId[key]);
         const tagToUpdate = findTag(tagId);
+        updateTagList.push(tagToUpdate);
 
         if (tagToUpdate) {
             tagToUpdate.count = parseInt(tagToUpdate.count) + value;
@@ -949,6 +951,17 @@ function updateTagCount(tagsId) {
     }
 
     initTagsTreeview();
+
+    for (const tag of updateTagList) {
+        if(!tag.parent) {
+            highlightTag(tag.id);
+            continue;
+        }
+        const parentRoot = findRootParent(tag.id);
+        expandNode(treeview_tags, parentRoot);
+        highlightTag(tag.id);
+    }
+
 }
 
 var tag_add_modal = document.getElementById('tag-add-modal');
