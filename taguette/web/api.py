@@ -439,8 +439,8 @@ class TagMerge(BaseHandler):
             .values(tag_id=tag_dest.id)
         )
         # note that the tag was merged
-        tag_dest.description = tag_dest.description + "\ntag merged with " 
-                                                    + tag_src.path
+        tag_dest.description = tag_dest.description + "\ntag merged with "
+        tag_dest.description = tag_dest.description + tag_src.path
         self.db.execute(update(database.Tag)
                         .where(database.Tag.id == tag_dest.id)
                         .values(description=tag_dest.description)
