@@ -444,7 +444,7 @@ class TagMerge(BaseHandler):
         self.db.execute(update(database.Tag)
                         .where(database.Tag.id == tag_dest.id)
                         .values(description=tag_dest.description)
-        )
+                       )
 
         # Delete tag_src
         self.db.delete(tag_src)
