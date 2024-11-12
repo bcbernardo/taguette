@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_
+from sqlalchemy import and_, update
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -438,6 +438,13 @@ class TagMerge(BaseHandler):
             .where(database.highlight_tags.c.tag_id == tag_src.id)
             .values(tag_id=tag_dest.id)
         )
+	# note that the tag was merged
+        tag_dest.description = tag_dest.description + "\ntag merged with " + tag_src.path
+        self.db.execute(update(database.Tag)
+            .where(database.Tag.id == tag_dest.id)
+            .values(description=tag_dest.description)
+        )
+
         # Delete tag_src
         self.db.delete(tag_src)
 
