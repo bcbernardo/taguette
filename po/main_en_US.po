@@ -268,8 +268,8 @@ msgid "Import"
 msgstr "Import"
 
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Selected the document"
-msgstr "Favorite documents"
+msgid "Starred documents"
+msgstr "Starred documents"
 
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:53

@@ -431,7 +431,7 @@ msgid "Import"
 msgstr "Importer"
 
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Selected the document"
+msgid "Starred documents"
 msgstr "Documents favoris"
 
 #: taguette/templates/partials/document_toolbar.html:7

@@ -182,7 +182,7 @@ msgid "Cancel"
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Selected the document"
+msgid "Starred documents"
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:7

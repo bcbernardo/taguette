@@ -127,7 +127,7 @@ $(document).ready(function() {
                 exitOnEsc: true,
                 hidePrev: true,
                 keyboardNavigation: false,
-                showBullets: false,
+                showBullets: true,
                 steps: [
                     {
                         element: document.querySelector("#right-panel"),
@@ -338,7 +338,7 @@ $(document).ready(function() {
                     {
                         element: document.querySelector("#left-panel"),
                         title: gettext('Analyze'),
-                        intro: gettext('<p>After encoding several passages, you can analyze them. Let\'s click on games</p>'),
+                        intro: gettext('<p>After encoding several passages, you can analyze them. Let\'s click on barrieres</p>'),
                         position: 'right',
                         highlights: [[ 732, 764 ], [ 924, 933 ], [ 1210, 1218 ]],
                         doAction: 'create-highlights'
@@ -532,6 +532,9 @@ $(document).ready(function() {
                                 let i = this._introItems[this._currentStep].which;
                                 if(isNaN(i)) {
                                     i = 0;
+                                }
+                                if(!$("[data-nodeid='2']").is(':visible')) {
+                                    $("[data-nodeid='1'] .expand-icon").trigger('click');
                                 }
                                 $("[data-nodeid='2']").trigger( "contextmenu" );
                                 $(".context-menu-root li:nth(" + i + ")").addClass('context-menu-hover context-menu-visible');
