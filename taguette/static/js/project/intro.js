@@ -291,12 +291,12 @@ $(document).ready(function() {
                         intro: gettext('<p>Then you can return to your highlights by clicking this button.</p>'),
                         position: 'left',
                     },
-                    {
-                        element: document.querySelector('#accordionCollaborators'),
-                        title: gettext('Add collaborators'),
-                        intro: gettext('<p>Here you can add collaborators to your project.</p>'),
-                        position: 'right',
-                    },
+                    // {
+                    //     element: document.querySelector('#accordionCollaborators'),
+                    //     title: gettext('Add collaborators'),
+                    //     intro: gettext('<p>Here you can add collaborators to your project.</p>'),
+                    //     position: 'right',
+                    // },
                     {
                         title: gettext('Your turn'),
                         intro: gettext('<p>Now is up to you to use LibreQDA as you need. If you want to continue this tutorial, review the contents of the codes and look to define child codes.</p>'),
