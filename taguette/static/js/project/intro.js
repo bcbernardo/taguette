@@ -533,6 +533,10 @@ $(document).ready(function() {
                                 if(isNaN(i)) {
                                     i = 0;
                                 }
+                                window.scrollTo({
+                                    top: 0,
+                                    behavior: 'instant'
+                                });
                                 if(!$("[data-nodeid='2']").is(':visible')) {
                                     $("[data-nodeid='1'] .expand-icon").trigger('click');
                                 }
