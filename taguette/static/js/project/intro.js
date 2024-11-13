@@ -197,66 +197,10 @@ $(document).ready(function() {
                         doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
                     {
-                        element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight a third one'),
-                        intro: gettext("<p>Let's select a third excerpt and assign another code.</p>"),
-                        position: 'bottom',
-                        highlight: [2850, 3255],
-                        nodes: [null, null],
-                        highlight_context: [0, 0],
-                        doAction: 'document-highlight' // Action to create wrapper for introjs
-                    },
-                    {
-                        element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a code"),
-                        intro: gettext('<p>Add the code `barrieres` by clicking the corresponding code and save.</p>'),
-                        position: 'left',
-                        tagPosition: [0],
-                        doAction: 'document-selecttag' // Action to create wrapper for introjs
-                    },
-                    {
                         element: $("#documents-list > li:nth(1)")[0],
                         title: gettext('Load another document'),
                         intro: gettext('<p>2024-05-23_entrevue_Marc_ingenieur.txt.</p>'),
                         position: 'left',
-                    },
-                    //#9.1
-                    {
-                        element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight text'),
-                        intro: gettext("<p>Let's select a excerpt and assign a code.</p>"),
-                        position: 'bottom',
-                        highlight: [494, 806],
-                        nodes: [null, null],
-                        highlight_context: [0, 0],
-                        doAction: 'document-highlight' // Action to create wrapper for introjs
-                    },
-                    {
-                        element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a code"),
-                        intro: gettext('<p>Add the code `barrieres` by clicking the corresponding code and save.</p>'),
-                        position: 'left',
-                        tagPosition: [0],
-                        doAction: 'document-selecttag' // Action to create wrapper for introjs
-                    },
-                    //#9.2
-                    {
-                        element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight text'),
-                        intro: gettext("<p>Let's select a excerpt and assign a code.</p>"),
-                        position: 'bottom',
-                        highlight: [2182, 2400],
-                        nodes: [null, null],
-                        highlight_context: [0, 0],
-                        doAction: 'document-highlight' // Action to create wrapper for introjs
-                    },
-                    {
-                        element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a code"),
-                        intro: gettext('<p>Add the code `renforcement_relations` by clicking the corresponding code and save.</p>'),
-                        position: 'left',
-                        tagPosition: [3],
-                        doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
                     //#10
                     {
@@ -283,44 +227,6 @@ $(document).ready(function() {
                         title: gettext('Take a look to a last document'),
                         intro: gettext('<p>2024-05-26_entrevue_Nadia_enseignante.txt.</p>'),
                         position: 'left',
-                    },
-                    //#11.1
-                    {
-                        element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight text'),
-                        intro: gettext("<p>Highlight text and add code.</p>"),
-                        position: 'bottom',
-                        highlight: [255, 574],
-                        nodes: [null, null],
-                        highlight_context: [0, 0],
-                        doAction: 'document-highlight' // Action to create wrapper for introjs
-                    },
-                    {
-                        element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a codes"),
-                        intro: gettext('<p>Select `developpement_competences` and save.</p>'),
-                        position: 'left',
-                        tagPosition: [2],
-                        doAction: 'document-selecttag' // Action to create wrapper for introjs
-                    },
-                    //#11.2
-                    {
-                        element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight text'),
-                        intro: gettext("<p>Highlight text and add code.</p>"),
-                        position: 'bottom',
-                        highlight: [1794, 2421],
-                        nodes: [null, null],
-                        highlight_context: [0, 0],
-                        doAction: 'document-highlight' // Action to create wrapper for introjs
-                    },
-                    {
-                        element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a codes"),
-                        intro: gettext('<p>Select `developpement_competences` and save.</p>'),
-                        position: 'left',
-                        tagPosition: [0, 2, 3],
-                        doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
                     {
                         element: document.querySelector("#create-tag-link"),
@@ -515,11 +421,15 @@ $(document).ready(function() {
                                 break;
                             case 'create-highlights':
                                 //Create highlights in that document
-                                let highlights = this._introItems[this._currentStep].highlights;
+                                let highlights = this._introItems[this._currentStep].highlights,
+                                    tag_id = last_added_tag;
+                                if(typeof this._introItems[this._currentStep].node_id !== 'undefined') {
+                                    tag_id = $("[data-nodeid='"+this._introItems[this._currentStep].node_id+"']").data('tag-id');
+                                }
                                 setTimeout(function(){
                                     for(let i in highlights) {
                                         let highlight = {
-                                            id: "", selection: highlights[i], tags: [last_added_tag]
+                                            id: "", selection: highlights[i], tags: [tag_id]
                                         }
                                         submitHighLightCreation(highlight, ()=>{}, ()=>{});
                                     }

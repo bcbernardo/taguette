@@ -131,6 +131,20 @@ class CreateDemoProject(BaseHandler):
 
         self.db.commit()
 
+        for highlight in DEMO_DATA['highlights']:
+            h = database.Highlight(
+                document=documents[highlight['document']],
+                start_offset=highlight['start_offset'],
+                end_offset=highlight['end_offset'],
+                snippet=highlight['snippet'])
+            self.db.add(h)
+            self.db.flush()
+            for t in highlight['tags']:
+                h.tags.append(tags[t])
+            self.db.flush()
+            logger.info(h)
+        self.db.commit()
+
         return self.send_json(
             {
                 'html': self.render_string('partials/project_card.html',

@@ -252,6 +252,12 @@ DEMO_DATA = {'documents': [
     }
 ], 'tags': [
     {
+        'color': '#ff0600',
+        'path': 'barrieres',
+        'description': '',
+        'childrens': []
+    },
+    {
         'color': '#26A269',
         'path': 'benefices',
         'description': '',
@@ -267,34 +273,43 @@ DEMO_DATA = {'documents': [
                 'description': '',
             }
         ]
-    },
-    {
-        'color': '#ff0600',
-        'path': 'barrieres',
-        'description': '',
-        'childrens': []
     }
 ], 'highlights': [
     {
-        'document': None,
-        'start_offset': 732,
-        'end_offset': 764,
-        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
-        'tags': None
+        'document': 0,
+        'start_offset': 2850,
+        'end_offset': 3255,
+        'snippet': '<p>Le coût des jeux peut être un obstacle, surtout pour '
+                   'les éditions spéciales ou les nouvelles sorties sur '
+                   'Kickstarter. De plus, coordonner les horaires pour des '
+                   'sessions de jeux régulières avec un groupe fixe peut être '
+                   'compliqué, compte tenu de nos vies bien remplies. '
+                   'Habituellement j’utilise des sondages de disponibilité '
+                   'comme Framadate et il y a quand même des conflits '
+                   'd’horaire à arbitrer.</p>',
+        'tags': [0]
     },
     {
-        'document': None,
-        'start_offset': 924,
-        'end_offset': 933,
-        'snippet': '<p>Pandémie</p>',
-        'tags': None
+        'document': 1,
+        'start_offset': 494,
+        'end_offset': 806,
+        'snippet': '<p>Je préfère les jeux qui sont rapides à jouer et qui '
+                   'n’ont pas trop de règles compliquées. Comme les jeux de '
+                   'cartes, le Uno, ou même des jeux de plateau assez '
+                   'simples. L’idée c’est de pouvoir terminer une partie en '
+                   'une heure ou moins, ça garde tout le monde engagé et ça '
+                   'ne prend pas toute la soirée.</p>',
+        'tags': [0]
     },
     {
-        'document': None,
-        'start_offset': 1210,
-        'end_offset': 1218,
-        'snippet': '<p>Daybreak</p>',
-        'tags': None
+        'document': 1,
+        'start_offset': 2182,
+        'end_offset': 2400,
+        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
+                   'à nous asseoir ensemble, à discuter, à négocier, et même '
+                   'à résoudre des conflits. C’est comme un exercice de team '
+                   'building, mais dans un cadre amicale.</p>',
+        'tags': [3]
     },
 ]
 }
