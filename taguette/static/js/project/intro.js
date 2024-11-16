@@ -62,17 +62,17 @@ $(document).ready(function() {
                 exitOnEsc: true,
                 steps: [
                     {
-                        title: gettext('Welcome to LibreQDA, an open source qualitative analysis application.'),
-                        intro: gettext('<p>To get the source code: <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
+                        title: gettext('Bienvenue sur LibreQDA, un logiciel d\'analyse qualitative développé en code source libre ouvert par la Plateforme en humanités numériques de l\'Université de Sherbrooke.'),
+                        intro: gettext('<p>Visitez notre dépôt de code <a href="https://gitlab.com/bin-cirst/libreqda/libre-qda" target="_blank">Gitlab</a></p>'),
                     },
                     {
                         element: document.querySelector('#intro-documentation'),
-                        intro: gettext('<p>To consult documentation</p>'),
+                        intro: gettext('<p>Pour consulter la documentation.</p>'),
                         position: 'bottom'
                     },
                     {
                         element: $('#demo-project-container .col:first')[0],
-                        intro: gettext('<p>A mini project has been added to your home screen to simulate an analysis approach.</p>'),
+                        intro: gettext('<p>Un projet tutoriel a été ajouté à votre espace personnel.</p>'),
                         position: 'top',
                         doAction: 'create-demo-project'
                     },
@@ -131,54 +131,54 @@ $(document).ready(function() {
                 steps: [
                     {
                         element: document.querySelector("#right-panel"),
-                        title: gettext('Documents'),
-                        intro: gettext('<p>To manipulate documents.</p>'),
+                        title: gettext('Vos documents'),
+                        intro: gettext('<p>Utilisez cet onglet pour charger des fichiers et naviguer entre eux</p>'),
                         position: 'right',
                     },
-                    {
+                    { // #1
                         element: document.querySelector("#left-panel"),
-                        title: gettext('Code tree'),
-                        intro: gettext('<p>The list of all tags in your projects. You can add codes by clicking on the "Create a code button"</p>'),
+                        title: gettext('Arbre de codes'),
+                        intro: gettext('<p>Cet onglet liste tous les codes que vous définissez. Ajoutez-en avec le bouton dédié à cet effet.</p><br><p>La fréquence totale d\'usage est indiquée dans la pastille de droite, et le nombre de documents dans celle de gauche.</p>'),
                         position: 'right'
                     },
-                    {
+                    { // #2
                         element: document.querySelector("#treeview-tags"),
-                        title: gettext('Parents codes'),
-                        intro: gettext('<p>Here are all the parents codes.</p>'),
+                        title: gettext('Codes parents'),
+                        intro: gettext('<p>Vous pouvez définir des codes qui sont appelés à en contenir d\'autres</p>'),
                         position: 'right'
                     },
-                    {
+                    { // #3
                         element: $("[data-nodeid='1']")[0],
-                        title: gettext('Children codes'),
-                        intro: gettext('<p>If you click on a parent code you can seel all childrens.</p>'),
+                        title: gettext('Codes enfants'),
+                        intro: gettext('<p>Ils peuvent être développés ou réduits.</p>'),
                         position: 'right',
                         doAction: 'expand-tag-childrens'
                     },
-                    {
+                    { // #4
                         element: $("#documents-list > li:first-child")[0],
-                        title: gettext('Load a document'),
-                        intro: gettext('<p>To load a document you can click on it in the right panel.</p>'),
+                        title: gettext('Consulter les documents'),
+                        intro: gettext('<p>Cliquez sur un document pour consulter son contenu. Utilisez l\'étoile pour enregistrer vos favoris.</p>'),
                         position: 'left',
                     },
-                    {
+                    { // #5
                         element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight excerpt'),
-                        intro: gettext('<p>You can highlight a text excerpt and assign a code by clicking `New highlight`.</p>'),
+                        title: gettext('Encoder'),
+                        intro: gettext('<p>Sélectionnez un passage de texte avec votre curseur. Deux boutons apparaîtront pour y assigner un code.</p>'),
                         position: 'bottom',
                         highlight: [195, 403],
                         nodes: [null, null],
                         highlight_context: [0, 0],
                         doAction: 'document-highlight' // Action to create wrapper for introjs
                     },
-                    {
+                    { // #6
                         element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign a code"),
-                        intro: gettext('<p>Add the code `renforcement_relations` by clicking the corresponding code and save.</p>'),
+                        title: gettext("Sélectionner un code"),
+                        intro: gettext('<p>Depuis le menu, sélectionnez des codes existants qui correspondent au contenu de la sélection et sauvegardez l\'opération. Ici, l\'extrait concerne le renforcement des relations sociales.</p>'),
                         position: 'left',
                         tagPosition: [3],
                         doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
-                    {
+                    { // #7 superflu??
                         element: document.querySelector("#document-highlight"), // This element doesn't exist
                         title: gettext('Highlight another excerpt'),
                         intro: gettext("<p>Let's select another text excerpt and assign another code.</p>"),
@@ -188,25 +188,25 @@ $(document).ready(function() {
                         highlight_context: [0, 0],
                         doAction: 'document-highlight' // Action to create wrapper for introjs
                     },
-                    {
+                    { // #8 superflu??
                         element: document.querySelector("#highlight-add-form"),
                         title: gettext("Let's assign anoher code"),
-                        intro: gettext('<p>Add the code `developpement_competences` by clicking the corresponding code and save.</p>'),
+                        intro: gettext('<p>Add the code <i>developpement_competences</i> by clicking the corresponding code and save.</p>'),
                         position: 'left',
                         tagPosition: [2],
                         doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
-                    {
+                    { // #9  superflu??
                         element: $("#documents-list > li:nth(1)")[0],
                         title: gettext('Load another document'),
                         intro: gettext('<p>2024-05-23_entrevue_Marc_ingenieur.txt.</p>'),
                         position: 'left',
                     },
-                    //#10
-                    {
+                    
+                    { //#10 
                         element: document.querySelector("#document-highlight"), // This element doesn't exist
-                        title: gettext('Highlight text'),
-                        intro: gettext("<p>Add more than 1 code to an excerpt.</p>"),
+                        title: gettext('Assignation multiple'),
+                        intro: gettext("<p>Plus d'un code peuvent être assigné aux mêmes extraits.</p>"),
                         position: 'bottom',
                         highlight: [2182, 2733],
                         nodes: [null, null],
@@ -215,91 +215,91 @@ $(document).ready(function() {
                     },
                     {
                         element: document.querySelector("#highlight-add-form"),
-                        title: gettext("Let's assign 3 codes"),
-                        intro: gettext('<p>Select `renforcement_relations`, `developpement_competences`, `barrieres` by clicking corresponding codes and save.</p>'),
+                        title: gettext("Assignation multiple"),
+                        intro: gettext('<p>Sélectionner <i>renforcement_relations</i>, `developpement_competences` et `barrieres` en cliquant sur les entrées correspondantes dans la liste de codes.</p>'),
                         position: 'left',
                         tagPosition: [0, 2, 3],
                         doAction: 'document-selecttag' // Action to create wrapper for introjs
                     },
-                    //#11
-                    {
+                    
+                    { //#11 superflu??
                         element: $("#documents-list > li:nth(2)")[0],
                         title: gettext('Take a look to a last document'),
                         intro: gettext('<p>2024-05-26_entrevue_Nadia_enseignante.txt.</p>'),
                         position: 'left',
                     },
-                    {
+                    { //#12 superflu??
                         element: document.querySelector("#create-tag-link"),
                         title: gettext("Create codes"),
                         intro: gettext('<p>As you read on, you\'ll have to create codes, which you can do in several ways.</p>'),
                         position: 'right',
                     },
-                    {
+                    { //#13 superflu??
                         element: document.querySelector("#tag-add-form"),
-                        title: gettext("Let's create a code"),
-                        intro: gettext('<p>Create the code `games` and assign a color.</p>'),
+                        title: gettext("Couleurs"),
+                        intro: gettext('<p>Vous pouvez aussi définir des couleurs pour le soulignement des codes.</p>'),
                         position: 'left',
                         doAction: 'open-tag-add-form' // Action to create wrapper for introjs
                     },
-                    {
+                    { //#14
                         element: document.querySelector("#left-panel"),
-                        title: gettext('Analyze'),
-                        intro: gettext('<p>After encoding several passages, you can analyze them. Let\'s click on barrieres</p>'),
+                        title: gettext('Exploration des codes'),
+                        intro: gettext('<p>Pendant ou après la phase d\'encodage, vous pouvez toujours explorer les passages de textes auxquels vous avez assigné des codes.</p><br><p> Affichez tous les extraits encodés avec un code de votre arbre en cliquant dessus.</p>'),
                         position: 'right',
                         highlights: [[ 732, 764 ], [ 924, 933 ], [ 1210, 1218 ]],
                         doAction: 'create-highlights'
                     },
-                    {
+                    { //#15
                         element: document.querySelector("#document-view"),
-                        title: gettext('Analyze'),
-                        intro: gettext('<p>If you observe trends that you want to study</p>'),
+                        title: gettext('Préciser votre besoin d\'information'),
+                        intro: gettext('<p>Si votre liste d\'extraits est longue, vous pouvez la raffiner avec une recherche avancée.</p>'),
                         position: 'left',
                         doAction: 'exploration-mode'
                     },
-                    {
+                    { //#16
                         element: document.querySelector(".context-menu-root"),
-                        title: gettext('Select With Condition'),
-                        intro: gettext('<p>You can add conditions to your exploration by right-clicking a tag. This contextual menu can apply others operations</p>'),
+                        title: gettext('Sélection conditionnelle'),
+                        intro: gettext('<p>D\'un clic droit, vous pouvez spécifier des conditions pour croiser des codes, en inclure plus ou en ignorer certains.</p>'),
                         position: 'left',
                         which: 2,
                         doAction: 'select-condition'
                     },
-                    {
+                    { //#17
                         element: document.querySelector("#document-view"),
                         title: gettext('Analyze'),
-                        intro: gettext('<p>There you can see excerpts that have both `barrieres` and `developpment_competences`</p>'),
+                        intro: gettext('<p>Les pastilles de la requête montrent que les extraits récupérés doivent nécessairement inclure les codes <i>barrieres</i> et <i>developpment_competences</i>.</p>'),
                         position: 'left',
                         doAction: 'apply-condition'
                     },
-                    {
+                    { //#18
                         element: $('#document-contents .highlight-entry:first .badge')[0],
-                        title: gettext('Return to document'),
-                        intro: gettext('<p>By clicking the document name, you can return to this highlight in the document.</p>'),
+                        title: gettext('Naviguer vers le document'),
+                        intro: gettext('<p>En cliquant sur le nom du document, vous pouvez retourner au contexte.</p>'),
                         position: 'top',
                         doAction: 'select-badge'
                     },
-                    {
+                    { //#19
                         element: document.querySelector('#tag-selection-return'),
-                        title: gettext('Return to highlights'),
-                        intro: gettext('<p>Then you can return to your highlights by clicking this button.</p>'),
+                        title: gettext('Retourner aux extraits'),
+                        intro: gettext('<p>Après avoir consulté le contexte, vous pouvez retourner `a la liste d\'extraits précédement récupérés à l\'aide d\'une recherche avancée.</p>'),
                         position: 'right',
                         doAction: 'reposition-after-scroll'
                     },
-                    {
+                    { //#20
                         element: document.querySelector('#document-dropdown-export'),
                         title: gettext('Export'),
-                        intro: gettext('<p>Then you can return to your highlights by clicking this button.</p>'),
+                        intro: gettext('<p>Au besoin, téléchargez cette liste d\'extraits sur votre ordinateur.</p>'),
                         position: 'left',
                     },
-                    // {
+                    // {  //#21
                     //     element: document.querySelector('#accordionCollaborators'),
                     //     title: gettext('Add collaborators'),
                     //     intro: gettext('<p>Here you can add collaborators to your project.</p>'),
                     //     position: 'right',
                     // },
-                    {
-                        title: gettext('Your turn'),
-                        intro: gettext('<p>Now is up to you to use LibreQDA as you need. If you want to continue this tutorial, review the contents of the codes and look to define child codes.</p>'),
+                    { //#22
+                        title: gettext('À vous d\'encoder!'),
+                        intro: gettext('<p>Utilisez LibreQDA comme vous le souhaitez avec l\'assurance que vos donnée seront sauvegardée sur votre espace personnel. Pour vous familiariser d\'avantage avec les fonctionnalités, poursuivez l\'encodage et l\'exploration des fichiers d\'entretiens fictives concernant les jeux de sociétés.</p>'),
                         position: 'left',
                         doAction: 'last'
                     },
