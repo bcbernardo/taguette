@@ -306,6 +306,10 @@ msgstr "Ajout de documents"
 msgid "Loading..."
 msgstr "Chargement..."
 
+#: taguette/templates/project.html:103
+msgid "Resume tutorial"
+msgstr "Reprendre le tutoriel"
+
 #: taguette/templates/project.html:82
 msgid "Backlight"
 msgstr "Rétroéclairage"

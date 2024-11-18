@@ -185,6 +185,10 @@ msgstr "Add documents"
 msgid "Loading..."
 msgstr "Loading..."
 
+#: taguette/templates/project.html:103
+msgid "Resume tutorial"
+msgstr "Resume tutorial"
+
 #: taguette/templates/project.html:87
 msgid "Backlight"
 msgstr "Backlight"
