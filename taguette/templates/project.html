@@ -99,6 +99,10 @@
     </div>
 </div>
 
+{% if is_demo == 'true' %}
+<button id="start-tutorial" class="btn btn-primary rounded-4">{% trans %}Resume tutorial{% endtrans %}</button>
+{% endif %}
+
 <!-- Manage collaborators modal -->
 {% include 'modal/manage_collaborators.html' %}
 

@@ -1085,6 +1085,12 @@ Document custom select
     display: none;
 }
 
+button#start-tutorial {
+    position: fixed;
+    right: 50px;
+    bottom: 50px;
+}
+
 /* Tag highlight */
 .highlight-tag {
     background-color: #EDEFE9 !important;

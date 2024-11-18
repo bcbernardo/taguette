@@ -273,8 +273,26 @@ DEMO_DATA = {'documents': [
                 'description': '',
             }
         ]
-    }
+    },
+    {
+        'color': '#ff0600',
+        'path': 'jeux',
+        'description': '',
+        'childrens': []
+    },
 ], 'highlights': [
+    {
+        'document': 0,
+        'start_offset': 2161,
+        'end_offset': 2461,
+        'snippet': '<p>Les jeux de société améliorent des compétences '
+                   'transversales importantes comme la pensée stratégique, la '
+                   'gestion des ressources et la communication. Pour moi, en '
+                   'tant que designer graphique, ils stimulent également ma '
+                   'créativité et m’aident à penser de manière plus innovante '
+                   'et flexible.</p>',
+        'tags': [2]
+    },
     {
         'document': 0,
         'start_offset': 2850,
@@ -310,6 +328,37 @@ DEMO_DATA = {'documents': [
                    'à résoudre des conflits. C’est comme un exercice de team '
                    'building, mais dans un cadre amicale.</p>',
         'tags': [3]
+    },
+    {
+        'document': 1,
+        'start_offset': 2182,
+        'end_offset': 2733,
+        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
+                   'à nous asseoir ensemble, à discuter, à négocier, et même '
+                   'à résoudre des conflits. C’est comme un exercice de team '
+                   'building, mais dans un cadre amicale.</p>',
+        'tags': [0, 2, 3]
+    },
+    {
+        'document': 2,
+        'start_offset': 732,
+        'end_offset': 764,
+        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
+        'tags': [4]
+    },
+    {
+        'document': 2,
+        'start_offset': 924,
+        'end_offset': 933,
+        'snippet': '<p>Pandémie</p>',
+        'tags': [4]
+    },
+    {
+        'document': 2,
+        'start_offset': 1210,
+        'end_offset': 1218,
+        'snippet': '<p>Daybreak</p>',
+        'tags': [4]
     },
 ]
 }
