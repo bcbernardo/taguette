@@ -15,12 +15,12 @@ This qualitative data analysis software (QDA) allows you to:
 + Retrieve your tagged documents and lists of encoded sentences.
 + Export you material in various formats for diffusion or post-processing with other tools.
 
-[Visit our website to consult the documentation.](https://aide.libreqda.org/)
+[Visit our website to consult the documentation.](https://help.libreqda.org/)
 
 Motivation and Goal
 -------------------
 
-Through its collaborations with research teams and non-profit organizations across various fields, the team at PHuN has come to recognize the crucial need for developing rich, resilient and responsive ecosystem of open-source QDA software. Numerous testimonies highlight the disconnect between the commercial incentives of proprietary software and the core theories of substantive qualitative analysis. Today, users of QDA are subjected to forced obsolescence, costly licenses, black box features and restrictions that prevent them from fully owning with their intellectual product.
+Through its collaborations with research teams and non-profit organizations across various fields, the team at PHuN has come to recognize the crucial need for developing rich, resilient and responsive ecosystem of open-source QDA software. Numerous testimonies highlight the disconnect between the commercial incentives of proprietary software and the core theories of substantive qualitative analysis. Today, users of QDA are subjected to forced obsolescence, costly licenses, black box features and data restrictions that prevent them from fully owning their intellectual product.
 
 Our goal is to position LibreQDA as a valuable component within a diverse array of resources available to users seeking to develop a rich understanding of their textual data. We are committed to continuous improvement through community feedback and advocate for open integration with other tools to best meet your needs.
 
@@ -29,14 +29,14 @@ If you think LibreQDA could do something better, reach out!
 Installation
 ------------
 
-You can find complete installation instructions on [our website](https://www.taguette.org/install.html), including installers for Windows and MacOS.
+A secure instance of LibreQDA running on Canadian servers is available at [https://www.libreqda.org/](https://www.libreqda.org/). You can clone the software and run a single-user version on your computer using the instructions below. Installers for Windows and MacOS are pending.
 
-Development setup from the repository
+Development Setup from the Repository
 -------------------------------------
 
-You can install from a local clone of this repository, which will allow you to easily change the sources to suit your needs:
+You can install from a local clone of this repository, which will allow you to easily change the sources to suit your needs. Taguette provide the base infrastructure for LibreQDA, which is reflected in these instructions:
 
-1. Clone this git repository from the terminal: `git clone [UPDATE WITH THE CORRECT REPO]`
+1. Clone this git repository from the terminal: `git clone https://gitlab.com/bin-cirst/libreqda/libre-qda/`
 2. Navigate on the command line to the repository you've just cloned locally, using the `cd` command. To get help using `cd`, use [this tutorial](https://swcarpentry.github.io/shell-novice/02-filedir/index.html).
 3. LibreQDA uses [Poetry](https://python-poetry.org/) for its packaging and dependency management. You will need to [install Poetry](https://python-poetry.org/docs/#installation).
 4. Install LibreQDA and its dependencies by running `poetry install`. Poetry will create a virtual environment for you by default, activate it by running `poetry shell`.
