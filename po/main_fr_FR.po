@@ -306,6 +306,10 @@ msgstr "Ajout de documents"
 msgid "Loading..."
 msgstr "Chargement..."
 
+#: taguette/templates/project.html:103
+msgid "Resume tutorial"
+msgstr "Reprendre le tutoriel"
+
 #: taguette/templates/project.html:82
 msgid "Backlight"
 msgstr "Rétroéclairage"
@@ -431,7 +435,7 @@ msgid "Import"
 msgstr "Importer"
 
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Selected the document"
+msgid "Starred documents"
 msgstr "Documents favoris"
 
 #: taguette/templates/partials/document_toolbar.html:7

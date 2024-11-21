@@ -917,7 +917,7 @@ function scrollToHighlight(highlight_id, search_text=null) {
     window.setTimeout(function () {
         let scroll_position = 0,
             toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
-        const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`)
+        const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`).closest('div');
         if (highlight_id !== null && !isNaN(highlight_id)) {
             scroll_position = data_highlight_selector.offset().top - toolbar_height - 15;
             data_highlight_selector.addClass('flash-once');
