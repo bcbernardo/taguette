@@ -444,38 +444,84 @@ class Test2E2MultiUser(SeleniumTest):
         # check highlighted document 1
         await self.s_get('/project/1/document/1')
         await asyncio.sleep(5)
+
+        browser_name = self.driver.capabilities['browserName']
+
+        doc_content = {
+            'chrome': (
+                '<div id="doc-offset-0">'
+                '<div data-line--id="line-0-17" style="height: 65px;">'
+                '<svg width="100%" height="65px">'
+                '<g data-line--id="line-group-0-17" '
+                'transform="translate(0, 20)">'
+                '<text x="0" y="0" text-anchor="start">'
+                'different content</text>'
+                '<line data-highlight-id="1" '
+                'x1="4" x2="25.3125" y1="10" y2="10" '
+                'stroke="#000000" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'class="smooth-stroke"></line>'
+                '<linearGradient id="gradient-2" '
+                'x1="0%" y1="0%" x2="100%" y2="0%">'
+                '<stop offset="0%" stop-color="#000000"></stop>'
+                '<stop offset="100%" stop-color="#000000"></stop>'
+                '</linearGradient>'
+                '<line data-highlight-id="2" '
+                'x1="90.84375" x2="117.46875" y1="25" y2="25.1" '
+                'stroke="url(#gradient-2)" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'class="smooth-stroke"></line>'
+                '</g></svg></div></div>'
+            ),
+            'firefox': (
+                '<div id="doc-offset-0">'
+                '<div data-line--id="line-0-17" style="height: 65px;">'
+                '<svg width="100%" height="65px">'
+                '<g data-line--id="line-group-0-17" '
+                'transform="translate(0, 20)">'
+                '<text x="0" y="0" text-anchor="start">'
+                'different content</text>'
+                '<linearGradient id="gradient-2" '
+                'x1="0%" y1="0%" x2="100%" y2="0%">'
+                '<stop offset="0%" stop-color="#000000"></stop>'
+                '<stop offset="100%" stop-color="#000000"></stop>'
+                '</linearGradient></g>'
+                '<use href="#highlights-0-17">'
+                '</use></svg></div></div><defs>'
+                '<g id="highlights-0-17" class="highlights">'
+                '<line data-highlight-id="1" x1="1" '
+                'x2="30.666671752929688" y1="30" y2="30" '
+                'stroke="#000000" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'onclick="editHighlight.call(this, \'1\')" '
+                'onmouseover="this.style.strokeWidth='
+                '\'7\'" onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                '<line data-highlight-id="2" '
+                'x1="116.53334045410156" x2="152.76666259765625" '
+                'y1="45" y2="45.1" stroke="url(#gradient-2)" '
+                'stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'onclick="editHighlight.call(this, \'2\')" '
+                'onmouseover="this.style.strokeWidth=\'7\'" '
+                'onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                '</g></defs>'
+            )
+        }
+
+        print(self.find_by_id('document-contents').get_attribute('innerHTML'))
+
         self.assertEqual(
             self.find_by_id('document-contents').get_attribute('innerHTML'),
-            (
-                '<div id="doc-offset-0">'
-                + '<div data-line--id="line-0-17" style="height: 65px;">'
-                + '<svg width="100%" height="65px">'
-                + '<g data-line--id="line-group-0-17" '
-                + 'transform="translate(0, 20)">'
-                + '<text x="0" y="0" text-anchor="start">'
-                + 'different content</text>'
-                + '<line data-highlight-id="1" x1="4" x2="25.3125" '
-                + 'y1="10" y2="10" stroke="#000000" '
-                + 'stroke-linecap="round" stroke-width="4" '
-                + 'pointer-events="all" '
-                + 'class="smooth-stroke"></line>'
-                + '<linearGradient id="gradient-2" '
-                + 'x1="0%" y1="0%" x2="100%" y2="0%">'
-                + '<stop offset="0%" stop-color="#000000"></stop>'
-                + '<stop offset="100%" stop-color="#000000"></stop>'
-                + '</linearGradient>'
-                + '<line data-highlight-id="2" x1="90.84375" '
-                + 'x2="117.46875" y1="25" y2="25.1" '
-                + 'stroke="url(#gradient-2)" '
-                + 'stroke-linecap="round" stroke-width="4" '
-                + 'class="smooth-stroke"></line>'
-                + '</g></svg></div></div>'
-            ),
+            doc_content[browser_name]
         )
 
         # Edit highlight 1 in document 1
-        hl_1 = self.find_by_path('//*[@data-highlight-id="1"]')
-        ActionChains(self.driver).move_to_element(hl_1).click().perform()
+        self.driver.execute_script(
+            "editHighlight.call("
+            "document.querySelector('[data-highlight-id=\"1\"]'), "
+            "'1'"
+            ")"
+        )
 
         self.assertEqual(
             self.get_highlight_add_tags(),

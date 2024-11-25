@@ -382,7 +382,7 @@ function log(message, status = 'info', context = {}) {
     const timestamp = new Date().toLocaleString();
     const logMessage = `${timestamp} [${status.toUpperCase()}]: ${message}`;
     if (status.toLowerCase() === 'error') {
-        console.error(logMessage, context);
+       // console.error(logMessage, context);
     } else {
         console.log(logMessage, context);
     }

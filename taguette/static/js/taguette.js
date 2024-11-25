@@ -345,6 +345,7 @@ $(tag_add_modal).on('shown.bs.modal', function () {
 });
 let createTagFromHighlight;
 function createTag(fromHighlight, selection, parent) {
+    document.getElementById('hlinfo').style.display = 'none';
     createTagFromHighlight = fromHighlight;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
@@ -579,6 +580,7 @@ function selectionChanged() {
 document.addEventListener('selectionchange', selectionChanged);
 
 function createHighlight(selection) {
+    document.getElementById('hlinfo').style.display = 'none';
     document.getElementById('highlight-add-id').value = '';
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
