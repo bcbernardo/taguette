@@ -256,6 +256,7 @@ function createRanges(element, highlight, line) {
 let document_lines = [];
 const DEFAULT_STROKE_WIDTH = "4";
 
+
 function extractTextFromHtml(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -320,85 +321,121 @@ function displayTextWithHighlights(container, text, font, maxWidth, highlights, 
     log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
 }
 
+
+// ******* Handle SVG Line Render ************* //
+
 function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction) {
+    // Switch to using <defs> for line underline in Firefox to prevent interference with text selection.
+    applyHighlights(line, text, highlights, container, utf8IndexMap, direction, isFirefox());
+}
+
+function applyHighlights(line, text, highlights, container, utf8IndexMap, direction, useDefs = false) {
+    const svgNamespace = "http://www.w3.org/2000/svg";
+
+    // Create global defs if needed
+    if (useDefs && !globalDefs) {
+        globalDefs = document.createElementNS(svgNamespace, "defs");
+        container.parentElement.appendChild(globalDefs);
+    }
 
     document_lines.push(line);
 
     const lineContent = getUTF8Substring(text, line.startOffset, line.endOffset, utf8IndexMap);
+    if (lineContent === '') return;
 
-    if (lineContent === '') {
-        return;
-    }
-
-    // Create main container for each line
+    // Line row container
     const divContainer = document.createElement('div');
     divContainer.setAttribute('data-line--id', `line-${line.startOffset}-${line.endOffset}`);
 
-    const svgNamespace = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("width", "100%");
     svg.setAttribute("height", "40px");
 
-    // Create group for text, linear and underline lines
-    const group = document.createElementNS(svgNamespace, "g");
-    group.setAttribute("data-line--id", `line-group-${line.startOffset}-${line.endOffset}`);
-    group.setAttribute("transform", "translate(0, 20)");
+    const textGroup = document.createElementNS(svgNamespace, "g");
+    textGroup.setAttribute("data-line--id", `line-group-${line.startOffset}-${line.endOffset}`);
+    textGroup.setAttribute("transform", "translate(0, 20)");
 
-    svg.appendChild(group);
+    const textElement = document.createElementNS(svgNamespace, "text");
+    setupTextAttributes(textElement, lineContent, direction);
+
+    textGroup.appendChild(textElement);
+    svg.appendChild(textGroup);
     divContainer.appendChild(svg);
     container.appendChild(divContainer);
 
-    const textElement = document.createElementNS(svgNamespace, "text");
+    // Create highlight group based on `useDefs`
+    const highlightsGroup = useDefs ? createDefsHighlightGroup(line, svgNamespace, svg): null;
 
-    //Handle text direction
-    let textXPosition = direction === 'RIGHT_TO_LEFT' ? "100%" : "0";
-    let textAnchor = direction === 'RIGHT_TO_LEFT' ? "end" : "start";
-    textElement.setAttribute("x", textXPosition);
-    textElement.setAttribute("y", "0");
-    textElement.setAttribute("text-anchor", textAnchor);
-    textElement.textContent = lineContent;
-
-    group.appendChild(textElement);
-
+    // Process highlights
     let highlightCount = 0;
-
-    highlights.forEach((highlight, index) => {
-
+    highlights.forEach((highlight) => {
         if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
-
-            // Find textElement positions in DOM
             const range = createRanges(textElement, highlight, line);
-
             range.items.forEach((rect) => {
-                index = highlightCount;
-                rect.y = calculateYPosition(index);
-                const lineElement = createSvgUnderline(group, rect, highlight);
-                group.appendChild(lineElement);
+                rect.y = useDefs ? calculateYPositionWithDefs(highlightCount) : calculateYPosition(highlightCount);
+                const lineElement = createSvgUnderline(textGroup, rect, highlight, useDefs);
+                if(!useDefs) {
+                    textGroup.appendChild(lineElement);
+                } else {
+                    highlightsGroup.appendChild(lineElement);
+                }
                 highlightCount++;
             });
         }
     });
 
-    adjustLineHeight(divContainer, group, highlightCount);
+    adjustLineHeight(divContainer, textGroup, highlightCount);
 }
 
-function createSvgUnderline(svgParent, rect, highlight) {
+function setupTextAttributes(textElement, lineContent, direction) {
+    const textXPosition = direction === 'RIGHT_TO_LEFT' ? "100%" : "0";
+    const textAnchor = direction === 'RIGHT_TO_LEFT' ? "end" : "start";
+
+    textElement.setAttribute("x", textXPosition);
+    textElement.setAttribute("y", "0");
+    textElement.setAttribute("text-anchor", textAnchor);
+    textElement.textContent = lineContent;
+}
+
+function createDefsHighlightGroup(line, svgNamespace, svg) {
+    const highlightsId = `highlights-${line.startOffset}-${line.endOffset}`;
+    const highlightsGroup = document.createElementNS(svgNamespace, "g");
+    highlightsGroup.setAttribute("id", highlightsId);
+    highlightsGroup.setAttribute("class", "highlights");
+    globalDefs.appendChild(highlightsGroup);
+
+    const useElement = document.createElementNS(svgNamespace, "use");
+    useElement.setAttribute("href", `#${highlightsId}`);
+    svg.appendChild(useElement);
+
+    return highlightsGroup;
+}
+
+function createSvgUnderline(textParent, rect, highlight, useDefs = false) {
     const svgNamespace = "http://www.w3.org/2000/svg";
     const colors = highlight.tags.map(id => findTag(id).color);
 
     if (colors.length === 1) {
-        return createSvgLine(svgParent, svgNamespace, highlight, rect, colors[0], 'solid');
+        return createSvgLine(textParent, svgNamespace, highlight, rect, colors[0], 'solid', useDefs);
     }
 
+    // Gradient
     const gradient = createSvgGradient(svgNamespace, highlight, colors);
-    svgParent.appendChild(gradient);
+    textParent.appendChild(gradient);
 
-    return createSvgLine(svgParent, svgNamespace, highlight, rect, `url(#gradient-${highlight.id})`, 'gradient');
+    return createSvgLine(
+        textParent,
+        svgNamespace,
+        highlight,
+        rect,
+        `url(#gradient-${highlight.id})`,
+        'gradient',
+        useDefs
+    );
 }
 
-function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeType = 'solid') {
+function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeType = 'solid', useDefs = false) {
     const line = document.createElementNS(svgNamespace, "line");
-    line.setAttribute("data-highlight-id", highlight.id);
 
     const textElement = svgParent.querySelector('text');
     const textBox = textElement.getBBox();
@@ -406,6 +443,8 @@ function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeTy
     const x1 = textBox.x + (rect.x1 === 0 ? 4 : rect.x1);
     const x2 = textBox.x + rect.x2;
 
+    // Set basic attributes
+    line.setAttribute("data-highlight-id", highlight.id);
     line.setAttribute("x1", x1);
     line.setAttribute("x2", x2);
     line.setAttribute("y1", rect.y);
@@ -413,20 +452,18 @@ function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeTy
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-linecap", "round");
     line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH);
+    line.setAttribute("pointer-events", "all");
 
-    // Add smooth transition class
-    line.classList.add("smooth-stroke");
-
-    // Add hover effect
-    line.addEventListener("mouseover", function () {
-        line.setAttribute("stroke-width", "7");
-    });
-
-    line.addEventListener("mouseout", function () {
-        line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH);
-    });
-
-    line.addEventListener('click', editHighlight);
+    if (useDefs) {
+        line.setAttribute("onclick", `editHighlight.call(this, '${highlight.id}')`);
+        line.setAttribute("onmouseover", "this.style.strokeWidth='7'");
+        line.setAttribute("onmouseout", `this.style.strokeWidth='${DEFAULT_STROKE_WIDTH}'`);
+    } else {
+        line.classList.add("smooth-stroke");
+        line.addEventListener("mouseover", () => line.setAttribute("stroke-width", "7"));
+        line.addEventListener("mouseout", () => line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH));
+        line.addEventListener("click", () => editHighlight.call(line, highlight.id));
+    }
 
     return line;
 }
@@ -439,9 +476,9 @@ function createSvgGradient(svgNamespace, highlight, colors) {
     gradient.setAttribute("x2", "100%");
     gradient.setAttribute("y2", "0%");
 
-    colors.forEach((color, i) => {
+    colors.forEach((color, index) => {
         const stop = document.createElementNS(svgNamespace, "stop");
-        stop.setAttribute("offset", `${(i / (colors.length - 1)) * 100}%`);
+        stop.setAttribute("offset", `${(index / (colors.length - 1)) * 100}%`);
         stop.setAttribute("stop-color", color);
         gradient.appendChild(stop);
     });
@@ -449,7 +486,71 @@ function createSvgGradient(svgNamespace, highlight, colors) {
     return gradient;
 }
 
-// Add , Update, and remove one highlight
+// ******* Handle Highlight add ************* //
+function addHighlight(highlight) {
+    const id = '' + highlight.id;
+    highlights[id] = highlight;
+
+    document_lines.forEach(line => {
+        if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
+            const divContainer = document.querySelector(`[data-line--id="line-${line.startOffset}-${line.endOffset}"]`);
+
+            const useDefs = isFirefox();
+            if (useDefs) {
+                addHighlightWithDefs(line, highlight, divContainer);
+            } else {
+                addHighlightWithoutDefs(line, highlight, divContainer);
+            }
+        }
+    });
+}
+
+function addHighlightWithDefs(line, highlight, divContainer) {
+    const highlightsGroup = document.querySelector(`g[id="highlights-${line.startOffset}-${line.endOffset}"]`);
+    if (!highlightsGroup) return;
+
+    const existingLine = highlightsGroup.querySelector(`line[data-highlight-id="${highlight.id}"]`);
+    if (existingLine) {
+        removeHighlightWithDefs(line, highlight, divContainer);
+    }
+
+    const existingHighlightsCount = highlightsGroup.querySelectorAll('line').length;
+
+    const textGroup = divContainer.querySelector(`g[data-line--id="line-group-${line.startOffset}-${line.endOffset}"]`);
+    const range = createRanges(textGroup.querySelector('text'), highlight, line);
+
+    range.items.forEach((rect, index) => {
+        rect.y = calculateYPositionWithDefs(existingHighlightsCount);
+        const lineElement = createSvgUnderline(textGroup, rect, highlight, true);
+        highlightsGroup.appendChild(lineElement);
+    });
+
+    adjustLineHeight(divContainer, textGroup, existingHighlightsCount + 1);
+}
+
+function addHighlightWithoutDefs(line, highlight, divContainer) {
+    const textGroup = divContainer.querySelector(`g[data-line--id="line-group-${line.startOffset}-${line.endOffset}"]`);
+    if (!textGroup) return;
+
+    const existingLine = textGroup.querySelector(`line[data-highlight-id="${highlight.id}"]`);
+    if (existingLine) {
+        removeHighlightWithoutDefs(line, highlight, divContainer);
+    }
+
+    const existingHighlightsCount = textGroup.querySelectorAll('line').length;
+
+    const range = createRanges(textGroup.querySelector('text'), highlight, line);
+
+    range.items.forEach((rect, index) => {
+        rect.y = calculateYPosition(existingHighlightsCount);
+        const lineElement = createSvgUnderline(textGroup, rect, highlight);
+        textGroup.appendChild(lineElement);
+    });
+
+    adjustLineHeight(divContainer, textGroup, existingHighlightsCount + 1);
+}
+
+// ******* Handle Highlight remove ************* //
 function removeHighlight(id, line = null) {
     id = '' + id;
     if (!highlights[id]) {
@@ -461,62 +562,58 @@ function removeHighlight(id, line = null) {
 
     linesToCheck.forEach(line => {
         if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
-
             const divContainer = document.querySelector(`[data-line--id="line-${line.startOffset}-${line.endOffset}"]`);
-            const group = divContainer.querySelector(`g[data-line--id="line-group-${line.startOffset}-${line.endOffset}"]`);
 
-            const highlightsToRemove = group.querySelectorAll(`[data-highlight-id="${highlight.id}"]`);
-            highlightsToRemove.forEach(hl => hl.remove());
-
-            const gradientElement = document.querySelector(`#gradient-${highlight.id}`);
-            if (gradientElement) {
-                gradientElement.remove();
+            const useDefs = isFirefox();
+            if (useDefs) {
+                removeHighlightWithDefs(line, highlight, divContainer);
+            } else {
+                removeHighlightWithoutDefs(line, highlight, divContainer);
             }
-
-            const remainingHighlights = group.querySelectorAll('line[data-highlight-id]');
-
-            remainingHighlights.forEach((hl, index) => {
-                const newY = calculateYPosition(index);
-                const isGradient = hl.getAttribute('stroke').startsWith('url(#gradient-');
-                const newY2 = isGradient ? newY + 0.1 : newY;
-                hl.setAttribute('y1', '' + newY);
-                hl.setAttribute('y2', '' + newY2);
-            });
-
-            const lineCount = group.querySelectorAll('line').length;
-            adjustLineHeight(divContainer, group, lineCount);
         }
     });
 }
 
-function addHighlight(highlight) {
-    const id = '' + highlight.id;
-    highlights[id] = highlight;
+function removeHighlightWithoutDefs(line, highlight, divContainer) {
+    const textGroup = divContainer.querySelector(`g[data-line--id="line-group-${line.startOffset}-${line.endOffset}"]`);
+    if (!textGroup) return;
 
-    document_lines.forEach(line => {
-        if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
+    const highlightsToRemove = textGroup.querySelectorAll(`[data-highlight-id="${highlight.id}"]`);
+    highlightsToRemove.forEach(hl => hl.remove());
 
-            const divContainer = document.querySelector(`[data-line--id="line-${line.startOffset}-${line.endOffset}"]`);
-            const group = divContainer.querySelector(`g[data-line--id="line-group-${line.startOffset}-${line.endOffset}"]`);
+    const gradientElement = document.querySelector(`#gradient-${highlight.id}`);
+    if (gradientElement) gradientElement.remove();
 
-            let existingLine = group.querySelector(`line[data-highlight-id="${highlight.id}"]`);
-            if (existingLine) {
-                removeHighlight(highlight.id, line);
-            }
+    const remainingHighlights = textGroup.querySelectorAll('line[data-highlight-id]');
+    updateHighlightPositions(textGroup, divContainer, remainingHighlights);
+}
 
-            const existingHighlightsCount = group.querySelectorAll('line').length;
+function removeHighlightWithDefs(line, highlight, divContainer) {
+    const highlightsGroup = document.querySelector(`g[id="highlights-${line.startOffset}-${line.endOffset}"]`);
+    if (!highlightsGroup) return;
 
-            const range = createRanges(group.querySelector('text'), highlight, line);
+    const highlightsToRemove = highlightsGroup.querySelectorAll(`[data-highlight-id="${highlight.id}"]`);
+    highlightsToRemove.forEach(hl => hl.remove());
 
-            range.items.forEach((rect, index) => {
-                rect.y = calculateYPosition(existingHighlightsCount);
-                const lineElement = createSvgUnderline(group, rect, highlight);
-                group.appendChild(lineElement);
-            });
+    const gradientElement = document.querySelector(`#gradient-${highlight.id}`);
+    if (gradientElement) gradientElement.remove();
 
-            adjustLineHeight(divContainer, group, existingHighlightsCount + 1)
-        }
+    const remainingHighlights = highlightsGroup.querySelectorAll('line[data-highlight-id]');
+    updateHighlightPositions(highlightsGroup, divContainer, remainingHighlights, true);
+}
+
+function updateHighlightPositions(group, divContainer, highlights, useDefs = false) {
+    highlights.forEach((hl, index) => {
+        const newY = useDefs ? calculateYPositionWithDefs(index) : calculateYPosition(index);
+        const isGradient = hl.getAttribute('stroke').startsWith('url(#gradient-');
+        const newY2 = isGradient ? newY + 0.1 : newY;
+
+        hl.setAttribute('y1', '' + newY);
+        hl.setAttribute('y2', '' + newY2);
     });
+
+    const lineCount = highlights.length;
+    adjustLineHeight(divContainer, group, lineCount);
 }
 
 // Utils
@@ -550,12 +647,20 @@ function getCharIndexFromUTF8Index(str, utf8Index) {
     return charIndex;
 }
 
-function adjustLineHeight(divContainer, group, highlightCount) {
+function adjustLineHeight(divContainer, textGroup, highlightCount) {
     const lineHeight = 40;
     const extraHeightPerHighlight = 12.5;
     const totalHeight = lineHeight + highlightCount * extraHeightPerHighlight;
-    group.parentNode.setAttribute("height", `${totalHeight}px`);
+    textGroup.parentNode.setAttribute("height", `${totalHeight}px`);
     divContainer.style.height = `${totalHeight}px`;
+}
+
+function calculateYPositionWithDefs(itemsCount) {
+    const baseY = 30;
+    const spacing = 10;
+    const additionalSpacing = 5;
+
+    return baseY + (itemsCount * spacing) + (itemsCount * additionalSpacing);
 }
 
 function calculateYPosition(itemsCount) {
@@ -565,6 +670,7 @@ function calculateYPosition(itemsCount) {
 
     return baseY + (itemsCount * spacing) + (itemsCount * additionalSpacing);
 }
+
 
 // Save highlight drag drop
 function saveHighlightDragDrop(tagId) {

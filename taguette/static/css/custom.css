@@ -1121,3 +1121,8 @@ button#start-tutorial {
     text-align: center;
     display: inline-block;
 }
+
+line {
+    cursor: pointer;
+}
+

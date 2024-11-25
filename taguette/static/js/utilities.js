@@ -382,7 +382,7 @@ function log(message, status = 'info', context = {}) {
     const timestamp = new Date().toLocaleString();
     const logMessage = `${timestamp} [${status.toUpperCase()}]: ${message}`;
     if (status.toLowerCase() === 'error') {
-        // console.error(logMessage, context);
+        console.error(logMessage, context);
     } else {
         console.log(logMessage, context);
     }
@@ -468,7 +468,6 @@ function describeSelection() {
         if (!range.collapsed) {
             const start = describePos(range.startContainer, range.startOffset);
             const end = describePos(range.endContainer, range.endOffset);
-
             if (start !== null && end !== null) {
                 return [start, end];
             }
@@ -517,4 +516,8 @@ function restoreSelection(saved) {
         range.setEnd(end[0], end[1]);
         sel.addRange(range);
     }
+}
+
+function isFirefox() {
+    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 }

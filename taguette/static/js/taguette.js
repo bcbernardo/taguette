@@ -837,6 +837,7 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
+let globalDefs = null;
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
@@ -864,6 +865,7 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
                 document_contents.appendChild(elem);
                 const cleanText = extractTextFromHtml(chunk.contents);
                 setHighlights(cleanText, elem, info.highlights, info.text_direction);
+                globalDefs = null;
                 chunk_offsets.push(chunk.offset);
             }
 
@@ -1345,5 +1347,6 @@ function debounce(func, wait) {
 }
 
 window.addEventListener('resize', debounce(() => {
+    // Issue in test
     // loadDocument(current_document);
 }, 250));
