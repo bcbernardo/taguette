@@ -105,7 +105,14 @@ class Test2E2MultiUser(SeleniumTest):
         await self.s_get('/')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
-            ['Welcome tester', 'Bienvenue sur LibreQDA, un logiciel d\'analyse qualitative développé en code source libre ouvert par la Plateforme en humanités numériques de l\'Université de Sherbrooke.'],
+            [
+                'Welcome tester',
+                'Bienvenue sur LibreQDA, un logiciel '
+                'd\'analyse qualitative développé '
+                'en code source libre ouvert par la '
+                'Plateforme en humanités numériques '
+                'de l\'Université de Sherbrooke.'
+            ]
         )
         self.assertIn(
             'Here are your projects:',
@@ -201,7 +208,7 @@ class Test2E2MultiUser(SeleniumTest):
         from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
-        
+
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')
@@ -255,13 +262,13 @@ class Test2E2MultiUser(SeleniumTest):
             expected.strip() == script.get_property('textContent').strip()
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
         ))
-        
+
         # Remove event listeners in your test setup
         self.driver.execute_script("""
             window.removeEventListener('resize', window.onresize);
             window.onresize = null;
         """)
-        
+
         # Change project 1 metadata
         await self.s_click(self.find_by_id('project-sidebar-open'))
         self.assertEqual(self.find_by_class(
@@ -386,19 +393,19 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         await asyncio.sleep(0.5)
-        
+
         # create highlight 1 - diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
             'Select tag',
             tag='a'
         )
-        
+
         # select tag 1 - interesting
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-1'),
         )
-        
+
         await self.s_click_button('save-highlight-button')
 
         await asyncio.sleep(0.5)
@@ -415,12 +422,12 @@ class Test2E2MultiUser(SeleniumTest):
             self.get_highlight_add_tags(),
             {1: False, 2: False}
         )
-        
+
         # select tag 1 - interesting
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-1'),
         )
-        
+
         # select tag 2 - people
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-2'),
@@ -431,9 +438,9 @@ class Test2E2MultiUser(SeleniumTest):
             self.get_highlight_add_tags(),
             {1: True, 2: True}
         )
-        
+
         await self.s_click_button('save-highlight-button')
-        
+
         # check highlighted document 1
         await self.s_get('/project/1/document/1')
         await asyncio.sleep(5)
@@ -441,20 +448,31 @@ class Test2E2MultiUser(SeleniumTest):
             self.find_by_id('document-contents').get_attribute('innerHTML'),
             (
                 '<div id="doc-offset-0">'
-                + '<div data-line--id="line-0-17" style="height: 65px;"><svg width="100%" height="65px">'
-                + '<g data-line--id="line-group-0-17" transform="translate(0, 20)">'
-                + '<text x="0" y="0" text-anchor="start">different content</text>'
-                + '<line data-highlight-id="1" x1="4" x2="25.3125" y1="10" y2="10" stroke="#000000" '
-                + 'stroke-linecap="round" stroke-width="4" class="smooth-stroke"></line>'
-                + '<linearGradient id="gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">'
+                + '<div data-line--id="line-0-17" style="height: 65px;">'
+                + '<svg width="100%" height="65px">'
+                + '<g data-line--id="line-group-0-17" '
+                + 'transform="translate(0, 20)">'
+                + '<text x="0" y="0" text-anchor="start">'
+                + 'different content</text>'
+                + '<line data-highlight-id="1" x1="4" x2="25.3125" '
+                + 'y1="10" y2="10" stroke="#000000" '
+                + 'stroke-linecap="round" stroke-width="4" '
+                + 'pointer-events="all" '
+                + 'class="smooth-stroke"></line>'
+                + '<linearGradient id="gradient-2" '
+                + 'x1="0%" y1="0%" x2="100%" y2="0%">'
                 + '<stop offset="0%" stop-color="#000000"></stop>'
-                + '<stop offset="100%" stop-color="#000000"></stop></linearGradient>'
-                + '<line data-highlight-id="2" x1="90.84375" x2="117.46875" y1="25" y2="25.1" '
-                + 'stroke="url(#gradient-2)" stroke-linecap="round" stroke-width="4" class="smooth-stroke"></line>'
+                + '<stop offset="100%" stop-color="#000000"></stop>'
+                + '</linearGradient>'
+                + '<line data-highlight-id="2" x1="90.84375" '
+                + 'x2="117.46875" y1="25" y2="25.1" '
+                + 'stroke="url(#gradient-2)" '
+                + 'stroke-linecap="round" stroke-width="4" '
+                + 'class="smooth-stroke"></line>'
                 + '</g></svg></div></div>'
             ),
         )
-    
+
         # Edit highlight 1 in document 1
         hl_1 = self.find_by_path('//*[@data-highlight-id="1"]')
         ActionChains(self.driver).move_to_element(hl_1).click().perform()
@@ -470,30 +488,30 @@ class Test2E2MultiUser(SeleniumTest):
         await asyncio.sleep(0.5)
         self.set_value("tag-add-path", "interesting.places")
         await self.s_click_button('save-tag-button')
-        
+
         # Finish editing highlight 1 in document 1
         self.assertEqual(
             self.get_highlight_add_tags(),
             # 3 was created while this modal was opened, it should be selected
             {1: True, 3: True, 2: False},
         )
-        
+
         # unselect tag 1 - interesting
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-1'),
         )
-        
+
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: False, 3: True, 2: False},
         )
-        
+
         await self.s_click_button('save-highlight-button')
         await asyncio.sleep(1)
 
         tag_links = self.find_children_by_id(
             'treeview-tags', 'node-treeview-tags')
-        
+
         # Check tags list
         self.assertEqual(
             [link.text.split('\n')[0] for link in tag_links],
@@ -520,20 +538,20 @@ class Test2E2MultiUser(SeleniumTest):
             self.get_highlight_add_tags(),
             {1: False, 2: False, 3: False},
         )
-        
+
         # select tag 2 - people
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-2'),
         )
-        
+
         # check after select
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: False, 3: False, 2: True},
         )
-        
+
         await self.s_click_button('save-highlight-button')
-        
+
         # List highlights in project 1 under 'people'
         await self.s_click(
             self.find_by_test_id('tag-node-2'),
@@ -593,12 +611,12 @@ class Test2E2MultiUser(SeleniumTest):
             ('DOCX', self.base_path + '/project/1/export/document/1.docx'),
             ('PDF', self.base_path + '/project/1/export/document/1.pdf'),
         ])
-        
+
         # Check scroll position for highlight 1
         await self.s_get('/project/1/document/1/highlight/1')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertNotEqual(self.s_get_scroll_height(), 0)
-        
+
         # Check export options for highlights in project 1 under 'interesting'
         await self.s_get('/project/1/highlights/interesting')
         await asyncio.sleep(1)  # Wait for XHR
@@ -641,12 +659,13 @@ class Test2E2MultiUser(SeleniumTest):
             ('DOCX', self.base_path + '/project/1/export/codebook.docx'),
             ('PDF', self.base_path + '/project/1/export/codebook.pdf'),
         ])
-        
+
         await self.s_click(self.find_by_test_id('close-sidebar-button'))
         await asyncio.sleep(1)
-        
+
         # Merge tag 2 into 1
-        ActionChains(self.driver).context_click(self.find_by_test_id('tag-node-2')).perform()
+        ActionChains(self.driver).context_click(
+            self.find_by_test_id('tag-node-2')).perform()
         await asyncio.sleep(1)
         menu_items = self.find_by_class("context-menu-item")
         for item in menu_items:
@@ -674,7 +693,7 @@ class Test2E2MultiUser(SeleniumTest):
             [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'interesting.places'],
         )
-        
+
         # List all highlights in project 1
         await self.s_click(self.find_by_id('tag-more-action-button'))
         await asyncio.sleep(0.5)
