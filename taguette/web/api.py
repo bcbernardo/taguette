@@ -23,7 +23,7 @@ from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
 from ..utils import get_path_informations
-from ..demodata import DEMO_DATA
+from ..demodata import DEMO_DATA_FR
 
 logger = logging.getLogger(__name__)
 
@@ -82,9 +82,9 @@ class CreateDemoProject(BaseHandler):
         tags = []
         # Create project
         project = database.Project(
-            name=self.gettext("Tutorial - board game"),
+            name=self.gettext("Tutorial - board games"),
             description=self.gettext(
-                'A project to simulate an analysis approach'
+                'A demo project to showcase LibreQDA'
             ))
         self.db.add(project)
         # Add user as admin
@@ -96,7 +96,7 @@ class CreateDemoProject(BaseHandler):
         self.db.add(membership)
         self.db.flush()
 
-        for document in DEMO_DATA['documents']:
+        for document in DEMO_DATA_FR['documents']:
             d = database.Document(
                 project_id=project.id,
                 name=document['name'],
@@ -110,7 +110,7 @@ class CreateDemoProject(BaseHandler):
             self.db.flush()
             documents.append(d)
 
-        for tag in DEMO_DATA['tags']:
+        for tag in DEMO_DATA_FR['tags']:
             t = database.Tag(project=project,
                              color=tag['color'],
                              path=tag['path'],
@@ -131,7 +131,7 @@ class CreateDemoProject(BaseHandler):
 
         self.db.commit()
 
-        for highlight in DEMO_DATA['highlights']:
+        for highlight in DEMO_DATA_FR['highlights']:
             h = database.Highlight(
                 document=documents[highlight['document']],
                 start_offset=highlight['start_offset'],

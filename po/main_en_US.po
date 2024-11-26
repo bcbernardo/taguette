@@ -271,9 +271,17 @@ msgctxt "submit button"
 msgid "Import"
 msgstr "Import"
 
+#: taguette/templates/partials/hlinfo.html:5
+msgid "New code"
+msgstr "New code"
+
+#: taguette/templates/partials/hlinfo.html:10
+msgid "Existing code"
+msgstr "Existing code
+
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Starred documents"
-msgstr "Starred documents"
+msgid "Bookmarks"
+msgstr "Bookmarks"
 
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:53
@@ -353,12 +361,17 @@ msgstr "Delete document"
 #: taguette/templates/modal/create_tag.html:6
 msgctxt "modal window title"
 msgid "New tag"
-msgstr "New code"
+msgstr "New tag"
 
 #: taguette/templates/modal/create_tag.html:8
 msgctxt "modal window title"
-msgid "Change tag"
+msgid "Change code"
 msgstr "Change code"
+
+#: taguette/templates/modal/create_tag.html:18
+msgctxt "tag change form placeholder"
+msgid "Parent code"
+msgstr "Parent code"
 
 #: taguette/templates/modal/create_tag.html:43
 msgctxt " tag change form placeholder"
@@ -380,6 +393,17 @@ msgstr "Delete code"
 msgctxt "modal window title"
 msgid "Highlight"
 msgstr "Highlight"
+
+#: taguette/templates/modal/create_highlight.html:14
+#: taguette/templates/project.html:55
+msgctxt "tag change form placeholder"
+msgid "Search for a code"
+msgstr "Search for a code"
+
+: taguette/templates/modal/create_highlight.html:25
+#: taguette/templates/project.html:28
+msgid "Create a code"
+msgstr "Create a code"
 
 #: taguette/templates/modal/create_highlight.html:29
 msgid "Delete highlight"
@@ -410,22 +434,23 @@ msgstr "Welcome"
 
 #: taguette/templates/welcome.html:9
 msgid ""
-"<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">TAGUETTE</a></span> is an open-source "
-"web-based document tagging tool for qualitative data analysis."
+"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
+"open-source web-based document tagging tool for qualitative data "
+"analysis."
 msgstr ""
-"<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.LibreQDA.org/\">LibreQDA</a></span> is an open-source "
-"web-based document tagging tool for qualitative data analysis."
+"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
+"open-source web-based document tagging tool for qualitative data "
+"analysis."
 
 #: taguette/templates/welcome.html:10
 msgid ""
 "Using this tool, you can upload a collection of documents, create a "
-"hierarchy of tags, and annotate portions of documents with tags and notes"
-" that you can recall and organize later."
-msgstr "Using this tool, you can upload a collection of documents, create a "
-"hierarchy of codes, and annotate portions of documents with codes and notes"
-" that you can recall and organize later."
+"hierarchy of codes, and annotate portions of documents with codes and "
+"notes that you can recall and organize later."
+msgstr ""
+"Using this tool, you can upload a collection of documents, create a "
+"hierarchy of codes, and annotate portions of documents with codes and "
+"notes that you can recall and organize later."
 
 #: taguette/templates/welcome.html:12
 #, python-format
@@ -484,10 +509,10 @@ msgctxt "navigation item"
 msgid "Home"
 msgstr "Home"
 
-#: taguette/templates/base.html:39
+#: taguette/templates/base.html:53
 #, python-format
 msgctxt "navigation item"
-msgid "Taguette Guide %(external_icon)s"
+msgid "LibreQDA Guide %(external_icon)s"
 msgstr "LibreQDA Guide %(external_icon)s"
 
 #: taguette/templates/base.html:43
@@ -999,13 +1024,13 @@ msgstr "No file provided"
 msgid "Not logged in"
 msgstr "Not logged in"
 
-#: taguette/web/api.py:82
-msgid "Tutorial - board game"
-msgstr "Tutorial - board game"
+#: taguette/web/api.py:85
+msgid "Tutorial - board games"
+msgstr "Tutorial - board games"
 
-#: taguette/web/api.py:83
-msgid "A project to simulate an analysis approach"
-msgstr "A project to simulate an analysis approach"
+#: taguette/web/api.py:86
+msgid "A demo project to showcase LibreQDA"
+msgstr "A demo project to showcase LibreQDA"
 
 #: taguette/web/api.py:82 taguette/web/api.py:113 taguette/web/api.py:204
 #: taguette/web/api.py:243 taguette/web/api.py:308 taguette/web/api.py:348

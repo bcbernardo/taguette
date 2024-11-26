@@ -25,7 +25,7 @@
             <div class="row py-1 panel-content">
                 <div class="col-md-12 mb-3 mx-1">
                     <div class="d-flex flex-wrap gap-2">
-                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a tag{% endtrans %}</a>
+                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a code{% endtrans %}</a>
                         <div class="dropdown ms-2">
                             <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
@@ -38,7 +38,7 @@
                         </div>
                         <div class="dropdown ms-2">
                             <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-sort"></i> {% trans %}Filter by{% endtrans %}
+                                <i class="fa fa-sort"></i> {% trans %}Sort by{% endtrans %}
                             </button>
                             <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
                                 <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
@@ -52,7 +52,7 @@
             </div>
             <div class="mb-2 panel-content">
                 <div class="form-group">
-                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search tags{% endtrans %}">
+                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search for a code{% endtrans %}">
                 </div>
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
                 </div>
@@ -71,7 +71,7 @@
 
         <div id="document-view" class="document-view">
             <div id="document-contents">
-                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
+                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on right{% endtrans %}</p>
             </div>
         </div>
 

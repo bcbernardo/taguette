@@ -32,7 +32,7 @@
                   <a class="nav-link {{ 'active' if active_page == 'project' else '' }} project-name" href="{{ reverse_url('project', project.id) }}">
                       {{ project.name }}
                   </a>
-                  <i id="project-sidebar-open" title="{% trans %}Edit project{% endtrans %}" class="fa fa-briefcase" style="color: white; cursor: pointer;"></i>
+                  <i id="project-sidebar-open" title="{% trans %}Edit project{% endtrans %}" class="fa fa-briefcase" style="color: white; cursor: pointer; font-size: 30px;"></i>
               </li>
             {% endif %}
           </ul>
@@ -49,8 +49,8 @@
           {% endif %}
           <ul class="navbar-nav">
             <li class="nav-item">
-              {% set external_icon %}<i class="fas fa-external-link-alt"></i>{% endset %}
-              <a id="intro-documentation" class="nav-link" href="https://aide.libreqda.org" target="_blank" rel="noopener">{% trans "navigation item" %}Taguette Guide {{ external_icon }}{% endtrans %}</a>
+              {% set external_icon %}<i class="fa fa-book-open"></i>{% endset %}
+              <a id="intro-documentation" class="nav-link" href="https://aide.libreqda.org" target="_blank" rel="noopener">{% trans "navigation item" %}LibreQDA Guide {{ external_icon }}{% endtrans %}</a>
             </li>
             {% if not multiuser %}
             <li class="nav-item">

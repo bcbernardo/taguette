@@ -1,10 +1,8 @@
-# Translations template for Taguette.
+# Translations template for Taguette and LibreQDA.
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
+# Copyright (c) 2023, Plateforme en humanités numériques (Université de Sherbrooke)
 # This file is distributed under the same license as the Taguette project.
-# Remi Rampin <remi@rampin.org>, 2018.
 #
-# Translators:
-# Rémi Rampin <remirampin@gmail.com>, 2022
 #
 msgid ""
 msgstr ""
@@ -12,8 +10,8 @@ msgstr ""
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
 "POT-Creation-Date: 2022-04-30 21:15-0400\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
-"Last-Translator: Rémi Rampin <remirampin@gmail.com>, 2022\n"
-"Language-Team: French (https://www.transifex.com/remram44/teams/98824/fr/)\n"
+"Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -174,10 +172,10 @@ msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Rechercher dans les documents"
 
-#: taguette/templates/base.html:37
+#: taguette/templates/base.html:53
 #, python-format
 msgctxt "navigation item"
-msgid "Taguette Guide %(external_icon)s"
+msgid "LibreQDA Guide %(external_icon)s"
 msgstr "Guide de LibreQDA %(external_icon)s"
 
 #: taguette/templates/base.html:41
@@ -327,7 +325,8 @@ msgstr "Développer Tout"
 msgid "Collapse all"
 msgstr "Réduire Tout"
 
-msgid "Filter by"
+#: taguette/templates/project.html:41
+msgid "Sort by"
 msgstr "Trier par"
 
 #: taguette/templates/project.html:38
@@ -358,9 +357,9 @@ msgstr "Exporter cette vue"
 msgid "Back to highlights"
 msgstr "Retour aux sélections"
 
-#: taguette/templates/project.html:120
-msgid "Load a document on the left"
-msgstr "Chargez un document depuis vos favoris ou le menu latéral"
+#: taguette/templates/project.html:74
+msgid "Load a document on right"
+msgstr "Chargez un document sur la droite"
 
 #: taguette/templates/project.html:132
 msgid "Manage Collaborators"
@@ -434,9 +433,17 @@ msgctxt "submit button"
 msgid "Import"
 msgstr "Importer"
 
+#: taguette/templates/partials/hlinfo.html:5
+msgid "New code"
+msgstr "Nouveau code"
+
+#: taguette/templates/partials/hlinfo.html:10
+msgid "Existing code"
+msgstr "Code existant"
+
 #: taguette/templates/partials/document_toolbar.html:4
-msgid "Starred documents"
-msgstr "Documents favoris"
+msgid "Bookmarks"
+msgstr "Favoris"
 
 #: taguette/templates/partials/document_toolbar.html:7
 msgid "..."
@@ -544,14 +551,21 @@ msgstr "Bienvenue %(user_display_name)s"
 msgid "Welcome!"
 msgstr "Bienvenue !"
 
-#: taguette/templates/index.html:14
-msgid "Here are your projects:"
-msgstr "Voici vos projets :"
+#: taguette/templates/index.html:32
+msgid "Create a new project"
+msgstr "Créer un nouveau projet"
 
-#: taguette/templates/index.html:53
-msgctxt "button in project list"
+#: taguette/templates/index.html:37
+msgid "Import a project file"
+msgstr "Importer un projet"
+
+#: taguette/templates/index.html:45
+msgid "Here are your projects"
+msgstr "Vos projets"
+
+#: taguette/templates/index.html:41
 msgid "Demo project"
-msgstr "Projet de démonstration"
+msgstr "Démo"
 
 #: taguette/templates/index.html:54
 msgctxt "button in project list"
@@ -666,13 +680,12 @@ msgstr "Bienvenue"
 
 #: taguette/templates/welcome.html:9
 msgid ""
-"<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">TAGUETTE</a></span> is an open-source "
-"web-based document tagging tool for qualitative data analysis."
+"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
+"open-source web-based document tagging tool for qualitative data "
+"analysis."
 msgstr ""
-"<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">TAGUETTE</a></span> est un logiciel de "
-"marquage open-source pour l'analyse de données qualitatives."
+"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> est un "
+"logiciel open-source d'annotation de données qualitatives "
 
 #: taguette/templates/welcome.html:10
 msgid ""
@@ -962,13 +975,13 @@ msgstr "Importer le projet"
 msgid "Not logged in"
 msgstr "Utilisateur non identifié"
 
-#: taguette/web/api.py:82
-msgid "Tutorial - board game"
+#: taguette/web/api.py:85
+msgid "Tutorial - board games"
 msgstr "Tutoriel - jeux de société"
 
-#: taguette/web/api.py:83
-msgid "A project to simulate an analysis approach"
-msgstr "Un projet pour simuler une démarche d'analyse"
+#: taguette/web/api.py:86
+msgid "A demo project to showcase LibreQDA"
+msgstr "Un projet servant à démontrer les fonctionnalités"
 
 #: taguette/web/api.py:80 taguette/web/api.py:111 taguette/web/api.py:202
 #: taguette/web/api.py:241 taguette/web/api.py:306 taguette/web/api.py:341

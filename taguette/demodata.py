@@ -1,4 +1,4 @@
-DEMO_DATA = {'documents': [
+DEMO_DATA_FR = {'documents': [
     {
         "name": "2024-05-16_entrevue_Élise_graphiste.txt",
         "filename": "2024-05-16_entrevue_Élise_graphiste.txt",
