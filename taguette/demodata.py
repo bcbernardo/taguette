@@ -253,30 +253,30 @@ DEMO_DATA_FR = {'documents': [
 ], 'tags': [
     {
         'color': '#ff0600',
-        'path': 'barrieres',
+        'path': 'barriers',
         'description': '',
         'childrens': []
     },
     {
         'color': '#26A269',
-        'path': 'benefices',
+        'path': 'benefits',
         'description': '',
         'childrens': [
             {
                 'color': '#57E389',
-                'path': 'developpement_competences',
+                'path': 'skill development',
                 'description': '',
             },
             {
                 'color': '#99c1f1',
-                'path': 'renforcement_relations',
+                'path': 'reinforcing_relations',
                 'description': '',
             }
         ]
     },
     {
         'color': '#ff0600',
-        'path': 'jeux',
+        'path': 'games',
         'description': '',
         'childrens': []
     },
