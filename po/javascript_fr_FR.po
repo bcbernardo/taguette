@@ -222,7 +222,7 @@ msgstr "Votre sélection"
 
 #: taguette/static/js/tag/context-menu.js:67
 msgid "Add child"
-msgstr "Ajouter un enfant"
+msgstr "Ajouter un code enfant"
 
 #: taguette/static/js/tag/context-menu.js:39
 msgid "Select With Condition"

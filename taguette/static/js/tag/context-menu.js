@@ -88,7 +88,7 @@ function generateContextMenuItems(node) {
         },
         "deleteParent": {
             name: gettext('deleteParent'),
-            icon: "fas fa-folder-minus",
+            icon: "fas fa-times-circle",
             visible: hasParent,
             callback: (key, options) => contextMenuAction('deleteParent', tagId)
         },
