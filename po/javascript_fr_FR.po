@@ -1,237 +1,413 @@
-# Translations template for Taguette.
+# French translations for Taguette.
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
 # This file is distributed under the same license as the Taguette project.
 # Remi Rampin <remi@rampin.org>, 2018.
-# 
+#
 # Translators:
 # Rémi Rampin <remirampin@gmail.com>, 2021
-# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Taguette 1.1\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2021-10-12 19:00-0400\n"
+"POT-Creation-Date: 2024-11-27 10:49-0500\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
 "Last-Translator: Rémi Rampin <remirampin@gmail.com>, 2021\n"
-"Language-Team: French (https://www.transifex.com/remram44/teams/98824/fr/)\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
 "Language: fr\n"
+"Language-Team: French "
+"(https://www.transifex.com/remram44/teams/98824/fr/)\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
 
-#: taguette/static/js/project/search.js:50
+#: taguette/static/js/project/search.js:67
 #, python-format
 msgid "Found in %(nb)s document(s)"
 msgstr "Trouvé dans %(nb)s document(s)"
 
-#: taguette/static/js/project/search.js:75
+#: taguette/static/js/project/search.js:115
 msgid "Error searching documents!"
 msgstr "Une erreur est survenue lors de la recherche dans les documents!"
 
-#: taguette/static/js/taguette.js:500
-msgid "Couldn't update project metadata!"
-msgstr "Impossible de mettre à jour les métadonnées !"
+#: taguette/static/js/project/intro.js:10
+msgid ""
+"Bienvenue sur LibreQDA, un logiciel d'analyse qualitative développé en "
+"code source libre ouvert par la Plateforme en humanités numériques de "
+"l'Université de Sherbrooke."
+msgstr ""
 
-#: taguette/static/js/taguette.js:556 taguette/static/js/taguette.js:829
-msgid "Edit"
-msgstr "Éditer"
+#: taguette/static/js/project/intro.js:11
+msgid ""
+"<p>Visitez notre dépôt de code <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda\" target=\"_blank\">Gitlab</a></p>"
+msgstr ""
 
-#: taguette/static/js/taguette.js:565
-msgid "There are no documents in this project yet."
-msgstr "Il n'y a pas encore de documents dans ce projet."
+#: taguette/static/js/project/intro.js:15
+msgid "<p>Pour consulter la documentation.</p>"
+msgstr ""
 
-#: taguette/static/js/taguette.js:655 taguette/static/js/taguette.js:661
-msgid "Error uploading file!"
-msgstr "Impossible d'envoyer ce fichier !"
+#: taguette/static/js/project/intro.js:20
+msgid "<p>Un projet tutoriel a été ajouté à votre espace personnel.</p>"
+msgstr ""
 
-#: taguette/static/js/taguette.js:693
+#: taguette/static/js/project/intro.js:27
+#: taguette/static/js/project/intro.js:172
+msgid "Next"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:28
+#: taguette/static/js/project/intro.js:173
+msgid "Back"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:29
+msgid "Continue"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:67
+#, fuzzy
+msgid "Vos documents"
+msgstr "Documents"
+
+#: taguette/static/js/project/intro.js:68
+msgid "<p>Utilisez cet onglet pour charger des fichiers et naviguer entre eux</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:73
+msgid "Arbre de codes"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:74
+msgid ""
+"<p>Cet onglet liste tous les codes que vous définissez. Ajoutez-en avec "
+"le bouton dédié à cet effet.</p><br><p>La fréquence totale d'usage est "
+"indiquée dans la pastille de droite, et le nombre de documents dans celle"
+" de gauche.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:79
+#, fuzzy
+msgid "Codes parents"
+msgstr "Dissocier du parent"
+
+#: taguette/static/js/project/intro.js:80
+msgid ""
+"<p>Vous pouvez définir des codes qui sont appelés à en contenir "
+"d'autres</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:85
+msgid "Codes enfants"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:86
+msgid "<p>Ils peuvent être développés ou réduits.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:92
+#, fuzzy
+msgid "Consulter les documents"
+msgstr "Impossible de supprimer le document !"
+
+#: taguette/static/js/project/intro.js:93
+msgid ""
+"<p>Cliquez sur un document pour consulter son contenu. Utilisez l'étoile "
+"pour enregistrer vos favoris.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:98
+msgid "Encoder"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:99
+msgid ""
+"<p>Sélectionnez un passage de texte avec votre curseur. Deux boutons "
+"apparaîtront pour y assigner un code.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:108
+msgid "Sélectionner un code"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:109
+msgid ""
+"<p>Depuis le menu, sélectionnez des codes existants qui correspondent au "
+"contenu de la sélection et sauvegardez l'opération. Ici, l'extrait "
+"concerne le renforcement des relations sociales.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:116
+msgid "Exploration des codes"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:117
+msgid ""
+"<p>Pendant ou après la phase d'encodage, vous pouvez toujours explorer "
+"les passages de textes auxquels vous avez assigné des codes.</p><br><p> "
+"Affichez tous les extraits encodés avec un code de votre arbre en "
+"cliquant dessus.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:122
+msgid "Préciser votre besoin d'information"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:123
+msgid ""
+"<p>Si votre liste d'extraits est longue, vous pouvez la raffiner avec une"
+" recherche avancée.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:129
+#, fuzzy
+msgid "Sélection conditionnelle"
+msgstr "Sélection conditionnelle"
+
+#: taguette/static/js/project/intro.js:130
+msgid ""
+"<p>D'un clic droit, vous pouvez spécifier des conditions pour croiser des"
+" codes, en inclure plus ou en ignorer certains.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:137
+msgid "Analyze"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:138
+msgid ""
+"<p>Les pastilles de la requête montrent que les extraits récupérés "
+"doivent nécessairement inclure les codes <i>barrieres</i> et "
+"<i>developpment_competences</i>.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:144
+msgid "Naviguer vers le document"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:145
+msgid ""
+"<p>En cliquant sur le nom du document, vous pouvez retourner au "
+"contexte.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:151
+msgid "Retourner aux extraits"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:152
+msgid ""
+"<p>Après avoir consulté le contexte, vous pouvez retourner `a la liste "
+"d'extraits précédement récupérés à l'aide d'une recherche avancée.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:158
+msgid "Export"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:159
+msgid "<p>Au besoin, téléchargez cette liste d'extraits sur votre ordinateur.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:163
+msgid "À vous d'encoder!"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:164
+msgid ""
+"<p>Utilisez LibreQDA comme vous le souhaitez avec l'assurance que vos "
+"donnée seront sauvegardée sur votre espace personnel. Pour vous "
+"familiariser d'avantage avec les fonctionnalités, poursuivez l'encodage "
+"et l'exploration des fichiers d'entretiens fictives concernant les jeux "
+"de sociétés.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:174
+msgid "Done"
+msgstr ""
+
+#: taguette/static/js/polling-event.js:111
+msgid "It appears that you have been logged out."
+msgstr "Il semble que vous vous soyez déconnecté de votre profil."
+
+#: taguette/static/js/polling-event.js:114
+msgid "You can no longer access this project."
+msgstr "Vous ne pouvez plus accéder à ce projet."
+
+#: taguette/static/js/taguette.js:257
 msgid "Document name cannot be empty"
 msgstr "Le nom du document ne peut pas être vide"
 
-#: taguette/static/js/taguette.js:710
-msgid "Couldn't update document!"
-msgstr "Impossible de mettre à jour le document !"
-
-#: taguette/static/js/taguette.js:719
+#: taguette/static/js/taguette.js:282
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Êtes-vous sûr de vouloir supprimer le document \"%(doc)s\" ?"
 
-#: taguette/static/js/taguette.js:731
-msgid "Couldn't delete document!"
-msgstr "Impossible de supprimer le document !"
-
-#: taguette/static/js/taguette.js:838
-msgid "There are no tags in this project yet."
-msgstr "Il n'y a pas encore de codes dans ce projet."
-
-#: taguette/static/js/taguette.js:878
-msgid "no tags"
-msgstr "pas de codes"
-
-#: taguette/static/js/taguette.js:945
+#: taguette/static/js/taguette.js:408
 msgid "Invalid tag name"
 msgstr "Nom de code invalide"
 
-#: taguette/static/js/taguette.js:972
-msgid "Couldn't create tag!"
-msgstr "Impossible de créer le code !"
+#: taguette/static/js/taguette.js:413
+msgid "Impossible to define the same tag as parent"
+msgstr "Impossible de définir la même code comme parent"
 
-#: taguette/static/js/taguette.js:981
+#: taguette/static/js/taguette.js:476
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Êtes-vous sûr de vouloir supprimer le code \"%(tag)s\" ?"
 
-#: taguette/static/js/taguette.js:996
-msgid "Couldn't delete tag!"
-msgstr "Impossible de supprimer le code !"
-
-#: taguette/static/js/taguette.js:1065
+#: taguette/static/js/taguette.js:529
 msgid "Couldn't merge tags!"
 msgstr "Impossible de fusionner les codes !"
 
-msgid "Impossible to define the same tag as parent"
-msgstr "Impossible de définir la même code comme parent"
-
-#. Key used to create a new highlight
-#: taguette/static/js/taguette.js:1176
-msgid "n"
-msgstr "n"
-
-#: taguette/static/js/taguette.js:1226
-msgid "Couldn't create highlight!"
-msgstr "Impossible de créer cette sélection !"
-
-#: taguette/static/js/taguette.js:1246
-msgid "Couldn't delete highlight!"
-msgstr "Impossible de supprimer cette sélection !"
-
-#: taguette/static/js/taguette.js:1277
+#: taguette/static/js/taguette.js:688
 msgid "Full permissions"
 msgstr "Toutes les permissions"
 
-#: taguette/static/js/taguette.js:1278
+#: taguette/static/js/taguette.js:689
 msgid "Can't change collaborators / delete project"
 msgstr "Ne peut pas changer les collaborateurs / supprimer le projet"
 
-#: taguette/static/js/taguette.js:1279
+#: taguette/static/js/taguette.js:690
 msgid "View & make changes"
 msgstr "Voir & faire des changements"
 
-#: taguette/static/js/taguette.js:1280
+#: taguette/static/js/taguette.js:691
 msgid "View only"
 msgstr "Voir seulement"
 
-#: taguette/static/js/taguette.js:1351
+#: taguette/static/js/taguette.js:763
 msgid "Already a member!"
 msgstr "Déja membre de ce projet !"
 
-#: taguette/static/js/taguette.js:1369
+#: taguette/static/js/taguette.js:778
 msgid "This user doesn't exist!"
 msgstr "Cet utilisateur n'existe pas !"
 
-#: taguette/static/js/taguette.js:1412
-msgid "Couldn't update collaborators!"
-msgstr "Impossible de mettre à jour les collaborateurs !"
-
-#: taguette/static/js/taguette.js:1440
+#: taguette/static/js/taguette.js:846
 msgid "Load a document on the left"
 msgstr "Sélectionnez un document sur la gauche"
 
-#: taguette/static/js/taguette.js:1508
-msgid "Error loading document!"
-msgstr "Impossible de charger le document !"
-
-#: taguette/static/js/taguette.js:1571
+#: taguette/static/js/taguette.js:1054
 msgid "No highlights with this tag yet."
 msgstr "Aucune sélection avec ce code."
 
-#: taguette/static/js/taguette.js:1659
-msgid "Error loading tag highlights!"
-msgstr "Impossible de charger les sélections liées à ce code !"
+#: taguette/static/js/taguette.js:1199
+#, fuzzy
+msgid "No tag found"
+msgstr "Pas de codes"
 
-#: taguette/static/js/taguette.js:1812
-msgid "It appears that you have been logged out."
-msgstr "Il semble que vous vous soyez déconnecté de votre profil."
-
-#: taguette/static/js/taguette.js:1815
-msgid "You can no longer access this project."
-msgstr "Vous ne pouvez plus accéder à ce projet."
-
-#: taguette/static/js/tag/context-menu.js.js:25
+#: taguette/static/js/tag/context-menu.js:35
 msgid "selectAll"
 msgstr "Sélectionner tout"
 
-#: taguette/static/js/tag/context-menu.js.js:25
+#: taguette/static/js/tag/context-menu.js:41
 msgid "unselectAll"
 msgstr "Désélectionner tout"
 
-#: taguette/static/js/tag/context-menu.js.js:33
-msgid "Select"
-msgstr "Sélectionner"
-
-#: taguette/static/js/tag/context-menu.js.js:38
-msgid "AND"
-msgstr "Combiner avec (ET)"
-
-#: taguette/static/js/tag/context-menu.js.js:45
-msgid "OR"
-msgstr "Inclure également (OU)"
-
-#: taguette/static/js/tag/context-menu.js.js:52
-msgid "NOT"
-msgstr "Exclure"
-
-#: taguette/static/js/tag/context-menu.js.js:61
-msgid "expand"
-msgstr "Développer"
-
-#: taguette/static/js/tag/context-menu.js.js:61
-msgid "collapse"
-msgstr "Réduire"
-
-#: taguette/static/js/tag/context-menu.js.js:70
-msgid "edit"
-msgstr "Modifier"
-
-#: taguette/static/js/tag/context-menu.js.js:71
-msgid "merge"
-msgstr "Fusionner"
-
-#: taguette/static/js/tag/context-menu.js.js:77
-msgid "delete"
-msgstr "Supprimer"
-
-#: taguette/static/js/tag/context-menu.js.js:73
-msgid "deleteParent"
-msgstr "Dissocier du parent"
-
-#: taguette/static/js/tag/treeview.js:359
-msgid "Documents"
-msgstr "Documents"
-
-#: taguette/static/js/tag/treeview.js:360
-msgid "Highlights"
-msgstr "Sélections"
-
-#: taguette/static/js/tag/manager.js:362
-msgid "Your selection"
-msgstr "Votre sélection"
-
-#: taguette/static/js/tag/context-menu.js:67
-msgid "Add child"
-msgstr "Ajouter un code enfant"
-
-#: taguette/static/js/tag/context-menu.js:39
+#: taguette/static/js/tag/context-menu.js:47
 msgid "Select With Condition"
 msgstr "Sélection conditionnelle"
 
-#: taguette/static/js/document/manager.js:40
-msgid "Remove from Favorites"
-msgstr "Retirer comme favori"
+#: taguette/static/js/tag/context-menu.js:52
+msgid "AND"
+msgstr "Combiner avec (ET)"
 
-#: taguette/static/js/document/manager.js:44
+#: taguette/static/js/tag/context-menu.js:57
+msgid "OR"
+msgstr "Inclure également (OU)"
+
+#: taguette/static/js/tag/context-menu.js:62
+msgid "NOT"
+msgstr "Exclure"
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "collapse"
+msgstr "Réduire"
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "expand"
+msgstr "Développer"
+
+#: taguette/static/js/tag/context-menu.js:75
+msgid "Add child"
+msgstr "Ajouter un code enfant"
+
+#: taguette/static/js/tag/context-menu.js:80
+msgid "edit"
+msgstr "Modifier"
+
+#: taguette/static/js/tag/context-menu.js:85
+msgid "merge"
+msgstr "Fusionner"
+
+#: taguette/static/js/tag/context-menu.js:90
+msgid "deleteParent"
+msgstr "Dissocier du parent"
+
+#: taguette/static/js/tag/context-menu.js:96
+msgid "delete"
+msgstr "Supprimer"
+
+#: taguette/static/js/document/manager.js:72
+msgid "Remove from Favorites"
+msgstr "Retirer des favoris"
+
+#: taguette/static/js/document/manager.js:72
 msgid "Add to Favorites"
-msgstr "Ajouter comme favori"
+msgstr "Ajouter aux favoris"
+
+#: taguette/static/js/document/manager.js:92
+msgid "There are no documents in this project yet."
+msgstr "Il n'y a pas encore de documents dans ce projet."
+
+#: taguette/static/js/document/manager.js:112
+#, fuzzy
+msgid "Import new document"
+msgstr "Impossible de charger le document !"
+
+#~ msgid "Couldn't update project metadata!"
+#~ msgstr "Impossible de mettre à jour les métadonnées !"
+
+#~ msgid "Edit"
+#~ msgstr "Éditer"
+
+#~ msgid "Error uploading file!"
+#~ msgstr "Impossible de téléverser ce fichier !"
+
+#~ msgid "Couldn't update document!"
+#~ msgstr "Impossible de mettre à jour le document !"
+
+#~ msgid "There are no tags in this project yet."
+#~ msgstr "Il n'y a pas encore de codes dans ce projet."
+
+#~ msgid "Couldn't create tag!"
+#~ msgstr "Impossible de créer le code !"
+
+#~ msgid "Couldn't delete tag!"
+#~ msgstr "Impossible de supprimer le code !"
+
+#~ msgid "n"
+#~ msgstr "n"
+
+#~ msgid "Couldn't create highlight!"
+#~ msgstr "Impossible de créer cette sélection !"
+
+#~ msgid "Couldn't delete highlight!"
+#~ msgstr "Impossible de supprimer cette sélection !"
+
+#~ msgid "Couldn't update collaborators!"
+#~ msgstr "Impossible de mettre à jour les collaborateurs !"
+
+#~ msgid "Error loading tag highlights!"
+#~ msgstr "Impossible de charger les sélections liées à ce code !"
+
+#~ msgid "Select"
+#~ msgstr "Sélectionner"
+
+#~ msgid "Highlights"
+#~ msgstr "Sélections"
+
+#~ msgid "Your selection"
+#~ msgstr "Votre sélection"
+
