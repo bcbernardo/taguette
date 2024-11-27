@@ -71,7 +71,6 @@ msgid "Continue"
 msgstr "Continuer"
 
 #: taguette/static/js/project/intro.js:67
-#, fuzzy
 msgid "Your documents"
 msgstr "Vos documents"
 
