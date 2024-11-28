@@ -1,4 +1,9 @@
 DEMO_DATA = {'fr_FR': {
+    "tutorial_highlights": [
+        [[195, 402]],   # Document 0
+        [],             # Document 1
+        []              # Document 2
+    ],
     'documents': [{
         "name": "2024-05-16_entrevue_Élise_graphiste.txt",
         "filename": "2024-05-16_entrevue_Élise_graphiste.txt",
@@ -298,8 +303,8 @@ DEMO_DATA = {'fr_FR': {
         },
     ], 'highlights': [{
         'document': 0,
-        'start_offset': 2161,
-        'end_offset': 2461,
+        'start_offset': 2164,
+        'end_offset': 2464,
         'snippet': '<p>Les jeux de société améliorent des compétences '
                    'transversales importantes comme la pensée stratégique, la '
                    'gestion des ressources et la communication. Pour moi, en '
@@ -310,7 +315,7 @@ DEMO_DATA = {'fr_FR': {
     }, {
         'document': 0,
         'start_offset': 2850,
-        'end_offset': 3255,
+        'end_offset': 3259,
         'snippet': '<p>Le coût des jeux peut être un obstacle, surtout pour '
                    'les éditions spéciales ou les nouvelles sorties sur '
                    'Kickstarter. De plus, coordonner les horaires pour des '
@@ -323,7 +328,7 @@ DEMO_DATA = {'fr_FR': {
     }, {
         'document': 1,
         'start_offset': 494,
-        'end_offset': 806,
+        'end_offset': 810,
         'snippet': '<p>Je préfère les jeux qui sont rapides à jouer et qui '
                    'n’ont pas trop de règles compliquées. Comme les jeux de '
                    'cartes, le Uno, ou même des jeux de plateau assez '
@@ -370,6 +375,11 @@ DEMO_DATA = {'fr_FR': {
     },
     ]
 }, 'en_US': {
+    "tutorial_highlights": [
+        [[174, 324]],   # Document 0
+        [],             # Document 1
+        []              # Document 2
+    ],
     'documents': [{
         "name": "2024-05-16_elise_graphic_designer.txt",
         "filename": "2024-05-16_elise_graphic_designer.txt",
@@ -603,73 +613,75 @@ DEMO_DATA = {'fr_FR': {
         'childrens': []
     }], 'highlights': [{
         'document': 0,
-        'start_offset': 2161,
-        'end_offset': 2461,
-        'snippet': '<p>Les jeux de société améliorent des compétences '
-                   'transversales importantes comme la pensée stratégique, la '
-                   'gestion des ressources et la communication. Pour moi, en '
-                   'tant que designer graphique, ils stimulent également ma '
-                   'créativité et m’aident à penser de manière plus innovante '
-                   'et flexible.</p>',
+        'start_offset': 1704,
+        'end_offset': 1966,
+        'snippet': '<p>Actually, yes, absolutely. Board games enhance '
+                   'important transferable skills like strategic thinking, '
+                   'resource management, and communication. For me, '
+                   'as a graphic designer, they also stimulate my creativity '
+                   'and help me think in more innovative and flexible '
+                   'ways.</p>',
         'tags': [2]
     }, {
         'document': 0,
-        'start_offset': 2850,
-        'end_offset': 3255,
-        'snippet': '<p>Le coût des jeux peut être un obstacle, surtout pour '
-                   'les éditions spéciales ou les nouvelles sorties sur '
-                   'Kickstarter. De plus, coordonner les horaires pour des '
-                   'sessions de jeux régulières avec un groupe fixe peut être '
-                   'compliqué, compte tenu de nos vies bien remplies. '
-                   'Habituellement j’utilise des sondages de disponibilité '
-                   'comme Framadate et il y a quand même des conflits '
-                   'd’horaire à arbitrer.</p>',
+        'start_offset': 2305,
+        'end_offset': 2621,
+        'snippet': '<p>The cost of games can be a barrier, especially for '
+                   'special editions or new releases on Kickstarter. Plus, '
+                   'coordinating schedules for regular game sessions with a '
+                   'fixed group can be complicated, given our busy lives. '
+                   'Usually, I use availability polls like Framadate, '
+                   'and there are still schedule conflicts to resolve.</p>',
         'tags': [0]
     }, {
         'document': 1,
-        'start_offset': 494,
-        'end_offset': 806,
-        'snippet': '<p>Je préfère les jeux qui sont rapides à jouer et qui '
-                   'n’ont pas trop de règles compliquées. Comme les jeux de '
-                   'cartes, le Uno, ou même des jeux de plateau assez '
-                   'simples. L’idée c’est de pouvoir terminer une partie en '
-                   'une heure ou moins, ça garde tout le monde engagé et ça '
-                   'ne prend pas toute la soirée.</p>',
+        'start_offset': 409,
+        'end_offset': 677,
+        'snippet': '<p>I prefer games that are quick to play and don’t have '
+                   'too many complicated rules. Like card games, Uno, '
+                   'or even quite simple board games. The idea is to be able '
+                   'to finish a game in an hour or less, it keeps everyone '
+                   'engaged and it doesn’t take up the whole evening.</p>',
         'tags': [0]
     }, {
         'document': 1,
-        'start_offset': 2182,
-        'end_offset': 2400,
-        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
-                   'à nous asseoir ensemble, à discuter, à négocier, et même '
-                   'à résoudre des conflits. C’est comme un exercice de team '
-                   'building, mais dans un cadre amicale.</p>',
+        'start_offset': 1831,
+        'end_offset': 2011,
+        'snippet': '<p>I think they strengthen bonds. They force us to sit '
+                   'together, to talk, to negotiate, and even to resolve '
+                   'conflicts. It’s like a team-building exercise, but in a '
+                   'friendly setting.</p>',
         'tags': [3]
     }, {
         'document': 1,
         'start_offset': 2182,
-        'end_offset': 2733,
-        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
-                   'à nous asseoir ensemble, à discuter, à négocier, et même '
-                   'à résoudre des conflits. C’est comme un exercice de team '
-                   'building, mais dans un cadre amicale.</p>',
+        'end_offset': 2287,
+        'snippet': '<p>I think they strengthen bonds. They force us to sit '
+                   'together, to talk, to negotiate, and even to resolve '
+                   'conflicts. It’s like a team-building exercise, but in a '
+                   'friendly setting. And generally, it goes very well. But '
+                   'sometimes, I must say, I’ve experienced tense situations '
+                   'where sensitivities were heated, either because someone '
+                   'was cheating or didn’t understand the rules very well. '
+                   'I’m not comfortable in those moments, which cool my '
+                   'enthusiasm.</p>',
         'tags': [0, 2, 3]
     }, {
         'document': 2,
-        'start_offset': 732,
-        'end_offset': 764,
-        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
+        'start_offset': 589,
+        'end_offset': 617,
+        'snippet': '<p>Werewolves of Millers Hollow</p>',
         'tags': [4]
     }, {
         'document': 2,
-        'start_offset': 924,
-        'end_offset': 933,
-        'snippet': '<p>Pandémie</p>',
+        'start_offset': 740,
+        'end_offset': 748,
+        'snippet': '<p>Pandemic</p>',
         'tags': [4]
     }, {
         'document': 2,
-        'start_offset': 1210,
-        'end_offset': 1218,
+        'start_offset': 974,
+        'end_offset': 982,
         'snippet': '<p>Daybreak</p>',
         'tags': [4]
     }]}

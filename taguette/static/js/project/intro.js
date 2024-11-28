@@ -98,7 +98,7 @@ $(document).ready(function() {
                     title: gettext('Coding'),
                     intro: gettext('<p>Select a portion of text with your cursor. Two buttons will appear to assign a code to the selection.</p>'),
                     position: 'bottom',
-                    highlight: [195, 403],
+                    highlight: demo_highlights_location[0][0],
                     nodes: [null, null],
                     highlight_context: [0, 0],
                     doAction: 'document-highlight' // Action to create wrapper for introjs
