@@ -2549,7 +2549,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         await self.s_get('/')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
-            ['Welcome tester', 'Bienvenue sur LibreQDA, un logiciel d\'analyse qualitative développé en code source libre ouvert par la Plateforme en humanités numériques de l\'Université de Sherbrooke.'],
+            ['Welcome tester', 'Welcome to LibreQDA, a qualitative data analysis software (QDA) developed by the Plateforme en humanités numériques (PHuN) at Université de Sherbrooke.'],
         )
         self.assertIn(
             'Here are your projects:',
