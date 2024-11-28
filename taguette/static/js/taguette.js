@@ -451,7 +451,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
-        document.getElementById('dropdownMenuButtonTag').innerText = 'None';
+        document.getElementById('dropdownMenuButtonTag').innerText = gettext('None');
 
     };
     const callbackFail = (error) => {

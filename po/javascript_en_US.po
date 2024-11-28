@@ -242,7 +242,11 @@ msgstr "Invalid code name"
 
 #: taguette/static/js/taguette.js:413
 msgid "Impossible to define the same tag as parent"
-msgstr "Impossible to define the same code as paren"
+msgstr "Impossible to define the same code as parent"
+
+#: taguette/static/js/taguette.js:454
+msgid "None"
+msgstr "None"
 
 #: taguette/static/js/taguette.js:476
 #, python-format

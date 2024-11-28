@@ -524,7 +524,7 @@ msgstr "New code"
 
 #: taguette/templates/partials/hlinfo.html:10
 msgid "Existing code"
-msgstr "Existing cod"
+msgstr "Existing code"
 
 #: taguette/templates/partials/project_sidebar.html:3
 msgid "Close"
@@ -653,7 +653,12 @@ msgstr ""
 #: taguette/templates/partials/document_toolbar.html:17
 #, fuzzy
 msgid "Export"
-msgstr "Import"
+msgstr "Export"
+
+#: taguette/templates/partials/confirm.html:6
+msgctxt "confirm modal"
+msgid "Confirm"
+msgstr "Confirm"
 
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:57
@@ -1306,6 +1311,11 @@ msgstr ""
 "groupes-et-equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> and "
 "Taguette contributors | <a href=\"https://help.libreqda.org/\">User "
 "Documentation</a>"
+
+#: taguette/static/js/taguette.js:1199
+msgid "No tag found"
+msgstr "No code found"
+
 
 #~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
 #~ msgstr "Welcome to LibreQDA, an open source qualitative analysis application."

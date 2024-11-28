@@ -89,7 +89,7 @@ $(document).ready(function() {
                         // Add document title
                         $("<li/>", {
                             'class': "dropdown-item disabled sticky",
-                            'text': `${d['name']} (${d['occurences']} occurences)`
+                            'text': `${d['name']} (${d['occurences']} occurrences)`
                         }).appendTo($divSearchResults);
 
                         // Find results and context

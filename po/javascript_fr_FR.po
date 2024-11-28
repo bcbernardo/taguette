@@ -251,6 +251,10 @@ msgstr "Nom de code invalide"
 msgid "Impossible to define the same tag as parent"
 msgstr "Impossible de définir la même code comme parent"
 
+#: taguette/static/js/taguette.js:454
+msgid "None"
+msgstr "Aucun"
+
 #: taguette/static/js/taguette.js:476
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
