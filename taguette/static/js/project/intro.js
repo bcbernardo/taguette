@@ -267,6 +267,16 @@ $(document).ready(function() {
                             break;
                         case 'exploration-mode':
                             $("[data-nodeid='0']:not(.node-selected)").click();
+                            // Reposition
+                            setTimeout(function() {
+                                window.scrollTo({
+                                    top: 0,
+                                    behavior: 'instant'
+                                });
+                                $('.introjs-tooltipReferenceLayer').css('height', $(targetElement).outerHeight())
+                                $('.introjs-helperLayer').css('height', $(targetElement).outerHeight())
+                                $('.introjs-disableInteraction').css('height', $(targetElement).outerHeight())
+                            }, 500);
                             break;
                         case 'select-condition':
                             let i = this._introItems[this._currentStep].which;
