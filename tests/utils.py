@@ -54,6 +54,7 @@ def generate_initial_state_script(user_login,
         f'    let highlights = {{}};\n'
         f'    let last_event = {last_event};\n'
         f'    let is_demo = {is_demo};\n'
+        f'    let demo_highlights_location = [[],[],[]];\n'
         f'</script>'
     )
 
