@@ -397,7 +397,7 @@ class Test2E2MultiUser(SeleniumTest):
         # create highlight 1 - diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
@@ -413,7 +413,7 @@ class Test2E2MultiUser(SeleniumTest):
         # Create highlight 2 - tent
         self.driver.execute_script('restoreSelection([13, 17]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
@@ -575,7 +575,7 @@ class Test2E2MultiUser(SeleniumTest):
         # Create highlight 3 - Opinion
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
