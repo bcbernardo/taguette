@@ -140,9 +140,6 @@ class Test2E2MultiUser(SeleniumTest):
             -1,
         )
         logs = self.get_logs()
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(logs)
         if logs is not None:
             self.assertEqual(len(logs), 1)
             self.assertTrue(re.search(

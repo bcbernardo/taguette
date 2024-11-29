@@ -1,3 +1,7 @@
+if((demo_highlights_location.length < 3)) {
+    demo_highlights_location = [[],[],[]]; //Default empty value
+}
+
 $(document).ready(function() {
     let demoElement = null,
         introjs_selection = null,
@@ -98,7 +102,7 @@ $(document).ready(function() {
                     title: gettext('Coding'),
                     intro: gettext('<p>Select a portion of text with your cursor. Two buttons will appear to assign a code to the selection.</p>'),
                     position: 'bottom',
-                    highlight: demo_highlights_location[0][0],
+                    highlight: (typeof(demo_highlights_location[0][0]) !== 'undefined') ? demo_highlights_location[0][0] : [0,0],
                     nodes: [null, null],
                     highlight_context: [0, 0],
                     doAction: 'document-highlight' // Action to create wrapper for introjs
