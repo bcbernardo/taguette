@@ -698,7 +698,7 @@ class TestMultiuser(MyHTTPTestCase):
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
             '  let is_demo = false;\n'
-            '  let demo_highlights_location = [[],[],[]];\n'
+            '  let demo_highlights_location = [[[174, 324]],[],[]];\n'
             '</script>' % (
                 exact_version(),
                 json.dumps(
@@ -2677,7 +2677,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
             '  let is_demo = false;\n'
-            '  let demo_highlights_location = [[],[],[]];\n'
+            '  let demo_highlights_location = [[[174, 324]],[],[]];\n'
         ) % (
             exact_version(),
             json.dumps(
