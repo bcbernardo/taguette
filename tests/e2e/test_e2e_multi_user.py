@@ -259,8 +259,10 @@ class Test2E2MultiUser(SeleniumTest):
             )
         )
 
+        import logging
+        logger = logging.getLogger(__name__)
         for script in self.driver.find_elements(By.TAG_NAME, 'script'):
-            print(script.get_property('textContent').strip())
+            logger.info(script.get_property('textContent').strip())
 
         self.assertTrue(any(
             expected.strip() == script.get_property('textContent').strip()
