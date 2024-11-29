@@ -2,6 +2,12 @@
  * Utilities
  */
 
+// NEW selector
+jQuery.expr[':'].contains_insensitive = function(a, i, m) {
+    return jQuery(a).text().toUpperCase()
+        .indexOf(m[3].toUpperCase()) >= 0;
+};
+
 if (!Object.entries) {
     Object.entries = function (obj) {
         let ownProps = Object.keys(obj),
@@ -376,7 +382,7 @@ function log(message, status = 'info', context = {}) {
     const timestamp = new Date().toLocaleString();
     const logMessage = `${timestamp} [${status.toUpperCase()}]: ${message}`;
     if (status.toLowerCase() === 'error') {
-        console.error(logMessage, context);
+       // console.error(logMessage, context);
     } else {
         console.log(logMessage, context);
     }
@@ -462,27 +468,12 @@ function describeSelection() {
         if (!range.collapsed) {
             const start = describePos(range.startContainer, range.startOffset);
             const end = describePos(range.endContainer, range.endOffset);
-
             if (start !== null && end !== null) {
                 return [start, end];
             }
         }
     }
     return null;
-}
-
-// Restore a described selection
-function restoreSelection(saved) {
-    let sel = window.getSelection();
-    sel.removeAllRanges();
-    if (saved !== null) {
-        let range = document.createRange();
-        let start = locatePos(saved[0]);
-        let end = locatePos(saved[1]);
-        range.setStart(start[0], start[1]);
-        range.setEnd(end[0], end[1]);
-        sel.addRange(range);
-    }
 }
 
 function splitAtPos(pos, after) {
@@ -511,4 +502,22 @@ function splitAtPos(pos, after) {
         // Split, return right node
         return node.splitText(idx_char);
     }
+}
+
+// Restore a described selection
+function restoreSelection(saved) {
+    let sel = window.getSelection();
+    sel.removeAllRanges();
+    if (saved !== null) {
+        let range = document.createRange();
+        let start = locatePos(saved[0]);
+        let end = locatePos(saved[1]);
+        range.setStart(start[0], start[1]);
+        range.setEnd(end[0], end[1]);
+        sel.addRange(range);
+    }
+}
+
+function isFirefox() {
+    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 }

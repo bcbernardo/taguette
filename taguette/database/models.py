@@ -13,11 +13,12 @@ from sqlalchemy import (Column, func, ForeignKey,
                         Table, UniqueConstraint,
                         select, distinct)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import column_property, deferred, relationship
+from sqlalchemy.orm import aliased, column_property, deferred, relationship
 from sqlalchemy.sql import functions
 from sqlalchemy.types import (Boolean, DateTime, Enum, Integer, String, Text,
                               BigInteger)
-
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import ARRAY
 from .base import PROM_COMMAND
 
 
@@ -668,7 +669,7 @@ highlight_tags = Table(
            primary_key=True, index=True),
 )
 
-
+# Property to count highlight associate with tag
 Tag.highlights_count = column_property(
     select(
         [functions.count(highlight_tags.c.highlight_id)],
@@ -680,6 +681,7 @@ Tag.highlights_count = column_property(
     .scalar_subquery()
 )
 
+# Property to get documents count associate with tag
 Tag.documents_count = column_property(
     select(
         [functions.count(distinct(Document.id)).label('count')],
@@ -692,6 +694,36 @@ Tag.documents_count = column_property(
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )
+
+# Property to get ids documents associate with tag
+document_alias = aliased(Document)
+
+
+class GroupArray(functions.GenericFunction):
+    name = 'group_array'
+    type = ARRAY(Integer)
+
+
+@compiles(GroupArray, 'postgresql')
+def _compile_group_array_postgresql(element, compiler, **kw):
+    return "ARRAY_AGG(DISTINCT %s)" % compiler.process(element.clauses)
+
+
+@compiles(GroupArray, 'sqlite')
+def _compile_group_array_sqlite(element, compiler, **kw):
+    return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
+
+
+Tag.document_ids = column_property(
+    select([GroupArray(document_alias.id)])
+    .select_from(highlight_tags)
+    .outerjoin(Highlight, Highlight.id == highlight_tags.c.highlight_id)
+    .outerjoin(document_alias, document_alias.id == Highlight.document_id)
+    .where(highlight_tags.c.tag_id == Tag.id)
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
 
 # Property to count documents associate with projet
 Project.document_count = column_property(

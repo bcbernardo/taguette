@@ -1,87 +1,79 @@
-//https://blog.logrocket.com/creating-custom-select-dropdown-css/
+// Custom Select Dropdown with Toolbar Actions
+// Based on https://blog.logrocket.com/creating-custom-select-dropdown-css/
 
+// DOM Elements
 const customSelect = document.querySelector(".custom-select");
 const selectBtn = document.querySelector(".select-button");
-
 const selectedValue = document.querySelector(".selected-value");
-
 const toolbarActionButtons = document.querySelector(".toolbar-action-buttons");
-toggleToolbarActions(false);
 
+// Toggle dropdown on button click
 selectBtn.addEventListener("click", () => {
-    // add/remove active class on the container element
     customSelect.classList.toggle("active");
-    // update the aria-expanded attribute based on the current state
     selectBtn.setAttribute(
         "aria-expanded",
         selectBtn.getAttribute("aria-expanded") === "true" ? "false" : "true"
     );
 });
 
-// optionsList.forEach((option) => {
-//     function handler(e) {
-//         // Click Events
-//         if (e.type === "click" && e.clientX !== 0 && e.clientY !== 0) {
-//             selectedValue.textContent = this.children[1].textContent;
-//             const input = option.querySelector('input[type="radio"]');
-//             const fullId = input.id;
-//             const docId = fullId.split('-')[1];
-//             linkDocument(input,docId);
-//             toggleToolbarActions(true);
-//             emptyTagSelection(true);
-//         }
-//         // Key Events
-//         if (e.key === "Enter") {
-//             selectedValue.textContent = this.textContent;
-//             customSelect.classList.remove("active");
-//         }
-//     }
-//
-//     option.addEventListener("keyup", handler);
-//     option.addEventListener("click", handler);
-// });
-
-function addEventListenerToOption () {
-
+// Add event listeners to options
+function addEventListenerToOption() {
     const optionsList = document.querySelectorAll(".select-dropdown li");
 
     optionsList.forEach((option) => {
-        function handler(e) {
-            // Click Events
-            if (e.type === "click" && e.clientX !== 0 && e.clientY !== 0) {
-                selectedValue.textContent = this.children[1].textContent;
-                const input = option.querySelector('input[type="radio"]');
-                const fullId = input.id;
-                const docId = fullId.split('-')[1];
-                linkDocument(input,docId);
-                toggleToolbarActions(true);
-                emptyTagSelection(true);
-            }
-            // Key Events
-            if (e.key === "Enter") {
-                selectedValue.textContent = this.textContent;
-                customSelect.classList.remove("active");
-            }
-        }
-
-        option.addEventListener("keyup", handler);
-        option.addEventListener("click", handler);
+        option.addEventListener("keyup", createHandler(option));
+        option.addEventListener("click", createHandler(option));
     });
 }
 
+// Create event handler
+function createHandler(option) {
+    return function(e) {
+        // Handle click events
+        if (e.type === "click" && e.clientX !== 0 && e.clientY !== 0) {
+            const text = this.children[1].textContent;
+            updateSelectedValue(text);
 
-addEventListenerToOption();
+            const input = option.querySelector('input[type="radio"]');
+            const docId = input.id.split('-')[1];
 
+            linkDocument(input, docId);
+            toggleToolbarActions(true);
+            emptyTagSelection(true);
+        }
+
+        // Handle keyboard events
+        if (e.key === "Enter") {
+            const text = this.textContent;
+            updateSelectedValue(text);
+            customSelect.classList.remove("active");
+        }
+    };
+}
+
+// Update selected value
+function updateSelectedValue(text) {
+    selectedValue.textContent = text;
+    selectedValue.title = text;
+}
+
+// Toggle toolbar actions
 function toggleToolbarActions(show = false) {
     if(show) {
         customSelect.classList.remove("active");
         toolbarActionButtons.style.display = '';
+
         if(current_document) {
             const doc = documents[current_document];
-            selectedValue.textContent = doc.name;
+            updateSelectedValue(doc.name);
         }
     } else {
         toolbarActionButtons.style.setProperty('display', 'none', 'important');
-        selectedValue.textContent = '';
+        updateSelectedValue('');
     }
 }
+
+// Initialize event listeners
+addEventListenerToOption();
+// Toggle Toolbars actions
+toggleToolbarActions(false);

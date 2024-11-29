@@ -27,7 +27,13 @@ let project_description = project_description_input.value;
 let upload_canceled = false;
 
 function openSidebar() {
-    document.getElementById("project-sidebar").style.width = "600px";
+
+    // Desktop behavior
+    if (window.innerWidth > 768) {
+        document.getElementById("project-sidebar").style.width = "600px";
+    } else {
+        document.getElementById("project-sidebar").style.width = "100%";
+    }
     showMembers();
 }
 
@@ -89,14 +95,6 @@ function projectMetadataChanged() {
 
 function addDocument(document) {
     documents['' + document.id] = document;
-    if (document.id === current_document) {
-        // Text direction is the only meaningful thing that can be mutated
-        if (document.text_direction === 'RIGHT_TO_LEFT') {
-            document_contents.style.direction = 'rtl';
-        } else {
-            document_contents.style.direction = 'ltr';
-        }
-    }
     updateDocumentsList();
 }
 
@@ -118,7 +116,7 @@ const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
-    $(document_add_modal).modal('show');
+    $(document_add_modal).modal('show').drags({handle: '.modal-header'});
     customSelect.classList.remove("active");
 }
 
@@ -239,7 +237,7 @@ function editDocument(doc_id) {
     document.getElementById('document-change-name').value = '' + documents['' + doc_id].name;
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
-    $(document_change_modal).modal('show');
+    $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
@@ -264,6 +262,7 @@ document.getElementById('document-change-form').addEventListener('submit', funct
         log("Document update posted");
         $(document_change_modal).modal('hide');
         document.getElementById('document-change-form').reset();
+        loadDocument(current_document);
     }
 
     const callbackFail = (error) => {
@@ -331,8 +330,11 @@ linkTag(document.getElementById('load-all-tags'), '');
 
 function highlightModalReset() {
     document.getElementById('highlight-add-form').reset();
+    highlightSelectedTags.length = 0;
+    showHighlightTagSelection();
     hideSearchErrorMessage();
-    initTagsHighlightTreeview(false);
+    savedSelections = [];
+    initTagsHighlightTreeview();
 }
 
 
@@ -342,8 +344,9 @@ $(tag_add_modal).on('shown.bs.modal', function () {
     document.getElementById('tag-add-path').focus();
 });
 let createTagFromHighlight;
-function createTag(from, selection, parent) {
-    createTagFromHighlight = false;
+function createTag(fromHighlight, selection, parent) {
+    document.getElementById('hlinfo').style.display = 'none';
+    createTagFromHighlight = fromHighlight;
     document.getElementById('tag-add-form').reset();
     document.getElementById('tag-add-id').value = '';
     document.getElementById('tag-add-path').value = '';
@@ -355,9 +358,8 @@ function createTag(from, selection, parent) {
     document.getElementById('tag-add-cancel').style.display = '';
     document.getElementById('tag-add-delete').style.display = 'none';
     document.getElementById('tag-add-merge').style.display = 'none';
-    if (from === 2) {
+    if (fromHighlight) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
-        createTagFromHighlight = true;
     }
 
     if(selection) {
@@ -370,7 +372,7 @@ function createTag(from, selection, parent) {
         document.getElementById('dropdownMenuButtonTag').innerText = findTag(parent).path
     }
 
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editTag(tag_id) {
@@ -389,7 +391,7 @@ function editTag(tag_id) {
     document.getElementById('tag-add-cancel').style.display = 'none';
     document.getElementById('tag-add-delete').style.display = '';
     document.getElementById('tag-add-merge').style.display = '';
-    $(tag_add_modal).modal('show');
+    $(tag_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 // Save tag button
@@ -449,7 +451,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
-        document.getElementById('dropdownMenuButtonTag').innerText = 'None';
+        document.getElementById('dropdownMenuButtonTag').innerText = gettext('None');
 
     };
     const callbackFail = (error) => {
@@ -542,14 +544,6 @@ document.getElementById('tag-merge-form').addEventListener('submit', function (e
 });
 
 
-// Backlight
- const backlight_checkbox = document.getElementById('backlight');
- backlight_checkbox.addEventListener('change', function () {
-     const documentView = document.getElementById('document-view');
-     documentView.classList.toggle('backlight', backlight_checkbox.checked);
-});
-
-
 /*
  * Add highlight
  */
@@ -559,6 +553,7 @@ const highlight_add_modal = document.getElementById('highlight-add-modal');
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
+    log('current selection offset : ' + current_selection);
     let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
         const current_range = window.getSelection().getRangeAt(0);
@@ -585,12 +580,12 @@ function selectionChanged() {
 document.addEventListener('selectionchange', selectionChanged);
 
 function createHighlight(selection) {
+    document.getElementById('hlinfo').style.display = 'none';
     document.getElementById('highlight-add-id').value = '';
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
     highlightModalReset();
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 function editHighlight() {
@@ -607,11 +602,12 @@ function editHighlight() {
     const hl_tags = highlights['' + id].tags;
     const allNodes = treeview_tags_highlight.treeview('getEnabled');
     for (let i = 0; i < hl_tags.length; ++i) {
+        highlightSelectedTags.push(hl_tags[i]);
         const node = allNodes.find((node) => node.id === hl_tags[i]);
         treeview_tags_highlight.treeview('selectNode', node.nodeId);
     }
-    //$(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
-    $(highlight_add_modal).modal('show');
+    showHighlightTagSelection();
+    $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
 
 $('#highlight-add-form').off().on('submit', (e) => {
@@ -679,25 +675,6 @@ function removeMember(login) {
 const members_modal = document.getElementById('members-modal');
 let members_initial = {};
 let members_displayed = {};
-
-// function _memberRow(login, user, can_edit, is_self) {
-//     let elem = document.createElement('div');
-//     elem.className = 'row members-item';
-//     elem.innerHTML = '<div class="col-md-4">' + '  <p class="members-item-login">' + login + '</p>' + '</div>' + '<div class="col-md-4 form-group">' + '  <select class="form-control"' + (can_edit ? '' : ' disabled') + '>' + '    <option value="ADMIN">' + gettext("Full permissions") + '</option>' + '    <option value="MANAGE_DOCS">' + gettext("Can't change collaborators / delete project") + '</option>' + '    <option value="TAG">' + gettext("View & make changes") + '</option>' + '    <option value="READ">' + gettext("View only") + '</option>' + '  </select>' + '</div>' + (is_self ? '<button type="button" class="btn btn-danger col-md-4 form-group">Leave project</button>' : '<button type="button" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>');
-//
-//     [].forEach.call(elem.querySelectorAll('option'), function (e) {
-//         if (e.value === user.privileges) {
-//             e.selected = true;
-//         }
-//     });
-//
-//     elem.querySelector('button').addEventListener('click', function () {
-//         elem.parentNode.removeChild(elem);
-//         delete members_displayed[login];
-//     });
-//
-//     return elem;
-// }
 
 function _memberRow(login, user, can_edit, is_self) {
     let elem = document.createElement('div');
@@ -862,7 +839,8 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-function loadDocument(document_id, highlight_id=null) {
+let globalDefs = null;
+function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -878,79 +856,143 @@ function loadDocument(document_id, highlight_id=null) {
             document_contents.innerHTML = '';
             highlights = {};
             chunk_offsets = [];
+
             for (let i = 0; i < contents.contents.length; ++i) {
                 let chunk = contents.contents[i];
                 let elem = document.createElement('div');
                 elem.setAttribute('id', 'doc-offset-' + chunk.offset);
-                elem.classList.add('draggable');
-                elem.setAttribute('contenteditable', 'true');
-                elem.addEventListener('dragstart', function (event) {
-                        event.dataTransfer.effectAllowed = 'move';
-                });
+                disableEditing(elem);
+                addDragFunctionality(elem);
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
+                const cleanText = extractTextFromHtml(chunk.contents);
+                setHighlights(cleanText, elem, info.highlights, info.text_direction);
+                globalDefs = null;
                 chunk_offsets.push(chunk.offset);
-            }
-            if (info.text_direction === 'RIGHT_TO_LEFT') {
-                document_contents.style.direction = 'rtl';
-            } else {
-                document_contents.style.direction = 'ltr';
             }
 
             current_document = document_id;
 
             toggleToolbarActions(true);
 
-            let document_links = document.getElementsByClassName('document-link-current');
-            for (let i = document_links.length - 1; i >= 0; --i) {
-                document_links[i].classList.remove('document-link-current');
-            }
-            let document_link = document.getElementById('document-link-' + current_document);
-            if (document_link) {
-                document_link.classList.add('document-link-current');
-            }
-
-            //current_tag = null;
-            // let tag_links = document.getElementsByClassName('tag-current');
-            // for (let i = tag_links.length - 1; i >= 0; --i) {
-            //     tag_links[i].classList.remove('tag-current');
-            // }
+            updateDocumentLinkHighlight(current_document);
 
             log(`Loaded document ${document_id}`);
+
             for (let i = 0; i < info.highlights.length; ++i) {
-                setHighlight(info.highlights[i]);
+                const id = '' + info.highlights[i].id;
+                highlights[id] = info.highlights[i];
             }
+
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Update document export button
-            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
-            for (let i = 0; i < items.length; ++i) {
-                const ext = items[i].getAttribute('data-extension');
-                if (items[i].getAttribute('data-document') !== 'false') {
-                    items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
-                    items[i].style.display = '';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
+            // Mettre à jour le bouton d'exportation du document
+            updateDocumentExportButton(project_id, document_id);
 
             // Scroll up
-            window.setTimeout(function () {
-                let scroll_position = 0,
-                    toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight()
-                if(highlight_id !== null && !isNaN(highlight_id)) {
-                    log(`Go to highlight :  ${highlight_id}`);
-                    scroll_position = $(`[data-highlight-id='${highlight_id}']`).offset().top - toolbar_height - 15;
-                    $(`[data-highlight-id='${highlight_id}']`).addClass('flash-once');
-                }
-                window.scrollTo(0, scroll_position);
-            }, 0);
+            scrollToHighlight(highlight_id, search_text);
         })
         .catch(function (error) {
             log("Failed to load document", 'error', {error});
-            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error})
+            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error});
         })
         .then(hideSpinner);
+}
+
+function disableEditing(element) {
+    element.addEventListener('keydown', function (event) {
+        event.preventDefault();
+    });
+    element.addEventListener('paste', function (event) {
+        event.preventDefault();
+    });
+    element.addEventListener('input', function (event) {
+        event.preventDefault();
+    });
+}
+
+function addDragFunctionality(element) {
+    element.addEventListener('dragstart', function (event) {
+        event.dataTransfer.effectAllowed = 'move';
+    });
+}
+
+function scrollToHighlight(highlight_id, search_text=null) {
+    window.setTimeout(function () {
+        let scroll_position = 0,
+            toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
+        // Find highlight position and go to it
+        if (highlight_id !== null && !isNaN(highlight_id)) {
+            const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
+            let count_lines = 0;
+            data_highlight_selector.each(function(){
+                const line_id = $(this).data('parent-line-id'),
+                    div_to_highlight = $(`div[data-line--id="${line_id}"]`);
+                div_to_highlight.addClass('flash-once');
+                if(count_lines++ === 0) {
+                    scroll_position = div_to_highlight.offset().top - toolbar_height - 15;
+                }
+            });
+        }
+
+        if(search_text !== null) {
+            search_text = decodeURI(search_text.toLowerCase());
+            let lastIndex = search_text.lastIndexOf('/'),
+                position = parseInt(search_text.substring(lastIndex+1));
+            search_text = search_text.substring(0, lastIndex);
+            log(`Go to ${position+1} occurence of ${search_text}`);
+
+            let elements = $(`*:contains_insensitive("${search_text}")`),
+                count= 0,
+                nb_occurences_in_container = 0,
+                goto = null;
+            elements.each(function() {
+                if($(this)[0].children.length === 0){
+                    if($(this).parents('#document-contents').length) {
+                        nb_occurences_in_container = $(this).text().toLowerCase().split(search_text).length - 1;
+                        if((position >= count) && (position <= (count + nb_occurences_in_container))) {
+                            goto = $(this);
+                        }
+                        count += nb_occurences_in_container;
+                    }
+                }
+            });
+            if(goto) {
+                scroll_position = goto.offset().top - toolbar_height - 15;
+                goto.addClass('flash-once');
+            } else {
+                log('Text container not found..')
+            }
+        }
+        window.scrollTo({
+            top: scroll_position,
+            behavior: 'instant'
+        });
+    }, 0);
+}
+
+function updateDocumentExportButton(project_id, document_id) {
+    const items = document.querySelectorAll('#document-export-dropdown-menu a');
+    for (let i = 0; i < items.length; ++i) {
+        const ext = items[i].getAttribute('data-extension');
+        if (items[i].getAttribute('data-document') !== 'false') {
+            items[i].setAttribute('href', `${base_path}/project/${project_id}/export/document/${document_id}.${ext}`);
+            items[i].style.display = '';
+        } else {
+            items[i].style.display = 'none';
+        }
+    }
+}
+
+function updateDocumentLinkHighlight(current_document) {
+    let document_links = document.getElementsByClassName('document-link-current');
+    for (let i = document_links.length - 1; i >= 0; --i) {
+        document_links[i].classList.remove('document-link-current');
+    }
+    let document_link = document.getElementById('document-link-' + current_document);
+    if (document_link) {
+        document_link.classList.add('document-link-current');
+    }
 }
 
 function loadTag(tag_path, page) {
@@ -1113,15 +1155,25 @@ function loadTag(tag_path, page) {
 
 // Load the document if the URL includes one
 setTimeout(function () {
-    const _document_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))?`);
+    const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))?`);
+  //  const _document_url_highlight = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/highlight/([0-9]+))+`),
+    const _document_url_search_text = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/document/([0-9]+)(/search/([^\/]+/[0-9]+))+`);
     // Don't use RegExp literals https://github.com/python-babel/babel/issues/640
-    let m = window.location.pathname.match(_document_url);
+    let m = window.location.pathname.match(_document_url_highlight),
+        m2 = window.location.pathname.match(_document_url_search_text);
     if (m) {
         let h_id = null;
         if(typeof m[4] !== 'undefined') {
             h_id = parseInt(m[4]);
         }
         loadDocument(parseInt(m[2]), h_id);
+    // Or a search in document text
+    } else if (m2) {
+        let search_text = null;
+        if(typeof m2[4] !== 'undefined') {
+            search_text = m2[4];
+        }
+        loadDocument(parseInt(m2[2]), null, true, search_text);
     }
     // Or a tag
     const _tag_url = new RegExp(`^${escapeRegExp(base_path)}/project/([0-9]+)/highlights/([^/]*)`);
@@ -1136,8 +1188,9 @@ setTimeout(function () {
 window.onpopstate = function (e) {
     if (e.state) {
         if (e.state.document_id !== undefined) {
-            let highlight_id = (e.state.highlight_id !== undefined ) ? e.state.highlight_id : null;
-            loadDocument(e.state.document_id, highlight_id);
+            let highlight_id = (e.state.highlight_id !== undefined ) ? e.state.highlight_id : null,
+                search_text = (e.state.search_text !== undefined ) ? e.state.search_text : null;
+            loadDocument(e.state.document_id, highlight_id, true, search_text);
         } else if (e.state.tag_path !== undefined) {
             loadTag(e.state.tag_path);
         } else {
@@ -1151,30 +1204,64 @@ window.onpopstate = function (e) {
 /*
  * Attach input change for tag search event
  */
-const TAG_NOT_FOUND_MESSAGE = "No tag found";
+const TAG_NOT_FOUND_MESSAGE = gettext("No tag found");
+const alert_tag_treeview = $('#alert-tag-treeview');
+const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
 
 document.getElementById('input-search-tags').addEventListener('input', function () {
-    const alert_tag_treeview = $('#alert-tag-treeview');
-    const filterText = $('#input-search-tags').val().toLowerCase();
+    const filterText = $(this).val().toLowerCase();
     alert_tag_treeview.addClass('d-none')
+    if(filterText === '') {
+        initTagsTreeview();
+        collapseAllNodes(treeview_tags);
+        return;
+    }
     const filteredTags = handleSearch(filterText);
-    initTagsTreeview(false, filteredTags);
+    initTagsTreeview(filteredTags);
+    expandAllNodes(treeview_tags);
     if (filteredTags.length === 0) {
         alert_tag_treeview.removeClass('d-none')
         alert_tag_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
     }
 });
 
-const alert_tag_highlight_treeview = $('#alert-tag-highlight-treeview');
+function saveSelectedNodes(treeview) {
+    const selectedNodes = treeview.treeview('getSelected');
+    return selectedNodes.map(node => node.id);
+}
+
+function restoreSelectedNodes(treeview, savedNodeIds) {
+    savedNodeIds.forEach(id => {
+        const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
+        selectNode(treeview_tags_highlight, nodeId);
+    });
+}
+
+let savedSelections = [];
+
 document.getElementById('input-search-tags-highlight').addEventListener('input', function () {
-    const filterText = $('#input-search-tags-highlight').val().toLowerCase();
-    hideSearchErrorMessage();
-    const filteredTags = handleSearch(filterText);
-    initTagsHighlightTreeview(false, filteredTags);
-    if (filteredTags.length === 0) {
-        showSearchErrorMessage();
-        alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
-    }
+
+        const filterText = $(this).val().toLowerCase();
+        hideSearchErrorMessage();
+
+        // save selected tags
+        const tempSavedSelections = saveSelectedNodes(treeview_tags_highlight);
+
+        tempSavedSelections.forEach(id => {
+            if (!savedSelections.includes(id)) {
+                savedSelections.push(id);
+            }
+        });
+
+        const filteredTags = handleSearch(filterText);
+        initTagsHighlightTreeview(filteredTags);
+        if (filteredTags.length === 0) {
+            showSearchErrorMessage();
+            alert_tag_highlight_treeview.html(`<strong>${TAG_NOT_FOUND_MESSAGE}</strong>`)
+        }
+
+        // Restore tags selections
+        restoreSelectedNodes(treeview_tags_highlight, savedSelections);
 });
 
 function showSearchErrorMessage() {
@@ -1184,3 +1271,92 @@ function showSearchErrorMessage() {
 function hideSearchErrorMessage() {
     alert_tag_highlight_treeview.addClass('d-none');
 }
+
+function updateToggleButtons() {
+    const isDesktop = window.innerWidth > 768;
+
+    const leftButton = document.getElementById('toggle-left-panel');
+    const rightButton = document.getElementById('toggle-right-panel');
+
+    if (isDesktop) {
+        leftButton.querySelector('i').className = 'fas fa-chevron-left';
+        rightButton.querySelector('i').className = 'fas fa-chevron-right';
+    } else {
+        leftButton.querySelector('i').className = 'fas fa-chevron-down';
+        rightButton.querySelector('i').className = 'fas fa-chevron-down';
+    }
+}
+
+document.getElementById('toggle-left-panel').addEventListener('click', function() {
+    const leftPanel = document.getElementById('left-panel');
+    leftPanel.classList.toggle('reduced-col');
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
+});
+
+document.getElementById('toggle-right-panel').addEventListener('click', function() {
+    const rightPanel = document.getElementById('right-panel');
+    rightPanel.classList.toggle('reduced-col');
+    if (window.innerWidth > 768) {
+        adjustMiddlePanelWidth();
+    }
+});
+
+function adjustMiddlePanelWidth() {
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const middlePanel = document.getElementById('middle-panel');
+
+    // Desktop behavior
+    if (window.innerWidth > 768) {
+        let leftWidth = leftPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let rightWidth = rightPanel.classList.contains('reduced-col') ? '5%' : '20.8333%';
+        let middleWidth = `calc(100% - ${leftWidth} - ${rightWidth})`;
+        middlePanel.style.setProperty('width', middleWidth, 'important');
+    } else {
+        // Mobile behavior
+        middlePanel.style.setProperty('width', '100%', 'important');
+    }
+
+    loadDocument(current_document);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    updateToggleButtons();
+
+    const scrollBtn = document.getElementById('scroll-to-top-button');
+
+    window.addEventListener('scroll', function() {
+        if ((window.pageYOffset || document.documentElement.scrollTop) > 300) {
+            scrollBtn.classList.remove('d-none');
+        } else {
+            scrollBtn.classList.add('d-none');
+        }
+    });
+
+    scrollBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+});
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+window.addEventListener('resize', debounce(() => {
+    // Issue in test
+    // loadDocument(current_document);
+}, 250));

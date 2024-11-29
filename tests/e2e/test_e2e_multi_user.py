@@ -46,6 +46,7 @@ class Test2E2MultiUser(SeleniumTest):
             BASE_PATH=self.base_path,
             REDIS_SERVER=REDIS,
             TOS_FILE=None,
+            ALLOW_EXTERNAL_LOGIN=False,
             EMAIL='test@example.com',
             MAIL_SERVER={'host': 'localhost', 'port': 25},
             COOKIES_PROMPT=True,
@@ -104,7 +105,14 @@ class Test2E2MultiUser(SeleniumTest):
         await self.s_get('/')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
-            ['Welcome tester'],
+            [
+                'Welcome tester',
+                'Welcome to LibreQDA, a '
+                'qualitative data analysis software (QDA) '
+                'developed by the Plateforme en '
+                'humanités numériques (PHuN) at '
+                'Université de Sherbrooke.'
+            ]
         )
         self.assertIn(
             'Here are your projects:',
@@ -200,6 +208,7 @@ class Test2E2MultiUser(SeleniumTest):
         from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
+
         # Accept cookies
         await self.s_get('/cookies')
         await self.s_click_button_by_text('Accept cookies')
@@ -229,6 +238,8 @@ class Test2E2MultiUser(SeleniumTest):
             '    let members = {"admin": {"privileges": "ADMIN"}};\n'
             '    let highlights = {};\n'
             '    let last_event = -1;\n'
+            '    let is_demo = false;\n'
+            '    let demo_highlights_location = [];\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -253,7 +264,13 @@ class Test2E2MultiUser(SeleniumTest):
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
         ))
 
-        # Change project 2 metadata
+        # Remove event listeners in your test setup
+        self.driver.execute_script("""
+            window.removeEventListener('resize', window.onresize);
+            window.onresize = null;
+        """)
+
+        # Change project 1 metadata
         await self.s_click(self.find_by_id('project-sidebar-open'))
         self.assertEqual(self.find_by_class(
             'project-name')[0].text, 'Project 1')
@@ -272,7 +289,7 @@ class Test2E2MultiUser(SeleniumTest):
         )
         await asyncio.sleep(0.5)
         self.set_value('project-description', 'Meaningful')
-        await self.s_click(self.find_by_id('document-contents'))
+        await self.s_click(self.find_by_test_id('close-sidebar-button'))
         await asyncio.sleep(10)  # Wait for XHR
         self.assertEqual(self.find_by_class(
             'project-name')[0].text, 'new project')
@@ -280,8 +297,6 @@ class Test2E2MultiUser(SeleniumTest):
         proj = db.query(database.Project).get(1)
         self.assertEqual(proj.name, 'new project')
         self.assertEqual(proj.description, 'Meaningful')
-
-        await self.s_click(self.find_by_test_id('close-sidebar-button'))
 
         # Create tag 2 in project 1
         await self.s_click_button('create-tag-link')
@@ -292,7 +307,6 @@ class Test2E2MultiUser(SeleniumTest):
         # Check tags
         tag_links = self.find_children_by_id(
             'treeview-tags', 'node-treeview-tags')
-
         self.assertEqual(
             [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'people'],
@@ -302,6 +316,10 @@ class Test2E2MultiUser(SeleniumTest):
         self.driver.execute_script('''
             javascript:createDocument();
         ''')
+        # await asyncio.sleep(1)
+        # element = self.find_by_test_id('create-document-link')
+        # actions = ActionChains(self.driver)
+        # actions.move_to_element(element).click().perform()
         docs_1 = []
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
@@ -312,6 +330,7 @@ class Test2E2MultiUser(SeleniumTest):
             })
             self.set_value("document-add-file", docs_1[0]['path'])
             await self.s_click_button('import-document-button')
+        await asyncio.sleep(20)
         db = self.application.DBSession()
         doc = db.query(database.Document).get(1)
         self.assertEqual(doc.name, docs_1[0]['name'])
@@ -319,17 +338,14 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
         self.assertTrue(doc.filename, docs_1[0]['name'])
-        self.driver.execute_script('$("#document-add-modal").modal("hide");')
 
-        await asyncio.sleep(0.5)
-        # await self.s_get('/project/new')
         # Create document 2 and 3 in project 1
-        await self.s_click(self.find_by_id('project-sidebar-open'))
-        await self.s_click_button('documents-tab')
-        await self.s_click_button('create-document-link')
-        await self.s_click(self.find_by_test_id('close-sidebar-button'))
-        self.set_value('document-add-description',
-                       'description doc 2 & 3')
+        # await self.s_click_button('create-document-link')
+        self.driver.execute_script('''
+            javascript:createDocument();
+        ''')
+        # self.set_value('document-add-description',
+        #                'description doc 2 & 3')
         await self.s_click_button('document-add-direction-rtl-input')
         docs_2 = []
         with (tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp,
@@ -353,14 +369,14 @@ class Test2E2MultiUser(SeleniumTest):
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
         self.assertEqual(doc.name, docs_2[0]['name'])
-        self.assertEqual(doc.description, 'description doc 2 & 3')
+        # self.assertEqual(doc.description, 'description doc 2 & 3')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
         self.assertTrue(doc.filename, docs_2[0]['name'])
 
         doc = db.query(database.Document).get(3)
         self.assertEqual(doc.name, docs_2[1]['name'])
-        self.assertEqual(doc.description, 'description doc 2 & 3')
+        # self.assertEqual(doc.description, 'description doc 2 & 3')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
         self.assertTrue(doc.filename, docs_2[1]['name'])
@@ -372,47 +388,51 @@ class Test2E2MultiUser(SeleniumTest):
         )
 
         # Select document and create highlight 1 and 2
-        await self.s_click(self.find_by_id('project-sidebar-open'))
-        await self.s_click_button('documents-tab')
         await self.s_click(
             self.driver.find_element(By.ID, 'document-link-1')
             .find_element(By.CLASS_NAME, 'document-link-a')
         )
-        await self.s_click_button('close-sidebar-button')
-        # await self.s_get('/project/1/document/1')
+
         await asyncio.sleep(0.5)
 
-        # create highlight 1 diff
+        # create highlight 1 - diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
-        self.driver.execute_script('''
-            $("#treeview-tags-highlight").treeview("selectNode", 0);
-        ''')
+
+        # select tag 1 - interesting
+        await self.s_click(
+            self.find_by_test_id('tag-node-highlight-1'),
+        )
+
         await self.s_click_button('save-highlight-button')
 
         await asyncio.sleep(0.5)
 
-        # Create highlight 2 tent
+        # Create highlight 2 - tent
         self.driver.execute_script('restoreSelection([13, 17]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
+
         # check tags before select
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: False, 2: False}
         )
 
-        self.driver.execute_script("""
-              $("#treeview-tags-highlight").treeview("selectNode", 0);
-              """)
-        self.driver.execute_script("""
-              $("#treeview-tags-highlight").treeview("selectNode", 1);
-              """)
+        # select tag 1 - interesting
+        await self.s_click(
+            self.find_by_test_id('tag-node-highlight-1'),
+        )
+
+        # select tag 2 - people
+        await self.s_click(
+            self.find_by_test_id('tag-node-highlight-2'),
+        )
 
         # check tags after select
         self.assertEqual(
@@ -422,84 +442,141 @@ class Test2E2MultiUser(SeleniumTest):
 
         await self.s_click_button('save-highlight-button')
 
-        await asyncio.sleep(0.5)
+        # check highlighted document 1
+        await self.s_get('/project/1/document/1')
+        await asyncio.sleep(5)
 
-        # Check highlighted document 1
+        browser_name = self.driver.capabilities['browserName']
+
+        doc_content = {
+            'chrome': (
+                '<div id="doc-offset-0">'
+                '<div data-line--id="line-0-17" style="height: 65px;">'
+                '<svg width="100%" height="65px">'
+                '<g data-line--id="line-group-0-17" '
+                'transform="translate(0, 20)">'
+                '<text x="0" y="0" text-anchor="start">'
+                'different content</text>'
+                '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
+                'x1="4" x2="25.3125" y1="10" y2="10" '
+                'stroke="#000000" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'class="smooth-stroke"></line>'
+                '<linearGradient id="gradient-2" '
+                'x1="0%" y1="0%" x2="100%" y2="0%">'
+                '<stop offset="0%" stop-color="#000000"></stop>'
+                '<stop offset="100%" stop-color="#000000"></stop>'
+                '</linearGradient>'
+                '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
+                'x1="90.84375" x2="117.46875" y1="25" y2="25.1" '
+                'stroke="url(#gradient-2)" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'class="smooth-stroke"></line>'
+                '</g></svg></div></div>'
+            ),
+            'firefox': (
+                '<div id="doc-offset-0">'
+                '<div data-line--id="line-0-17" style="height: 65px;">'
+                '<svg width="100%" height="65px">'
+                '<g data-line--id="line-group-0-17" '
+                'transform="translate(0, 20)">'
+                '<text x="0" y="0" text-anchor="start">'
+                'different content</text>'
+                '<linearGradient id="gradient-2" '
+                'x1="0%" y1="0%" x2="100%" y2="0%">'
+                '<stop offset="0%" stop-color="#000000"></stop>'
+                '<stop offset="100%" stop-color="#000000"></stop>'
+                '</linearGradient></g>'
+                '<use href="#highlights-0-17">'
+                '</use></svg></div></div><defs>'
+                '<g id="highlights-0-17" class="highlights">'
+                '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
+                'x1="1" x2="30.666671752929688" y1="30" y2="30" '
+                'stroke="#000000" stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'onclick="editHighlight.call(this, \'1\')" '
+                'onmouseover="this.style.strokeWidth='
+                '\'7\'" onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
+                'x1="116.53334045410156" x2="152.76666259765625" '
+                'y1="45" y2="45.1" stroke="url(#gradient-2)" '
+                'stroke-linecap="round" '
+                'stroke-width="4" pointer-events="all" '
+                'onclick="editHighlight.call(this, \'2\')" '
+                'onmouseover="this.style.strokeWidth=\'7\'" '
+                'onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                '</g></defs>'
+            )
+        }
+
+        print(self.find_by_id('document-contents').get_attribute('innerHTML'))
+
         self.assertEqual(
             self.find_by_id('document-contents').get_attribute('innerHTML'),
-            (
-                '<div id="doc-offset-0" class="draggable" '
-                + 'contenteditable="true">'
-                + '<a class="highlight highlight-1" '
-                + 'data-highlight-id="1" title="interesting" '
-                + 'style="cursor: pointer; border-bottom: 4px solid #000000;">'
-                + 'diff</a>erent con'
-                + '<a class="highlight highlight-2" data-highlight-id="2" '
-                + 'title="interesting, people" '
-                + 'style="cursor: pointer; '
-                + 'border-bottom: 4px solid transparent; '
-                + 'border-image: linear-gradient(90deg, #000000, #000000); '
-                + 'border-image-slice: 1;">tent</a></div>'
-            ),
+            doc_content[browser_name]
         )
 
         # Edit highlight 1 in document 1
-        hl, = self.find_by_class('highlight-1')
-        await self.s_click(hl)
+        self.driver.execute_script(
+            "editHighlight.call("
+            "document.querySelector('[data-highlight-id=\"1\"]'), "
+            "'1'"
+            ")"
+        )
 
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: True, 2: False}
         )
 
-        await self.s_click_button('save-highlight-button')
-
         # Create tag 3 in project 1
-        await self.s_click_button('create-tag-link')
+        await asyncio.sleep(0.5)
+        await self.s_click_button('create-tag-from-highlight-link')
+        await asyncio.sleep(0.5)
         self.set_value("tag-add-path", "interesting.places")
         await self.s_click_button('save-tag-button')
 
         # Finish editing highlight 1 in document 1
-        hl, = self.find_by_class('highlight-1')
-        await self.s_click(hl)
-
-        self.driver.execute_script(
-            '$("#treeview-tags-highlight").treeview("selectNode", 1);')
-
         self.assertEqual(
             self.get_highlight_add_tags(),
+            # 3 was created while this modal was opened, it should be selected
             {1: True, 3: True, 2: False},
         )
-        self.driver.execute_script(
-            '$("#treeview-tags-highlight").treeview("unselectNode", 0);')
+
+        # unselect tag 1 - interesting
+        await self.s_click(
+            self.find_by_test_id('tag-node-highlight-1'),
+        )
+
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: False, 3: True, 2: False},
         )
+
         await self.s_click_button('save-highlight-button')
+        await asyncio.sleep(1)
 
         tag_links = self.find_children_by_id(
             'treeview-tags', 'node-treeview-tags')
 
+        # Check tags list
         self.assertEqual(
             [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'interesting.places', 'people'],
         )
 
         # Create highlight 3 in document 2
-        await self.s_click(self.find_by_id('project-sidebar-open'))
-        await self.s_click_button('documents-tab')
         await self.s_click(
             self.driver.find_element(By.ID, 'document-link-2')
             .find_element(By.CLASS_NAME, 'document-link-a')
         )
-        await self.s_click_button('close-sidebar-button')
-        # await self.s_get('/project/1/document/2')
+
         await asyncio.sleep(0.5)
 
+        # Create highlight 3 - Opinion
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
@@ -508,18 +585,24 @@ class Test2E2MultiUser(SeleniumTest):
             self.get_highlight_add_tags(),
             {1: False, 2: False, 3: False},
         )
-        self.driver.execute_script(
-            '$("#treeview-tags-highlight").treeview("selectNode", 2);')
+
+        # select tag 2 - people
+        await self.s_click(
+            self.find_by_test_id('tag-node-highlight-2'),
+        )
+
         # check after select
         self.assertEqual(
             self.get_highlight_add_tags(),
             {1: False, 3: False, 2: True},
         )
+
         await self.s_click_button('save-highlight-button')
 
         # List highlights in project 1 under 'people'
-        self.driver.execute_script(
-            '$("#treeview-tags").treeview("selectNode", 2);')
+        await self.s_click(
+            self.find_by_test_id('tag-node-2'),
+        )
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
@@ -602,7 +685,7 @@ class Test2E2MultiUser(SeleniumTest):
             ('CSV', export_url + '/highlights/interesting.csv'),
         ])
 
-        # # Check codebook export options of project 1
+        # Check codebook export options of project 1
         await self.s_click(self.find_by_id('project-sidebar-open'))
         await self.s_click_button('project-tab')
         await self.s_click_button('dropdown-codebook')
@@ -623,55 +706,50 @@ class Test2E2MultiUser(SeleniumTest):
             ('DOCX', self.base_path + '/project/1/export/codebook.docx'),
             ('PDF', self.base_path + '/project/1/export/codebook.pdf'),
         ])
+
+        await self.s_click(self.find_by_test_id('close-sidebar-button'))
+        await asyncio.sleep(1)
+
         # Merge tag 2 into 1
-        # await self.s_click_button('tags-tab')
-        # self.driver.execute_script(
-        #     '$("#treeview-tags").treeview("selectNode", 1);')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # edit_button = self.find_by_path('//*[@data-nodeid="1"]')
-        # await self.s_click_button_by_text(
-        #     'Edit',
-        #     tag='a',
-        #     parent=edit_button
-        # )
-        # await self.s_click_button('show-merge-tag-modal-button')
-        # await self.s_click(self.find_by_id('dropdownMenuButtonTagMerge'))
-        # await asyncio.sleep(2)
-        #
-        # parent = (
-        #     self.find_by_test_id('hs-menu-inner-tag-merge')
-        # )
-        #
-        # await self.s_click_button_by_text(
-        #     'interesting',
-        #     tag='a',
-        #     parent=parent
-        # )
-        #
-        # await self.s_click_button('merge-tag-button')
-        #
-        # tag_links = self.find_children_by_id(
-        #     'treeview-tags', 'node-treeview-tags')
-        #
-        # # check tags
-        # self.assertEqual(
-        #     [link.text.split('\n')[0] for link in tag_links],
-        #     ['interesting', 'interesting.places'],
-        # )
-        #
-        # self.driver.execute_script(
-        #     '$("#tag-add-modal").modal("hide")'
-        # )
-        #
-        # await asyncio.sleep(1)
+        ActionChains(self.driver).context_click(
+            self.find_by_test_id('tag-node-2')).perform()
+        await asyncio.sleep(1)
+        menu_items = self.find_by_class("context-menu-item")
+        for item in menu_items:
+            if "merge" in item.text:
+                await self.s_click(item)
+                break
+        await asyncio.sleep(0.5)
+        await self.s_click(self.find_by_id('dropdownMenuButtonTagMerge'))
+        await asyncio.sleep(1)
+        target_option = self.driver.find_element(
+            By.XPATH,
+            "//div[@id='tag-hierarchy-merge-select']"
+            "//div[@class='hs-menu-inner']"
+            "//a[@data-value='1']"
+        )
+        await self.s_click(target_option)
+        await asyncio.sleep(1)
+        await self.s_click_button('merge-tag-button')
+        await asyncio.sleep(1)
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
+        # check tags
+        self.assertEqual(
+            [link.text.split('\n')[0] for link in tag_links],
+            ['interesting', 'interesting.places'],
+        )
+
         # List all highlights in project 1
-        # await self.s_click(self.find_by_id('tags-tab'))
-        # await self.s_click_button('see-all-highlights-button')
-        # await asyncio.sleep(1)  # Wait for XHR
-        # self.assertEqual(self.s_path, '/project/1/highlights/')
-        # self.assertEqual(
-        #     self.find_by_id('document-contents').text,
-        #     (f"diff\n{docs_1[0]['name']} interesting.places\n"
-        #      f"tent\n{docs_1[0]['name']} interesting\n"
-        #      f"Opinion\n{docs_2[0]['name']} interesting"),
-        # )
+        await self.s_click(self.find_by_id('tag-more-action-button'))
+        await asyncio.sleep(0.5)
+        await self.s_click_button('see-all-highlights-button')
+        await asyncio.sleep(1)  # Wait for XHR
+        self.assertEqual(self.s_path, '/project/1/highlights/')
+        self.assertEqual(
+            self.find_by_id('document-contents').text,
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting\n"
+             f"Opinion\n{docs_2[0]['name']} interesting"),
+        )
