@@ -259,6 +259,9 @@ class Test2E2MultiUser(SeleniumTest):
             )
         )
 
+        for script in self.driver.find_elements(By.TAG_NAME, 'script'):
+            print(script.get_property('textContent').strip())
+
         self.assertTrue(any(
             expected.strip() == script.get_property('textContent').strip()
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
