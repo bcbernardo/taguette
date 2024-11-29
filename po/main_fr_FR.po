@@ -668,6 +668,21 @@ msgstr ""
 msgid "Export"
 msgstr "Exporter"
 
+#: taguette/templates/partials/confirm.html:6
+msgctxt "confirm modal"
+msgid "Confirm"
+msgstr "Confirmation"
+
+#: taguette/templates/partials/confirm.html:6
+msgctxt "confirm modal confirm"
+msgid "Confirm"
+msgstr "Confirmer"
+
+#: taguette/templates/partials/confirm.html:12
+msgctxt "confirm modal"
+msgid "Cancel"
+msgstr "Annuler"
+
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:57
 #: taguette/templates/modal/manage_collaborators.html:41
@@ -1324,6 +1339,11 @@ msgstr ""
 "equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> et contributeurs à"
 " Taguette | <a href=\"https://aide.libreqda.org\">Documentation "
 "utilisateur</a>"
+
+#: taguette/static/js/taguette.js:1199
+msgid "No tag found"
+msgstr "Aucun code trouvé"
+
 
 #~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
 #~ msgstr ""

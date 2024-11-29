@@ -698,6 +698,7 @@ class TestMultiuser(MyHTTPTestCase):
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
             '  let is_demo = false;\n'
+            '  let demo_highlights_location = [];\n'
             '</script>' % (
                 exact_version(),
                 json.dumps(
@@ -2549,7 +2550,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         await self.s_get('/')
         self.assertEqual(
             [el.text for el in self.find_by_tag('h1')],
-            ['Welcome tester', 'Bienvenue sur LibreQDA, un logiciel d\'analyse qualitative développé en code source libre ouvert par la Plateforme en humanités numériques de l\'Université de Sherbrooke.'],
+            ['Welcome tester', 'Welcome to LibreQDA, a qualitative data analysis software (QDA) developed by the Plateforme en humanités numériques (PHuN) at Université de Sherbrooke.'],
         )
         self.assertIn(
             'Here are your projects:',
@@ -2676,6 +2677,7 @@ class TestSeleniumMultiuser(SeleniumTest):
             '  let highlights = {};\n'
             '  let last_event = -1;\n'
             '  let is_demo = false;\n'
+            '  let demo_highlights_location = [];\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -2818,7 +2820,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # create highlight 1 diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
         self.driver.execute_script('''
@@ -2829,7 +2831,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Create highlight 2 tent
         self.driver.execute_script('restoreSelection([13, 17]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
         # check tags before select
@@ -2923,7 +2925,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 

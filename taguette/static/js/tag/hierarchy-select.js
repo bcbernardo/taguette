@@ -12,7 +12,7 @@ function addDefaultValue(parentContainer) {
         .attr("data-value", '')
         .attr("data-default-selected", '')
         .attr("data-level", DEFAULT_LEVEL)
-        .text('None');
+        .text(gettext('None'));
     li.append(a);
 
     parentContainer.append(li);

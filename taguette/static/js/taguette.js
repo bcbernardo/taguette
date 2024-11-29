@@ -451,7 +451,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
 
         $(tag_add_modal).modal('hide');
         document.getElementById('input-search-tags-highlight').value = '';
-        document.getElementById('dropdownMenuButtonTag').innerText = 'None';
+        document.getElementById('dropdownMenuButtonTag').innerText = gettext('None');
 
     };
     const callbackFail = (error) => {
@@ -921,10 +921,18 @@ function scrollToHighlight(highlight_id, search_text=null) {
     window.setTimeout(function () {
         let scroll_position = 0,
             toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
-        const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`).closest('div');
+        // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
-            scroll_position = data_highlight_selector.offset().top - toolbar_height - 15;
-            data_highlight_selector.addClass('flash-once');
+            const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
+            let count_lines = 0;
+            data_highlight_selector.each(function(){
+                const line_id = $(this).data('parent-line-id'),
+                    div_to_highlight = $(`div[data-line--id="${line_id}"]`);
+                div_to_highlight.addClass('flash-once');
+                if(count_lines++ === 0) {
+                    scroll_position = div_to_highlight.offset().top - toolbar_height - 15;
+                }
+            });
         }
 
         if(search_text !== null) {

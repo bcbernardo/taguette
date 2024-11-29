@@ -23,7 +23,7 @@ from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
 from ..utils import get_path_informations
-from ..demodata import DEMO_DATA_FR
+from ..demodata import DEMO_DATA
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,12 @@ class CreateDemoProject(BaseHandler):
         self.db.add(membership)
         self.db.flush()
 
-        for document in DEMO_DATA_FR['documents']:
+        # Select language for demo
+        user = self.db.query(database.User).get(self.current_user)
+        lang = user.language
+        if lang not in DEMO_DATA.keys():
+            lang = self.config['DEFAULT_LANGUAGE']
+        for document in DEMO_DATA[lang]['documents']:
             d = database.Document(
                 project_id=project.id,
                 name=document['name'],
@@ -110,7 +115,7 @@ class CreateDemoProject(BaseHandler):
             self.db.flush()
             documents.append(d)
 
-        for tag in DEMO_DATA_FR['tags']:
+        for tag in DEMO_DATA[lang]['tags']:
             t = database.Tag(project=project,
                              color=tag['color'],
                              path=tag['path'],
@@ -131,7 +136,7 @@ class CreateDemoProject(BaseHandler):
 
         self.db.commit()
 
-        for highlight in DEMO_DATA_FR['highlights']:
+        for highlight in DEMO_DATA[lang]['highlights']:
             h = database.Highlight(
                 document=documents[highlight['document']],
                 start_offset=highlight['start_offset'],

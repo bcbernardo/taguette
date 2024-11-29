@@ -1,14 +1,20 @@
-DEMO_DATA_FR = {'documents': [
-    {
+DEMO_DATA = {'fr_FR': {
+    "tutorial_highlights": [
+        [[195, 402]],   # Document 0
+        [],             # Document 1
+        []              # Document 2
+    ],
+    'documents': [{
         "name": "2024-05-16_entrevue_Élise_graphiste.txt",
         "filename": "2024-05-16_entrevue_Élise_graphiste.txt",
         "text_direction": "LEFT_TO_RIGHT",
         "contents": "<p>Élise, 28 ans</p>\n<p>Profession: designer "
-                    "graphique</p>\n<p>Intervieweur : Bonjour Élise, merci "
+                    "graphique</p>\n<p>Intervieweur : Bonjour Élise, "
+                    "merci "
                     "de nous rejoindre. Comment as-tu commencé avec les "
                     "jeux de société ?</p>\n<p>Élise : Salut! Oui, ça "
                     "enregistre? Oui? Eh bien, je dirais qu’en famille on "
-                    "a toujours été très friands de jeux de société. Aussi "
+                    "a toujours été très friands de jeux de société. Aussi"
                     "loin que je me souvienne, les jeux de cartes ou les "
                     "jeux de plateau ont toujours fait partie de nos "
                     "weekends. J’ai conservé l’habitude et quand je suis "
@@ -60,44 +66,61 @@ DEMO_DATA_FR = {'documents': [
                     "magnifiques, créatifs et bien exécutés.</p>\n"
                     "<p>Intervieweur : Quels sont les principaux défis "
                     "associés à ce hobby ?</p>\n<p>Élise : Le coût des "
-                    "jeux peut être un obstacle, surtout pour les éditions "
+                    "jeux peut être un obstacle, surtout pour les "
+                    "éditions "
                     "spéciales ou les nouvelles sorties sur Kickstarter. "
-                    "De plus, coordonner les horaires pour des sessions de "
+                    "De plus, coordonner les horaires pour des "
+                    "sessions de "
                     "jeux régulières avec un groupe fixe peut être "
                     "compliqué, compte tenu de nos vies bien remplies. "
                     "Habituellement j’utilise des sondages de "
                     "disponibilité comme Framadate et il y a quand même "
                     "des conflits d’horaire à arbitrer.</p>\n"
                     "<p>Intervieweur : As-tu des conseils pour ceux qui "
-                    "souhaiteraient se lancer dans les jeux de société ?</p>"
+                    "souhaiteraient se lancer dans les jeux "
+                    "de société ?</p>"
                     "\n<p>Élise : Je recommande de commencer simplement. "
-                    "Choisis un jeu qui te semble intéressant et organise une "
-                    "soirée avec quelques amis. Ne te préoccupe pas trop des "
+                    "Choisis un jeu qui te semble intéressant et "
+                    "organise une "
+                    "soirée avec quelques amis. Ne te préoccupe "
+                    "pas trop des "
                     "règles au début; l’important est de s’amuser et de "
-                    "profiter de l’expérience.</p>\n<p>Intervieweur : Quelle "
-                    "est ta vision pour l’avenir des jeux de société dans ta "
-                    "vie ?</p>\n<p>Élise : Je vois les jeux de société comme "
-                    "une partie permanente de ma vie. J’espère continuer à "
+                    "profiter de l’expérience.</p>\n<p>Intervieweur : "
+                    "Quelle "
+                    "est ta vision pour l’avenir des jeux de société "
+                    "dans ta "
+                    "vie ?</p>\n<p>Élise : Je vois les jeux de "
+                    "société comme "
+                    "une partie permanente de ma vie. J’espère "
+                    "continuer à "
                     "découvrir de nouveaux jeux et à élargir mon cercle "
-                    "social. Les jeux sont une façon ludique et enrichissante "
+                    "social. Les jeux sont une façon ludique et "
+                    "enrichissante "
                     "de connecter avec les autres, et je ne vois pas cela "
-                    "changer.</p>\n<p>Intervieweur : Y a-t-il des tendances "
+                    "changer.</p>\n<p>Intervieweur : Y a-t-il des "
+                    "tendances "
                     "spécifiques dans les jeux de société que tu trouves "
-                    "particulièrement excitantes ?</p>\n<p>Élise : Je suis "
-                    "vraiment excitée par les jeux qui intègrent des éléments "
-                    "de réalité augmentée et virtuelle, car ils offrent une "
+                    "particulièrement excitantes ?</p>\n<p>Élise : Je "
+                    "suis "
+                    "vraiment excitée par les jeux qui intègrent des "
+                    "éléments "
+                    "de réalité augmentée et virtuelle, car ils "
+                    "offrent une "
                     "nouvelle dimension à l’expérience traditionnelle des "
                     "jeux "
                     "de société. Ce genre d’innovations ouvrent des "
                     "possibilités intéressantes pour l’immersion et "
-                    "l’interaction dans le jeu.</p>\n<p>Intervieweur : Merci "
-                    "Élise, pour ce partage enrichissant sur ta passion pour "
+                    "l’interaction dans le jeu.</p>\n<p>Intervieweur : "
+                    "Merci "
+                    "Élise, pour ce partage enrichissant sur ta passion "
+                    "pour "
                     "les jeux de société et leur impact sur ta vie.</p>\n"
-                    "<p>Élise : Merci à toi! J’espère avoir inspiré d’autres "
-                    "à explorer ce merveilleux monde des jeux de société.</p>",
+                    "<p>Élise : Merci à toi! J’espère avoir inspiré "
+                    "d’autres "
+                    "à explorer ce merveilleux monde des jeux de "
+                    "société.</p>",
         "favorite": True
-    },
-    {
+    }, {
         "name": "2024-05-23_entrevue_Marc_ingenieur.txt",
         "filename": "2024-05-23_entrevue_Marc_ingenieur.txt",
         "text_direction": "LEFT_TO_RIGHT",
@@ -164,8 +187,7 @@ DEMO_DATA_FR = {'documents': [
                     "une dimension intéressante à notre exploration des jeux "
                     "de société.</p>",
         "favorite": False
-    },
-    {
+    }, {
         "name": "2024-05-26_entrevue_Nadia_enseignante.txt",
         "filename": "2024-05-26_entrevue_Nadia_enseignante.txt",
         "text_direction": "LEFT_TO_RIGHT",
@@ -249,15 +271,326 @@ DEMO_DATA_FR = {'documents': [
                     "que notre discussion inspirera plus d’éducateurs à "
                     "explorer cette méthode.</p>",
         "favorite": False
-    }
-], 'tags': [
-    {
+    }], 'tags': [
+        {
+            'color': '#ff0600',
+            'path': 'barrieres',
+            'description': '',
+            'childrens': []
+        },
+        {
+            'color': '#26A269',
+            'path': 'benefices',
+            'description': '',
+            'childrens': [
+                {
+                    'color': '#57E389',
+                    'path': 'developpement_competences',
+                    'description': '',
+                },
+                {
+                    'color': '#99c1f1',
+                    'path': 'renforcement_relations',
+                    'description': '',
+                }
+            ]
+        },
+        {
+            'color': '#ff0600',
+            'path': 'jeux',
+            'description': '',
+            'childrens': []
+        },
+    ], 'highlights': [{
+        'document': 0,
+        'start_offset': 2164,
+        'end_offset': 2464,
+        'snippet': '<p>Les jeux de société améliorent des compétences '
+                   'transversales importantes comme la pensée stratégique, la '
+                   'gestion des ressources et la communication. Pour moi, en '
+                   'tant que designer graphique, ils stimulent également ma '
+                   'créativité et m’aident à penser de manière plus innovante '
+                   'et flexible.</p>',
+        'tags': [2]
+    }, {
+        'document': 0,
+        'start_offset': 2850,
+        'end_offset': 3259,
+        'snippet': '<p>Le coût des jeux peut être un obstacle, surtout pour '
+                   'les éditions spéciales ou les nouvelles sorties sur '
+                   'Kickstarter. De plus, coordonner les horaires pour des '
+                   'sessions de jeux régulières avec un groupe fixe peut être '
+                   'compliqué, compte tenu de nos vies bien remplies. '
+                   'Habituellement j’utilise des sondages de disponibilité '
+                   'comme Framadate et il y a quand même des conflits '
+                   'd’horaire à arbitrer.</p>',
+        'tags': [0]
+    }, {
+        'document': 1,
+        'start_offset': 494,
+        'end_offset': 810,
+        'snippet': '<p>Je préfère les jeux qui sont rapides à jouer et qui '
+                   'n’ont pas trop de règles compliquées. Comme les jeux de '
+                   'cartes, le Uno, ou même des jeux de plateau assez '
+                   'simples. L’idée c’est de pouvoir terminer une partie en '
+                   'une heure ou moins, ça garde tout le monde engagé et ça '
+                   'ne prend pas toute la soirée.</p>',
+        'tags': [0]
+    }, {
+        'document': 1,
+        'start_offset': 2182,
+        'end_offset': 2400,
+        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
+                   'à nous asseoir ensemble, à discuter, à négocier, et même '
+                   'à résoudre des conflits. C’est comme un exercice de team '
+                   'building, mais dans un cadre amicale.</p>',
+        'tags': [3]
+    }, {
+        'document': 1,
+        'start_offset': 2182,
+        'end_offset': 2733,
+        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
+                   'à nous asseoir ensemble, à discuter, à négocier, et même '
+                   'à résoudre des conflits. C’est comme un exercice de team '
+                   'building, mais dans un cadre amicale.</p>',
+        'tags': [0, 2, 3]
+    }, {
+        'document': 2,
+        'start_offset': 732,
+        'end_offset': 764,
+        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
+        'tags': [4]
+    }, {
+        'document': 2,
+        'start_offset': 924,
+        'end_offset': 933,
+        'snippet': '<p>Pandémie</p>',
+        'tags': [4]
+    }, {
+        'document': 2,
+        'start_offset': 1210,
+        'end_offset': 1218,
+        'snippet': '<p>Daybreak</p>',
+        'tags': [4]
+    },
+    ]
+}, 'en_US': {
+    "tutorial_highlights": [
+        [[174, 324]],   # Document 0
+        [],             # Document 1
+        []              # Document 2
+    ],
+    'documents': [{
+        "name": "2024-05-16_elise_graphic_designer.txt",
+        "filename": "2024-05-16_elise_graphic_designer.txt",
+        "text_direction": "LEFT_TO_RIGHT",
+        "contents": "<p>Élise, 28 years old</p>\n<p>Profession: graphic "
+                    "designer</p>\n<p>Interviewer: Hi Élise, thanks for "
+                    "joining us. How did you get started with board "
+                    "games?</p>\n<p>Élise: Hey! Is this recording? […] Well, "
+                    "I’d say my family has always been big on board games. "
+                    "As far back as I can remember, card games or board "
+                    "games were a part of our weekends. I kept up the habit "
+                    "and when I moved into an apartment, I quickly started "
+                    "collecting games and hosting my own game "
+                    "nights.</p>\n<p>Interviewer: What do you particularly "
+                    "enjoy about board games?</p>\n<p>Élise: What I love is "
+                    "how board games bring us together. They’re a fantastic "
+                    "way to connect with others, to think together, and to "
+                    "share fun moments. Games that require thinking and "
+                    "strategy, like Catan or Tiny Epic Galaxies, really draw "
+                    "me in because every choice can change the outcome of "
+                    "the game, which is incredibly captivating. Am I going "
+                    "too fast? Am I talking too fast?</p>\n<p>Interviewer: "
+                    "No, no, it’s fine. It’s perfect. How about the impact "
+                    "on your social relationships?</p>\n<p>Élise: Board "
+                    "games have radically changed my social life. I’ve met "
+                    "many interesting people and made new friends at game "
+                    "nights and conventions. Surprisingly, these meetups "
+                    "have also led to unexpected professional opportunities, "
+                    "like creative collaborations outside the world of "
+                    "games.</p>\n<p>Interviewer: How do you incorporate "
+                    "games into your everyday life?</p>\n<p>Élise: I host a "
+                    "game night almost every week. It’s a great way to stay "
+                    "in touch with my friends and meet new ones. Even when "
+                    "traveling, I make time to visit local game cafes to "
+                    "discover new games and interact with other "
+                    "enthusiasts.</p>\n<p>Interviewer: Do you think board "
+                    "games can also be beneficial for professional "
+                    "skills?</p>\n<p>Élise: That’s a good question. "
+                    "Actually, yes, absolutely. Board games enhance "
+                    "important transferable skills like strategic thinking, "
+                    "resource management, and communication. For me, "
+                    "as a graphic designer, they also stimulate my "
+                    "creativity and help me think in more innovative and "
+                    "flexible ways. I also admit that the visual quality of "
+                    "games is always something interesting for me. I think "
+                    "the games I played in my youth were less refined "
+                    "visually than what’s available now. There are some "
+                    "truly beautiful, creative, and well-executed designs "
+                    "out there.</p>\n<p>Interviewer: What are the main "
+                    "challenges associated with this hobby?</p>\n<p>Élise: "
+                    "The cost of games can be a barrier, especially for "
+                    "special editions or new releases on Kickstarter. Plus, "
+                    "coordinating schedules for regular game sessions with a "
+                    "fixed group can be complicated, given our busy lives. "
+                    "Usually, I use availability polls like Framadate, "
+                    "and there are still schedule conflicts to "
+                    "resolve.</p>\n<p>Interviewer: Any advice for those who "
+                    "might want to get into board games?</p>\n<p>Élise: I "
+                    "recommend starting simple. Pick a game that looks "
+                    "interesting and organize a night with a few friends. "
+                    "Don’t worry too much about the rules at first; the "
+                    "important thing is to have fun and enjoy the "
+                    "experience.</p>\n<p>Interviewer: What’s your vision for "
+                    "the future of board games in your life?</p>\n<p>Élise: "
+                    "I see board games as a permanent part of my life. I "
+                    "hope to continue discovering new games and expanding my "
+                    "social circle. Games are a playful and enriching way to "
+                    "connect with others, and I don’t see that "
+                    "changing.</p>\n<p>Interviewer: Are there any specific "
+                    "trends in board games that you find particularly "
+                    "exciting?</p>\n<p>Élise: I’m really excited about games "
+                    "that incorporate elements of augmented and virtual "
+                    "reality, as they add a new dimension to the traditional "
+                    "board game experience. These innovations open up "
+                    "interesting possibilities for immersion and interaction "
+                    "in the game.</p>\n<p>Interviewer: Thank you Élise, "
+                    "for this enriching share on your passion for board "
+                    "games and their impact on your life.</p>\n<p>Élise: "
+                    "Thanks to you! I hope to have inspired others to "
+                    "explore this wonderful world of board games.</p>",
+        "favorite": True
+    }, {
+        "name": "2024-05-23_marc_engineer.txt",
+        "filename": "2024-05-23_marc_engineer.txt",
+        "text_direction": "LEFT_TO_RIGHT",
+        "contents": "<p>Marc, 38 years old</p>\n<p>Profession: software "
+                    "engineer</p>\n<p>Interviewer: Hi Marc, thanks for "
+                    "joining us today to talk about board games. To start, "
+                    "can you tell us what role board games play in your "
+                    "life?</p>\n<p>Marc: Hi! Sure, I’m not a huge fanatic, "
+                    "but I play from time to time, especially with friends. "
+                    "It’s a great way to relax together, away from "
+                    "screens.</p>\n<p>Interviewer: What types of games do "
+                    "you prefer and why?</p>\n<p>Marc: I prefer games that "
+                    "are quick to play and don’t have too many complicated "
+                    "rules. Like card games, Uno, or even quite simple board "
+                    "games. The idea is to be able to finish a game in an "
+                    "hour or less, it keeps everyone engaged and it doesn’t "
+                    "take up the whole evening.</p>\n<p>Interviewer: Do you "
+                    "have any memorable game sessions that particularly "
+                    "stood out?</p>\n<p>Marc: Yes, absolutely. A few weeks "
+                    "ago, we played Ticket to Ride at a friend’s house. It "
+                    "was very competitive and fun because everyone was "
+                    "trying to find the best routes to score points. What I "
+                    "appreciate is that it can become strategic, but without "
+                    "being too heavy.</p>\n<p>Interviewer: Do you often "
+                    "integrate board games into your routines? Is it "
+                    "something you plan or is it more "
+                    "spontaneous?</p>\n<p>Marc: It’s usually quite "
+                    "spontaneous. Sometimes, during a quiet evening or a "
+                    "weekend with no specific plans, someone will suggest "
+                    "pulling out a game and it quickly becomes the focus of "
+                    "our evening. It’s a pleasant activity that can easily "
+                    "adapt to different groups.</p>\n<p>Interviewer: Do you "
+                    "think board games have changed the way you interact "
+                    "with your loved ones?</p>\n<p>Marc: Certainly, "
+                    "they offer a different way to connect than usual "
+                    "conversations. When we play, we collaborate or compete "
+                    "in a playful context, which can really spice things up "
+                    "and bring a lot of laughter and good "
+                    "memories.</p>\n<p>Interviewer: In your opinion, what is "
+                    "the impact of board games on social "
+                    "relationships?</p>\n<p>Marc: I think they strengthen "
+                    "bonds. They force us to sit together, to talk, "
+                    "to negotiate, and even to resolve conflicts. It’s like "
+                    "a team-building exercise, but in a friendly setting. "
+                    "And generally, it goes very well. But sometimes, "
+                    "I must say, I’ve experienced tense situations where "
+                    "sensitivities were heated, either because someone was "
+                    "cheating or didn’t understand the rules very well. I’m "
+                    "not comfortable in those moments, which cool my "
+                    "enthusiasm.</p>\n<p>Interviewer: Do you plan to get "
+                    "more involved in board games in the "
+                    "future?</p>\n<p>Marc: Maybe a bit more, especially if I "
+                    "find games that are quick to play and can be enjoyed by "
+                    "people of all ages. It’s always nice to discover "
+                    "something new and see how different games can bring joy "
+                    "and healthy competition.</p>\n<p>Interviewer: Thank you "
+                    "very much, Marc, for sharing your experiences. Your "
+                    "perspective adds an interesting dimension to our "
+                    "exploration of board games.</p>",
+        "favorite": False
+    }, {
+        "name": "2024-05-26_nadia_teacher.txt",
+        "filename": "2024-05-26_nadia_teacher.txt",
+        "text_direction": "LEFT_TO_RIGHT",
+        "contents": "<p>Nadia, 35 years old</p>\n<p>Profession : "
+                    "teacher</p>\n<p>Interviewer: Hello Nadia, thank you for "
+                    "being here today. Could you tell us how you use board "
+                    "games in your college-level teaching?</p>\n<p>Nadia: "
+                    "Hello! I’m delighted to discuss it. In my courses, "
+                    "I integrate board games as a way to materialize "
+                    "theories in social sciences. They serve as excellent "
+                    "pedagogical tools for simulating complex social "
+                    "situations, allowing students to better grasp group "
+                    "dynamics and strategic decisions.</p>\n<p>Interviewer: "
+                    "What games do you find particularly effective in this "
+                    "educational context?</p>\n<p>Nadia: I often use games "
+                    "like ‘Werewolves of Millers Hollow,’ which pushes "
+                    "students to talk, debate, and use their critical "
+                    "analysis skills to uncover lies. Another favorite is "
+                    "‘Pandemic,’ where students must collaborate to resolve "
+                    "a crisis, which helps them understand the importance of "
+                    "cooperation in emergency situations. The same team that "
+                    "created Pandemic is also behind a similar cooperative "
+                    "game called Daybreak, which is generally about fighting "
+                    "climate change. We play together to reduce greenhouse "
+                    "gas emissions from major world "
+                    "regions.</p>\n<p>Interviewer: Have you noticed notable "
+                    "improvements in student engagement or understanding "
+                    "thanks to these games?</p>\n<p>Nadia: Yes, definitely. "
+                    "Students are more active and involved when they can "
+                    "apply what they learn in an interactive way. Games help "
+                    "them see the real implications of social and economic "
+                    "theories in a more lively and immediate "
+                    "manner.</p>\n<p>Interviewer: Do you see other ways to "
+                    "make board games more accessible?</p>\n<p>Nadia: "
+                    "Absolutely. Funding programs for educational "
+                    "institutions could help integrate more games into "
+                    "classrooms. Publishers might also consider donation "
+                    "programs or discounts for educational institutions. "
+                    "That would be a way to democratize access to these "
+                    "playful resources.</p>\n<p>Interviewer: How do you see "
+                    "the future of board games in education?</p>\n<p>Nadia: "
+                    "I’m optimistic. I think we will see an increasing "
+                    "integration of board games in educational programs, "
+                    "especially among the younger ones. They have proven "
+                    "their value as pedagogical tools, and I think their "
+                    "potential is immense, particularly in disciplines that "
+                    "benefit from a more practical and interactive "
+                    "approach.</p>\n<p>Interviewer: Any last advice for "
+                    "educators who want to use board games in their "
+                    "classes?</p>\n<p>Nadia: Start with simple games and "
+                    "observe the students’ reaction. Adapt the use of games "
+                    "according to the specific needs of your class and make "
+                    "sure to always link the playful activities to the "
+                    "educational goals of the course. And most importantly, "
+                    "don’t be afraid to experiment to find what works best "
+                    "for your students.</p>\n<p>Interviewer: Thank you very "
+                    "much Nadia for this discussion. Your experience speaks "
+                    "volumes about the benefits of board games in "
+                    "education.</p>\n<p>Nadia: Thank you. I hope our "
+                    "discussion will inspire more educators to explore this "
+                    "method.</p>",
+        "favorite": False
+    }], 'tags': [{
         'color': '#ff0600',
         'path': 'barriers',
         'description': '',
         'childrens': []
-    },
-    {
+    }, {
         'color': '#26A269',
         'path': 'benefits',
         'description': '',
@@ -273,92 +606,83 @@ DEMO_DATA_FR = {'documents': [
                 'description': '',
             }
         ]
-    },
-    {
+    }, {
         'color': '#ff0600',
         'path': 'games',
         'description': '',
         'childrens': []
-    },
-], 'highlights': [
-    {
+    }], 'highlights': [{
         'document': 0,
-        'start_offset': 2161,
-        'end_offset': 2461,
-        'snippet': '<p>Les jeux de société améliorent des compétences '
-                   'transversales importantes comme la pensée stratégique, la '
-                   'gestion des ressources et la communication. Pour moi, en '
-                   'tant que designer graphique, ils stimulent également ma '
-                   'créativité et m’aident à penser de manière plus innovante '
-                   'et flexible.</p>',
+        'start_offset': 1704,
+        'end_offset': 1966,
+        'snippet': '<p>Actually, yes, absolutely. Board games enhance '
+                   'important transferable skills like strategic thinking, '
+                   'resource management, and communication. For me, '
+                   'as a graphic designer, they also stimulate my creativity '
+                   'and help me think in more innovative and flexible '
+                   'ways.</p>',
         'tags': [2]
-    },
-    {
+    }, {
         'document': 0,
-        'start_offset': 2850,
-        'end_offset': 3255,
-        'snippet': '<p>Le coût des jeux peut être un obstacle, surtout pour '
-                   'les éditions spéciales ou les nouvelles sorties sur '
-                   'Kickstarter. De plus, coordonner les horaires pour des '
-                   'sessions de jeux régulières avec un groupe fixe peut être '
-                   'compliqué, compte tenu de nos vies bien remplies. '
-                   'Habituellement j’utilise des sondages de disponibilité '
-                   'comme Framadate et il y a quand même des conflits '
-                   'd’horaire à arbitrer.</p>',
+        'start_offset': 2305,
+        'end_offset': 2621,
+        'snippet': '<p>The cost of games can be a barrier, especially for '
+                   'special editions or new releases on Kickstarter. Plus, '
+                   'coordinating schedules for regular game sessions with a '
+                   'fixed group can be complicated, given our busy lives. '
+                   'Usually, I use availability polls like Framadate, '
+                   'and there are still schedule conflicts to resolve.</p>',
         'tags': [0]
-    },
-    {
+    }, {
         'document': 1,
-        'start_offset': 494,
-        'end_offset': 806,
-        'snippet': '<p>Je préfère les jeux qui sont rapides à jouer et qui '
-                   'n’ont pas trop de règles compliquées. Comme les jeux de '
-                   'cartes, le Uno, ou même des jeux de plateau assez '
-                   'simples. L’idée c’est de pouvoir terminer une partie en '
-                   'une heure ou moins, ça garde tout le monde engagé et ça '
-                   'ne prend pas toute la soirée.</p>',
+        'start_offset': 409,
+        'end_offset': 677,
+        'snippet': '<p>I prefer games that are quick to play and don’t have '
+                   'too many complicated rules. Like card games, Uno, '
+                   'or even quite simple board games. The idea is to be able '
+                   'to finish a game in an hour or less, it keeps everyone '
+                   'engaged and it doesn’t take up the whole evening.</p>',
         'tags': [0]
-    },
-    {
+    }, {
         'document': 1,
-        'start_offset': 2182,
-        'end_offset': 2400,
-        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
-                   'à nous asseoir ensemble, à discuter, à négocier, et même '
-                   'à résoudre des conflits. C’est comme un exercice de team '
-                   'building, mais dans un cadre amicale.</p>',
+        'start_offset': 1831,
+        'end_offset': 2011,
+        'snippet': '<p>I think they strengthen bonds. They force us to sit '
+                   'together, to talk, to negotiate, and even to resolve '
+                   'conflicts. It’s like a team-building exercise, but in a '
+                   'friendly setting.</p>',
         'tags': [3]
-    },
-    {
+    }, {
         'document': 1,
         'start_offset': 2182,
-        'end_offset': 2733,
-        'snippet': '<p>Je pense qu’ils renforcent les liens. Ils nous forcent '
-                   'à nous asseoir ensemble, à discuter, à négocier, et même '
-                   'à résoudre des conflits. C’est comme un exercice de team '
-                   'building, mais dans un cadre amicale.</p>',
+        'end_offset': 2287,
+        'snippet': '<p>I think they strengthen bonds. They force us to sit '
+                   'together, to talk, to negotiate, and even to resolve '
+                   'conflicts. It’s like a team-building exercise, but in a '
+                   'friendly setting. And generally, it goes very well. But '
+                   'sometimes, I must say, I’ve experienced tense situations '
+                   'where sensitivities were heated, either because someone '
+                   'was cheating or didn’t understand the rules very well. '
+                   'I’m not comfortable in those moments, which cool my '
+                   'enthusiasm.</p>',
         'tags': [0, 2, 3]
-    },
-    {
+    }, {
         'document': 2,
-        'start_offset': 732,
-        'end_offset': 764,
-        'snippet': '<p>Les Loups-garous de Thiercelieux</p>',
+        'start_offset': 589,
+        'end_offset': 617,
+        'snippet': '<p>Werewolves of Millers Hollow</p>',
         'tags': [4]
-    },
-    {
+    }, {
         'document': 2,
-        'start_offset': 924,
-        'end_offset': 933,
-        'snippet': '<p>Pandémie</p>',
+        'start_offset': 740,
+        'end_offset': 748,
+        'snippet': '<p>Pandemic</p>',
         'tags': [4]
-    },
-    {
+    }, {
         'document': 2,
-        'start_offset': 1210,
-        'end_offset': 1218,
+        'start_offset': 974,
+        'end_offset': 982,
         'snippet': '<p>Daybreak</p>',
         'tags': [4]
-    },
-]
+    }]}
 }

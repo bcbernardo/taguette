@@ -232,13 +232,13 @@ function initTagsTreeview(filterTags = null) {
             if (node.tags && node.tags.length > 0) {
                 container.append($('<span>', {
                     class: 'badge badge-primary ms-1 badge-fixed-width',
-                    title: 'Documents',
+                    title: gettext('Documents'),
                     text: node.tags[0]
                 }));
                 if (node.tags.length > 1) {
                     container.append($('<span>', {
                         class: 'badge badge-secondary ms-1 ms-2 badge-fixed-width',
-                        title: 'Highlights',
+                        title: gettext('Highlights'),
                         text: node.tags[1]
                     }));
                 }

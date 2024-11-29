@@ -445,6 +445,7 @@ function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeTy
 
     // Set basic attributes
     line.setAttribute("data-highlight-id", highlight.id);
+    line.setAttribute("data-parent-line-id", $(svgParent).data('line--id').replace('-group', ''));
     line.setAttribute("x1", x1);
     line.setAttribute("x2", x2);
     line.setAttribute("y1", rect.y);

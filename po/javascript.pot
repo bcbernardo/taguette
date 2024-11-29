@@ -8,14 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-11-27 12:24-0500\n"
+"POT-Creation-Date: 2024-11-28 09:49-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.10.3\n"
 
 #: taguette/static/js/project/search.js:67
 #, python-format
@@ -216,12 +216,93 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
+#: taguette/static/js/tag/treeview.js:235
+msgid "Documents"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:241
+msgid "Highlights"
+msgstr ""
+
+#: taguette/static/js/tag/hierarchy-select.js:15
+#: taguette/static/js/taguette.js:454
+msgid "None"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:35
+msgid "selectAll"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:41
+msgid "unselectAll"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:47
+msgid "Select With Condition"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:52
+msgid "AND"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:57
+msgid "OR"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:62
+msgid "NOT"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "collapse"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "expand"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:75
+msgid "Add child"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:80
+msgid "edit"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:85
+msgid "merge"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:90
+msgid "deleteParent"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:96
+msgid "delete"
+msgstr ""
+
 #: taguette/static/js/polling-event.js:111
 msgid "It appears that you have been logged out."
 msgstr ""
 
 #: taguette/static/js/polling-event.js:114
 msgid "You can no longer access this project."
+msgstr ""
+
+#: taguette/static/js/document/manager.js:72
+msgid "Remove from Favorites"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:72
+msgid "Add to Favorites"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:92
+msgid "There are no documents in this project yet."
+msgstr ""
+
+#: taguette/static/js/document/manager.js:112
+msgid "Import new document"
 msgstr ""
 
 #: taguette/static/js/taguette.js:257
@@ -284,73 +365,5 @@ msgstr ""
 
 #: taguette/static/js/taguette.js:1199
 msgid "No tag found"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:35
-msgid "selectAll"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:41
-msgid "unselectAll"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:47
-msgid "Select With Condition"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:52
-msgid "AND"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:57
-msgid "OR"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:62
-msgid "NOT"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:69
-msgid "collapse"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:69
-msgid "expand"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:75
-msgid "Add child"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:80
-msgid "edit"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:85
-msgid "merge"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:90
-msgid "deleteParent"
-msgstr ""
-
-#: taguette/static/js/tag/context-menu.js:96
-msgid "delete"
-msgstr ""
-
-#: taguette/static/js/document/manager.js:72
-msgid "Remove from Favorites"
-msgstr ""
-
-#: taguette/static/js/document/manager.js:72
-msgid "Add to Favorites"
-msgstr ""
-
-#: taguette/static/js/document/manager.js:92
-msgid "There are no documents in this project yet."
-msgstr ""
-
-#: taguette/static/js/document/manager.js:112
-msgid "Import new document"
 msgstr ""
 

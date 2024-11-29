@@ -107,11 +107,11 @@ class Test2E2MultiUser(SeleniumTest):
             [el.text for el in self.find_by_tag('h1')],
             [
                 'Welcome tester',
-                'Bienvenue sur LibreQDA, un logiciel '
-                'd\'analyse qualitative développé '
-                'en code source libre ouvert par la '
-                'Plateforme en humanités numériques '
-                'de l\'Université de Sherbrooke.'
+                'Welcome to LibreQDA, a '
+                'qualitative data analysis software (QDA) '
+                'developed by the Plateforme en '
+                'humanités numériques (PHuN) at '
+                'Université de Sherbrooke.'
             ]
         )
         self.assertIn(
@@ -239,6 +239,7 @@ class Test2E2MultiUser(SeleniumTest):
             '    let highlights = {};\n'
             '    let last_event = -1;\n'
             '    let is_demo = false;\n'
+            '    let demo_highlights_location = [];\n'
         ) % (
             exact_version(),
             json.dumps(
@@ -397,7 +398,7 @@ class Test2E2MultiUser(SeleniumTest):
         # create highlight 1 - diff
         self.driver.execute_script('restoreSelection([0, 4]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
@@ -413,7 +414,7 @@ class Test2E2MultiUser(SeleniumTest):
         # Create highlight 2 - tent
         self.driver.execute_script('restoreSelection([13, 17]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
@@ -456,7 +457,7 @@ class Test2E2MultiUser(SeleniumTest):
                 'transform="translate(0, 20)">'
                 '<text x="0" y="0" text-anchor="start">'
                 'different content</text>'
-                '<line data-highlight-id="1" '
+                '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
                 'x1="4" x2="25.3125" y1="10" y2="10" '
                 'stroke="#000000" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
@@ -466,7 +467,7 @@ class Test2E2MultiUser(SeleniumTest):
                 '<stop offset="0%" stop-color="#000000"></stop>'
                 '<stop offset="100%" stop-color="#000000"></stop>'
                 '</linearGradient>'
-                '<line data-highlight-id="2" '
+                '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
                 'x1="90.84375" x2="117.46875" y1="25" y2="25.1" '
                 'stroke="url(#gradient-2)" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
@@ -489,14 +490,14 @@ class Test2E2MultiUser(SeleniumTest):
                 '<use href="#highlights-0-17">'
                 '</use></svg></div></div><defs>'
                 '<g id="highlights-0-17" class="highlights">'
-                '<line data-highlight-id="1" x1="1" '
-                'x2="30.666671752929688" y1="30" y2="30" '
+                '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
+                'x1="1" x2="30.666671752929688" y1="30" y2="30" '
                 'stroke="#000000" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
                 'onclick="editHighlight.call(this, \'1\')" '
                 'onmouseover="this.style.strokeWidth='
                 '\'7\'" onmouseout="this.style.strokeWidth=\'4\'"></line>'
-                '<line data-highlight-id="2" '
+                '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
                 'x1="116.53334045410156" x2="152.76666259765625" '
                 'y1="45" y2="45.1" stroke="url(#gradient-2)" '
                 'stroke-linecap="round" '
@@ -575,7 +576,7 @@ class Test2E2MultiUser(SeleniumTest):
         # Create highlight 3 - Opinion
         self.driver.execute_script('restoreSelection([0, 7]);')
         await self.s_click_button_by_text(
-            'Select tag',
+            'Existing code',
             tag='a'
         )
 
