@@ -132,6 +132,13 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
     border-color: #018849 !important;
 }
 
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
+    background-color: #4f9b4b !important;
+    border-color: #4f9b4b !important;
+}
+
 .btn.btn-outline-primary {
   color: #018849;
   background-color: transparent;
@@ -184,6 +191,67 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
   color: #fff !important;
   background-color: #018849 !important;
   border-color: #018849 !important;
+}
+
+/* Colors for secondary buttons */
+.btn.btn-outline-secondary {
+    background-color: #3a3a3a;
+    border-color: #3a3a3a;
+    color: #ffffff;
+}
+
+.btn.btn-secondary {
+    background-color: #3a3a3a;
+    border-color: #3a3a3a;
+    color: #ffffff;
+}
+
+.btn.btn-secondary:hover,
+.btn.btn-secondary:focus,
+.btn.btn-secondary:active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn.btn-outline-secondary:hover,
+.btn.btn-outline-secondary:focus,
+.btn.btn-outline-secondary:active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn.btn-secondary.me-3 {
+  background-color: #018849 !important;
+    border-color: #018849 !important;
+}
+
+.btn.btn-secondary.me-3:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
+    background-color: #4f9b4b !important;
+    border-color: #4f9b4b !important;
+}
+
+.btn-sm.btn-outline-secondary {
+    color: #6c757d !important;
+    background-color: #fff !important;
+}
+
+.btn-sm.btn-outline-secondary:hover {
+	color: var(--bs-btn-hover-color) !important;
+	background-color: var(--bs-btn-hover-bg) !important;
+	border-color: var(--bs-btn-hover-border-color) !important;
+}
+
+.btn-sm.btn-outline-secondary.my-2 {
+    color: #6c757d !important;
+    background-color: #fff !important;
+}
+
+.btn-sm.btn-outline-secondary.my-2:hover {
+	color: var(--bs-btn-hover-color) !important;
+	background-color: var(--bs-btn-hover-bg) !important;
+	border-color: var(--bs-btn-hover-border-color) !important;
 }
 
 /* Colors for button info */

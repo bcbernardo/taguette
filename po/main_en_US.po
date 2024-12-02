@@ -1,13 +1,15 @@
-# English translations for PROJECT.
-# Copyright (C) 2024 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+# English (US) translations for LibreQDA and Taguette.
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2018 Remi Rampin and Taguette contributors
+# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# PHuN <phun@usherbrooke.ca>, 2023.
+# Remi Rampin <remi@rampin.org>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-11-27 10:49-0500\n"
+"POT-Creation-Date: 2024-12-02 10:14-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -220,99 +222,99 @@ msgstr "File name is too long"
 msgid "Invalid file name"
 msgstr "Invalid file name"
 
-#: taguette/web/views.py:188
+#: taguette/web/views.py:189
 msgid "Invalid login or password"
 msgstr "Invalid login or password"
 
-#: taguette/web/views.py:244 taguette/web/views.py:555
-#: taguette/web/views.py:721
+#: taguette/web/views.py:245 taguette/web/views.py:556
+#: taguette/web/views.py:722
 msgid "Passwords do not match"
 msgstr "Passwords do not match"
 
-#: taguette/web/views.py:246
+#: taguette/web/views.py:247
 msgid "User name is taken"
 msgstr "User name is taken"
 
-#: taguette/web/views.py:253
+#: taguette/web/views.py:254
 msgid "Email address is already used"
 msgstr "Email address is already used"
 
-#: taguette/web/views.py:263
+#: taguette/web/views.py:264
 msgid "Terms of Service must be accepted"
 msgstr "Terms of Service must be accepted"
 
-#: taguette/web/views.py:602
+#: taguette/web/views.py:603
 msgid "This email address is not associated with any user"
 msgstr "This email address is not associated with any user"
 
-#: taguette/web/views.py:631
+#: taguette/web/views.py:632
 msgid "Password reset for Taguette"
 msgstr "Password reset for LibreQDA"
 
-#: taguette/web/views.py:674
+#: taguette/web/views.py:675
 msgid "Invalid token"
 msgstr "Invalid token"
 
-#: taguette/web/views.py:678
+#: taguette/web/views.py:679
 msgid "No user associated with that token"
 msgstr "No user associated with that token"
 
-#: taguette/web/views.py:681
+#: taguette/web/views.py:682
 msgid "Password has already been changed"
 msgstr "Password has already been changed"
 
 #. Default tag name
-#: taguette/web/views.py:765
+#: taguette/web/views.py:766
 msgid "interesting"
 msgstr "interesting"
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:769
+#: taguette/web/views.py:770
 msgid "Further review required"
 msgstr "Further review required"
 
-#: taguette/web/views.py:804
+#: taguette/web/views.py:805
 msgid "You don't have permission to delete this project"
 msgstr "You don't have permission to delete this project"
 
-#: taguette/web/views.py:838 taguette/web/views.py:865
+#: taguette/web/views.py:839 taguette/web/views.py:866
 msgid "You don't have permission to import a codebook"
 msgstr "You don't have permission to import a codebook"
 
-#: taguette/web/views.py:884
+#: taguette/web/views.py:885
 #, python-format
 msgid "Row %d: %s"
 msgstr "Row %d: %s"
 
-#: taguette/web/views.py:1022
+#: taguette/web/views.py:1023
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr "Error importing codes, concurrent changes caused a conflict"
 
-#: taguette/web/views.py:1037
+#: taguette/web/views.py:1038
 msgid "No file provided"
 msgstr "No file provided"
 
-#: taguette/web/__init__.py:60 taguette/web/base.py:581
+#: taguette/web/__init__.py:60 taguette/web/base.py:580
 msgctxt "page title"
 msgid "Error 404"
 msgstr "Error 404"
 
-#: taguette/web/__init__.py:61 taguette/web/base.py:582
+#: taguette/web/__init__.py:61 taguette/web/base.py:581
 msgid "This page does not exist."
 msgstr "This page does not exist."
 
 #: taguette/web/base.py:473
+#, fuzzy
 msgid ""
-" | Please report issues via <a "
-"href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or <a "
-"href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
+" | Please report issues via <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda/\">GitLab</a> "
 msgstr ""
 " | Please report issues via <a href=\"https://gitlab.com/bin-"
 "cirst/libreqda/libre-qda/\">GitLab</a> or <a "
 "href=\"mailto:phun@usherbrooke.ca\">PHuN@usherbrooke.ca</a>!"
 
-#: taguette/web/base.py:588
+#: taguette/web/base.py:587
 #, python-format
 msgctxt "page title"
 msgid "Error %d"
@@ -330,35 +332,35 @@ msgstr "Tutorial - board games"
 msgid "A demo project to showcase LibreQDA"
 msgstr "A demo project to showcase LibreQDA"
 
-#: taguette/web/api.py:162 taguette/web/api.py:193 taguette/web/api.py:286
-#: taguette/web/api.py:326 taguette/web/api.py:391 taguette/web/api.py:431
-#: taguette/web/api.py:472 taguette/web/api.py:497 taguette/web/api.py:588
-#: taguette/web/api.py:655 taguette/web/api.py:749 taguette/web/api.py:976
+#: taguette/web/api.py:167 taguette/web/api.py:198 taguette/web/api.py:291
+#: taguette/web/api.py:331 taguette/web/api.py:396 taguette/web/api.py:436
+#: taguette/web/api.py:477 taguette/web/api.py:502 taguette/web/api.py:593
+#: taguette/web/api.py:660 taguette/web/api.py:754 taguette/web/api.py:981
 msgid "Unauthorized"
 msgstr "Unauthorized"
 
-#: taguette/web/api.py:436 taguette/web/api.py:475 taguette/web/api.py:507
-#: taguette/web/api.py:602 taguette/web/api.py:685
+#: taguette/web/api.py:441 taguette/web/api.py:480 taguette/web/api.py:512
+#: taguette/web/api.py:607 taguette/web/api.py:690
 msgid "No such tag"
 msgstr "No such code"
 
-#: taguette/web/api.py:605
+#: taguette/web/api.py:610
 msgid "Empty highlight"
 msgstr "Empty highlight"
 
-#: taguette/web/api.py:659 taguette/web/api.py:752
+#: taguette/web/api.py:664 taguette/web/api.py:757
 msgid "No such highlight"
 msgstr "No such highlight"
 
-#: taguette/web/api.py:913
+#: taguette/web/api.py:918
 msgid "Bad page number"
 msgstr ""
 
-#: taguette/web/api.py:1039
+#: taguette/web/api.py:1044
 msgid "There must be one admin"
 msgstr "There must be one admin"
 
-#: taguette/web/api.py:1094
+#: taguette/web/api.py:1099
 msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
@@ -366,11 +368,11 @@ msgstr ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of LibreQDA, please check for updates"
 
-#: taguette/web/api.py:1100
+#: taguette/web/api.py:1105
 msgid "This database could not be updated to the current version"
 msgstr "This database could not be updated to the current version"
 
-#: taguette/web/api.py:1104 taguette/web/api.py:1138
+#: taguette/web/api.py:1109 taguette/web/api.py:1143
 msgid "This is not a Taguette project file"
 msgstr "This is not a LibreQDA project file"
 
@@ -456,7 +458,7 @@ msgstr "Back to highlights"
 
 #: taguette/templates/project.html:74
 #, fuzzy
-msgid "Load a document on right"
+msgid "Load a document from your bookmarks or on the right"
 msgstr "Load a document from you favorites or the side menu"
 
 #: taguette/templates/project.html:92
@@ -655,6 +657,13 @@ msgstr ""
 msgid "Export"
 msgstr "Export"
 
+#: taguette/templates/modal/create_document.html:33
+#: taguette/templates/modal/create_tag.html:57
+#: taguette/templates/modal/manage_collaborators.html:41
+#: taguette/templates/partials/spinner.html:5
+msgid "Cancel"
+msgstr "Cancel"
+
 #: taguette/templates/partials/confirm.html:6
 msgctxt "confirm modal"
 msgid "Confirm"
@@ -669,13 +678,6 @@ msgstr "Cancel"
 msgctxt "confirm modal confirm"
 msgid "Confirm"
 msgstr "Confirm"
-
-#: taguette/templates/modal/create_document.html:33
-#: taguette/templates/modal/create_tag.html:57
-#: taguette/templates/modal/manage_collaborators.html:41
-#: taguette/templates/partials/spinner.html:5
-msgid "Cancel"
-msgstr "Cancel"
 
 #: taguette/templates/project_delete.html:3
 msgctxt "page title"
@@ -888,6 +890,12 @@ msgstr "Description"
 msgid "Delete document"
 msgstr "Delete document"
 
+#: taguette/templates/modal/merge_tag.html:6
+#, fuzzy
+msgctxt "merge modal"
+msgid "Merge codes"
+msgstr "Parent code"
+
 #: taguette/templates/modal/create_tag.html:6
 msgctxt "modal window title"
 msgid "New tag"
@@ -1039,36 +1047,36 @@ msgctxt "form submit button"
 msgid "Set new password"
 msgstr "Set new password"
 
-#: taguette/templates/index.html:24
+#: taguette/templates/index.html:25
 #, python-format
 msgid "Welcome %(user_display_name)s"
 msgstr "Welcome %(user_display_name)s"
 
-#: taguette/templates/index.html:26
+#: taguette/templates/index.html:27
 msgid "Welcome!"
 msgstr "Welcome!"
 
-#: taguette/templates/index.html:32
+#: taguette/templates/index.html:33
 #, fuzzy
 msgid "Create a new project"
 msgstr "Create a new project"
 
-#: taguette/templates/index.html:37
+#: taguette/templates/index.html:38
 #, fuzzy
 msgid "Import a project file"
 msgstr "Import a project file"
 
-#: taguette/templates/index.html:41
+#: taguette/templates/index.html:42
 #, fuzzy
 msgid "Demo project"
 msgstr "Demo project"
 
-#: taguette/templates/index.html:45
+#: taguette/templates/index.html:46
 #, fuzzy
 msgid "Here are your projects"
 msgstr "Here are your projects:"
 
-#: taguette/templates/index.html:68
+#: taguette/templates/index.html:69
 msgid "No projects available at the moment. Create or import one to get started."
 msgstr ""
 
@@ -1306,13 +1314,15 @@ msgid "Log in"
 msgstr "Log in"
 
 #: taguette/templates/base.html:87
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"Taguette %(version)s is released under a <a "
-"href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
-" license</a>, &#169; Rémi Rampin and Taguette contributors | <a "
-"href=\"https://www.taguette.org/getting-started.html\">User "
-"Documentation</a>"
+"LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
+"/bin-cirst/libreqda/libre-"
+"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause license</a>, "
+"&#169; Plateforme en humanités numériques (Université de Sherbrooke) and "
+"contributors\n"
+"            | &#169; Remi Rampin and Taguette contributors | <a "
+"href=\"https://help.libreqda.org/\">User Documentation</a>"
 msgstr ""
 "LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
 "/bin-cirst/libreqda/libre-qda/blob/main/LICENSE.txt\">BSD-3-Clause "
@@ -1321,11 +1331,6 @@ msgstr ""
 "groupes-et-equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> and "
 "Taguette contributors | <a href=\"https://help.libreqda.org/\">User "
 "Documentation</a>"
-
-#: taguette/static/js/taguette.js:1199
-msgid "No tag found"
-msgstr "No code found"
-
 
 #~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
 #~ msgstr "Welcome to LibreQDA, an open source qualitative analysis application."
@@ -1410,4 +1415,7 @@ msgstr "No code found"
 
 #~ msgid "#000000"
 #~ msgstr "#000000"
+
+#~ msgid "No tag found"
+#~ msgstr "No code found"
 
