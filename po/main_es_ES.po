@@ -893,10 +893,13 @@ msgid "Delete document"
 msgstr "Eliminar documento"
 
 #: taguette/templates/modal/merge_tag.html:6
-#, fuzzy
 msgctxt "merge modal"
 msgid "Merge codes"
-msgstr "Cambiar etiqueta"
+msgstr ""
+
+#: taguette/templates/modal/merge_tag.html:17
+msgid "into"
+msgstr ""
 
 #: taguette/templates/modal/create_tag.html:6
 msgctxt "modal window title"

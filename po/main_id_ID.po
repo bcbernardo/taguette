@@ -902,10 +902,13 @@ msgid "Delete document"
 msgstr "Hapus dokumen"
 
 #: taguette/templates/modal/merge_tag.html:6
-#, fuzzy
 msgctxt "merge modal"
 msgid "Merge codes"
-msgstr "Impor buku kode"
+msgstr ""
+
+#: taguette/templates/modal/merge_tag.html:17
+msgid "into"
+msgstr ""
 
 #: taguette/templates/modal/create_tag.html:6
 msgctxt "modal window title"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-12-02 10:14-0500\n"
+"POT-Creation-Date: 2024-12-02 12:08-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -846,6 +846,10 @@ msgstr ""
 #: taguette/templates/modal/merge_tag.html:6
 msgctxt "merge modal"
 msgid "Merge codes"
+msgstr ""
+
+#: taguette/templates/modal/merge_tag.html:17
+msgid "into"
 msgstr ""
 
 #: taguette/templates/modal/create_tag.html:6
