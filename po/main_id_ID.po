@@ -922,10 +922,9 @@ msgid "Change code"
 msgstr "Ubah tag"
 
 #: taguette/templates/modal/create_tag.html:18
-#, fuzzy
 msgctxt "tag change form placeholder"
 msgid "Parent code"
-msgstr "Impor buku kode"
+msgstr ""
 
 #: taguette/templates/modal/create_tag.html:35
 #: taguette/templates/modal/create_tag.html:37
