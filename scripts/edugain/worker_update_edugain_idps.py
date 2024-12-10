@@ -48,12 +48,13 @@ if idps[0][0]['id'] is not None:
             new_idp.coco_status = idp[0]['coco_status']
             new_idp.coco_id = idp[0]['coco_id']
             new_idp.sirtfi_status = idp[0]['sirtfi_status']
-            new_idp.code = idp[0]['code']
+            if new_idp.entityid.lower().find('inrs'):
+                new_idp.code = 'CAF'
+            else:
+                new_idp.code = idp[0]['code']
             new_idp.scopes = idp[0]['scopes']
 
             db.add(new_idp)
-            db.commit()
-
             idps_added += 1
 
         else:
@@ -67,9 +68,13 @@ if idps[0][0]['id'] is not None:
             idp_id.coco_status = idp[0]['coco_status']
             idp_id.coco_id = idp[0]['coco_id']
             idp_id.sirtfi_status = idp[0]['sirtfi_status']
-            idp_id.code = idp[0]['code']
+            if idp_id.entityid.lower().find('inrs'):
+                idp_id.code = 'CAF'
+            else:
+                idp_id.code = idp[0]['code']
             idp_id.scopes = idp[0]['scopes']
-            db.commit()
+
+        db.commit()
 
 
 if idps_added != 0 or idps_removed != 0 or idps_updated != 0:
