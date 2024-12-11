@@ -942,7 +942,7 @@ msgstr "Αλλαγή ετικέτας"
 #, fuzzy
 msgctxt "tag change form placeholder"
 msgid "Parent code"
-msgstr "Εισαγωγή βιβλίου ετικετών"
+msgstr ""
 
 #: taguette/templates/modal/create_tag.html:35
 #: taguette/templates/modal/create_tag.html:37

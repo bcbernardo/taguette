@@ -474,6 +474,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ' | Please report issues via '
                 + '<a href="https://gitlab.com/bin-cirst/libreqda/libre-qda/">'
                   'GitLab</a> '
+
             )
 
         with tracer.start_as_current_span(
