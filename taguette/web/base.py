@@ -472,8 +472,9 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         if not extra_footer:
             extra_footer = self.gettext(
                 ' | Please report issues via '
-                + '<a href="https://gitlab.com/remram44/taguette">GitLab</a> '
-                + 'or <a href="mailto:hi@taguette.org">hi@taguette.org</a>!'
+                + '<a href="https://gitlab.com/bin-cirst/libreqda/libre-qda/">'
+                  'GitLab</a> '
+
             )
 
         with tracer.start_as_current_span(
