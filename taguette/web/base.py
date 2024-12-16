@@ -477,6 +477,10 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
 
             )
 
+        if self.application.config['MAINTENANCE_MODE']:
+            self.current_user = None
+            template_name = 'maintenance.html'
+
         with tracer.start_as_current_span(
             'render_template',
             attributes={'template_name': template_name},
@@ -484,6 +488,10 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             template = self.template_env.get_template(template_name)
             return template.render(
                 handler=self,
+                maintenance_mode=self.application.config['MAINTENANCE_MODE'],
+                maintenance_message=self.application.config[
+                    'MAINTENANCE_MESSAGE'
+                ],
                 current_user=self.current_user,
                 multiuser=self.application.config['MULTIUSER'],
                 register_enabled=self.application.config[
@@ -598,7 +606,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             try:
                 if self.language in self.application.config['BUG_REPORT_URL']:
                     return self.application.config[
-                        'BUG_REPORT_URL'][self.language]
+                        'BUG_REPORT_URL'
+                    ][self.language]
                 else:
                     return next(iter(
                         self.application.config['BUG_REPORT_URL'].values()),

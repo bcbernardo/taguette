@@ -80,6 +80,10 @@ NAME = "Misconfigured LibreQDA Server"
 BIND_ADDRESS = "0.0.0.0"
 PORT = 7465
 
+# Disable access to LibreQQA in case of maintenance
+MAINTENANCE_MODE = False
+MAINTENANCE_MESSAGE = ""
+
 # Base path of the application
 BASE_PATH = "/"
 
@@ -180,6 +184,8 @@ DEFAULT_CONFIG = {
     'ALLOW_EXTERNAL_LOGIN': False,
     'BIND_ADDRESS': '0.0.0.0',
     'BASE_PATH': '',
+    'MAINTENANCE_MODE': False,
+    'MAINTENANCE_MESSAGE': "",
     'BUG_REPORT_URL': None,
     'EXTRA_FOOTER': None,
     'REGISTRATION_ENABLED': True,
