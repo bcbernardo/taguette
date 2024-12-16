@@ -493,6 +493,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 extra_footer=extra_footer,
                 show_messages=self.current_user == 'admin',
                 version=exact_version(),
+                bug_report_url=self.get_bug_report_url(),
                 gettext=self.gettext,
                 ngettext=self.ngettext,
                 pgettext=self.pgettext,
@@ -591,6 +592,21 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ),
                 error_message=self._reason + ".",
             )
+
+    def get_bug_report_url(self):
+        if self.application.config['BUG_REPORT_URL'] is not None:
+            try:
+                if self.language in self.application.config['BUG_REPORT_URL']:
+                    return self.application.config[
+                        'BUG_REPORT_URL'][self.language]
+                else:
+                    return next(iter(
+                        self.application.config['BUG_REPORT_URL'].values()),
+                        None
+                    )
+            except:
+                return None
+        return None
 
 
 class PromMeasureRequest(object):
