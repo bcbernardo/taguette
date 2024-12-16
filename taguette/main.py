@@ -127,10 +127,10 @@ MAIL_SERVER = {{
 
 CHECK_MESSAGES = False
 
-#BUG_REPORT_URL = {
+#BUG_REPORT_URL = {{
 #    "fr_FR": "",
 #    "en_US": "",
-#}
+#}}
 
 # Whether users must explicitly accept cookies before using the website
 COOKIES_PROMPT = False
