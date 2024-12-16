@@ -487,7 +487,7 @@ function deleteTag(tag_id) {
             };
 
             submitTagDelete(tag_id, callbackSuccess, callbackFail);
-        });
+        }, true);
     }
 }
 

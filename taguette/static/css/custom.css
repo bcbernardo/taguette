@@ -1061,6 +1061,7 @@ Document custom select
     right: 25px;
     font-size: 36px;
     margin-left: 50px;
+    text-decoration: none;
 }
 
 /* Backlight checkbox */
