@@ -363,9 +363,17 @@ function showAlert(message, status) {
     });
 }
 
-function showConfirm(message, confirmCallback) {
+function showConfirm(message, confirmCallback, show_danger_button=false) {
 
     $('#confirmMessage').html(message);
+
+    if(show_danger_button) {
+        $('#confirmButton').addClass('btn-danger');
+        $('#confirmButton').removeClass('btn-primary');
+    } else {
+        $('#confirmButton').addClass('btn-primary');
+        $('#confirmButton').removeClass('btn-danger');
+    }
 
     $('#confirmModal').modal('show');
 
