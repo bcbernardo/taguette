@@ -652,17 +652,22 @@ function createDefsHighlightGroup(line, svgNamespace, svg) {
     return highlightsGroup;
 }
 
+const highlightTags = new Map();
 function createSvgUnderline(textParent, rect, highlight, useDefs = false) {
     const svgNamespace = "http://www.w3.org/2000/svg";
 
     const tags = highlight.tags.map(id => findTag(id));
     const colors = tags.map(tag => tag.color);
+    highlightTags.set(highlight.id, tags);
 
     if (colors.length === 1) {
-        return createSvgLine(textParent, svgNamespace,
-            highlight, rect, colors[0],
+        return createSvgLine(textParent,
+            svgNamespace,
+            highlight,
+            rect,
+            colors[0],
             'solid',
-            useDefs, tags);
+            useDefs);
     }
 
     // Gradient
@@ -676,16 +681,18 @@ function createSvgUnderline(textParent, rect, highlight, useDefs = false) {
         rect,
         `url(#gradient-${highlight.id})`,
         'gradient',
-        useDefs,
-        tags
+        useDefs
     );
 }
 
-function createSvgLine(svgParent, svgNamespace, highlight, rect,
+
+function createSvgLine(svgParent,
+                       svgNamespace,
+                       highlight,
+                       rect,
                        color,
                        strokeType = 'solid',
-                       useDefs = false,
-                       tags) {
+                       useDefs = false) {
     const line = document.createElementNS(svgNamespace, "line");
 
     const textElement = svgParent.querySelector('text');
@@ -708,31 +715,19 @@ function createSvgLine(svgParent, svgNamespace, highlight, rect,
 
     if (useDefs) {
         line.setAttribute("onclick", `editHighlight.call(this, '${highlight.id}')`);
-        line.setAttribute("onmouseover", `
-            this.style.strokeWidth='7';
-            showLineTooltip(event, ${JSON.stringify(tags)});
-        `);
-        line.setAttribute("onmouseout", `
-            this.style.strokeWidth='${DEFAULT_STROKE_WIDTH}';
-            hideLineTooltip();
-        `);
+        line.setAttribute("onmouseover", `this.style.strokeWidth='7'; showLineTooltip.call(this, this, '${highlight.id}', true);`);
+        line.setAttribute("onmouseout", `this.style.strokeWidth='${DEFAULT_STROKE_WIDTH}'; hideLineTooltip();`);
     } else {
         line.classList.add("smooth-stroke");
-        line.addEventListener("mouseover", (event) => {
-            line.setAttribute("stroke-width", "7");
-            showLineTooltip(event, tags);
-        });
-        line.addEventListener("mouseout", () => {
-            line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH);
-            hideLineTooltip();
-        });
+        line.addEventListener("mouseover", (event) => { line.setAttribute("stroke-width", "7"); showLineTooltip(event, highlight.id); });
+        line.addEventListener("mouseout", () => { line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH); hideLineTooltip(); });
         line.addEventListener("click", () => editHighlight.call(line, highlight.id));
     }
 
     return line;
 }
 
-function showLineTooltip(event, tags) {
+function showLineTooltip(element, highlightId, useDefs = false) {
     let tooltip = document.getElementById('highlight-tooltip');
     if (!tooltip) {
         tooltip = document.createElement('div');
@@ -750,6 +745,8 @@ function showLineTooltip(event, tags) {
         tooltip.style.zIndex = '1000';
     }
 
+    const tags = highlightTags.get(parseInt(highlightId, 10));
+
     tooltip.innerHTML = tags.map(tag => `
        <div class="tag-badge" style="
            display: block;
@@ -765,9 +762,16 @@ function showLineTooltip(event, tags) {
        </div>
    `).join('');
 
-    tooltip.style.display = 'block';
-    tooltip.style.left = (event.clientX + 10) + 'px';
-    tooltip.style.top = (event.clientY + 10) + 'px';
+    if(useDefs) {
+        const rect = element.getBoundingClientRect();
+        tooltip.style.display = 'block';
+        tooltip.style.left = (rect.right - (rect.width / 2)) + 'px';
+        tooltip.style.top = (rect.top + 10) + 'px';
+    } else {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (element.clientX + 10) + 'px';
+        tooltip.style.top = (element.clientY + 10) + 'px';
+    }
 }
 
 function hideLineTooltip() {
