@@ -458,7 +458,7 @@ class Test2E2MultiUser(SeleniumTest):
                 '<text x="0" y="0" text-anchor="start">'
                 'different content</text>'
                 '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
-                'x1="4" x2="25.3125" y1="10" y2="10" '
+                'x1="2" x2="25.3125" y1="10" y2="10" '
                 'stroke="#000000" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
                 'class="smooth-stroke"></line>'
