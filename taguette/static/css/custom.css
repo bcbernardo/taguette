@@ -629,9 +629,29 @@ a.dropdown-item:hover {
     outline: 0 solid transparent;
 }
 
+.tag-badges {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#dropdownMenuButtonTag {
+    letter-spacing: -0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
 .tag-text {
     font-size: 1rem !important;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 120px !important;
+    display: inline-block;
 }
 
 /* Spinner animation */
@@ -823,6 +843,10 @@ Index project view custom
     color: #464e56;
     font-weight: 600;
     text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
 }
 
 .empty i.fas,

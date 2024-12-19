@@ -228,16 +228,16 @@ function initTagsTreeview(filterTags = null) {
         data: treeData,
         ...customNodeOptions,
         customizeBadges: function(container, node, tree) {
-            container.addClass('d-flex align-items-center');
+            container.addClass('tag-badges');
             if (node.tags && node.tags.length > 0) {
                 container.append($('<span>', {
-                    class: 'badge badge-primary ms-1 badge-fixed-width',
+                    class: 'badge badge-primary badge-fixed-width',
                     title: gettext('Documents'),
                     text: node.tags[0]
                 }));
                 if (node.tags.length > 1) {
                     container.append($('<span>', {
-                        class: 'badge badge-secondary ms-1 ms-2 badge-fixed-width',
+                        class: 'badge badge-secondary badge-fixed-width',
                         title: gettext('Highlights'),
                         text: node.tags[1]
                     }));
@@ -479,10 +479,11 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
+            element.attr('title', node.text);
             element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
                 : `tag-node-${node.id}`);
             if (isTagContextMenu) {
-                element.addClass('tag-context-menu');
+               element.addClass('tag-context-menu');
             }
         },
         addVerticalLine: function(element, node, tree) {
