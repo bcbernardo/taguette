@@ -865,9 +865,10 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
                 addDragFunctionality(elem);
                 elem.innerHTML = chunk.contents;
                 document_contents.appendChild(elem);
-                const cleanText = extractTextFromHtml(chunk.contents);
-                setHighlights(cleanText, elem, info.highlights, info.text_direction);
+                const textStructure = extractFormattedContent(chunk.contents);
+                setHighlights(textStructure, elem, info.highlights, info.text_direction);
                 globalDefs = null;
+                wordTracker = [];
                 chunk_offsets.push(chunk.offset);
             }
 
