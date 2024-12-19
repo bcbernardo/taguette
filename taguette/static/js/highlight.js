@@ -131,7 +131,6 @@ class BaseTextLineSplitter {
         this.wordWidthCache.clear();
     }
 }
-
 class FullTextLineSplitter extends BaseTextLineSplitter {
     constructor(widthManager, font) {
         super(widthManager, font);
@@ -168,6 +167,7 @@ class FullTextLineSplitter extends BaseTextLineSplitter {
         return lines;
     }
 }
+
 class Range {
     constructor(x1, x2) {
         if (x1 > x2) {
@@ -212,38 +212,88 @@ class Ranges {
 
 function createRanges(element, highlight, line) {
     const ranges = new Ranges(false);
-    const node = element.firstChild;
+    const hasTspans = element.getElementsByTagName('tspan').length > 0;
 
-    if (!node) {
-        console.error("Invalid text content: no text node found.");
-        return ranges;
-    }
+    // Handle formatted text with <tspan> elements
+    if (hasTspans) {
+        const tempContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const tempText = document.createElementNS("http://www.w3.org/2000/svg", "text");
 
-    const lineContent = node.textContent;
-    const start = Math.max(highlight.start_offset, line.startOffset) - line.startOffset;
-    const end = Math.min(highlight.end_offset, line.endOffset) - line.startOffset;
+        tempText.setAttribute("x", element.getAttribute("x"));
+        tempText.setAttribute("y", element.getAttribute("y"));
+        tempText.setAttribute("text-anchor", element.getAttribute("text-anchor"));
 
-    // Convert UTF-8 offsets to character offsets
-    const startChar = getCharIndexFromUTF8Index(lineContent, start);
-    const endChar = getCharIndexFromUTF8Index(lineContent, end);
+        // Merge all <tspan> content into one temporary <tspan>
+        const tspans = Array.from(element.getElementsByTagName('tspan'));
+        const validTspan = tspans.find(tspan => tspan.textContent.trim() !== "") || tspans[0];
+        const tempTspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
 
-    if (startChar === -1 || endChar === -1) {
-        console.error("Invalid UTF-8 index.");
-        return ranges;
-    }
+        // Copy attributes from the valid tspan
+        Array.from(validTspan.attributes).forEach(attr => {
+            tempTspan.setAttribute(attr.name, attr.value);
+        });
 
-    const range = document.createRange();
-    range.setStart(node, startChar);
-    range.setEnd(node, endChar);
+        const fullText = tspans.map(tspan => tspan.textContent).join('');
+        tempTspan.textContent = fullText;
 
-    const rects = range.getClientRects();
+        tempText.appendChild(tempTspan);
+        tempContainer.appendChild(tempText);
+        document.body.appendChild(tempContainer);
 
-    for (const rect of rects) {
-        // Adjust the coordinates based on the parent element's position
-        const elementRect = element.getBoundingClientRect();
-        const adjustedLeft = rect.left - elementRect.left;
-        const adjustedRight = rect.right - elementRect.left;
-        ranges.add(adjustedLeft, adjustedRight);
+        // Calculate start and end offsets
+        const start = Math.max(highlight.start_offset, line.startOffset) - line.startOffset;
+        const end = Math.min(highlight.end_offset, line.endOffset) - line.startOffset;
+
+        // Convert UTF-8 offsets to character offsets
+        const startChar = getCharIndexFromUTF8Index(fullText, start);
+        const endChar = getCharIndexFromUTF8Index(fullText, end);
+
+        if (startChar !== -1 && endChar !== -1) {
+            const range = document.createRange();
+            range.setStart(tempTspan.firstChild, startChar);
+            range.setEnd(tempTspan.firstChild, endChar);
+
+            const rects = range.getClientRects();
+            const elementRect = tempText.getBoundingClientRect();
+
+            for (const rect of rects) {
+                // Adjust the coordinates based on the parent element's position
+                const adjustedLeft = rect.left - elementRect.left;
+                const adjustedRight = rect.right - elementRect.left;
+                ranges.add(adjustedLeft, adjustedRight);
+            }
+        }
+
+        // Clean up the temporary container
+        document.body.removeChild(tempContainer);
+    } else {
+        // Handle plain text (no <tspan> formatting)
+        const node = element.firstChild;
+        const lineText = element.textContent;
+
+        // Calculate start and end offsets
+        const start = Math.max(highlight.start_offset, line.startOffset) - line.startOffset;
+        const end = Math.min(highlight.end_offset, line.endOffset) - line.startOffset;
+
+        // Convert UTF-8 offsets to character offsets
+        const startChar = getCharIndexFromUTF8Index(lineText, start);
+        const endChar = getCharIndexFromUTF8Index(lineText, end);
+
+        if (startChar !== -1 && endChar !== -1) {
+            const range = document.createRange();
+            range.setStart(node, startChar);
+            range.setEnd(node, endChar);
+
+            const rects = range.getClientRects();
+            const elementRect = element.getBoundingClientRect();
+
+            for (const rect of rects) {
+                // Adjust the coordinates based on the parent element's position
+                const adjustedLeft = rect.left - elementRect.left;
+                const adjustedRight = rect.right - elementRect.left;
+                ranges.add(adjustedLeft, adjustedRight);
+            }
+        }
     }
 
     return ranges;
@@ -255,7 +305,7 @@ function createRanges(element, highlight, line) {
 
 let document_lines = [];
 const DEFAULT_STROKE_WIDTH = "4";
-
+let wordTracker = {};
 
 function extractTextFromHtml(html) {
     const div = document.createElement('div');
@@ -274,6 +324,82 @@ function extractTextFromHtml(html) {
     return div.textContent.trim();
 }
 
+function extractFormattedContent(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const plainText = extractTextFromHtml(html);
+
+    const formattedPortions = [];
+    let index = 1;
+
+    /**
+     * Count occurrences of a specific text up to the current node.
+     */
+    function countOccurrencesUpTo(searchText, node) {
+        let count = 0;
+        let tempDiv = document.createElement('div');
+
+        // Traverse previous siblings and parent nodes
+        let currentNode = node;
+        while (currentNode.previousSibling) {
+            tempDiv.prepend(currentNode.previousSibling.cloneNode(true));
+            currentNode = currentNode.previousSibling;
+        }
+        while (currentNode.parentNode && currentNode.parentNode !== div) {
+            currentNode = currentNode.parentNode;
+            while (currentNode.previousSibling) {
+                tempDiv.prepend(currentNode.previousSibling.cloneNode(true));
+                currentNode = currentNode.previousSibling;
+            }
+        }
+
+        // Count occurrences of the text
+        const textUpToNode = extractTextFromHtml(tempDiv.innerHTML);
+        let position = 0;
+        while ((position = textUpToNode.indexOf(searchText, position)) !== -1) {
+            count++;
+            position += searchText.length;
+        }
+
+        return count + 1;
+    }
+
+    /**
+     * Recursively processes nodes to extract formatted content.
+     */
+    function processNode(node) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            let format = null;
+            switch (node.tagName) {
+                case 'STRONG': case 'B': format = 'bold'; break;
+                case 'EM': case 'I': format = 'italic'; break;
+                case 'U': format = "underline"; break;
+                case 'H1': format = "heading1"; break;
+                case 'H2': format = "heading2"; break;
+                case 'H3': format = "heading3"; break;
+                case 'H4': case 'H5': case 'H6': format = "bold"; break;
+            }
+
+            if (format) {
+                const text = node.textContent;
+                formattedPortions.push({
+                    index: index++,
+                    text: text,
+                    format: format,
+                    wordPosition: countOccurrencesUpTo(text, node)
+                });
+            }
+        }
+
+        // Process child nodes
+        Array.from(node.childNodes).forEach(child => processNode(child));
+    }
+
+    processNode(div);
+
+    return { html, plainText, formattedPortions };
+}
+
 function getMaxWidth() {
     const computedStyle = window.getComputedStyle(document_contents);
     return parseFloat(computedStyle.width) -
@@ -283,36 +409,38 @@ function getMaxWidth() {
         parseFloat(computedStyle.borderRightWidth);
 }
 
-function setHighlights(text, container, highlights, direction) {
+function setHighlights(textStructure, container, highlights, direction) {
 
     const maxWidth = getMaxWidth();
     const font = Font.create(container);
 
-    displayTextWithHighlights(container, text, font, maxWidth, highlights, direction);
+    displayTextWithHighlights(container, textStructure, font, maxWidth, highlights, direction);
 }
 
-function displayTextWithHighlights(container, text, font, maxWidth, highlights, direction) {
+function displayTextWithHighlights(container, textStructure,  font, maxWidth, highlights, direction) {
+
     const startTime = performance.now();
     log('start displayTextWithHighlights');
 
     container.innerHTML = '';
 
-    const utf8IndexMap = createUTF8IndexMap(text);
+    const utf8IndexMap = createUTF8IndexMap(textStructure.plainText);
 
     const lineWidthManager = new LineWidthManager(maxWidth, 50);
     const splitter = new FullTextLineSplitter(lineWidthManager, font);
 
     const splitStartTime = performance.now();
-    const lines = splitter.split(text, container, highlights);
+    const lines = splitter.split(textStructure.plainText);
 
     log('line total : ' + lines.length);
+    console.log(lines);
 
     const splitEndTime = performance.now();
     log(`split time : ${((splitEndTime - splitStartTime) / 1000).toFixed(3)} secondes`);
 
     const highlightStartTime = performance.now();
     lines.forEach(line => {
-        applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction);
+        applyHighlightsToLine(line, textStructure, highlights, container, utf8IndexMap, direction);
     });
     const highlightEndTime = performance.now();
     log(`applyHighlights time : ${((highlightEndTime - highlightStartTime) / 1000).toFixed(3)} secondes`);
@@ -321,15 +449,14 @@ function displayTextWithHighlights(container, text, font, maxWidth, highlights, 
     log(`total displayTextWithHighlights time: ${((endTime - startTime) / 1000).toFixed(3)} secondes`);
 }
 
-
 // ******* Handle SVG Line Render ************* //
 
-function applyHighlightsToLine(line, text, highlights, container, utf8IndexMap, direction) {
+function applyHighlightsToLine(line, textStructure, highlights, container, utf8IndexMap, direction) {
     // Switch to using <defs> for line underline in Firefox to prevent interference with text selection.
-    applyHighlights(line, text, highlights, container, utf8IndexMap, direction, isFirefox());
+    applyHighlights(line, textStructure, highlights, container, utf8IndexMap, direction, isFirefox());
 }
 
-function applyHighlights(line, text, highlights, container, utf8IndexMap, direction, useDefs = false) {
+function applyHighlights(line, textStructure, highlights, container, utf8IndexMap, direction, useDefs = false) {
     const svgNamespace = "http://www.w3.org/2000/svg";
 
     // Create global defs if needed
@@ -340,8 +467,14 @@ function applyHighlights(line, text, highlights, container, utf8IndexMap, direct
 
     document_lines.push(line);
 
-    const lineContent = getUTF8Substring(text, line.startOffset, line.endOffset, utf8IndexMap);
-    if (lineContent === '') return;
+    const lineContent = getUTF8Substring(textStructure.plainText, line.startOffset, line.endOffset, utf8IndexMap);
+
+    if (lineContent === '\n') {
+        const textElement = document.createElementNS(svgNamespace, "text");
+        textElement.textContent = lineContent;
+        container.appendChild(textElement);
+        return;
+    }
 
     // Line row container
     const divContainer = document.createElement('div');
@@ -356,7 +489,8 @@ function applyHighlights(line, text, highlights, container, utf8IndexMap, direct
     textGroup.setAttribute("transform", "translate(0, 20)");
 
     const textElement = document.createElementNS(svgNamespace, "text");
-    setupTextAttributes(textElement, lineContent, direction);
+    setTextAttributes(textElement, lineContent, direction);
+    formatText(textElement, textStructure, line, utf8IndexMap);
 
     textGroup.appendChild(textElement);
     svg.appendChild(textGroup);
@@ -387,14 +521,121 @@ function applyHighlights(line, text, highlights, container, utf8IndexMap, direct
     adjustLineHeight(divContainer, textGroup, highlightCount);
 }
 
-function setupTextAttributes(textElement, lineContent, direction) {
+function setTextAttributes(textElement, lineContent, direction) {
     const textXPosition = direction === 'RIGHT_TO_LEFT' ? "100%" : "0";
     const textAnchor = direction === 'RIGHT_TO_LEFT' ? "end" : "start";
 
     textElement.setAttribute("x", textXPosition);
     textElement.setAttribute("y", "0");
     textElement.setAttribute("text-anchor", textAnchor);
-    textElement.textContent = lineContent;
+}
+
+function formatText(textElement, formattedContent, line, utf8IndexMap) {
+    const svgNamespace = "http://www.w3.org/2000/svg";
+
+    // Extract line content from the plain text using UTF-8 offsets
+    const lineContent = getUTF8Substring(
+        formattedContent.plainText,
+        line.startOffset,
+        line.endOffset,
+        utf8IndexMap
+    );
+
+    let remainingPortions = formattedContent.formattedPortions;
+
+    // Return early if no formatted text exists in this line
+    if (!remainingPortions.some(portion => lineContent.includes(portion.text))) {
+        textElement.textContent = lineContent;
+        return;
+    }
+
+    let remainingText = lineContent;
+
+    // Iterate over the remaining line text to find and format portions
+    while (remainingText.length > 0) {
+        // Find the next formatted portion in the remaining text
+        const portionIndex = remainingPortions.findIndex(portion =>
+            remainingText.includes(portion.text)
+        );
+
+        if (portionIndex === -1) {
+            // No more formatted portions, add the remaining raw text
+            if (remainingText) {
+                const tspan = document.createElementNS(svgNamespace, "tspan");
+                tspan.textContent = remainingText;
+                textElement.appendChild(tspan);
+            }
+            break;
+        }
+
+        const nextFormattedPortion = remainingPortions[portionIndex];
+        const textIndex = remainingText.indexOf(nextFormattedPortion.text);
+        const word = nextFormattedPortion.text;
+
+        // Initialize word tracker for this word if not already set
+        if (!wordTracker[word]) {
+            wordTracker[word] = 0;
+        }
+
+        // Increment the tracker even if the word isn't formatted yet
+        wordTracker[word]++;
+
+        // Add raw text before the formatted portion
+        if (textIndex > 0) {
+            const tspan = document.createElementNS(svgNamespace, "tspan");
+            tspan.textContent = remainingText.substring(0, textIndex);
+            textElement.appendChild(tspan);
+        }
+
+        // Format the portion only if the occurrence matches the word position
+        if (wordTracker[word] === nextFormattedPortion.wordPosition) {
+            const formattedTspan = document.createElementNS(svgNamespace, "tspan");
+            applyFormatAttributes(formattedTspan, nextFormattedPortion.format);
+
+            formattedTspan.textContent = nextFormattedPortion.text;
+            textElement.appendChild(formattedTspan);
+
+            // Remove the processed portion from the list
+            remainingPortions.splice(portionIndex, 1);
+        } else {
+            // Add as raw text if the occurrence doesn't match
+            const tspan = document.createElementNS(svgNamespace, "tspan");
+            tspan.textContent = nextFormattedPortion.text;
+            textElement.appendChild(tspan);
+        }
+
+        // Update the remaining text to process
+        remainingText = remainingText.substring(textIndex + nextFormattedPortion.text.length);
+    }
+}
+
+function applyFormatAttributes(tspan, format) {
+    switch (format) {
+        case "bold":
+            tspan.setAttribute("font-weight", "bold");
+            break;
+        case "italic":
+            tspan.setAttribute("font-style", "italic");
+            break;
+        case "heading1":
+            tspan.setAttribute("font-weight", "bold");
+            tspan.setAttribute("font-size", "150%");
+            break;
+        case "heading2":
+            tspan.setAttribute("font-weight", "bold");
+            tspan.setAttribute("font-size", "130%");
+            break;
+        case "heading3":
+            tspan.setAttribute("font-weight", "bold");
+            tspan.setAttribute("font-size", "120%");
+            break;
+        case "underline":
+            tspan.setAttribute("text-decoration", "underline");
+            break;
+        case "strikethrough":
+            tspan.setAttribute("text-decoration", "line-through");
+            break;
+    }
 }
 
 function createDefsHighlightGroup(line, svgNamespace, svg) {
@@ -411,12 +652,22 @@ function createDefsHighlightGroup(line, svgNamespace, svg) {
     return highlightsGroup;
 }
 
+const highlightTags = new Map();
 function createSvgUnderline(textParent, rect, highlight, useDefs = false) {
     const svgNamespace = "http://www.w3.org/2000/svg";
-    const colors = highlight.tags.map(id => findTag(id).color);
+
+    const tags = highlight.tags.map(id => findTag(id));
+    const colors = tags.map(tag => tag.color);
+    highlightTags.set(highlight.id, tags);
 
     if (colors.length === 1) {
-        return createSvgLine(textParent, svgNamespace, highlight, rect, colors[0], 'solid', useDefs);
+        return createSvgLine(textParent,
+            svgNamespace,
+            highlight,
+            rect,
+            colors[0],
+            'solid',
+            useDefs);
     }
 
     // Gradient
@@ -434,13 +685,20 @@ function createSvgUnderline(textParent, rect, highlight, useDefs = false) {
     );
 }
 
-function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeType = 'solid', useDefs = false) {
+
+function createSvgLine(svgParent,
+                       svgNamespace,
+                       highlight,
+                       rect,
+                       color,
+                       strokeType = 'solid',
+                       useDefs = false) {
     const line = document.createElementNS(svgNamespace, "line");
 
     const textElement = svgParent.querySelector('text');
     const textBox = textElement.getBBox();
 
-    const x1 = textBox.x + (rect.x1 === 0 ? 4 : rect.x1);
+    const x1 = textBox.x + (rect.x1 === 0 ? 2 : rect.x1);
     const x2 = textBox.x + rect.x2;
 
     // Set basic attributes
@@ -457,16 +715,70 @@ function createSvgLine(svgParent, svgNamespace, highlight, rect, color, strokeTy
 
     if (useDefs) {
         line.setAttribute("onclick", `editHighlight.call(this, '${highlight.id}')`);
-        line.setAttribute("onmouseover", "this.style.strokeWidth='7'");
-        line.setAttribute("onmouseout", `this.style.strokeWidth='${DEFAULT_STROKE_WIDTH}'`);
+        line.setAttribute("onmouseover", `this.style.strokeWidth='7'; showLineTooltip.call(this, this, '${highlight.id}', true);`);
+        line.setAttribute("onmouseout", `this.style.strokeWidth='${DEFAULT_STROKE_WIDTH}'; hideLineTooltip();`);
     } else {
         line.classList.add("smooth-stroke");
-        line.addEventListener("mouseover", () => line.setAttribute("stroke-width", "7"));
-        line.addEventListener("mouseout", () => line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH));
+        line.addEventListener("mouseover", (event) => { line.setAttribute("stroke-width", "7"); showLineTooltip(event, highlight.id); });
+        line.addEventListener("mouseout", () => { line.setAttribute("stroke-width", DEFAULT_STROKE_WIDTH); hideLineTooltip(); });
         line.addEventListener("click", () => editHighlight.call(line, highlight.id));
     }
 
     return line;
+}
+
+function showLineTooltip(element, highlightId, useDefs = false) {
+    let tooltip = document.getElementById('highlight-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'highlight-tooltip';
+        document.body.appendChild(tooltip);
+
+        tooltip.style.position = 'fixed';
+        tooltip.style.padding = '8px';
+        tooltip.style.background = '#fff';
+        tooltip.style.border = '1px solid #ddd';
+        tooltip.style.borderRadius = '4px';
+        tooltip.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        tooltip.style.fontSize = '12px';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.zIndex = '1000';
+    }
+
+    const tags = highlightTags.get(parseInt(highlightId, 10));
+
+    tooltip.innerHTML = tags.map(tag => `
+       <div class="tag-badge" style="
+           display: block;
+           padding: 4px 8px;
+           margin: 4px 0;
+           border-radius: 3px;
+           background-color: ${tag.color};
+           color: white;
+           font-size: 1rem;
+           white-space: nowrap;
+       ">
+           ${tag.path}
+       </div>
+   `).join('');
+
+    if(useDefs) {
+        const rect = element.getBoundingClientRect();
+        tooltip.style.display = 'block';
+        tooltip.style.left = (rect.right - (rect.width / 2)) + 'px';
+        tooltip.style.top = (rect.top + 10) + 'px';
+    } else {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (element.clientX + 10) + 'px';
+        tooltip.style.top = (element.clientY + 10) + 'px';
+    }
+}
+
+function hideLineTooltip() {
+    const tooltip = document.getElementById('highlight-tooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
 }
 
 function createSvgGradient(svgNamespace, highlight, colors) {
@@ -495,7 +807,9 @@ function addHighlight(highlight) {
     document_lines.forEach(line => {
         if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
             const divContainer = document.querySelector(`[data-line--id="line-${line.startOffset}-${line.endOffset}"]`);
-
+            if (!divContainer) {
+                return;
+            }
             const useDefs = isFirefox();
             if (useDefs) {
                 addHighlightWithDefs(line, highlight, divContainer);
@@ -564,7 +878,9 @@ function removeHighlight(id, line = null) {
     linesToCheck.forEach(line => {
         if (highlight.end_offset > line.startOffset && highlight.start_offset < line.endOffset) {
             const divContainer = document.querySelector(`[data-line--id="line-${line.startOffset}-${line.endOffset}"]`);
-
+            if (!divContainer) {
+                return;
+            }
             const useDefs = isFirefox();
             if (useDefs) {
                 removeHighlightWithDefs(line, highlight, divContainer);
@@ -671,7 +987,6 @@ function calculateYPosition(itemsCount) {
 
     return baseY + (itemsCount * spacing) + (itemsCount * additionalSpacing);
 }
-
 
 // Save highlight drag drop
 function saveHighlightDragDrop(tagId) {

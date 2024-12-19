@@ -458,7 +458,7 @@ class Test2E2MultiUser(SeleniumTest):
                 '<text x="0" y="0" text-anchor="start">'
                 'different content</text>'
                 '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
-                'x1="4" x2="25.3125" y1="10" y2="10" '
+                'x1="2" x2="25.3125" y1="10" y2="10" '
                 'stroke="#000000" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
                 'class="smooth-stroke"></line>'
@@ -495,21 +495,23 @@ class Test2E2MultiUser(SeleniumTest):
                 'stroke="#000000" stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
                 'onclick="editHighlight.call(this, \'1\')" '
-                'onmouseover="this.style.strokeWidth='
-                '\'7\'" onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                'onmouseover="this.style.strokeWidth=\'7\'; '
+                'showLineTooltip.call(this, this, \'1\', true);" '
+                'onmouseout="this.style.strokeWidth=\'4\'; '
+                'hideLineTooltip();"></line>'
                 '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
                 'x1="116.53334045410156" x2="152.76666259765625" '
                 'y1="45" y2="45.1" stroke="url(#gradient-2)" '
                 'stroke-linecap="round" '
                 'stroke-width="4" pointer-events="all" '
                 'onclick="editHighlight.call(this, \'2\')" '
-                'onmouseover="this.style.strokeWidth=\'7\'" '
-                'onmouseout="this.style.strokeWidth=\'4\'"></line>'
+                'onmouseover="this.style.strokeWidth=\'7\'; '
+                'showLineTooltip.call(this, this, \'2\', true);" '
+                'onmouseout="this.style.strokeWidth=\'4\'; '
+                'hideLineTooltip();"></line>'
                 '</g></defs>'
             )
         }
-
-        print(self.find_by_id('document-contents').get_attribute('innerHTML'))
 
         self.assertEqual(
             self.find_by_id('document-contents').get_attribute('innerHTML'),
