@@ -1,3 +1,4 @@
+import re
 import alembic.util.exc
 import asyncio
 import functools
@@ -6,7 +7,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_
+from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -21,10 +22,10 @@ from .. import database
 from .. import extract
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
-
+from ..utils import get_path_informations
+from ..demodata import DEMO_DATA
 
 logger = logging.getLogger(__name__)
-
 
 PROM_POLLING_CLIENTS = prometheus_client.Gauge(
     'polling_clients',
@@ -71,6 +72,90 @@ class CheckUser(BaseHandler):
             if user is not None and not user.disabled:
                 return self.send_json({'exists': True})
         return self.send_json({'exists': False})
+
+
+class CreateDemoProject(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('create_demo_project')
+    def post(self):
+        documents = []
+        tags = []
+        # Create project
+        project = database.Project(
+            name=self.gettext("Tutorial - board games"),
+            description=self.gettext(
+                'A demo project to showcase LibreQDA'
+            ))
+        self.db.add(project)
+        # Add user as admin
+        membership = database.ProjectMember(
+            project=project,
+            user_login=self.current_user,
+            privileges=database.Privileges.ADMIN
+        )
+        self.db.add(membership)
+        self.db.flush()
+
+        # Select language for demo
+        user = self.db.query(database.User).get(self.current_user)
+        lang = user.language
+        if lang not in DEMO_DATA.keys():
+            lang = self.config['DEFAULT_LANGUAGE']
+        for document in DEMO_DATA[lang]['documents']:
+            d = database.Document(
+                project_id=project.id,
+                name=document['name'],
+                description="",
+                filename=document['filename'],
+                text_direction=document['text_direction'],
+                contents=document['contents'],
+                favorite=document['favorite']
+            )
+            self.db.add(d)
+            self.db.flush()
+            documents.append(d)
+
+        for tag in DEMO_DATA[lang]['tags']:
+            t = database.Tag(project=project,
+                             color=tag['color'],
+                             path=tag['path'],
+                             description=tag['description'])
+            self.db.add(t)
+            self.db.flush()
+            tags.append(t)
+            if tag['childrens']:
+                for tag2 in tag['childrens']:
+                    t2 = database.Tag(project=project,
+                                      color=tag2['color'],
+                                      path=tag2['path'],
+                                      description=tag2['description'],
+                                      parent=t)
+                    self.db.add(t2)
+                    self.db.flush()
+                    tags.append(t2)
+
+        self.db.commit()
+
+        for highlight in DEMO_DATA[lang]['highlights']:
+            h = database.Highlight(
+                document=documents[highlight['document']],
+                start_offset=highlight['start_offset'],
+                end_offset=highlight['end_offset'],
+                snippet=highlight['snippet'])
+            self.db.add(h)
+            self.db.flush()
+            for t in highlight['tags']:
+                h.tags.append(tags[t])
+            self.db.flush()
+            logger.info(h)
+        self.db.commit()
+
+        return self.send_json(
+            {
+                'html': self.render_string('partials/project_card.html',
+                                           project=project,
+                                           demo=True)
+            })
 
 
 class ProjectMeta(BaseHandler):
@@ -124,6 +209,7 @@ class DocumentAdd(BaseHandler):
                 raise MissingArgumentError('file')
             content_type = file.content_type
             filename = validate.fix_filename(unquote(file.filename))
+            favorite = False
             direction = self.get_body_argument('text_direction',
                                                'LEFT_TO_RIGHT')
             try:
@@ -153,6 +239,7 @@ class DocumentAdd(BaseHandler):
                     name=name,
                     description=description,
                     filename=filename,
+                    favorite=favorite,
                     project=project,
                     text_direction=direction,
                     contents=body,
@@ -215,6 +302,8 @@ class Document(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     document.description = obj['description']
+                if 'favorite' in obj:
+                    document.favorite = obj['favorite']
                 if 'text_direction' in obj:
                     direction = obj['text_direction']
                     try:
@@ -233,7 +322,6 @@ class Document(BaseHandler):
                 self.db.commit()
                 self.db.refresh(cmd)
                 self.application.notify_project(document.project_id, cmd)
-
             return self.send_json({'id': document.id})
         except validate.InvalidFormat as e:
             logger.info("Error validating DocumentUpdate: %r", e)
@@ -312,9 +400,14 @@ class TagAdd(BaseHandler):
             return self.send_error_json(403, self.gettext("Unauthorized"))
         try:
             obj = self.get_json()
+
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
+            validate.color(obj['color'])
+
             tag = database.Tag(project=project,
+                               parent_id=obj['parent_id'],
+                               color=obj['color'],
                                path=obj['path'],
                                description=obj['description'])
             try:
@@ -357,6 +450,11 @@ class TagUpdate(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     tag.description = obj['description']
+                if 'parent_id' in obj:
+                    tag.parent_id = obj['parent_id']
+                if 'color' in obj:
+                    validate.color(obj['color'])
+                    tag.color = obj['color']
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,
@@ -455,6 +553,41 @@ class TagMerge(BaseHandler):
         return self.send_json({'id': tag_dest.id})
 
 
+def calculate_tag_counts(db_session, tag_in_db, document, is_deletion=False):
+
+    # Increment or decrement the number of highlights associated with the tag
+    highlights_count = tag_in_db.highlights_count
+
+    # Get the list of associated document IDs, or an empty list if None
+    document_ids = tag_in_db.document_ids \
+        if tag_in_db.document_ids is not None else []
+    documents_count = len(document_ids)
+
+    if is_deletion:
+        highlights_count -= 1
+    else:
+        highlights_count += 1
+
+    if is_deletion:
+        # Check if there are still any highlights associated with the document
+        remaining_highlights = (
+            db_session.query(database.Highlight).join(
+                database.highlight_tags).filter(
+                database.highlight_tags.c.tag_id == tag_in_db.id,
+                database.Highlight.document_id == document.id
+            ).count())
+        if remaining_highlights == 0:
+            documents_count -= 1
+    else:
+        if document.id not in document_ids:
+            documents_count += 1
+
+    return {
+        'highlights_count': highlights_count,
+        'documents_count': documents_count
+    }
+
+
 class HighlightAdd(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('highlight_add')
@@ -473,10 +606,10 @@ class HighlightAdd(BaseHandler):
             .filter(database.Tag.project_id == document.project_id)
             .all()
         )
+        snippet = extract.extract(document.contents, start, end)
         if set(tag.id for tag in tags) != new_tags:
             return self.send_error_json(400, self.gettext("No such tag"))
 
-        snippet = extract.extract(document.contents, start, end)
         if all(c in '\r\n\t' for c in snippet):
             return self.send_error_json(400, self.gettext("Empty highlight"))
 
@@ -499,13 +632,21 @@ class HighlightAdd(BaseHandler):
                     for tag in sorted(new_tags)
                 ],
             )
+
+        tag_count_changes = {}
+        for tag in tags:
+            tag_in_db = self.db.query(database.Tag).get(tag.id)
+            tag_count_changes[tag.id] = calculate_tag_counts(self.db,
+                                                             tag_in_db,
+                                                             document)
+
         cmd = database.Command.highlight_add(
             self.current_user,
             document,
             hl,
             sorted(new_tags),
         )
-        cmd.tag_count_changes = {tag: 1 for tag in obj.get('tags')}
+        cmd.tag_count_changes = tag_count_changes
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -543,9 +684,9 @@ class HighlightUpdate(BaseHandler):
                 # Check the tags exist and are in this project
                 tags = (
                     self.db.query(database.Tag)
-                        .filter(database.Tag.id.in_(new_tags))
-                        .filter(database.Tag.project_id == document.project_id)
-                        .all()
+                    .filter(database.Tag.id.in_(new_tags))
+                    .filter(database.Tag.project_id == document.project_id)
+                    .all()
                 )
                 if set(tag.id for tag in tags) != new_tags:
                     return self.send_error_json(
@@ -574,9 +715,17 @@ class HighlightUpdate(BaseHandler):
                 # Compute the change in tag counts
                 tag_count_changes = {}
                 for tag in old_tags - new_tags:
-                    tag_count_changes[tag] = -1
+                    tag_in_db = self.db.query(database.Tag).get(tag)
+                    tag_count_changes[tag] = {
+                        'highlights_count': tag_in_db.highlights_count,
+                        'documents_count': tag_in_db.documents_count
+                    }
+
                 for tag in new_tags - old_tags:
-                    tag_count_changes[tag] = 1
+                    tag_in_db = self.db.query(database.Tag).get(tag)
+                    tag_count_changes[tag] = calculate_tag_counts(self.db,
+                                                                  tag_in_db,
+                                                                  document)
             else:
                 # Obtain old tags from database
                 new_tags = set(
@@ -617,12 +766,21 @@ class HighlightUpdate(BaseHandler):
             .all()
         ]
         self.db.delete(hl)
+        # Compute the change in tag counts for each old tag
+        tag_count_changes = {}
+        for tag in old_tags:
+            tag_in_db = self.db.query(database.Tag).get(tag)
+            tag_count_changes[tag] = calculate_tag_counts(self.db,
+                                                          tag_in_db,
+                                                          document,
+                                                          is_deletion=True)
+
         cmd = database.Command.highlight_delete(
             self.current_user,
             document,
             hl.id,
         )
-        cmd.tag_count_changes = {tag: -1 for tag in old_tags}
+        cmd.tag_count_changes = tag_count_changes
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -637,7 +795,7 @@ class Highlights(BaseHandler):
 
     @api_auth
     @PROM_REQUESTS.sync('highlights')
-    def get(self, project_id, path):
+    def get(self, project_id, paths):
         project, _ = self.get_project(project_id)
         page = self.get_query_argument('page', '1')
         try:
@@ -647,33 +805,83 @@ class Highlights(BaseHandler):
         if page < 0:
             self.send_error_json(404, "Bad page number")
 
-        if path:
-            tag = aliased(database.Tag)
-            hltag = aliased(database.highlight_tags)
-            document = aliased(database.Document)
-            query = (
-                self.db.query(database.Highlight, document.text_direction)
-                .options(joinedload(database.Highlight.tags))
-                .join(hltag, hltag.c.highlight_id == database.Highlight.id)
-                .join(tag, hltag.c.tag_id == tag.id)
-                .join(document, document.id == database.Highlight.document_id)
-                .filter(tag.path.startswith(path))
-                .filter(tag.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
+        list_of_paths, operator_type, exclude_paths = get_path_informations(
+            paths)
+
+        tag = aliased(database.Tag)
+        hl_tag = aliased(database.highlight_tags)
+        document = aliased(database.Document)
+
+        # main query
+        query = (
+            self.db.query(database.Highlight, document.text_direction)
+            .options(joinedload(database.Highlight.tags))
+            .join(hl_tag, hl_tag.c.highlight_id == database.Highlight.id)
+            .join(tag, hl_tag.c.tag_id == tag.id)
+            .join(document, document.id == database.Highlight.document_id)
+            .filter(tag.project == project)
+        )
+
+        if any(list_of_paths) and operator_type == 'or':
+            query = query.filter(tag.path.in_(list_of_paths))
+        elif any(list_of_paths) and operator_type == 'and':
+            subquery = (self.db.query(hl_tag.c.highlight_id)
+                        .join(tag, hl_tag.c.tag_id == tag.id)
+                        .filter(
+                tag.path.in_(list_of_paths),
+                tag.project == project
             )
+                .group_by(hl_tag.c.highlight_id)
+                .having(
+                func.count(distinct(tag.id)) == len(list_of_paths)
+            )
+                .subquery())
+            query = query.join(
+                subquery, subquery.c.highlight_id == database.Highlight.id)
+        elif any(list_of_paths) and operator_type == 'mixed':
+            or_conditions = []
+            # check to remove  ! if necessary
+            for group in list_of_paths:
+                if len(group) == 1:
+                    or_conditions.append(tag.path == group[0])
+                else:
+                    and_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                    .join(tag, hl_tag.c.tag_id == tag.id)
+                                    .filter(tag.project == project)
+                                    .filter(tag.path.in_(group))
+                                    .group_by(hl_tag.c.highlight_id)
+                                    .having(
+                                        func.count(
+                                            distinct(tag.id)) == len(group))
+                                    .subquery())
+                    or_conditions.append(database.Highlight.id.in_(
+                        self.db.query(and_subquery.c.highlight_id)))
+            if or_conditions:
+                query = query.filter(or_(*or_conditions))
         else:
             # Special case to select all highlights: we also need to select
             # highlights that have no tag at all
-            document = aliased(database.Document)
             query = (
                 self.db.query(database.Highlight, document.text_direction)
                 .options(joinedload(database.Highlight.tags))
                 .join(document, document.id == database.Highlight.document_id)
                 .filter(document.project == project)
-                .order_by(database.Highlight.document_id,
-                          database.Highlight.start_offset)
             )
+
+        # Handle exclusions
+        if any(exclude_paths):
+            exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
+                                .join(tag, hl_tag.c.tag_id == tag.id)
+                                .filter(tag.path.in_(exclude_paths),
+                                        tag.project == project)
+                                .subquery())
+            query = query.filter(
+                not_(database.Highlight.id.in_(exclude_subquery)))
+
+        query = query.order_by(
+            database.Highlight.document_id,
+            database.Highlight.start_offset
+        )
 
         total = query.count()
         highlights = (
@@ -695,6 +903,68 @@ class Highlights(BaseHandler):
                 for hl, direction in highlights
             ],
             'pages': math.ceil(total / self.PAGE_SIZE),
+        })
+
+
+class Search(BaseHandler):
+    PAGE_SIZE = 5
+
+    @api_auth
+    @PROM_REQUESTS.sync('search')
+    def get(self, project_id, search_text):
+        project, _ = self.get_project(project_id)
+        page = self.get_query_argument('page', '1')
+        try:
+            page = int(page, 10) - 1
+        except (ValueError, OverflowError):
+            page = -1
+        if page < 0:
+            self.send_error_json(404, self.gettext("Bad page number"))
+
+        search_text_escaped = f"%{search_text}%"
+        count_total = self.db.execute(
+            'SELECT count(d.id) as count '
+            'FROM documents as d '
+            'WHERE d.project_id = :project_id AND '
+            'LOWER(d.contents) like :search_text_escaped',
+            {
+                'project_id': project_id,
+                'search_text_escaped': search_text_escaped,
+            })
+        total = (count_total.first())['count']
+        # TODO: find a way to do this within SQLALchemy..
+        char_length = 'CHAR_LENGTH'
+        if self.application.config['DATABASE'].startswith('sqlite:'):
+            char_length = 'LENGTH'
+        result = self.db.execute(
+            'SELECT d.id, d.name, d.contents, '
+            f'(({char_length}(d.contents) - '
+            f'{char_length}(REPLACE(LOWER(d.contents), :search_text, \'\'))) '
+            f'/ {char_length}(:search_text)) as occurences '
+            'FROM documents as d '
+            'WHERE d.project_id = :project_id AND '
+            'LOWER(d.contents) like :search_text_escaped '
+            'ORDER BY occurences DESC '
+            'LIMIT :per_page OFFSET :start', {
+                'project_id': project_id,
+                'search_text': search_text,
+                'search_text_escaped': search_text_escaped,
+                'start': page * self.PAGE_SIZE,
+                'per_page': self.PAGE_SIZE
+            })
+        return self.send_json({
+            'documents': [
+                {
+                    'id': d['id'],
+                    'name': d['name'],
+                    'occurences': d['occurences'],
+                    'contents': re.sub('<[^<]+?>', '', d['contents']),
+                }
+                for d in result
+            ],
+            'nb_results': total,
+            'pages': math.ceil(total / self.PAGE_SIZE),
+            'search_text': search_text
         })
 
 
@@ -943,6 +1213,8 @@ class ProjectEvents(BaseHandler):
             return new
 
         cmds_json = [_change_cmd_json(cmd) for cmd in cmds_json]
+
+        tornado.log.access_log.info(cmds_json)
 
         return await self.send_json({'events': cmds_json})
 

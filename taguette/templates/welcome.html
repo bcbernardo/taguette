@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% set active_page = "index" %}
 
-{% block title %}{% trans "page title" %}Welcome{% endtrans %} | Taguette{% endblock %}
+{% block title %}{% trans "page title" %}Welcome{% endtrans %} | LibreQDA{% endblock %}
 
 {% block contents %}
 <div class="jumbotron">
   <h1 class="display-3">{% trans "title" %}Welcome{% endtrans %}</h1>
-  <p class="lead">{% trans %}<span style="font-family:BadScript;"><a href="https://www.taguette.org/">TAGUETTE</a></span> is an open-source web-based document tagging tool for qualitative data analysis.{% endtrans %}</p>
-  <p>{% trans %}Using this tool, you can upload a collection of documents, create a hierarchy of tags, and annotate portions of documents with tags and notes that you can recall and organize later.{% endtrans %}</p>
+  <p class="lead">{% trans %}<span><a href="https://help.libreqda.org/">LibreQDA</a></span> is an open-source web-based document tagging tool for qualitative data analysis.{% endtrans %}</p>
+  <p>{% trans %}Using this tool, you can upload a collection of documents, create a hierarchy of codes, and annotate portions of documents with codes and notes that you can recall and organize later.{% endtrans %}</p>
   {% if register_enabled %}
   <p>{% trans url=reverse_url('register') %}<a href="{{ url }}">Register now</a> for free and get started!{% endtrans %}</p>
   {% endif %}

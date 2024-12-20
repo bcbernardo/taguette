@@ -17,7 +17,7 @@ import taguette
 from .base import PROM_DATABASE_VERSION
 from .copy import copy_project  # noqa: F401
 from .models import Base, JSON, User, Project, Privileges, ProjectMember, \
-    TextDirection, Document, Command, Highlight, Tag, \
+    TextDirection, Document, Command, Highlight, Tag, EdugainIdps, \
     highlight_tags  # noqa: F401
 
 

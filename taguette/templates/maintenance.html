@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% set active_page = "" %}
+
+{% block title %}{% trans "page title" %}Maintenance{% endtrans %} | LibreQDA{% endblock %}
+
+{% block contents %}
+    {{ maintenance_message|safe }}
+{% endblock %}

@@ -1,382 +1,203 @@
 {% extends "base.html" %}
 {% set active_page = "project" %}
 
-{% block title %}{{ project.name }} | Taguette{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ static_url('css/vendor/hierarchy-select.min.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap-treeview.min.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/vendor/jquery.contextMenu.min.css') }}">
+{% endblock %}
+
+{% block title %}{{ project.name }} | LibreQDA{% endblock %}
 
 {% block containerclass %}container-fluid{% endblock %}
 
 {% block contents %}
-<div class="row">
-  <!-- Left panel -->
-  <div class="col-md-3">
-    <div class="sticky-top">
-      <!-- Tab selector -->
-      <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item">
-          <a class="nav-link" id="project-tab" data-bs-toggle="tab" href="#project" role="tab" aria-controls="project" aria-selected="true">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Project info{% endtrans %}</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Documents{% endtrans %}</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="tags-tab" data-bs-toggle="tab" href="#tags" role="tab" aria-controls="tags" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans "tab" %}Highlights{% endtrans %}</a>
-        </li>
-      </ul>
-
-      <div class="tab-content" id="myTabContent">
-
-        <!-- Project info and metadata -->
-        <div class="tab-pane fade" id="project" role="tabpanel" aria-labelledby="project-tab">
-          <form id="project-metadata-form">
-            <div class="form-group">
-              <label for="project-name" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Name{% endtrans %}</label>
-              <input type="text" class="form-control" id="project-name" name="project-name" value="{{ project.name }}" required />
-            </div>
-            <div class="form-group">
-              <label for="project-description" class="col-sm-2 col-form-label">{% trans "project metadata form label" %}Description{% endtrans %}</label>
-              <textarea class="form-control" id="project-description" name="project-description">{{ project.description }}</textarea>
-            </div>
-          </form>
-
-          {% if multiuser %}
-
-          <p><a href="javascript:showMembers()" class="w-100 btn btn-outline-secondary" role="button">{% trans %}Manage collaborators{% endtrans %}</a></p>
-
-          {% endif %}
-
-          <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
-
-          <div class="dropdown mb-3">
-            <button class="w-100 btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-codebook" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              {% trans %}Export codebook{% endtrans %}
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="dropdown-codebook">
-              <a href="{{ reverse_url('export_codebook_qdc', project.id) }}" class="dropdown-item">{% trans %}QDC (XML){% endtrans %}</a>
-              <a href="{{ reverse_url('export_codebook_xlsx', project.id) }}" class="dropdown-item">{% trans %}Excel{% endtrans %}</a>
-              <a href="{{ reverse_url('export_codebook_csv', project.id) }}" class="dropdown-item">{% trans %}CSV{% endtrans %}</a>
-              <a href="{{ reverse_url('export_codebook_doc', project.id, 'html') }}" class="dropdown-item">{% trans %}HTML{% endtrans %}</a>
-              <a href="{{ reverse_url('export_codebook_doc', project.id, 'docx') }}" class="dropdown-item">{% trans %}DOCX{% endtrans %}</a>
-              <a href="{{ reverse_url('export_codebook_doc', project.id, 'pdf') }}" class="dropdown-item">{% trans %}PDF{% endtrans %}</a>
-            </ul>
-          </div>
-
-          {% if can_import_codebook %}
-          <p><a href="{{ reverse_url('import_codebook', project.id) }}" class="w-100 btn btn-outline-primary" type="button">{% trans %}Import codebook{% endtrans %}</a></p>
-          {% endif %}
-
-          {% if can_delete_project %}
-          <p><a href="{{ reverse_url('delete_project', project.id) }}" class="w-100 btn btn-outline-danger">{% trans %}Delete project{% endtrans %}</a></p>
-          {% endif %}
-        </div>
-
-        <!-- List of documents -->
-        <div class="tab-pane fade show active" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-          <div class="row">
-            <div class="col-md-12">
-              <a class="btn btn-sm btn-primary float-end mb-3" href="javascript:createDocument()">{% trans %}Add a document{% endtrans %}</a>
-            </div>
-          </div>
-          <ul class="list-group list-group-flush" id="documents-list">
-            <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-          </ul>
-          <input type="checkbox" id="backlight" class="mt-3" /> <label for="backlight">{% trans %}Backlight{% endtrans %}</label>
-        </div>
-
-        <!-- List of tags -->
-        <div class="tab-pane fade" id="tags" role="tabpanel" aria-labelledby="tags-tab">
-          <div class="row">
-            <div class="col-md-12 mb-3">
-              <div class="dropdown float-end ms-2">
-                <button class="btn btn-sm btn-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-sort"></i>
+<div class="row flex-column flex-md-row">
+    <!-- Left panel -->
+    <div class="col-12 col-md-2-5 order-2 order-md-1" id="left-panel">
+        {% include 'partials/project_sidebar.html' %}
+        <div class="bordered-container sticky-top">
+            <div class="d-flex justify-content-start justify-content-md-end">
+                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2" title="Toggle Panel">
+                    <i class="fas fa-chevron-left"></i>
                 </button>
-                <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
-                  <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
-                  <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
-                  <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
-                  <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
-                </div>
-              </div>
-              <a id="load-all-tags" class="btn btn-sm btn-primary float-end ms-2" href="/project/{{ project.id }}/highlights/">{% trans %}See all highlights{% endtrans %}</a>
-              <a class="btn btn-sm btn-primary float-end" href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a>
             </div>
-          </div>
-          <ul class="list-group list-group-flush" id="tags-list">
-            <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-          </ul>
+            <div class="row py-1 panel-content">
+                <div class="col-md-12 mb-3 mx-1">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a code{% endtrans %}</a>
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
+                            </button>
+                            <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
+                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans %}Expand all{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans %}Collapse all{% endtrans %}</a>
+                            </div>
+                        </div>
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-sort"></i> {% trans %}Sort by{% endtrans %}
+                            </button>
+                            <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
+                                <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
+                            </div>
+                        </div>
+                   </div>
+                </div>
+            </div>
+            <div class="mb-2 panel-content">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search for a code{% endtrans %}">
+                </div>
+                <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
+                </div>
+                <p id="tag-selection-return"><a href="">{% trans %}Back to highlights{% endtrans %}</a></p>
+                <div id="treeview-tags"></div>
+                <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="col-12 col-md-7-5 order-3 order-md-2" id="middle-panel">
+
+        {% include 'partials/document_toolbar.html' %}
+
+        <div id="document-view" class="document-view">
+            <div id="document-contents">
+                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document from your bookmarks or on the right{% endtrans %}</p>
+            </div>
         </div>
 
-      </div>
-    </div>
-  </div>
-
-  <!-- Right panel -->
-  <div class="col-md-9">
-
-    <div id="document-view" class="document-view">
-      <div id="export-button" class="dropdown" style="display: none;">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {% trans %}Export this view{% endtrans %}
+        <button id="scroll-to-top-button" class="btn btn-primary rounded-circle scroll-btn d-none" title="Scroll to top">
+            <i class="fas fa-arrow-up"></i>
         </button>
-        <div class="dropdown-menu" aria-labelledby="dropdown-export">
-          <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
-        </div>
-      </div>
 
-      <div id="document-contents" style="direction: ltr;">
-        <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
-      </div>
     </div>
 
-  </div>
+    <!-- List of documents -->
+    <div class="col-12 col-md-2-5 order-1 order-md-3"  id="right-panel">
+        <div class="bordered-container sticky-top">
+            <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Panel">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="row  panel-content">
+                <div class="col-md-12">
+                    <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush  panel-content" id="documents-list">
+                <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+{% if is_demo == 'true' %}
+<button id="start-tutorial" class="btn btn-primary rounded-4">{% trans %}Resume tutorial{% endtrans %}</button>
+{% endif %}
 
 <!-- Manage collaborators modal -->
-<div class="modal" id="members-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans %}Manage Collaborators{% endtrans %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="container">
-          <h5>{% trans "modal window title" %}Add Collaborators{% endtrans %}</h5>
-          <form id="members-add">
-            <fieldset id="members-add-fields">
-              <div class="row">
-                <div class="col-md-4 form-group">
-                  <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
-                </div>
-                <div class="col-md-4 form-group">
-                  <select id="member-add-privileges" class="form-control">
-                    <option value="ADMIN">{% trans "permission level" %}Full permissions{% endtrans %}</option>
-                    <option value="MANAGE_DOCS">{% trans "permission level" %}Can't change collaborators / delete project{% endtrans %}</option>
-                    <option value="TAG" selected>{% trans "permission level" %}View & make changes{% endtrans %}</option>
-                    <option value="READ">{% trans "permission level" %}View only{% endtrans %}</option>
-                  </select>
-                </div>
-                <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Add to project{% endtrans %}</button>
-              </div>
-            </fieldset>
-          </form>
-          <h5>{% trans %}Current Collaborators{% endtrans %}</h5>
-          <form id="members-current">
-          </form>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
-      </div>
-    </div>
-  </div>
-</div>
+{% include 'modal/manage_collaborators.html' %}
 
 <!-- Add document modal -->
-<div class="modal" id="document-add-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-    <form id="document-add-form" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans "modal window title" %}Add a document{% endtrans %}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-6 form-group">
-              <input type="text" class="form-control" id="document-add-name" name="document-add-name" placeholder="{% trans "form placeholder" %}Enter a document name{% endtrans %}" />
-            </div>
-            <div class="col-md-6 form-group">
-              <input type="file" class="form-control-file" id="document-add-file" name="document-add-file" required />
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12 form-group">
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="document-add-direction" id="document-add-direction-ltr" value="LEFT_TO_RIGHT" checked />
-                <label class="form-check-label" for="document-add-direction-ltr">{% trans %}Left to right{% endtrans %}</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="document-add-direction" id="document-add-direction-rtl" value="RIGHT_TO_LEFT" />
-                <label class="form-check-label" for="document-add-direction-rtl">{% trans %}Right to left{% endtrans %}</label>
-              </div>
-            </div>
-          </div>
-          <textarea class="form-control" id="document-add-description" name="document-add-description" placeholder="{% trans "document add form placeholder" %}Description{% endtrans %}"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">{% trans "submit button" %}Import{% endtrans %}</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include 'modal/create_document.html' %}
 
 <!-- Change document modal -->
-<div class="modal" id="document-change-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <form id="document-change-form" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans "modal window title" %}Edit document{% endtrans %}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="document-change-id" />
-        <div class="container">
-          <div class="row">
-            <div class="col-md-6 form-group">
-              <input type="text" class="form-control mb-3" id="document-change-name" name="document-change-name" placeholder="{% trans "document change form placeholder" %}Name{% endtrans %}" required />
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12 form-group">
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="document-change-direction" id="document-change-direction-ltr" value="LEFT_TO_RIGHT" checked />
-                <label class="form-check-label" for="document-change-direction-ltr">{% trans %}Left to right{% endtrans %}</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="document-change-direction" id="document-change-direction-rtl" value="RIGHT_TO_LEFT" />
-                <label class="form-check-label" for="document-change-direction-rtl">{% trans %}Right to left{% endtrans %}</label>
-              </div>
-            </div>
-          </div>
-          <textarea class="form-control" id="document-change-description" name="document-change-description" placeholder="{% trans "document change form placeholder" %}Description{% endtrans %}"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-        <button type="button" id="document-change-delete" class="btn btn-danger" data-dismiss="modal">{% trans %}Delete document{% endtrans %}</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include 'modal/change_document.html' %}
 
 <!-- Add/change highlight modal -->
-<div class="modal" id="highlight-add-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <form id="highlight-add-form" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans "modal window title" %}Highlight{% endtrans %}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="highlight-add-id" />
-        <input type="hidden" id="highlight-add-start" />
-        <input type="hidden" id="highlight-add-end" />
-        <div>
-          Find tags: <input id="highlight-search" />
-        </div>
-        <div class="container">
-          <ul class="list-unstyled" id="highlight-add-tags">
-            <li>{% trans %}Loading...{% endtrans %}</li>
-            <li class="special-item-button"><a href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal" id="highlight-delete">{% trans %}Delete highlight{% endtrans %}</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Add/change tag modal -->
-<div class="modal" id="tag-add-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <form id="tag-add-form" class="modal-content">
-      <div class="modal-header">
-        <h5 id="tag-add-label-new" class="modal-title">{% trans "modal window title" %}New tag{% endtrans %}</h5>
-        <h5 id="tag-add-label-change" class="modal-title" style="display: none;">{% trans "modal window title" %}Change tag{% endtrans %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="tag-add-id" />
-        <div class="container">
-          <input type="text" class="form-group" id="tag-add-path" name="tag-add-path" placeholder="{% trans "tag change form placeholder" %}Name{% endtrans %}" required />
-          <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans "tag change form placeholder" %}Description{% endtrans %}"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-info" data-bs-dismiss="modal" id="tag-add-merge">{% trans "button in tag change modal window" %}Merge...{% endtrans %}</button>
-        <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="tag-add-cancel">{% trans %}Cancel{% endtrans %}</button>
-        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="tag-add-delete">{% trans %}Delete tag{% endtrans %}</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include 'modal/create_highlight.html' %}
 
 <!-- Merge tags modal -->
-<div class="modal" id="tag-merge-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <form id="tag-merge-form" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Merge tags</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-5 form-group">
-              <input type="hidden" id="tag-merge-src-id" />
-              <input type="text" class="form-control" id="tag-merge-src-name" disabled />
-            </div>
-            <div class="col-md-2 form-group">
-              <label for="tag-merge-dest">into</label>
-            </div>
-            <div class="col-md-5 form-group">
-              <select class="form-control-file" id="tag-merge-dest">
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Merge tags</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include 'modal/create_tag.html' %}
+
+<!-- Add/change tag modal -->
+{% include 'modal/create_tag.html' %}
+
+<!-- Merge tags modal -->
+{% include 'modal/merge_tag.html' %}
 
 <!-- Spinner modal -->
-<div id="spinner-modal" class="modal bd-example-modal-lg" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-      <div id="spinner"></div>
-    </div>
-  </div>
-</div>
+{% include 'partials/spinner.html' %}
+
+<!-- Alert modal -->
+{% include 'partials/alert.html' %}
+
+<!-- Confirm modal -->
+{% include 'partials/confirm.html' %}
 
 <!-- Initial state -->
 <script type="text/javascript">
-  var user_login = {{ user_login }};
-  var project_id = {{ project.id }};
-  var last_event = {{ last_event }};
-  var documents = {{ documents }};
-  var highlights = {};
-  var tags = {{ tags }};
-  var members = {{ members }};
-  var version = '{{ version }}';
+    const user_login = {{ user_login }};
+    const project_id = {{ project.id }};
+    const version = '{{ version }}';
+    let documents = {{ documents }};
+    let tags = {{ tags }};
+    let members = {{ members }};
+    let highlights = {};
+    let last_event = {{ last_event }};
+    let is_demo = {{ is_demo }};
+    let demo_highlights_location = {{ demo_highlights_location }};
 </script>
 
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
 
 <!-- "New highlight" button shown after selecting text -->
-<div id="hlinfo"><a class="btn btn-outline-primary" href="javascript:createHighlight(current_selection);">{% trans %}<em>n</em>ew highlight <span class="sr-only">(shortcut: n)</span>{% endtrans %}</a></div>
+{% include 'partials/hlinfo.html' %}
 
 {% endblock %}
 
 {% block morejs %}
 
 <!-- Should minify this but I hate NPM -->
+
+<!-- Utilities -->
+<script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+
+<!-- libraries -->
+<script type="text/javascript" src="{{ static_url('js/vendor/hierarchy-select.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/bootstrap-treeview-custum.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/vendor/jquery.contextMenu.min.js') }}"></script>
+
+<!-- tag -->
+<script type="text/javascript" src="{{ static_url('js/tag/manager.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/tag/hierarchy-select.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/tag/treeview.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/tag/context-menu.js') }}"></script>
+
+<!-- highlight -->
+<script type="text/javascript" src="{{ static_url('js/highlight.js') }}"></script>
+
+<!-- search documents -->
+<script type="text/javascript" src="{{ static_url('js/project/search.js') }}"></script>
+
+<!-- core -->
 <script type="text/javascript" src="{{ static_url('js/taguette.js') }}"></script>
+
+<!-- document -->
+<script type="text/javascript" src="{{ static_url('js/document/manager.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/document/custom-select.js') }}"></script>
+
+<!-- others -->
+<script type="text/javascript" src="{{ static_url('js/polling-event.js') }}"></script>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+
+        sortTagsBy('path', 'asc');
+        addContextMenu();
+
+    });
+
+</script>
+
+<script src="{{ static_url('js/project/intro.js') }}"></script>
 
 {% endblock %}

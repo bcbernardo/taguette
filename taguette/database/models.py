@@ -8,13 +8,17 @@ import json
 import logging
 import opentelemetry.trace
 import os
-from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
-    Table, UniqueConstraint, select
+from sqlalchemy import (Column, func, ForeignKey,
+                        Index, TypeDecorator, MetaData,
+                        Table, UniqueConstraint,
+                        select, distinct)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import column_property, deferred, relationship
+from sqlalchemy.orm import aliased, column_property, deferred, relationship
 from sqlalchemy.sql import functions
-from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text
-
+from sqlalchemy.types import (Boolean, DateTime, Enum, Integer, String, Text,
+                              BigInteger)
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import ARRAY
 from .base import PROM_COMMAND
 
 
@@ -50,7 +54,8 @@ SCRYPT_MAX_MEM = 64 << 20
 class User(Base):
     __tablename__ = 'users'
 
-    login = Column(String(30), primary_key=True)
+    login = Column(String(255), primary_key=True)
+    displayname = Column(String(255), nullable=True, default="")
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
     hashed_password = Column(String(192), nullable=True)
@@ -59,6 +64,7 @@ class User(Base):
     language = Column(String(10), nullable=True)
     email = Column(String(256), nullable=True, index=True, unique=True)
     email_sent = Column(DateTime, nullable=True)
+    external = Column(Boolean, nullable=True, default=False)
     project_memberships = relationship(
         'ProjectMember',
         cascade='all,delete-orphan',
@@ -277,7 +283,7 @@ class ProjectMember(Base):
     project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
                         primary_key=True, index=True)
     project = relationship('Project', back_populates='members')
-    user_login = Column(String(30),
+    user_login = Column(String(255),
                         ForeignKey('users.login',
                                    ondelete='CASCADE', onupdate='CASCADE'),
                         primary_key=True, index=True)
@@ -315,6 +321,7 @@ class Document(Base):
     contents = deferred(Column(Text, nullable=False))
     highlights = relationship('Highlight', cascade='all,delete-orphan',
                               passive_deletes=True)
+    favorite = Column(Boolean, nullable=True, default=False)
 
     def __repr__(self):
         return '<%s.%s %r %r project_id=%r>' % (
@@ -341,7 +348,7 @@ class Command(Base):
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False,
                   default=lambda: datetime.utcnow(), index=True)
-    user_login = Column(String(30),
+    user_login = Column(String(255),
                         ForeignKey('users.login', onupdate='CASCADE'),
                         nullable=False, index=True)
     user = relationship('User')
@@ -399,7 +406,10 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id', 'document_id'],
-        payload_fields=['document_name', 'description', 'text_direction'],
+        payload_fields=['document_name',
+                        'description',
+                        'favorite',
+                        'text_direction'],
     )
     def document_add(cls, user_login, document):
         assert isinstance(document.id, int)
@@ -410,6 +420,7 @@ class Command(Base):
             payload={'type': 'document_add',  # keep in sync above
                      'document_name': document.name,
                      'description': document.description,
+                     'favorite': document.favorite,
                      'text_direction': document.text_direction.name},
         )
 
@@ -466,7 +477,11 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id'],
-        payload_fields=['tag_id', 'tag_path', 'description'],
+        payload_fields=['tag_id',
+                        'tag_path',
+                        'tag_color',
+                        'tag_parent',
+                        'description'],
     )
     def tag_add(cls, user_login, tag):
         assert isinstance(tag, Tag)
@@ -477,6 +492,8 @@ class Command(Base):
             payload={'type': 'tag_add',  # keep in sync above
                      'tag_id': tag.id,
                      'tag_path': tag.path,
+                     'tag_color': tag.color,
+                     'tag_parent': tag.parent_id,
                      'description': tag.description},
         )
 
@@ -618,6 +635,11 @@ class Tag(Base):
 
     path = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
+    color = Column(String(20), nullable=False)
+
+    parent_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'),
+                       nullable=True, index=True)
+    parent = relationship('Tag', remote_side=[id])
 
     __table_args__ = (
         UniqueConstraint('project_id', 'path'),
@@ -647,7 +669,7 @@ highlight_tags = Table(
            primary_key=True, index=True),
 )
 
-
+# Property to count highlight associate with tag
 Tag.highlights_count = column_property(
     select(
         [functions.count(highlight_tags.c.highlight_id)],
@@ -658,3 +680,82 @@ Tag.highlights_count = column_property(
     .correlate_except(highlight_tags)
     .scalar_subquery()
 )
+
+# Property to get documents count associate with tag
+Tag.documents_count = column_property(
+    select(
+        [functions.count(distinct(Document.id)).label('count')],
+    )
+    .where(
+        highlight_tags.c.tag_id == Tag.id,
+        highlight_tags.c.highlight_id == Highlight.id,
+        Highlight.document_id == Document.id,
+    )
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
+# Property to get ids documents associate with tag
+document_alias = aliased(Document)
+
+
+class GroupArray(functions.GenericFunction):
+    name = 'group_array'
+    type = ARRAY(Integer)
+
+
+@compiles(GroupArray, 'postgresql')
+def _compile_group_array_postgresql(element, compiler, **kw):
+    return "ARRAY_AGG(DISTINCT %s)" % compiler.process(element.clauses)
+
+
+@compiles(GroupArray, 'sqlite')
+def _compile_group_array_sqlite(element, compiler, **kw):
+    return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
+
+
+Tag.document_ids = column_property(
+    select([GroupArray(document_alias.id)])
+    .select_from(highlight_tags)
+    .outerjoin(Highlight, Highlight.id == highlight_tags.c.highlight_id)
+    .outerjoin(document_alias, document_alias.id == Highlight.document_id)
+    .where(highlight_tags.c.tag_id == Tag.id)
+    .correlate_except(highlight_tags)
+    .scalar_subquery()
+)
+
+
+# Property to count documents associate with projet
+Project.document_count = column_property(
+    select([func.count(Document.id)])
+    .where(Document.project_id == Project.id)
+    .as_scalar()
+)
+
+# Property to count tags associate with projet
+Project.tag_count = column_property(
+    select([func.count(Tag.id)])
+    .where(Tag.project_id == Project.id)
+    .as_scalar()
+)
+
+
+class EdugainIdps(Base):
+    __tablename__ = 'edigainidps'
+
+    id = Column(Integer, primary_key=True)
+    entityid = Column(String(255), nullable=True)
+    e_displayname = Column(Text(), nullable=True)
+    regauth = Column(String(255), nullable=True)
+    entity_cat = Column(String(255), nullable=True)
+    eccs_status = Column(Integer, nullable=True)
+    validator_status = Column(BigInteger(), nullable=True)
+    coco_status = Column(String(255), nullable=True)
+    coco_id = Column(Integer, nullable=True)
+    sirtfi_status = Column(Integer, nullable=True)
+    code = Column(String(255), nullable=True)
+    scopes = Column(Text(), nullable=True)
+
+    def __repr__(self):
+        return (f"<EdugainIdps {self.e_displayname} "
+                f"({self.id}, {self.entityid})>")

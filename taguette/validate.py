@@ -6,6 +6,7 @@ from .utils import _f
 
 class InvalidFormat(ValueError):
     """User-supplied value doesn't pass validation."""
+
     def __init__(self, message):
         super(InvalidFormat, self).__init__(message)
         self.message = message
@@ -16,6 +17,12 @@ def description(descr):
         raise ValueError("Description is not a string")
     if len(descr) > 102400:
         raise InvalidFormat(_f("Description is too long"))
+    return True
+
+
+def color(value):
+    if not isinstance(value, str):
+        raise ValueError("color is not a string")
     return True
 
 
@@ -47,7 +54,7 @@ def user_login(login, *, new=False):
         raise ValueError("Login is not a string")
     if not login:
         raise InvalidFormat(_f("User login cannot be empty"))
-    if len(login) > (20 if new else 25):
+    if len(login) > 255:
         raise InvalidFormat(_f("User login is too long"))
     if login != login.lower():
         raise InvalidFormat(_f("User login is not lowercase"))

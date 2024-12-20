@@ -191,6 +191,8 @@ class Application(GracefulExitApplication):
                 digestmod=hashlib.sha256,
             ).hexdigest()
 
+        self.tag_default_color = config.get('TAG_DEFAULT_COLOR', '#000000')
+
         # Get messages from taguette.org
         self.messages = []
         self.messages_event = asyncio.Event()
@@ -214,7 +216,7 @@ class Application(GracefulExitApplication):
             for msg in obj['messages']
         ]
         for msg in self.messages:
-            logger.warning("Taguette message: %s", msg['text'])
+            logger.warning("LibreQDA message: %s", msg['text'])
         self.messages_event.set()
 
     @staticmethod
@@ -225,6 +227,9 @@ class Application(GracefulExitApplication):
             logger.exception("Error getting messages")
 
     def check_messages(self):
+        if ("CHECK_MESSAGES" in self.config
+                and not self.config["CHECK_MESSAGES"]):
+            return
         f_msg = self.io_loop.create_task(self._check_messages())
         f_msg.add_done_callback(self._check_messages_callback)
         self.io_loop.call_later(86400,  # 24 hours
@@ -377,7 +382,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         self._gettext = None
 
     def set_default_headers(self):
-        self.set_header('Server', 'Taguette/%s' % exact_version())
+        self.set_header('Server', 'LibreQDA/%s' % exact_version())
         self.set_header('X-Frame-Options', 'DENY')
         self.set_header('Content-Security-Policy', "frame-ancestors 'none';")
 
@@ -467,9 +472,14 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         if not extra_footer:
             extra_footer = self.gettext(
                 ' | Please report issues via '
-                + '<a href="https://gitlab.com/remram44/taguette">GitLab</a> '
-                + 'or <a href="mailto:hi@taguette.org">hi@taguette.org</a>!'
+                + '<a href="https://gitlab.com/bin-cirst/libreqda/libre-qda/">'
+                  'GitLab</a> '
+
             )
+
+        if self.application.config['MAINTENANCE_MODE']:
+            self.current_user = None
+            template_name = 'maintenance.html'
 
         with tracer.start_as_current_span(
             'render_template',
@@ -478,6 +488,10 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             template = self.template_env.get_template(template_name)
             return template.render(
                 handler=self,
+                maintenance_mode=self.application.config['MAINTENANCE_MODE'],
+                maintenance_message=self.application.config[
+                    'MAINTENANCE_MESSAGE'
+                ],
                 current_user=self.current_user,
                 multiuser=self.application.config['MULTIUSER'],
                 register_enabled=self.application.config[
@@ -487,6 +501,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 extra_footer=extra_footer,
                 show_messages=self.current_user == 'admin',
                 version=exact_version(),
+                bug_report_url=self.get_bug_report_url(),
                 gettext=self.gettext,
                 ngettext=self.ngettext,
                 pgettext=self.pgettext,
@@ -585,6 +600,24 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ),
                 error_message=self._reason + ".",
             )
+
+    def get_bug_report_url(self):
+        if self.application.config['BUG_REPORT_URL'] is not None:
+            try:
+                if self.language in self.application.config['BUG_REPORT_URL']:
+                    return self.application.config[
+                        'BUG_REPORT_URL'
+                    ][self.language]
+                else:
+                    return next(iter(
+                        self.application.config['BUG_REPORT_URL'].values()),
+                        None
+                    )
+            except AttributeError:
+                return None
+            except TypeError:
+                return None
+        return None
 
 
 class PromMeasureRequest(object):

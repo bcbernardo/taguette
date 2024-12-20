@@ -70,15 +70,19 @@ def default_config(output):
     else:
         out = open(output, 'w')
     out.write('''\
-# This is the configuration file for Taguette
+# This is the configuration file for LibreQDA
 # It is a Python file, so you can use the full Python syntax
 
 # Name of this server
-NAME = "Misconfigured Taguette Server"
+NAME = "Misconfigured LibreQDA Server"
 
 # Address and port to listen on
 BIND_ADDRESS = "0.0.0.0"
 PORT = 7465
+
+# Disable access to LibreQQA in case of maintenance
+MAINTENANCE_MODE = False
+MAINTENANCE_MESSAGE = ""
 
 # Base path of the application
 BASE_PATH = "/"
@@ -98,7 +102,7 @@ DATABASE = "sqlite:////non/existent/taguette/database.sqlite3"
 #REDIS_SERVER = 'redis://localhost:6379'
 
 # Address to send system emails from
-EMAIL = "Misconfigured Taguette Server <taguette@example.com>"
+EMAIL = "Misconfigured LibreQDA Server <LibreQDA@example.com>"
 
 # Terms of service (HTML file)
 TOS_FILE = 'tos.html'
@@ -107,7 +111,7 @@ TOS_FILE = 'tos.html'
 
 # Extra footer at the bottom of every page
 #EXTRA_FOOTER = """
-#  | This instance of Taguette is managed by Example University.
+#  | This instance of LibreQDA is managed by Example University.
 #  Please <a href="mailto:it@example.org">email IT</a> with any questions.
 #"""
 
@@ -121,6 +125,13 @@ MAIL_SERVER = {{
     "port": 25,
 }}
 
+CHECK_MESSAGES = False
+
+#BUG_REPORT_URL = {{
+#    "fr_FR": "",
+#    "en_US": "",
+#}}
+
 # Whether users must explicitly accept cookies before using the website
 COOKIES_PROMPT = False
 
@@ -132,12 +143,12 @@ SQLITE3_IMPORT_ENABLED = True
 
 # Set this to true if you are behind a reverse proxy that sets the
 # X-Forwarded-For header.
-# Leave this at False if users are connecting to Taguette directly
+# Leave this at False if users are connecting to LibreQDA directly
 X_HEADERS = False
 
 # Time limits for converting documents
-CONVERT_TO_HTML_TIMEOUT = 3 * 60  # 3min for importing document into Taguette
-CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
+CONVERT_TO_HTML_TIMEOUT = 3 * 60  # 3min for importing document into LibreQDA
+CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 
 # If you want to export metrics using Prometheus, set a port number here
 #PROMETHEUS_LISTEN = "0.0.0.0:9101"
@@ -147,6 +158,16 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 
 # If you want to enable multi-user app
 # MULTIUSER = True
+
+# Allow external authentication, MULTIUSER must be set to True
+# (only CILogon, see below)
+# If True, CI Logon variables must be defined
+ALLOW_EXTERNAL_LOGIN = False
+
+# Replace current authentication by CI_LOGON
+# CI_LOGON_ID=""
+# CI_LOGON_SECRET=""
+# CI_LOGON_CALLBACK_URL=""
 
 # Output manifest max size
 # OPF_OUT_SIZE_LIMIT = 5000000
@@ -160,8 +181,12 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from Taguette
 
 DEFAULT_CONFIG = {
     'MULTIUSER': True,
+    'ALLOW_EXTERNAL_LOGIN': False,
     'BIND_ADDRESS': '0.0.0.0',
     'BASE_PATH': '',
+    'MAINTENANCE_MODE': False,
+    'MAINTENANCE_MESSAGE': "",
+    'BUG_REPORT_URL': None,
     'EXTRA_FOOTER': None,
     'REGISTRATION_ENABLED': True,
     'REDIS_SERVER': None,
@@ -234,6 +259,8 @@ def main():
                         version)
             if version.startswith('v'):
                 taguette._exact_version = version[1:]
+            if version.startswith('libreqda-v'):
+                taguette._exact_version = version[10:]
     else:
         logger.info("Not a Git repository, using version=%s", exact_version())
     PROM_VERSION.labels(exact_version()).set(1)
@@ -264,7 +291,7 @@ def main():
         description="Document tagger for qualitative analysis",
     )
     parser.add_argument('--version', action='version',
-                        version='taguette version %s' % exact_version())
+                        version='LibreQDA version %s' % exact_version())
     parser.add_argument('-p', '--port', default='7465',
                         help=_("Port number on which to listen"))
     parser.add_argument('-b', '--bind', default='127.0.0.1',

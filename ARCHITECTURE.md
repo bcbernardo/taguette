@@ -28,7 +28,7 @@ Highlights are represented by their position (`start_offset`, `end_offset`) in t
 
 ## The frontend
 
-The frontend consists of a few different views, rendered from Jinja templates. The most important one is the project view from which a user does all their work. The JavaScript is kept in a single file, `static/js/taguette.js`.
+The frontend consists of a few different views, rendered from Jinja templates. The most important one is the project view from which a user does all their work. The JavaScript code is organized into multiple files by feature, located in `static/js/`.
 
 Every user action results in a call to the server over a JSON API. The server then syncs up every browser (including the acting user's) by sending an event over the long-polling endpoint; see [live editing](#live-editing) below.
 

@@ -1,0 +1,29 @@
+<div class="toolbar-container py-3 d-flex flex-column flex-md-row align-items-center">
+
+    <div class="w-100 d-flex flex-column flex-md-row align-items-center mx-3 mb-3 mb-md-0">
+        <span class="text-label mb-2 mb-md-0">{% trans %}Bookmarks{% endtrans %}</span>
+        <div class="custom-select rounded-5 mx-md-3">
+            <button class="select-button" data-test-id="select-document-button" role="combobox" aria-labelledby="select button" aria-haspopup="listbox" aria-expanded="false" aria-controls="select-dropdown">
+                <span class="selected-value">{% trans %}...{% endtrans %}</span>
+                <span class="arrow"></span>
+            </button>
+            <ul class="select-dropdown" role="listbox" id="select-dropdown"></ul>
+        </div>
+    </div>
+
+    <div class="toolbar-action-buttons d-flex mx-2">
+        <!-- Bouton Export -->
+        <div class="document-export-button dropdown mx-2">
+            <button class="btn btn-outline-primary dropdown-toggle" title="{% trans %}Export{% endtrans %}" type="button" id="document-dropdown-export" data-test-id="document-dropdown-export" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-download"></i>
+            </button>
+            <div id='document-export-dropdown-menu' class="dropdown-menu" aria-labelledby="document-dropdown-export">
+                <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
+                <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+            </div>
+        </div>
+    </div>
+</div>

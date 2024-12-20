@@ -13,16 +13,23 @@ import time
 import tornado.locale
 from tornado.web import authenticated, HTTPError
 from urllib.parse import urlunparse
+from collections import defaultdict
+import re
 
 from .. import database
 from .. import import_codebook
 from ..utils import _f
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
+from ..demodata import DEMO_DATA
 
+# For CILogon
+from oauth2client.client import OAuth2WebServerFlow
+import base64
+import requests
+from tornado.escape import url_escape
 
 logger = logging.getLogger(__name__)
-
 
 PROM_REQUESTS = PromMeasureRequest(
     count=prometheus_client.Counter(
@@ -38,9 +45,30 @@ PROM_REQUESTS = PromMeasureRequest(
 )
 
 
+def get_idps(db):
+    idps = [{'entityid': 'http://google.com/accounts/o8/id',
+             'name': 'Google'}]
+
+    idps_query = (db.query(database.EdugainIdps)
+                  .filter(database.EdugainIdps.code == 'CAF')
+                  .order_by(database.EdugainIdps.e_displayname)).all()
+    for idp in idps_query:
+        displayname = idp.e_displayname.split(';')
+        if len(displayname) > 1:
+            displayname = displayname[1]
+        else:
+            displayname = displayname[0]
+        displayname = re.sub(r'==[a-z]{2}$', '', displayname)
+        idps.append({'entityid': idp.entityid,
+                     'name': displayname})
+
+    return idps
+
+
 class Index(BaseHandler):
     """Index page, shows welcome message and user's projects.
     """
+
     @PROM_REQUESTS.sync('index')
     def get(self):
         if self.current_user is not None:
@@ -48,13 +76,24 @@ class Index(BaseHandler):
                 # Remove the token from the URL
                 return self.redirect(self.reverse_url('index'))
             user = self.db.query(database.User).get(self.current_user)
+            user_display_name = user.login
+            if user.displayname is not None and user.displayname != "":
+                user_display_name = user.displayname
+
+            is_demo = 'false' if len(user.project_memberships) else 'true'
             return self.render(
                 'index.html',
                 user=user,
+                user_login=Markup(
+                    json.dumps(self.current_user)
+                ),
+                user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
                 can_import_project=(
                     self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
+                demo=False,
+                is_demo=Markup(is_demo)
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)
@@ -64,7 +103,7 @@ class Index(BaseHandler):
             elif token:
                 return self.redirect(self.reverse_url('index'))
             else:
-                return self.render('token_needed.html')
+                return self.render('auth/token_needed.html')
         return self.render('welcome.html')
 
     head = get
@@ -96,7 +135,7 @@ class BrokenBasePath(BaseHandler):
             + "page.\n"
             + "\n"
             + "You might need to fix your reverse proxy's configuration or "
-            + "Taguette's BASE_PATH setting.\n"
+            + "LibreQDA's BASE_PATH setting.\n"
         ).format(self.application.config['BASE_PATH']))
 
 
@@ -108,12 +147,25 @@ class Login(BaseHandler):
         if self.current_user:
             return self._go_to_next()
         else:
-            return self.render('login.html', register=False,
-                               next=self.get_argument('next', ''))
+            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+                return self.render('auth/login.html', register=False,
+                                   next=self.get_argument('next', ''))
+            else:
+                error = self.get_argument('error', '')
+                error_msg = self.get_argument('error_msg', '')
+                return self.render('auth/cilogon.login.html',
+                                   next=self.get_argument('next', ''),
+                                   error=error, error_msg=error_msg,
+                                   idps=get_idps(self.db),
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('login')
     async def post(self):
         if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
             raise HTTPError(404)
         login = self.get_body_argument('login')
         try:
@@ -132,7 +184,7 @@ class Login(BaseHandler):
                 return self._go_to_next()
 
         return self.render(
-            'login.html', register=False,
+            'auth/login.html', register=False,
             next=self.get_argument('next', ''),
             login_error=self.gettext("Invalid login or password"),
         )
@@ -163,11 +215,20 @@ class Register(BaseHandler):
         if self.current_user:
             return self.redirect(self.reverse_url('index'))
         else:
-            return self.render('login.html', register=True)
+            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+                return self.render('auth/login.html', register=True)
+            else:
+                return self.render('auth/cilogon.login.html',
+                                   idps=get_idps(self.db),
+                                   entity_id=self.get_cookie('entity_id',
+                                                             None)
+                                   )
 
     @PROM_REQUESTS.async_('register')
     async def post(self):
         if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
             raise HTTPError(404)
         if not self.application.config['REGISTRATION_ENABLED']:
             raise HTTPError(403)
@@ -211,10 +272,217 @@ class Register(BaseHandler):
         except validate.InvalidFormat as e:
             logger.info("Error validating Register: %r", e)
             return await self.render(
-                'login.html',
+                'auth/login.html',
                 register=True,
                 register_error=self.gettext(e.message),
             )
+
+
+class Cilogon(BaseHandler):
+    flow_cilogon = None
+
+    def flow_func_cilogon(self):
+        d = {}
+
+        def get_flow():
+            if "FLOW" in d:
+                return d["FLOW"]
+
+            # Notes:
+            # The first in the list of selected_idp will be the
+            # default choice of idp
+            f = OAuth2WebServerFlow(
+                auth_uri='https://cilogon.org/authorize',
+                token_uri='https://cilogon.org/oauth2/token',
+                client_id=self.application.config['CI_LOGON_ID'],
+                client_secret=self.application.config['CI_LOGON_SECRET'],
+                scope=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
+                redirect_uri=self.application.config['CI_LOGON_CALLBACK_URL'],
+            )
+            f.params['access_type'] = 'offline'  # offline access
+            f.params['include_granted_scopes'] = 'true'  # incremental auth
+
+            d["FLOW"] = f
+            return f
+
+        return get_flow
+
+    def login_cilogon(self, entity_id=None, appredirecturl='None'):
+        state_encoded_str = (
+            str(base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8")
+        )
+        auth_uri = (self.flow_cilogon()
+                    .step1_get_authorize_url(state=state_encoded_str))
+        if entity_id is not None:
+            auth_uri += f"&idphint={entity_id}"
+        return self.redirect(auth_uri, status=301)
+
+    @PROM_REQUESTS.sync('cilogon')
+    def get(self):
+        entity_id = self.get_argument('entity_id', None)
+        self.set_cookie('entity_id', entity_id)
+        self.flow_cilogon = self.flow_func_cilogon()
+        self.login_cilogon(entity_id=entity_id)
+
+
+class CilogonCallback(BaseHandler):
+    @PROM_REQUESTS.sync('ci_callback')
+    def get(self):
+        error = self.get_argument('error', None)
+        error_description = self.get_argument('error_description', '')
+        if error:
+            logger.error(f"CILogon : ERROR : {error}, "
+                         f"MESSAGE: {error_description}")
+            error = url_escape(error)
+            error_description = url_escape(error_description)
+            return self.redirect(
+                self.reverse_url('login')
+                + f"?error={error}&error_msg={error_description}"
+            )
+        else:
+            logger.info("CILogon : Success")
+            auth_code = self.get_argument('code', None)
+            self.cilogon_callback(auth_code)
+
+    def get_ci_token(self, params):
+        return requests.get(
+            'https://cilogon.org/oauth2/token',
+            params=params
+        )
+
+    def get_ci_user_infos(self, access_token):
+        return requests.get(
+            'https://cilogon.org/oauth2/userinfo',
+            params={'access_token': access_token}
+        )
+
+    def cilogon_callback(self, auth_code=''):
+        if not auth_code:
+            login_url = self.reverse_url('login')
+            error_description = url_escape("Invalid authorization code")
+            return self.redirect(
+                f"{login_url}?error=error&error_msg={error_description}")
+        #######################################################################
+        # Get user informations from CILogon
+        params = {
+            'grant_type': 'authorization_code',
+            'code': auth_code,
+            'client_id': self.application.config['CI_LOGON_ID'],
+            'client_secret': self.application.config['CI_LOGON_SECRET'],
+            'redirect_uri': self.application.config['CI_LOGON_CALLBACK_URL']
+        }
+        error = False
+        cil_user_infos = {}
+
+        tok = self.get_ci_token(params)
+        if tok.status_code == 200:
+            tok = tok.json()
+            r = self.get_ci_user_infos(tok['access_token'])
+            logger.info(r)
+            if r.status_code == 200:
+                cil_user_infos = r.json()
+                logger.info(cil_user_infos)
+            else:
+                error = True
+        else:
+            error = True
+
+        if error:
+            login_url = self.reverse_url('login')
+            error_description = url_escape("Invalid CI Logon response")
+            return self.redirect(
+                f"{login_url}?error=error&error_msg={error_description}"
+            )
+
+        #######################################################################
+        # Set user provenances.
+        # We use local cached list of Edugain IDPs (updated weekly)
+        edugain_idp = (self.db.query(database.EdugainIdps)
+                       .filter(database.EdugainIdps.entityid
+                               == cil_user_infos['idp'])
+                       .first())
+
+        # From Canadian Access Federation
+        if edugain_idp is not None:
+            if edugain_idp.code == 'CAF':
+                user_from_caf = True
+            else:
+                user_from_caf = False
+        else:
+            user_from_caf = False
+
+        # From Google
+        if cil_user_infos['idp_name'] == 'Google':
+            user_from_google = True
+        else:
+            user_from_google = False
+
+        # For testing
+        logger.info("Dump CILogon information for testing period")
+        logger.info(json.dumps(cil_user_infos, indent=3))
+
+        if not user_from_caf and not user_from_google:
+            error_msg = url_escape("Restricted access. Users must comes from "
+                                   "Canadian Access Federation (CAF).")
+            return self.redirect(self.reverse_url('login')
+                                 + f"?error=error&error_msg={error_msg}")
+
+        if 'email' in cil_user_infos.keys():
+            logger.info("OK CILogon provided email")
+        else:
+            logger.error("LOGIN FAILED : Using CILogon : "
+                         "CILogon user email= !!! Email not provided !!!")
+            logger.error("Dump CILogon information")
+            logger.error(json.dumps(cil_user_infos, indent=3))
+            error_msg = url_escape("No email provided from CI Logon")
+            return self.redirect(self.reverse_url('login')
+                                 + f"?error=error&error_msg={error_msg}")
+
+        self.init_session(cil_user_infos)
+
+        # Log information
+        logger.info(f"LOGIN SUCCESS : Using CILogon : "
+                    f"email={cil_user_infos['email']}")
+
+    def init_session(self, user_info):
+        login = user_info['email'].lower()
+        user = self.db.query(database.User).get(login)
+        if user is None:
+            logger.info(f"CILogon Login: User login not found: {login}, "
+                        f"searching email.")
+            user = (self.db.query(database.User)
+                    .filter(database.User.email == login)
+                    .first())
+            if user:
+                logger.info(f"CILogon Login: Updating user info for existing "
+                            f"user: {user.login} -> {login}.")
+                user.login = login
+                user.displayname = user_info['name']
+                user.external = True
+                self.db.commit()
+        if user is None:
+            logger.info(f"CILogon Login: non-existent user, "
+                        f"create user {login}")
+            user = database.User(login=login)
+            user.displayname = user_info['name']
+            user.login = login
+            user.email = login
+            user.external = True
+            user.disabled = False
+            self.db.add(user)
+            self.db.commit()
+            self.set_secure_cookie('user', login)
+            return self.redirect(self.reverse_url('index'))
+        else:
+            logger.info("CILogon Login: Logging in..")
+            self.login(user.login)
+            return self._go_to_next()
+
+    def _go_to_next(self):
+        next_ = self.get_argument('next', '')
+        if not next_:
+            next_ = self.reverse_url('index')
+        return self.redirect(next_)
 
 
 class TermsOfService(BaseHandler):
@@ -231,10 +499,14 @@ class TermsOfService(BaseHandler):
 
 class Account(BaseHandler):
     def get_languages(self):
-        return [
-            (loc_code, tornado.locale.get(loc_code).name)
+        locale_list = [
+            (loc_code,
+             tornado.locale.get(loc_code).name
+             if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
             for loc_code in tornado.locale.get_supported_locales()
         ]
+        # locale_list.append(('en', self.gettext("English")))
+        return locale_list
 
     @authenticated
     @PROM_REQUESTS.sync('account')
@@ -242,9 +514,19 @@ class Account(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
-        return self.render('account.html', user=user,
-                           languages=self.get_languages(),
-                           current_language=user.language)
+        logger.info(self.get_languages())
+        if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            return self.render(
+                'auth/account.html',
+                user=user,
+                languages=self.get_languages(),
+                current_language=user.language,
+                is_external=self.application.config['ALLOW_EXTERNAL_LOGIN']
+            )
+        else:
+            return self.render('auth/external_account.html', user=user,
+                               languages=self.get_languages(),
+                               current_language=user.language)
 
     @authenticated
     @PROM_REQUESTS.async_('account')
@@ -253,19 +535,27 @@ class Account(BaseHandler):
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
         try:
+            displayname = self.get_body_argument('displayname', None)
             email = self.get_body_argument('email', None)
             language = self.get_body_argument('language', None)
             password1 = self.get_body_argument('password1', None)
             password2 = self.get_body_argument('password2', None)
+            if displayname is not None:
+                user.displayname = displayname
+            if displayname == "":
+                user.displayname = None
             if email is not None:
                 if email:
                     validate.user_email(email)
-                user.email = email or None
-            if password1 or password2:
-                validate.user_password(password1)
-                if password1 != password2:
-                    raise validate.InvalidFormat(_f("Passwords do not match"))
-                await user.set_password(password1)
+                user.email = email.lower() or None
+            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+                if password1 or password2:
+                    validate.user_password(password1)
+                    if password1 != password2:
+                        raise validate.InvalidFormat(
+                            _f("Passwords do not match")
+                        )
+                    await user.set_password(password1)
             if language not in tornado.locale.get_supported_locales():
                 language = None
             user.language = language
@@ -273,8 +563,12 @@ class Account(BaseHandler):
             return self.redirect(self.reverse_url('account'))
         except validate.InvalidFormat as e:
             logger.info("Error validating Account: %r", e)
+            template = 'auth/account.html'
+            if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+                template = 'auth/external_account.html'
+
             return await self.render(
-                'account.html',
+                template,
                 user=user,
                 languages=self.get_languages(),
                 current_language=user.language,
@@ -287,11 +581,15 @@ class AskResetPassword(BaseHandler):
     def get(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        return self.render('reset_password.html')
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            raise HTTPError(404)
+        return self.render('auth/reset_password.html')
 
     @PROM_REQUESTS.async_('reset_password')
     async def post(self):
         if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
             raise HTTPError(404)
         email = self.get_body_argument('email')
         user = (
@@ -301,7 +599,7 @@ class AskResetPassword(BaseHandler):
         ).one_or_none()
         if user is None:
             return await self.render(
-                'reset_password.html',
+                'auth/reset_password.html',
                 error=self.gettext("This email address is not associated with "
                                    "any user"),
             )
@@ -341,7 +639,7 @@ class AskResetPassword(BaseHandler):
             ))
             msg.add_alternative(
                 self.render_string(
-                    'email_reset_password.html',
+                    'auth/email_reset_password.html',
                     link=reset_link,
                     login=user.login,
                 ),
@@ -361,7 +659,8 @@ class AskResetPassword(BaseHandler):
                 "NOT Sending reset password email to %s %s (rate limited)",
                 user.login, user.email,
             )
-        return await self.render('reset_password.html', message="Email sent!")
+        return await self.render('auth/reset_password.html',
+                                 message="Email sent!")
 
 
 class SetNewPassword(BaseHandler):
@@ -387,13 +686,15 @@ class SetNewPassword(BaseHandler):
     def get(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            raise HTTPError(404)
         reset_token = self.get_query_argument('reset_token')
         try:
             self.decode_reset_token(reset_token)
         except HTTPError as e:
             self.set_status(403)
             return self.render(
-                'login.html', register=False,
+                'auth/login.html', register=False,
                 login_error=self.gettext(e.log_message),
             )
         return self.render('new_password.html', reset_token=reset_token)
@@ -402,13 +703,15 @@ class SetNewPassword(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
+        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            raise HTTPError(404)
         reset_token = self.get_body_argument('reset_token')
         try:
             user = self.decode_reset_token(reset_token)
         except HTTPError as e:
             self.set_status(403)
             return await self.render(
-                'login.html', register=False,
+                'auth/login.html', register=False,
                 login_error=self.gettext(e.log_message),
             )
         try:
@@ -417,7 +720,8 @@ class SetNewPassword(BaseHandler):
             validate.user_password(password1)
             if password1 != password2:
                 raise validate.InvalidFormat(_f("Passwords do not match"))
-            logger.info("Password reset: changing password for %r", user.login)
+            logger.info("Password reset: changing password for %r",
+                        user.login)
             await user.set_password(password1)
             self.db.commit()
             return self.redirect(self.reverse_url('index'))
@@ -460,6 +764,8 @@ class ProjectAdd(BaseHandler):
                 project=project,
                 # TRANSLATORS: Default tag name
                 path=self.gettext("interesting"),
+                # TRANSLATORS: Default tag color
+                color=self.application.tag_default_color,
                 # TRANSLATORS: Default tag description
                 description=self.gettext("Further review required")),
             )
@@ -605,6 +911,8 @@ class ImportCodebook(BaseHandler):
 
             for i in itertools.count():
                 path = self.get_body_argument('tag%d-path' % i, None)
+                parent = self.get_body_argument('tag%d-parent' % i, None)
+                color = self.get_body_argument('tag%d-color' % i, '')
                 description = self.get_body_argument(
                     'tag%d-description' % i,
                     '',
@@ -623,6 +931,7 @@ class ImportCodebook(BaseHandler):
                 try:
                     validate.tag_path(path)
                     validate.description(description)
+                    validate.color(color)
                 except validate.InvalidFormat as e:
                     errors.append(self.gettext(e.message))
                     continue
@@ -630,17 +939,23 @@ class ImportCodebook(BaseHandler):
                 tags.append({
                     'path': path,
                     'description': description,
+                    'color': color,
+                    'parent': parent,
                     'enabled': enabled,
                 })
                 if not enabled:
                     continue
 
                 if replace:
-                    replace_tags[path] = {'description': description}
+                    replace_tags[path] = {'description': description,
+                                          'parent': parent,
+                                          'color': color}
                 else:  # Insert
                     insert_tags.append({
                         'path': path,
                         'description': description,
+                        'color': color,
+                        'parent': parent,
                     })
 
             if errors:
@@ -662,20 +977,31 @@ class ImportCodebook(BaseHandler):
                         pass
                     else:
                         tag.description = tag_update['description']
+                        tag.color = tag_update['color']
+                        tag_parent = (self.db.query(database.Tag)
+                                      .filter_by(path=tag_update['parent'],
+                                                 project_id=project.id)
+                                      .first())
+                        tag.parent_id = tag_parent.id if tag_parent else None
                         changed_tags.append(tag)
                 if replace_tags:
                     raise KeyError
 
                 # Do inserts
                 for tag_insert in insert_tags:
+                    tag_parent = (self.db.query(database.Tag)
+                                  .filter_by(path=tag_insert['parent'],
+                                             project_id=project.id)
+                                  .first())
                     tag = database.Tag(
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
+                        color=tag_insert['color'],
+                        parent_id=tag_parent.id if tag_parent else None,
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)
-
                 self.db.flush()
                 commands = []
                 for tag in changed_tags:
@@ -718,25 +1044,63 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
+        is_demo = self.get_argument('demo', None)
+        demo_highlights_location = []
+        if is_demo is not None:
+            is_demo = "true"
+            user = self.db.query(database.User).get(self.current_user)
+            lang = user.language
+            if lang not in DEMO_DATA.keys():
+                lang = self.config['DEFAULT_LANGUAGE']
+            demo_highlights_location = DEMO_DATA[lang]['tutorial_highlights']
+        else:
+            is_demo = "false"
+
+        # Group tags by their parent IDs
+        grouped_tags = defaultdict(list)
+
+        for tag in project.tags:
+            tag_parent_id = tag.parent.id if tag.parent else None
+            grouped_tags[tag_parent_id].append(tag)
+
+        # Function to build the tree structure
+        def build_tree(parent_id):
+            children = []
+            for child_tag in grouped_tags[parent_id]:
+                child_id = child_tag.id
+                parent_id = child_tag.parent.id if child_tag.parent else None
+                color = (child_tag.color if child_tag.color
+                         else self.application.tag_default_color)
+                child_info = {
+                    "id": child_tag.id,
+                    "path": child_tag.path,
+                    "description": child_tag.description,
+                    "color": color,
+                    "parent": parent_id,
+                    "count": child_tag.highlights_count,
+                    "count_document": child_tag.documents_count,
+                    "children": build_tree(child_id)
+                }
+                children.append(child_info)
+            return children
+
+        # Build the tree for tags with parent_id=None (root level)
+        result_tree = build_tree(None)
+
+        # Convert the result to JSON
+        tags_json = Markup(json.dumps(result_tree, sort_keys=True))
+
         documents_json = Markup(json.dumps(
             {
                 str(doc.id): {'id': doc.id, 'name': doc.name,
                               'description': doc.description,
+                              'favorite': doc.favorite,
                               'text_direction': doc.text_direction.name}
                 for doc in project.documents
             },
             sort_keys=True,
         ))
-        tags_json = Markup(json.dumps(
-            {
-                str(tag.id): {'id': tag.id,
-                              'path': tag.path,
-                              'description': tag.description,
-                              'count': tag.highlights_count}
-                for tag in project.tags
-            },
-            sort_keys=True,
-        ))
+
         members = (
             self.db.query(database.ProjectMember)
             .filter(database.ProjectMember.project_id == project_id)
@@ -762,4 +1126,7 @@ class Project(BaseHandler):
             members=members_json,
             can_import_codebook=can_import_codebook,
             can_delete_project=can_delete_project,
+            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN'],
+            is_demo=Markup(is_demo),
+            demo_highlights_location=Markup(demo_highlights_location)
         )

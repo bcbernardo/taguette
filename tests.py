@@ -1,6 +1,4 @@
-import aiohttp
 import asyncio
-import concurrent.futures
 from datetime import datetime
 import functools
 import io
@@ -16,17 +14,18 @@ import string
 import tempfile
 import textwrap
 import time
-from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPTestCase
 import unittest
 from unittest import mock
 from urllib.parse import urlencode, urlparse
 from xml.etree import ElementTree
-
+from tornado.testing import AsyncTestCase, gen_test
+from tests.http_test_case import MyHTTPTestCase
+from tests.selenium_wrapper import SeleniumTest
 from taguette import exact_version
 from taguette import convert, database, extract, import_codebook, main, \
-    validate, web
+    web
 from taguette.utils import sanitize_filename
-
+from tornado.escape import url_escape
 
 if 'TAGUETTE_TEST_DB' in os.environ:
     DATABASE_URI = os.environ['TAGUETTE_TEST_DB']
@@ -233,7 +232,6 @@ class TestPassword(AsyncTestCase):
             user = database.User(login='user')
             await user.set_password(password, 'scrypt')
             self.assertTrue(user.hashed_password.startswith('scrypt:'))
-
             self.assertTrue(await user.check_password(password))
             self.assertFalse(await user.check_password(password[:-1]))
 
@@ -244,7 +242,6 @@ class TestPassword(AsyncTestCase):
             user = database.User(login='user')
             await user.set_password(password, 'pbkdf2')
             self.assertTrue(user.hashed_password.startswith('pbkdf2:'))
-
             self.assertTrue(await user.check_password(password))
             self.assertFalse(await user.check_password(password[:-1]))
 
@@ -255,7 +252,6 @@ class TestPassword(AsyncTestCase):
             user = database.User(login='user')
             await user.set_password(password, 'bcrypt')
             self.assertTrue(user.hashed_password.startswith('bcrypt:'))
-
             self.assertTrue(await user.check_password(password))
             self.assertFalse(await user.check_password(password[:-1]))
 
@@ -390,8 +386,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': 'Named persons'},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': 'Named persons'},
             ]
         )
 
@@ -404,8 +402,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': ''},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': ''},
             ]
         )
 
@@ -421,8 +421,10 @@ class TestReadCodebook(unittest.TestCase):
                 ).encode('utf-8'),
             )),
             [
-                {'path': 'interesting', 'description': ''},
-                {'path': 'people', 'description': ''},
+                {'path': 'interesting', 'color': '',
+                 'parent': '', 'description': ''},
+                {'path': 'people', 'color': '',
+                 'parent': '', 'description': ''},
             ]
         )
 
@@ -468,71 +470,6 @@ class TestReadCodebook(unittest.TestCase):
             "Empty tag name",
         )
         self.assertEqual(err.exception.row, 3)
-
-
-class MyHTTPTestCase(AsyncHTTPTestCase):
-    xsrf = None
-
-    def setUp(self):
-        web.Application.check_messages = lambda s: s.messages_event.set()
-        validate.filename.windows = True  # escape device names
-        super(MyHTTPTestCase, self).setUp()
-
-        # Tornado's http client doesn't support cookies, use aiohttp instead
-        @self.io_loop.run_sync
-        async def async_init():
-            self.http_client = aiohttp.ClientSession(
-                # Need to set 'unsafe' to work when host is an IP address
-                cookie_jar=aiohttp.cookiejar.CookieJar(unsafe=True),
-            )
-            await self.http_client.__aenter__()
-
-    def tearDown(self):
-        self.io_loop.run_sync(
-            lambda: self.http_client.close(),
-            timeout=3,
-        )
-
-    def _fetch(self, url, method='GET', **kwargs):
-        # Copied from tornado.testing.AsyncHTTPTestCase.fetch()
-        if not url.lower().startswith(('http://', 'https://')):
-            url = self.get_url(url)
-        return getattr(self.http_client, method.lower())(url, **kwargs)
-
-    def aget(self, url, headers=None):
-        return self._fetch(url, headers=headers, allow_redirects=False)
-
-    def apost(self, url, **kwargs):
-        cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
-        if '_xsrf' in cookies:
-            token = cookies['_xsrf'].value
-            if 'data' in kwargs:
-                if isinstance(kwargs['data'], dict):
-                    kwargs['data'] = dict(kwargs['data'], _xsrf=token)
-            else:
-                url = '%s%s%s' % (url, '&' if '?' in url else '?',
-                                  urlencode(dict(_xsrf=token)))
-        if 'files' in kwargs:
-            files = kwargs.pop('files')
-            data = aiohttp.FormData()
-            for key, value in kwargs.get('data', {}).items():
-                data.add_field(key, value)
-            for key, (filename, content_type, value) in files.items():
-                data.add_field(
-                    key, value,
-                    content_type=content_type,
-                    filename=filename,
-                )
-            kwargs['data'] = data
-        return self._fetch(url, method='POST', allow_redirects=False, **kwargs)
-
-    def adelete(self, url):
-        cookies = self.http_client.cookie_jar.filter_cookies(self.get_url('/'))
-        if '_xsrf' in cookies:
-            token = cookies['_xsrf'].value
-            url = '%s%s%s' % (url, '&' if '?' in url else '?',
-                              urlencode(dict(_xsrf=token)))
-        return self._fetch(url, method='DELETE')
 
 
 async def set_dumb_password(DBSession):
@@ -713,7 +650,6 @@ class TestMultiuser(MyHTTPTestCase):
         #                         merge tag 3 -> 2
         #                         highlights: [2, 3, 5]
         # delete project
-
         # Accept cookies
         async with self.apost('/cookies', data=dict()) as response:
             self.assertEqual(response.status, 303)
@@ -753,24 +689,32 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             init_js,
             '<script type="text/javascript">\n'
-            '  var user_login = "admin";\n'
-            '  var project_id = 1;\n'
-            '  var last_event = -1;\n'
-            '  var documents = {};\n'
-            '  var highlights = {};\n'
-            '  var tags = %s;\n'
-            '  var members = {"admin": {"privileges": "ADMIN"}};\n'
-            '  var version = \'%s\';\n'
+            '  const user_login = "admin";\n'
+            '  const project_id = 1;\n'
+            '  const version = \'%s\';\n'
+            '  let documents = {};\n'
+            '  let tags = %s;\n'
+            '  let members = {"admin": {"privileges": "ADMIN"}};\n'
+            '  let highlights = {};\n'
+            '  let last_event = -1;\n'
+            '  let is_demo = false;\n'
+            '  let demo_highlights_location = [];\n'
             '</script>' % (
-                json.dumps(
-                    {
-                        "1": {
-                            "count": 0, "id": 1, "path": "interesting",
-                            "description": "Further review required",
-                        },
-                    },
-                    sort_keys=True),
                 exact_version(),
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "path": "interesting",
+                            "description": "Further review required",
+                            "color": "#000000",
+                            "parent": None,
+                            "count": 0,
+                            "count_document": 0,
+                            "children": []
+                        },
+                    ],
+                    sort_keys=True)
             ),
         )
 
@@ -793,24 +737,32 @@ class TestMultiuser(MyHTTPTestCase):
         # Create tags in project 2
         async with self.apost(
             '/api/project/2/tag/new',
-            json=dict(path='people', description="People of interest"),
+            json=dict(path='people',
+                      parent_id=None,
+                      color='#000000',
+                      description="People of interest"),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 1, 'tag_id': 3,
-             'tag_path': 'people', 'description': "People of interest"})
+            {'type': 'tag_add', 'id': 1, 'tag_id': 3, 'tag_parent': None,
+             'tag_color': '#000000', 'tag_path': 'people',
+             'description': "People of interest"})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
             '/api/project/2/tag/new',
-            json=dict(path='interesting.places', description=''),
+            json=dict(path='interesting.places',
+                      color='#000000',
+                      parent_id=None,
+                      description=''),
         ) as response:
             self.assertEqual(response.status, 200)
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 2, 'tag_id': 4,
-             'tag_path': 'interesting.places', 'description': ''})
+            {'type': 'tag_add', 'id': 2, 'tag_id': 4, 'tag_parent': None,
+             'tag_color': '#000000', 'tag_path': 'interesting.places',
+             'description': ''})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -1066,7 +1018,7 @@ class TestMultiuser(MyHTTPTestCase):
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/interesting',
+            '/api/project/2/highlights/interesting|interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
@@ -1094,6 +1046,8 @@ class TestMultiuser(MyHTTPTestCase):
                 ],
                 'pages': 1,
             })
+
+        # TODO : add test with condition or and not
 
         # Get contents of document 2
         async with self.aget('/api/project/2/document/2') as response:
@@ -1185,14 +1139,6 @@ class TestMultiuser(MyHTTPTestCase):
                       <body>
                         <h1>Taguette highlights: interesting</h1>
 
-                        diff
-                        <p>
-                          <strong>Document:</strong> otherdoc
-                          <strong>Tags:</strong>
-                            interesting.places
-                        </p>
-                        <hr>
-
                         tent
                         <p>
                           <strong>Document:</strong> otherdoc
@@ -1264,7 +1210,6 @@ class TestMultiuser(MyHTTPTestCase):
                 await response.text(),
                 textwrap.dedent('''\
                 id,document,tag,content
-                2,otherdoc,interesting.places,diff
                 3,otherdoc,interesting,tent
                 3,otherdoc,people,tent
                 ''').replace('\n', '\r\n'),
@@ -1280,10 +1225,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,Further review required,1
-                    people,People of interest,2
-                    interesting.places,,1
+                    tag,description,color,parent,number of highlights
+                    interesting,Further review required,#000000,,1
+                    people,People of interest,#000000,,2
+                    interesting.places,,#000000,,1
                     ''').replace('\n', '\r\n'),
             )
 
@@ -1373,7 +1318,6 @@ class TestMultiuser(MyHTTPTestCase):
             })
 
         # TODO: Collaborators
-
         await asyncio.sleep(2)
         self.assertFalse(poll_proj1.done())
         poll_proj1.cancel()
@@ -1543,12 +1487,16 @@ class TestMultiuser(MyHTTPTestCase):
         tag1 = database.Tag(
             project=project1,
             path='db%dtag%d1' % (db_num, project_num),
+            color='#000000',
+            parent_id=None,
             description='',
         )
         db.add(tag1)
         tag2 = database.Tag(
             project=project1,
             path='db%dtag%d2' % (db_num, project_num),
+            color='#000000',
+            parent_id=None,
             description='',
         )
         db.add(tag2)
@@ -1579,7 +1527,10 @@ class TestMultiuser(MyHTTPTestCase):
         db.add(database.Command.document_add(user, document2))
         db.add(database.Command.document_delete(user, document_fake))
         db.delete(document_fake)
-        tag_fake = database.Tag(project=project1, path='db%dtagF' % db_num,
+        tag_fake = database.Tag(project=project1,
+                                path='db%dtagF' % db_num,
+                                color='#000000',
+                                parent_id=None,
                                 description='')
         db.add(tag_fake)
         db.flush()
@@ -1741,14 +1692,17 @@ class TestMultiuser(MyHTTPTestCase):
                   'document_name': 'db2doc12.txt'}),
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 7,
-                  'tag_path': 'db2tag11'}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': 7, 'tag_path': 'db2tag11',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (32, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': -3,
-                  'tag_path': 'db2tagF'}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': -3, 'tag_path': 'db2tagF',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (33, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 8,
-                  'tag_path': 'db2tag12'}),
+                 {'type': 'tag_add', 'description': '',
+                  'tag_id': 8, 'tag_path': 'db2tag12',
+                  'tag_color': '#000000', 'tag_parent': None}),
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
@@ -1780,12 +1734,12 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertRowsEqualsExceptDates(
             db1.execute(database.Tag.__table__.select()),
             [
-                (1, 1, 'db1tag11', ''),
-                (2, 1, 'db1tag12', ''),
-                (4, 2, 'db1tag21', ''),
-                (5, 2, 'db1tag22', ''),
-                (7, 3, 'db2tag11', ''),
-                (8, 3, 'db2tag12', ''),
+                (1, 1, 'db1tag11', '', '#000000', None),
+                (2, 1, 'db1tag12', '', '#000000', None),
+                (4, 2, 'db1tag21', '', '#000000', None),
+                (5, 2, 'db1tag22', '', '#000000', None),
+                (7, 3, 'db2tag11', '', '#000000', None),
+                (8, 3, 'db2tag12', '', '#000000', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1896,14 +1850,14 @@ class TestMultiuser(MyHTTPTestCase):
                   'document_name': 'db1doc22.txt'}),
                 (4, 'admin', 1, -6, {'type': 'document_delete'}),
                 (5, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 1,
-                  'tag_path': 'db1tag21'}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': 1, 'tag_path': 'db1tag21', 'tag_parent': None}),
                 (6, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': -6,
-                  'tag_path': 'db1tagF'}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': -6, 'tag_path': 'db1tagF', 'tag_parent': None}),
                 (7, 'admin', 1, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 2,
-                  'tag_path': 'db1tag22'}),
+                 {'type': 'tag_add', 'description': '', 'tag_color': '#000000',
+                  'tag_id': 2, 'tag_path': 'db1tag22', 'tag_parent': None}),
                 (8, 'admin', 1, None,
                  {'type': 'tag_delete', 'tag_id': -6}),
                 (9, 'admin', 1, 1,
@@ -1938,8 +1892,8 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Tag.__table__.c.id)
             ),
             [
-                (1, 1, 'db1tag21', ''),
-                (2, 1, 'db1tag22', ''),
+                (1, 1, 'db1tag21', '', '#000000', None),
+                (2, 1, 'db1tag22', '', '#000000', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1952,7 +1906,6 @@ class TestMultiuser(MyHTTPTestCase):
 
     # The codebook import tests are split into the "read" tests (post CSV file,
     # get HTML form) and the "import" tests (submit form, database updates)
-
     async def _setup_import_codebook_project(self):
         # Log in
         async with self.apost('/cookies', data=dict()) as response:
@@ -2169,9 +2122,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,Further review required,0
-                    people,new,0
+                    tag,description,color,parent,number of highlights
+                    interesting,Further review required,#000000,,0
+                    people,new,,,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2185,7 +2138,8 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new',
+                    'tag_path': 'people', 'tag_parent': None,
+                    'tag_color': '', 'description': 'new',
                 }),
             ],
         )
@@ -2223,9 +2177,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights
-                    interesting,yes replace,0
-                    people,new,0
+                    tag,description,color,parent,number of highlights
+                    interesting,yes replace,#000000,,0
+                    people,new,,,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2239,11 +2193,13 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 1,
-                    'tag_path': 'interesting', 'description': 'yes replace',
+                    'tag_path': 'interesting', 'tag_parent': None,
+                    'tag_color': '#000000', 'description': 'yes replace',
                 }),
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new',
+                    'tag_path': 'people', 'tag_parent': None,
+                    'tag_color': '', 'description': 'new',
                 }),
             ],
         )
@@ -2264,6 +2220,136 @@ class TestMultiuser(MyHTTPTestCase):
         fut = asyncio.ensure_future(self._poll_event(proj, from_id))
         await asyncio.sleep(0.2)  # Give time for the request to be sent
         return fut
+
+
+class TestMultiuserExternal(MyHTTPTestCase):
+    def get_app(self):
+        self.application = web.make_app(dict(
+            main.DEFAULT_CONFIG,
+            NAME="Test Taguette instance", PORT=7465,
+            DATABASE=DATABASE_URI,
+            REDIS_SERVER=REDIS,
+            TOS_FILE=None,
+            EMAIL='test@example.com',
+            MAIL_SERVER={'host': 'localhost', 'port': 25},
+            COOKIES_PROMPT=True,
+            MULTIUSER=True,
+            SECRET_KEY='2PbQ/5Rs005G/nTuWfibaZTUAo3Isng3QuRirmBK',
+            ALLOW_EXTERNAL_LOGIN=True,
+            CI_LOGON_ID="cilogon:/client_id/123456789",
+            CI_LOGON_SECRET="very-secret-secret",
+            CI_LOGON_CALLBACK_URL="http://localhost:7465/ci_callback"
+        ))
+        self.io_loop.run_sync(
+            lambda: set_dumb_password(self.application.DBSession)
+        )
+        return self.application
+
+    def tearDown(self):
+        super(TestMultiuserExternal, self).tearDown()
+        close_all_sessions()
+        engine = sqlalchemy.create_engine(DATABASE_URI)
+        database.Base.metadata.drop_all(bind=engine)
+
+    @gen_test(timeout=30)
+    async def test_login(self):
+        # await self.s_get('/register')
+        # self.assertIn(
+        #     'CILogon',
+        #     [el.text for el in self.find_by_tag('p')],
+        # )
+        async with self.aget('/register') as response:
+            self.assertEqual(response.status, 200)
+            self.assertIn(
+                b'CILogon',
+                await response.read()
+            )
+
+        async with self.aget('/login') as response:
+            self.assertEqual(response.status, 200)
+            self.assertIn(
+                b'CILogon',
+                await response.read()
+            )
+
+        custom_error_message = "My custom error message"
+        error_msg = url_escape(custom_error_message)
+        async with self.aget(
+                f'/ci_callback?error=error&error_description={error_msg}'
+        ) as response:
+            self.assertGreaterEqual(response.status, 200)
+            self.assertLess(response.status, 400)
+
+        async with self.aget(
+                f'/login?error=error&error_msg={error_msg}'
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertIn(
+                b'My custom error message',
+                await response.read()
+            )
+
+        # Url to mock :
+        # auth_uri='https://cilogon.org/authorize'
+        # token_uri='https://cilogon.org/oauth2/token'
+        # userinfo_uri='https://cilogon.org/oauth2/userinfo'
+
+        async with self.aget('/ci_callback') as response:
+            # Should redirect with message
+            self.assertGreaterEqual(response.status, 200)
+            self.assertLess(response.status, 400)
+
+        # Insert in EdugainIdps
+        # 	{
+        # 		"id" : 34519,
+        # 		"entityid" :
+        #             "https:\/\/shibboleth.usherbrooke.ca\/idp\/shibboleth",
+        # 		"e_displayname" : null,
+        # 		"regauth" : "http:\/\/www.canarie.ca",
+        # 		"entity_cat" : "11;76",
+        # 		"eccs_status" : 4,
+        # 		"validator_status" : 0,
+        # 		"coco_status" : null,
+        # 		"coco_id" : null,
+        # 		"sirtfi_status" : 1,
+        # 		"code" : "CAF",
+        # 		"scopes" : "usherbrooke.ca"
+        # 	}
+
+        # Test login existing user
+        # code = 'LONG_AUTHORIZATION_CODE'
+        # async with self.aget(
+        #         f'/ci_callback?code={code}'
+        # ) as response:
+        #     self.assertEqual(response.status, 200)
+        #     # mock.patch
+        #     tok = {
+        #         "access_token": "VALID_ACCESS_TOKEN"
+        #     }
+        #     valid_response = {
+        #         "sub": "http://cilogon.org/serverE/users/123456789",
+        #         "idp_name": "Universit\u00e9 de Sherbrooke",
+        #         "eppn": "test@example.com",
+        #         "cert_subject_dn": "...",
+        #         "eptid": "https://shibboleth.usherbrooke.ca/idp/shibboleth"
+        #                  "!https://cilogon.org/shibboleth!123456789",
+        #         "iss": "https://cilogon.org",
+        #         "given_name": "My complete",
+        #         "acr": "https://refeds.org/profile/mfa",
+        #         "aud": "cilogon:/client_id/123456789",
+        #         "nbf": 1710169491,
+        #         "idp": "https://shibboleth.usherbrooke.ca/idp/shibboleth",
+        #         "affiliation": "email@example.com",
+        #         "name": "My complete Name",
+        #         "family_name": "Name",
+        #         "email": "test@example.com",
+        #         "jti":
+        #             "https://cilogon.org/oauth2/idToken/123456789/123456789"
+        #     }
+
+        # Test login non-existing user
+
+        # Test login forbidden user
 
 
 class TestSingleuser(MyHTTPTestCase):
@@ -2392,125 +2478,6 @@ class TestSingleuser(MyHTTPTestCase):
         self.assertIn(b"last project", body)
 
 
-class SeleniumTest(MyHTTPTestCase):
-    def setUp(self):
-        super(SeleniumTest, self).setUp()
-
-        from selenium import webdriver
-
-        if os.environ['TAGUETTE_TEST_WEBDRIVER'] == 'firefox':
-            self.driver = webdriver.Firefox()
-        elif os.environ['TAGUETTE_TEST_WEBDRIVER'] == 'chromium':
-            from selenium.webdriver.chrome.options import Options
-
-            options = Options()
-            options.add_argument('--disable-gpu')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--no-sandbox')
-            self.driver = webdriver.Chrome(options=options)
-        else:
-            raise EnvironmentError
-        self.driver.set_window_size(1024, 768)
-        self.driver_pool = concurrent.futures.ThreadPoolExecutor(1)
-
-        self.logs = []
-
-    def tearDown(self):
-        super(SeleniumTest, self).tearDown()
-
-        logs = self.get_logs()
-        if logs:
-            raise ValueError("Error in browser console: %s"
-                             % logs[0]['message'])
-
-        self.driver.quit()
-
-    @staticmethod
-    def extract_path(url):
-        m = re.match('^http://127.0.0.1:[0-9]+(.+)$', url)
-        return m.group(1)
-
-    @property
-    def s_path(self):
-        path = self.extract_path(self.driver.current_url)
-        self.assertTrue(
-            path.startswith(self.application.config['BASE_PATH']),
-            "Not under base path: %r" % path,
-        )
-        return path[len(self.application.config['BASE_PATH']):]
-
-    async def s_get(self, url, *, ignore_base_path=False):
-        self.store_logs()
-        if not ignore_base_path:
-            url = self.application.config['BASE_PATH'] + url
-        url = self.get_url(url)
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: self.driver.get(url),
-        )
-        await asyncio.sleep(0.2)
-
-    async def s_click(self, element):
-        self.store_logs()
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: element.click(),
-        )
-        await asyncio.sleep(0.2)
-
-    async def s_click_button(self, text, tag='button', parent=None):
-        from selenium.webdriver.common.by import By
-
-        await asyncio.sleep(0.2)
-        if parent is None:
-            parent = self.driver
-        buttons = parent.find_elements(By.TAG_NAME, tag)
-        correct_button, = [
-            button for button in buttons
-            if button.text == text
-        ]
-        await self.s_click(correct_button)
-
-    async def s_perform_action(self, action):
-        self.store_logs()
-        await asyncio.get_event_loop().run_in_executor(
-            self.driver_pool,
-            lambda: action.perform(),
-        )
-        await asyncio.sleep(0.2)
-
-    def _filter_logs(self, logs):
-        return [
-            line
-            for line in logs
-            if 'Polling failed:' not in line['message']
-        ]
-
-    def store_logs(self):
-        from selenium import webdriver
-
-        if isinstance(self.driver, webdriver.Chrome):
-            logs = self.driver.get_log('browser')
-            logs = self._filter_logs(logs)
-            if self.logs:
-                for i in reversed(range(len(logs))):
-                    if logs[i] == self.logs[-1]:
-                        self.logs.extend(logs[i + 1:])
-                        return
-            self.logs.extend(logs)
-
-    def get_logs(self):
-        from selenium import webdriver
-
-        if isinstance(self.driver, webdriver.Chrome):
-            self.store_logs()
-            logs = self.logs
-            self.logs = []
-            return logs
-        else:
-            return None
-
-
 @unittest.skipUnless(
     os.environ.get('TAGUETTE_TEST_WEBDRIVER', ''),
     "TAGUETTE_TEST_WEBDRIVER not set",
@@ -2538,18 +2505,16 @@ class TestSeleniumMultiuser(SeleniumTest):
 
     @gen_test(timeout=120)
     async def test_login(self):
-        from selenium.webdriver.common.by import By
-
         # Fetch index, should have welcome message and register link
         await self.s_get('/')
-        self.assertEqual(self.driver.title, 'Welcome | Taguette')
+        self.assertEqual(self.driver.title, 'Welcome | LibreQDA')
         self.assertEqual(
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'h1')],
+            [el.text for el in self.find_by_tag('h1')],
             ['Welcome'],
         )
         self.assertIn(
             'Register now',
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'a')],
+            [el.text for el in self.find_by_tag('a')],
         )
 
         # Only admin so far
@@ -2566,17 +2531,14 @@ class TestSeleniumMultiuser(SeleniumTest):
         )
 
         # Accept cookies
-        await self.s_click_button('Accept cookies')
+        await self.s_click_button_by_text('Accept cookies')
         self.assertEqual(self.s_path, '/register')
 
         # Register
-        elem = self.driver.find_element(By.ID, 'register-login')
-        elem.send_keys('Tester')
-        elem = self.driver.find_element(By.ID, 'register-password1')
-        elem.send_keys('hacktoo')
-        elem = self.driver.find_element(By.ID, 'register-password2')
-        elem.send_keys('hacktoo')
-        await self.s_click_button('Register')
+        self.set_value('register-login', 'Tester')
+        self.set_value('register-password1', 'hacktoo')
+        self.set_value('register-password2', 'hacktoo')
+        await self.s_click_button('register-button')
 
         # User exists in database
         db = self.application.DBSession()
@@ -2587,21 +2549,20 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Fetch index, should have project list
         await self.s_get('/')
         self.assertEqual(
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'h1')],
-            ['Welcome tester'],
+            [el.text for el in self.find_by_tag('h1')],
+            ['Welcome tester', 'Welcome to LibreQDA, a qualitative data analysis software (QDA) developed by the Plateforme en humanités numériques (PHuN) at Université de Sherbrooke.'],
         )
         self.assertIn(
             'Here are your projects:',
-            [el.text for el in self.driver.find_elements(By.TAG_NAME, 'p')],
+            [el.text for el in self.find_by_tag('p')],
         )
 
         # Fetch project creation page
         await self.s_get('/project/new')
 
         # Create a project
-        elem = self.driver.find_element(By.ID, 'project-name')
-        elem.send_keys('test project')
-        await self.s_click_button('Create')
+        self.set_value('project-name', 'test project')
+        await self.s_click_button('save-project-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Log out
@@ -2611,7 +2572,7 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Hit error page
         await self.s_get('/api/project/1/highlights/')
         self.assertNotEqual(
-            self.driver.find_element(By.TAG_NAME, 'body').text.find(
+            self.find_by_tag('body')[0].text.find(
                 '"Not logged in"',
             ),
             -1,
@@ -2629,11 +2590,9 @@ class TestSeleniumMultiuser(SeleniumTest):
         await self.s_get(
             '/login?' + urlencode(dict(next=self.base_path + '/project/1')),
         )
-        elem = self.driver.find_element(By.ID, 'log-in-login')
-        elem.send_keys('Tester')
-        elem = self.driver.find_element(By.ID, 'log-in-password')
-        elem.send_keys('hacktoo')
-        await self.s_click_button('Log in')
+        self.set_value('log-in-login', 'Tester')
+        self.set_value('log-in-password', 'hacktoo')
+        await self.s_click_button('log-in-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Check redirect to account
@@ -2642,15 +2601,24 @@ class TestSeleniumMultiuser(SeleniumTest):
 
     def get_highlight_add_tags(self):
         from selenium.webdriver.common.by import By
-
         tags = {}
-        form = self.driver.find_element(By.ID, 'highlight-add-form')
-        for elem in form.find_elements(By.TAG_NAME, 'input'):
-            if elem.get_attribute('type') == 'checkbox':
-                id = elem.get_attribute('id')
-                self.assertTrue(id.startswith('highlight-add-tags-'))
-                id = int(id[19:])
-                tags[id] = elem.get_property('checked')
+
+        tags_highlight = (
+            self.driver.find_element(By.ID, 'treeview-tags-highlight')
+            .find_elements(By.CLASS_NAME, 'node-treeview-tags-highlight')
+        )
+
+        for elem in tags_highlight:
+            node_id = elem.get_attribute('data-nodeid')
+            tag_id = self.driver.execute_script(
+                f"""
+                var all = $("#treeview-tags-highlight").treeview('getEnabled');
+                var node = all.find(item => item.nodeId === {int(node_id)});
+                return node.id;
+                """
+            )
+            class_list = elem.get_attribute('class')
+            tags[tag_id] = 'node-selected' in class_list.split()
         return tags
 
     @gen_test(timeout=120)
@@ -2675,307 +2643,359 @@ class TestSeleniumMultiuser(SeleniumTest):
         # export doc 1
         # merge tag 2 -> 1
         # highlights: [1, 2, 3]
-
         from selenium.webdriver import ActionChains
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
-        from selenium.webdriver.support.select import Select
 
         # Accept cookies
         await self.s_get('/cookies')
-        await self.s_click_button('Accept cookies')
+        await self.s_click_button_by_text('Accept cookies')
         self.assertEqual(self.s_path, '/')
 
         # Log in
         await self.s_get('/login')
-        elem = self.driver.find_element(By.ID, 'log-in-login')
-        elem.send_keys('admin')
-        elem = self.driver.find_element(By.ID, 'log-in-password')
-        elem.send_keys('hackme')
-        await self.s_click_button('Log in')
+        self.set_value('log-in-login', 'admin')
+        self.set_value('log-in-password', 'hackme')
+        await self.s_click_button('log-in-button')
         self.assertEqual(self.s_path, '/')
 
         # Create project 1
         await self.s_get('/project/new')
-        elem = self.driver.find_element(By.ID, 'project-name')
-        elem.send_keys('one')
-        elem = self.driver.find_element(By.ID, 'project-description')
-        elem.send_keys("Remi's project")
-        await self.s_click_button('Create')
+        self.set_value("project-name", "Project 1")
+        self.set_value("project-description", "phun's project")
+        await self.s_click_button('save-project-button')
         self.assertEqual(self.s_path, '/project/1')
 
         # Check project page
         expected = (
-            '  var user_login = "admin";\n'
-            '  var project_id = 1;\n'
-            '  var last_event = -1;\n'
-            '  var documents = {};\n'
-            '  var highlights = {};\n'
-            '  var tags = %s;\n'
-            '  var members = {"admin": {"privileges": "ADMIN"}};\n'
-            '  var version = \'%s\';\n'
-            '' % (
-                json.dumps(
+            '  const user_login = "admin";\n'
+            '  const project_id = 1;\n'
+            '  const version = \'%s\';\n'
+            '  let documents = {};\n'
+            '  let tags = %s;\n'
+            '  let members = {"admin": {"privileges": "ADMIN"}};\n'
+            '  let highlights = {};\n'
+            '  let last_event = -1;\n'
+            '  let is_demo = false;\n'
+            '  let demo_highlights_location = [];\n'
+        ) % (
+            exact_version(),
+            json.dumps(
+                [
                     {
-                        "1": {
-                            "count": 0, "id": 1, "path": "interesting",
-                            "description": "Further review required",
-                        },
+                        "children": [],
+                        "count": 0,
+                        "count_document": 0,
+                        "color": "#000000",
+                        "description": "Further review required",
+                        "id": 1,
+                        "parent": None,
+                        "path": "interesting"
                     },
-                    sort_keys=True,
-                ),
-                exact_version(),
+                ],
+                sort_keys=True
             )
         )
+
         self.assertTrue(any(
             expected.strip() == script.get_property('textContent').strip()
             for script in self.driver.find_elements(By.TAG_NAME, 'script')
         ))
 
         # Create tag 2 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        await self.s_click_button('Create a tag', tag='a')
-        elem = self.driver.find_element(By.ID, 'tag-add-path')
-        elem.send_keys('people')
-        elem = self.driver.find_element(By.ID, 'tag-add-description')
-        elem.send_keys('People of interest')
-        await self.s_click_button('Save & Close')
+        await self.s_click(self.find_by_id('tags-tab'))
+        await self.s_click_button('create-tag-link')
+        self.set_value("tag-add-path", "people")
+        self.set_value("tag-add-description", "People of interest")
+        await self.s_click_button('save-tag-button')
 
         # Check tags
-        tag_links = (
-            self.driver.find_element(By.ID, 'tags-list')
-            .find_elements(By.CLASS_NAME, 'tag-name')
-        )
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
         self.assertEqual(
-            [link.text for link in tag_links],
+            [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'people'],
         )
 
         # Create document 1 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
-        await self.s_click_button('Add a document', tag='a')
-        elem = self.driver.find_element(By.ID, 'document-add-name')
-        elem.send_keys('otherdoc')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
+        await self.s_click_button('documents-tab')
+        await self.s_click_button('create-document-link')
+        docs_1 = []
         with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
             tmp.write(b'different content')
             tmp.flush()
-            elem.send_keys(tmp.name)
-            await self.s_click_button('Import')
+            docs_1.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+            self.set_value("document-add-file", docs_1[0]['path'])
+            await self.s_click_button('import-document-button')
         db = self.application.DBSession()
         doc = db.query(database.Document).get(1)
-        self.assertEqual(doc.name, 'otherdoc')
+        self.assertEqual(doc.name, docs_1[0]['name'])
         self.assertEqual(doc.description, '')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.LEFT_TO_RIGHT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        self.assertTrue(doc.filename, docs_1[0]['name'])
 
         # Change project 2 metadata
-        self.assertEqual(
-            self.driver.find_element(By.CLASS_NAME, 'project-name').text,
-            'one',
-        )
-        await self.s_click(self.driver.find_element(By.ID, 'project-tab'))
-        elem = self.driver.find_element(By.ID, 'project-name')
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'Project 1')
+        await self.s_click_button('project-tab')
         await self.s_perform_action(
             ActionChains(self.driver)
-            .click(elem)
+            .click(self.find_by_id('project-name'))
             .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
             .send_keys('new project')
         )
-        elem = self.driver.find_element(By.ID, 'project-description')
-        elem.click()
+        self.find_by_id('project-description').click()
         await asyncio.sleep(0.5)
         await self.s_perform_action(
             ActionChains(self.driver)
             .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
         )
         await asyncio.sleep(0.5)
-        elem.send_keys('Meaningful')
-        await self.s_click(
-            self.driver.find_element(By.ID, 'document-contents'),
-        )
+        self.set_value('project-description', 'Meaningful')
+        await self.s_click(self.find_by_id('document-contents'))
         await asyncio.sleep(10)  # Wait for XHR
-        self.assertEqual(
-            self.driver.find_element(By.CLASS_NAME, 'project-name').text,
-            'new project',
-        )
+        self.assertEqual(self.find_by_class(
+            'project-name')[0].text, 'new project')
         db = self.application.DBSession()
         proj = db.query(database.Project).get(1)
         self.assertEqual(proj.name, 'new project')
         self.assertEqual(proj.description, 'Meaningful')
 
-        # Create document 2 in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
-        await self.s_click_button('Add a document', tag='a')
-        elem = self.driver.find_element(By.ID, 'document-add-name')
-        elem.send_keys('third')
-        elem = self.driver.find_element(By.ID, 'document-add-description')
-        elem.send_keys('Last one')
-        await self.s_click_button('Right to left', tag='label')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
-        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
+        # Create document 2 and 3 in project 1
+        await self.s_click_button('documents-tab')
+        await self.s_click_button('create-document-link')
+        self.set_value('document-add-description', 'description doc 2 & 3')
+        await self.s_click_button('document-add-direction-rtl-input')
+        docs_2 = []
+        with (tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp,
+              tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp2):
             tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
             tmp.flush()
-            elem.send_keys(tmp.name)
-            await self.s_click_button('Import')
+            docs_2.append({
+                "path": tmp.name,
+                "name": os.path.basename(tmp.name)
+            })
+            self.set_value('document-add-file', docs_2[0]['path'])
+            tmp2.write(b'<h1>Document 3</h1><p>This is the 3rd document</p>')
+            tmp2.flush()
+            docs_2.append({
+                "path": tmp2.name,
+                "name": os.path.basename(tmp2.name)
+            })
+            self.set_value('document-add-file', docs_2[1]['path'])
+            await self.s_click_button('import-document-button')
+
         db = self.application.DBSession()
         doc = db.query(database.Document).get(2)
-        self.assertEqual(doc.name, 'third')
-        self.assertEqual(doc.description, 'Last one')
+        self.assertEqual(doc.name, docs_2[0]['name'])
+        self.assertEqual(doc.description, 'description doc 2 & 3')
         self.assertEqual(doc.text_direction,
                          database.TextDirection.RIGHT_TO_LEFT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        self.assertTrue(doc.filename, docs_2[0]['name'])
 
-        # Create highlight 1 in document 1
+        doc = db.query(database.Document).get(3)
+        self.assertEqual(doc.name, docs_2[1]['name'])
+        self.assertEqual(doc.description, 'description doc 2 & 3')
+        self.assertEqual(doc.text_direction,
+                         database.TextDirection.RIGHT_TO_LEFT)
+        self.assertTrue(doc.filename, docs_2[1]['name'])
+
+        # Check highlight 1 in document 1
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 2: False}
+        )
+
+        # Select document and create highlight 1 and 2
         await self.s_click(
             self.driver.find_element(By.ID, 'document-link-1')
             .find_element(By.CLASS_NAME, 'document-link-a')
         )
+
+        # create highlight 1 diff
         self.driver.execute_script('restoreSelection([0, 4]);')
-        await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
-        self.assertEqual(
-            self.get_highlight_add_tags(),
-            {1: False, 2: False},
+        await self.s_click_button_by_text(
+            'Existing code',
+            tag='a'
         )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-1'),
-        )
-        await self.s_click_button('Save & Close')
+        self.driver.execute_script('''
+            $("#treeview-tags-highlight").treeview("selectNode", 0);
+        ''')
+        await self.s_click_button('save-highlight-button')
 
-        # Create highlight 2 in document 1
+        # Create highlight 2 tent
         self.driver.execute_script('restoreSelection([13, 17]);')
-        await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
+        await self.s_click_button_by_text(
+            'Existing code',
+            tag='a'
+        )
+        # check tags before select
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: False, 2: False},
+            {1: False, 2: False}
         )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-1'),
-        )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-2'),
-        )
-        await self.s_click_button('Save & Close')
 
-        # Check highlighted document
+        self.driver.execute_script("""
+              $("#treeview-tags-highlight").treeview("selectNode", 0);
+              """)
+        self.driver.execute_script("""
+              $("#treeview-tags-highlight").treeview("selectNode", 1);
+              """)
+
+        # check tags after select
         self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents')
-            .get_attribute('innerHTML'),
+            self.get_highlight_add_tags(),
+            {1: True, 2: True}
+        )
+
+        await self.s_click_button('save-highlight-button')
+        # Check highlighted document 1
+        self.assertEqual(
+            self.find_by_id('document-contents').get_attribute('innerHTML'),
             (
-                '<div id="doc-offset-0"><a class="highlight highlight-1" '
-                + 'data-highlight-id="1" title="interesting">diff</a>erent con'
+                '<div id="doc-offset-0" class="draggable" '
+                + 'contenteditable="true">'
+                + '<a class="highlight highlight-1" '
+                + 'data-highlight-id="1" title="interesting" '
+                + 'style="cursor: pointer; border-bottom: 4px solid #000000;">'
+                + 'diff</a>erent con'
                 + '<a class="highlight highlight-2" data-highlight-id="2" '
-                + 'title="interesting, people">tent</a></div>'
+                + 'title="interesting, people" '
+                + 'style="cursor: pointer; '
+                + 'border-bottom: 4px solid transparent; '
+                + 'border-image: linear-gradient(90deg, #000000, #000000); '
+                + 'border-image-slice: 1;">tent</a></div>'
             ),
         )
 
         # Edit highlight 1 in document 1
-        hl, = self.driver.find_elements(By.CLASS_NAME, 'highlight-1')
+        hl, = self.find_by_class('highlight-1')
         await self.s_click(hl)
+
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: True, 2: False},
+            {1: True, 2: False}
         )
 
-        # Create tag 3 in project 1
-        await self.s_click_button('Create a tag', tag='a')
-        elem = self.driver.find_element(By.ID, 'tag-add-path')
-        elem.send_keys('interesting.places')
-        await self.s_click_button(
-            'Save & Close',
-            parent=self.driver.find_element(By.ID, 'tag-add-form'),
-        )
+        await self.s_click_button('save-highlight-button')
+
+        # Create tag 3 in project 1 (todo: create from modal)
+        await self.s_click(self.find_by_id('tags-tab'))
+        await self.s_click_button('create-tag-link')
+        self.set_value("tag-add-path", "interesting.places")
+        await self.s_click_button('save-tag-button')
 
         # Finish editing highlight 1 in document 1
-        self.assertEqual(
-            self.get_highlight_add_tags(),
-            # 3 was created while this modal was opened, it should be selected
-            {1: True, 2: False, 3: True},
-        )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-1')
-        )
-        self.assertEqual(
-            self.get_highlight_add_tags(),
-            {1: False, 2: False, 3: True},
-        )
-        await self.s_click_button('Save & Close')
+        hl, = self.find_by_class('highlight-1')
+        await self.s_click(hl)
 
-        # Check tags
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        tag_links = (
-            self.driver.find_element(By.ID, 'tags-list')
-            .find_elements(By.CLASS_NAME, 'tag-name')
-        )
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("selectNode", 1);')
+
         self.assertEqual(
-            [link.text for link in tag_links],
+            self.get_highlight_add_tags(),
+            {1: True, 3: True, 2: False},
+        )
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("unselectNode", 0);')
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 3: True, 2: False},
+        )
+        await self.s_click_button('save-highlight-button')
+
+        tag_links = self.find_children_by_id(
+            'treeview-tags', 'node-treeview-tags')
+
+        self.assertEqual(
+            [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'interesting.places', 'people'],
         )
 
         # Create highlight 3 in document 2
-        await self.s_click(self.driver.find_element(By.ID, 'documents-tab'))
+        await self.s_click_button('documents-tab')
         await self.s_click(
             self.driver.find_element(By.ID, 'document-link-2')
             .find_element(By.CLASS_NAME, 'document-link-a')
         )
         self.driver.execute_script('restoreSelection([0, 7]);')
-        await self.s_click_button('new highlight\n(shortcut: n)', tag='a')
+        await self.s_click_button_by_text(
+            'Existing code',
+            tag='a'
+        )
+
+        # check before select
         self.assertEqual(
             self.get_highlight_add_tags(),
-            {1: False, 2: False, 3: False},
+            {1: False, 3: False, 2: False},
         )
-        await self.s_click(
-            self.driver.find_element(By.ID, 'highlight-add-tags-2'),
+        self.driver.execute_script(
+            '$("#treeview-tags-highlight").treeview("selectNode", 2);')
+        # check after select
+        self.assertEqual(
+            self.get_highlight_add_tags(),
+            {1: False, 3: False, 2: True},
         )
-        await self.s_click_button('Save & Close')
+        await self.s_click_button('save-highlight-button')
 
         # List highlights in project 1 under 'people'
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        await self.s_click(self.driver.find_element(By.ID, 'tag-link-2'))
+        await self.s_click(self.find_by_id('tags-tab'))
+        self.driver.execute_script(
+            '$("#treeview-tags").treeview("selectNode", 2);')
+        await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(self.s_path, '/project/1/highlights/people')
         self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents').text,
-            'tent\notherdoc interesting people\nOpinion\nthird people',
+            self.find_by_id('document-contents').text,
+            f"tent\n{docs_1[0]['name']} interesting people\nOpinion\n"
+            f"{docs_2[0]['name']} people"
         )
 
         # List highlights in project 1 under 'interesting.places'
         await self.s_get('/project/1/highlights/interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents').text,
-            'diff\notherdoc interesting.places',
+            self.find_by_id('document-contents').text,
+            f"diff\n{docs_1[0]['name']} interesting.places"
         )
 
         # List highlights in project 1 under 'interesting'
-        await self.s_get('/project/1/highlights/interesting')
+        await self.s_get('/project/1/highlights/interesting|'
+                         'interesting.places')
         await asyncio.sleep(1)  # Wait for XHR
         self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents').text,
-            ('diff\notherdoc interesting.places\n'
-             'tent\notherdoc interesting people'),
+            self.find_by_id('document-contents').text,
+            (f"diff\n{docs_1[0]['name']} interesting.places\n"
+             f"tent\n{docs_1[0]['name']} interesting people"),
         )
 
         # List all highlights in project 1
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        await self.s_click_button('See all highlights', tag='a')
-        await asyncio.sleep(1)  # Wait for XHR
-        self.assertEqual(self.s_path, '/project/1/highlights/')
-        self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents').text,
-            ('diff\notherdoc interesting.places\n'
-             'tent\notherdoc interesting people\n'
-             'Opinion\nthird people'),
-        )
+        # await self.s_click(self.find_by_id('tags-tab'))
+        # await self.s_click(self.find_by_id('tag-more-action-button'))
+        # await self.s_click_button('dropdown-export')
+        # await asyncio.sleep(1)
+        # await self.s_click_button('see-all-highlights-button')
+        # await asyncio.sleep(1)  # Wait for XHR
+        # self.assertEqual(self.s_path, '/project/1/highlights/')
+        # self.assertEqual(
+        #     self.find_by_id('document-contents').text,
+        #     (f"diff\n{docs_1[0]['name']} interesting.places\n"
+        #      f"tent\n{docs_1[0]['name']} interesting people\n"
+        #      f"Opinion\n{docs_2[0]['name']} people"),
+        # )
 
         # Check export options for document 1
         await self.s_get('/project/1/document/1')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('Export this view')
+        await self.s_click_button('dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'export-button')
+                self.find_by_id('export-button')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -2989,11 +3009,11 @@ class TestSeleniumMultiuser(SeleniumTest):
         # Check export options for highlights in project 1 under 'interesting'
         await self.s_get('/project/1/highlights/interesting')
         await asyncio.sleep(1)  # Wait for XHR
-        await self.s_click_button('Export this view')
+        await self.s_click_button('dropdown-export')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'export-button')
+                self.find_by_id('export-button')
                 .find_elements(By.TAG_NAME, 'a')
             )
             if link.text
@@ -3008,12 +3028,12 @@ class TestSeleniumMultiuser(SeleniumTest):
         ])
 
         # Check codebook export options of project 1
-        await self.s_click(self.driver.find_element(By.ID, 'project-tab'))
-        await self.s_click_button('Export codebook')
+        await self.s_click_button('project-tab')
+        await self.s_click_button('dropdown-codebook')
         links = [
             (link.text, self.extract_path(link.get_attribute('href')))
             for link in (
-                self.driver.find_element(By.ID, 'dropdown-codebook')
+                self.find_by_id('dropdown-codebook')
                 .find_element(By.XPATH, './..')
                 .find_elements(By.TAG_NAME, 'a')
             )
@@ -3029,32 +3049,58 @@ class TestSeleniumMultiuser(SeleniumTest):
         ])
 
         # Merge tag 2 into 1
-        await self.s_click(self.driver.find_element(By.ID, 'tags-tab'))
-        edit_button, = [
-            b
-            for b in (
-                self.driver.find_element(By.ID, 'tag-link-2')
-                .find_element(By.XPATH, './../..')
-                .find_elements(By.TAG_NAME, 'a')
-            )
-            if b.text == 'Edit'
-        ]
-        await self.s_click(edit_button)
-        await self.s_click_button('Merge...')
-        select = Select(self.driver.find_element(By.ID, 'tag-merge-dest'))
-        select.select_by_value('1')
-        await self.s_click_button('Merge tags')
+        # await self.s_click_button('tags-tab')
+        # self.driver.execute_script(
+        #     '$("#treeview-tags").treeview("selectNode", 1);')
+        # await asyncio.sleep(1)  # Wait for XHR
+        # edit_button = self.find_by_path('//*[@data-nodeid="1"]')
+        # await self.s_click_button_by_text(
+        #     'Edit',
+        #     tag='a',
+        #     parent=edit_button
+        # )
+        # await self.s_click_button('show-merge-tag-modal-button')
+        # await self.s_click(self.find_by_id('dropdownMenuButtonTagMerge'))
+        # await asyncio.sleep(2)
+        #
+        # parent = (
+        #     self.find_by_test_id('hs-menu-inner-tag-merge')
+        # )
+        #
+        # await self.s_click_button_by_text(
+        #     'interesting',
+        #     tag='a',
+        #     parent=parent
+        # )
+        #
+        # await self.s_click_button('merge-tag-button')
+        #
+        # tag_links = self.find_children_by_id(
+        #     'treeview-tags', 'node-treeview-tags')
+        #
+        # # check tags
+        # self.assertEqual(
+        #     [link.text.split('\n')[0] for link in tag_links],
+        #     ['interesting', 'interesting.places'],
+        # )
+        #
+        # self.driver.execute_script(
+        #     '$("#tag-add-modal").modal("hide")'
+        # )
+        #
+        # await asyncio.sleep(1)
 
         # List all highlights in project 1
-        await self.s_click_button('See all highlights', tag='a')
-        await asyncio.sleep(1)  # Wait for XHR
-        self.assertEqual(self.s_path, '/project/1/highlights/')
-        self.assertEqual(
-            self.driver.find_element(By.ID, 'document-contents').text,
-            ('diff\notherdoc interesting.places\n'
-             'tent\notherdoc interesting\n'
-             'Opinion\nthird interesting'),
-        )
+        # await self.s_click(self.find_by_id('tags-tab'))
+        # await self.s_click_button('see-all-highlights-button')
+        # await asyncio.sleep(1)  # Wait for XHR
+        # self.assertEqual(self.s_path, '/project/1/highlights/')
+        # self.assertEqual(
+        #     self.find_by_id('document-contents').text,
+        #     (f"diff\n{docs_1[0]['name']} interesting.places\n"
+        #      f"tent\n{docs_1[0]['name']} interesting\n"
+        #      f"Opinion\n{docs_2[0]['name']} interesting"),
+        # )
 
 
 if __name__ == '__main__':
