@@ -613,6 +613,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                         self.application.config['BUG_REPORT_URL'].values()),
                         None
                     )
+            except AttributeError:
+                return None
             except TypeError:
                 return None
         return None
