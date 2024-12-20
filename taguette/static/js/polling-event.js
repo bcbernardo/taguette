@@ -71,7 +71,7 @@ function longPollForEvents() {
                 } else if (event.type === 'document_delete') {
                     removeDocument(event.document_id);
                 } else if (event.type === 'highlight_add') {
-                    setHighlight({
+                    addHighlight({
                         id: event.highlight_id,
                         start_offset: event.start_offset,
                         end_offset: event.end_offset,

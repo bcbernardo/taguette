@@ -127,3 +127,19 @@ console.error: "update.locale" " file doesn't exist in either the application or
 1707927403926	addons.xpi	ERROR	System addon update list error SyntaxError: XMLHttpRequest.open: 'http://%(server)s/dummy-system-addons.xml' is not a valid URL.
 1707927433381	Marionette	INFO	Stopped listening on port 41371
 [125131] Sandbox: Unexpected EOF, op 0 flags 00 path /proc/cpuinfo
+1732847559880	geckodriver	INFO	Listening on 127.0.0.1:47259
+1732847560385	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "40207" "-no-remote" "-profile" "/tmp/rust_mozprofilegrfQqC"
+
+Command '/usr/bin/firefox' requires the firefox snap to be installed.
+Please install it with:
+
+snap install firefox
+
+1732847560582	geckodriver	INFO	Listening on 127.0.0.1:55991
+1732847561089	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "--remote-debugging-port" "39143" "-no-remote" "-profile" "/tmp/rust_mozprofilevz5hKm"
+
+Command '/usr/bin/firefox' requires the firefox snap to be installed.
+Please install it with:
+
+snap install firefox
+

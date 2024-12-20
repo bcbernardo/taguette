@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 {% set active_page = "index" %}
 
+{% block morejs %}
+    <script type="text/javascript">
+        const user_login = {{ user_login }};
+        let is_demo = {{ is_demo }};
+        let demo_highlights_location = [[],[],[]];
+    </script>
+    <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
+
+    <!-- Utilities -->
+    <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+
+    <script src="{{ static_url('js/project/intro.js') }}"></script>
+{% endblock %}
+
 {% block contents %}
 <div class="container py-4">
     <div id="messages-div"></div>
@@ -12,62 +26,63 @@
     {% else %}
     <h1>{% trans %}Welcome!{% endtrans %}</h1>
     {% endif %}
-    <p>{% trans %}Here are your projects{% endtrans %}:</p>
-    <div class="main">
-        <div class="row">
-            {% for project in projects %}
-            <a href="{{ reverse_url('project', project.id) }}" class="col-md-3 no-underline">
-                <div class="project-card">
-                    <div class="d-flex justify-content-end px-3 pt-3">
-                    <!-- <i class="fas fa-edit" onclick=""></i>-->
-                    </div>
-                    <div class="px-3 d-flex align-items-center">
-                        <div class="project-icon mr-2 d-flex align-items-center justify-content-center">
-                            <span class="text">{{ project.name[0] }}</span>
-                        </div>
-                        <h3 class="name px-3">{{ project.name }}</h3>
-                    </div>
-                    <div class="px-3 pt-4">
-                        <p class="quote2 flexible">{{ project.description | truncate(100, true, '...') }}</p>
-                    </div>
-                    <hr class="custom-hr">
-                    <div class="d-flex justify-content-between px-3 pb-3">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-file"></i>
-                            <span class="quote2 mx-2">{{ project.document_count }} documents</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-tag"></i>
-                            <span class="quote2 mx-2">{{ project.tag_count }} tags</span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-            <a href="{{ reverse_url('new_project') }}" class="col-md-3 no-underline">
-                <div class="project-card action">
-                    <div class="px-3 py-4">
-                        <div class="icon-circle mx-auto">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <h4 class="project">{% trans "button in project list" %}Create a new project{% endtrans %}</h4>
-                        <p class="quote">{% trans "button in project list" %}Description add new project{% endtrans %}</p>
-                    </div>
-                </div>
-            </a>
 
-            {% if can_import_project %}
-            <a href="{{ reverse_url('import_project') }}" class="col-md-3 no-underline">
-                <div class="project-card action">
-                    <div class="px-3 py-4">
-                        <div class="icon-circle mx-auto">
-                            <i class="fas fa-file-download"></i>
-                        </div>
-                        <h4 class="project">{% trans "button in project list" %}Import a project file{% endtrans %}</h4>
-                        <p class="quote">{% trans "button in project list" %}Description import a project file{% endtrans %}</p>
+    <!-- Actions list -->
+    <div class="d-flex justify-content-start mb-4 mt-4">
+        <a href="{{ reverse_url('new_project') }}" class="btn btn-primary me-3"> <!-- Using `me-3` to add a right margin -->
+            <i class="fas fa-plus"></i> {% trans %}Create a new project{% endtrans %}
+        </a>
+
+        {% if can_import_project %}
+        <a href="{{ reverse_url('import_project') }}" class="btn btn-secondary me-3">
+            <i class="fas fa-file-download"></i> {% trans %}Import a project file{% endtrans %}
+        </a>
+        {% endif %}
+        <a href="#" class="btn btn-secondary" id="a-start-demo">
+            <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
+        </a>
+    </div>
+
+    <p>{% trans %}Here are your projects{% endtrans %}:</p>
+    <!-- Projects List -->
+    <div class="main">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-4 g-4" id="demo-project-container">
+            {% if projects %}
+                {% for project in projects %}
+                    {% include 'partials/project_card.html' %}
+                {% endfor %}
+            {% else %}
+                <div class="col project empty">
+                    <div class="col project">
+                        <a href="#" class="no-underline">
+                            <div class="project-card">
+                                <div class="d-flex justify-content-end px-3 pt-3">
+                                    <!-- <i class="fas fa-edit" onclick=""></i>-->
+                                </div>
+                                <div class="px-3 d-flex align-items-center">
+                                    <div class="project-icon mr-2 d-flex align-items-center justify-content-center">
+                                        <span class="text"></span>
+                                    </div>
+                                    <h3 class="name px-3"></h3>
+                                </div>
+                                <div class="px-3 pt-4 description-container">
+                                    <p class="quote2 description-text">{% trans %}No projects available at the moment. Create or import one to get started.{% endtrans %}</p>
+                                </div>
+                                <hr class="custom-hr mt-auto">
+                                <div class="d-flex justify-content-between px-3 pb-3 stats-container">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file"></i>
+                                        <span class="quote2 mx-2"></span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-tag"></i>
+                                        <span class="quote2 mx-2"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div>
-            </a>
             {% endif %}
         </div>
     </div>

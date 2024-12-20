@@ -1,8 +1,11 @@
 import textwrap
+import json
 
 from tornado.testing import gen_test
 
+from taguette import database
 from taguette import exact_version
+from taguette.demodata import DEMO_DATA
 from .test_multi_user import TestMultiUser
 from tests.utils import build_tag_data
 from tests.utils import build_tag_response
@@ -82,7 +85,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
 
         tags = [
             build_tag_response(
@@ -92,9 +95,15 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
         ]
 
         last_event = -1
+        user = self.db.query(database.User).get(user_login)
+        lang = user.language
+        if lang not in DEMO_DATA.keys():
+            lang = self.config['DEFAULT_LANGUAGE']
+        demo_highlights_location = (
+            json.dumps(DEMO_DATA[lang]['tutorial_highlights']))
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
-            members, last_event)
+            members, last_event, 'false', demo_highlights_location)
         self.assertEqual(init_js, init_js_expected)
 
         # Start polling
@@ -142,7 +151,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:11])
+        init_js = '\n'.join(body[idx:].splitlines()[1:12])
 
         tags = [
             build_tag_response(
@@ -168,7 +177,7 @@ class TestMultiUserProjectTagHierarchy(TestMultiUser):
         last_event = 2
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
-            members, last_event)
+            members, last_event, 'false', demo_highlights_location)
 
         self.assertEqual(init_js, init_js_expected)
 
