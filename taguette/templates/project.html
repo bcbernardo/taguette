@@ -147,7 +147,7 @@
     let demo_highlights_location = {{ demo_highlights_location }};
 </script>
 
-<script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
+<script type="text/javascript" src="{{ reverse_url('trans.js') }}?lang={{ user.language }}"></script>
 
 <!-- "New highlight" button shown after selecting text -->
 {% include 'partials/hlinfo.html' %}
