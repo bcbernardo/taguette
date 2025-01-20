@@ -7,7 +7,7 @@
         let is_demo = {{ is_demo }};
         let demo_highlights_location = [[],[],[]];
     </script>
-    <script type="text/javascript" src="{{ reverse_url('trans.js') }}"></script>
+    <script type="text/javascript" src="{{ reverse_url('trans.js') }}?lang={{ user.language }}"></script>
 
     <!-- Utilities -->
     <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>

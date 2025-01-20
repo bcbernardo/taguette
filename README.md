@@ -1,48 +1,53 @@
-Taguette
+
+_We are building on the work of [Taguette](https://www.taguette.org/) — go check them out! You will find close alignments between our code bases and even the installation instructions._
+
+
+LibreQDA
 ========
 
-A spin on the phrase "tag it!", [Taguette](https://www.taguette.org/) is a free and open source qualitative research tool that allows users to:
+LibreQDA is developed by the [Plateforme en humanités numériques (PhuN)](https://www.usherbrooke.ca/flsh/recherche/centres-groupes-et-equipes-de-recherche/phun) at Université de Sherbrooke. 
 
-+ Import PDFs, Word Docs (`.docx`), Text files (`.txt`), HTML, EPUB, MOBI, Open Documents (`.odt`), and Rich Text Files (`.rtf`).
-+ Highlight words, sentences, or paragraphs and tag them with the codes **you** create.
-+ (not yet) Group imported documents together (e.g. as 'Interview' or 'Lit Review').
-+ Export tagged documents, highlights for a specific tag, a list of tags with descriptions and colors, and whole projects.
+This qualitative data analysis software (QDA) allows you to:
 
-[Check out our website to learn more about how to install and get started.](https://www.taguette.org/)
++ Import PDFs, Word documents (`.docx`), text files (`.txt`), HTML, EPUB, MOBI, Open Documents (`.odt`), and Rich Text Files (`.rtf`).
++ Highlight words, sentences or paragraphs and tag them with codes you create.
++ Create hierarchical relations between your codes.
++ Retrieve your tagged documents and lists of encoded sentences.
++ Export you material in various formats for diffusion or post-processing with other tools.
 
-Motivation and goal
+[Visit our website to consult the documentation.](https://help.libreqda.org/)
+
+Motivation and Goal
 -------------------
 
-Qualitative methods generate rich, detailed research materials that leave individuals' perspectives intact as well as provide multiple contexts for understanding the phenomenon under study. Qualitative methods are used by a wide range of fields, such as anthropology, education, nursing, psychology, sociology, and marketing. Qualitative data has a similarly wide range: observations, interviews, documents, audiovisual materials, and more.
+Through its collaborations with research teams and non-profit organizations across various fields, the team at PHuN has come to recognize the crucial need for developing rich, resilient and responsive ecosystem of open-source QDA software. Numerous testimonies highlight the disconnect between the commercial incentives of proprietary software and the core theories of substantive qualitative analysis. Today, users of QDA are subjected to forced obsolescence, costly licenses, black box features and data restrictions that prevent them from fully owning their intellectual product.
 
-However - the software options for qualitative researchers are either **far too expensive**, don't allow for the seminal method of highlighting and tagging materials, *or actually perform quantitative analysis*, just on text.
+Our goal is to position LibreQDA as a valuable component within a diverse array of resources available to users seeking to develop a rich understanding of their textual data. We are committed to continuous improvement through community feedback and advocate for open integration with other tools to best meet your needs.
 
-**It's not right or fair that qualitative researchers without massive research funds cannot afford the basic software to do their research.**
-
-So, to bolster a fair and equitable entry into qualitative methods, we've made Taguette!
+If you think LibreQDA could do something better, reach out!
 
 Installation
 ------------
 
-You can find complete installation instructions on [our website](https://www.taguette.org/install.html), including installers for Windows and MacOS.
+A secure instance of LibreQDA running on Canadian servers is available at [https://www.libreqda.org/](https://www.libreqda.org/). You can clone the software and run a single-user version on your computer using the instructions below. Installers for Windows and MacOS are pending.
 
-Development setup from the repository
+Development Setup from the Repository
 -------------------------------------
 
-You can install from a local clone of this repository, which will allow you to easily change the sources to suit your needs:
+You can install from a local clone of this repository, which will allow you to easily change the sources to suit your needs. Taguette provide the base infrastructure for LibreQDA, which is reflected in these instructions:
 
-1. Clone this git repository from the terminal: `git clone https://gitlab.com/remram44/taguette.git`
+1. Clone this git repository from the terminal: `git clone https://gitlab.com/bin-cirst/libreqda/libre-qda/`
 2. Navigate on the command line to the repository you've just cloned locally, using the `cd` command. To get help using `cd`, use [this tutorial](https://swcarpentry.github.io/shell-novice/02-filedir/index.html).
-3. Taguette uses [Poetry](https://python-poetry.org/) for its packaging and dependency management. You will need to [install Poetry](https://python-poetry.org/docs/#installation).
-4. Install Taguette and its dependencies by running `poetry install`. Poetry will create a virtual environment for you by default, activate it by running `poetry shell`.
+3. LibreQDA uses [Poetry](https://python-poetry.org/) for its packaging and dependency management. You will need to [install Poetry](https://python-poetry.org/docs/#installation).
+4. Install LibreQDA and its dependencies by running `poetry install`. Poetry will create a virtual environment for you by default, activate it by running `poetry shell`.
 5. Build translation files using `scripts/update_translations.sh`.
-6. You can start taguette in development mode using `taguette --debug` (or `taguette --debug server <config_file>`). This will start Tornado in debug mode, which means in particular that it will auto-restart every time you make changes. 
+6. You can start LibreQDA in development mode using `taguette --debug` (or `taguette --debug server <config_file>`). This will start Tornado in debug mode, which means in particular that it will auto-restart every time you make changes. 
    1. A config file can be created by running `taguette default-config > taguette.conf`
-7. Navigate to [localhost:7465](http://localhost:7465/) to use Taguette!
+7. Navigate to [localhost:7465](http://localhost:7465/) to use LibreQDA!
 
 License
 -------
-
-* Copyright (C) 2018, Rémi Rampin, PHuN and Taguette contributors
+* Copyright (c) 2023, Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+* Copyright (c) 2018, Remi Rampin and Taguette contributors
 
 Licensed under a **BSD 3-clause "New" or "Revised" License**. See the `LICENSE.txt` file for details.

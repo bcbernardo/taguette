@@ -792,7 +792,9 @@ class ProjectImport(BaseHandler):
     @authenticated
     @PROM_REQUESTS.sync('import_project')
     def get(self):
-        return self.render('project_import.html')
+        user = self.db.query(database.User).get(self.current_user)
+        return self.render('project_import.html',
+                           user=user)
 
 
 class ProjectDelete(BaseHandler):
@@ -1046,9 +1048,9 @@ class Project(BaseHandler):
         project, privileges = self.get_project(project_id)
         is_demo = self.get_argument('demo', None)
         demo_highlights_location = []
+        user = self.db.query(database.User).get(self.current_user)
         if is_demo is not None:
             is_demo = "true"
-            user = self.db.query(database.User).get(self.current_user)
             lang = user.language
             if lang not in DEMO_DATA.keys():
                 lang = self.config['DEFAULT_LANGUAGE']
@@ -1128,5 +1130,6 @@ class Project(BaseHandler):
             can_delete_project=can_delete_project,
             is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN'],
             is_demo=Markup(is_demo),
-            demo_highlights_location=Markup(demo_highlights_location)
+            demo_highlights_location=Markup(demo_highlights_location),
+            user=user
         )
