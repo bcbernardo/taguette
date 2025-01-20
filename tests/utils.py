@@ -36,7 +36,9 @@ def generate_initial_state_script(user_login,
                                   documents,
                                   tags,
                                   members,
-                                  last_event):
+                                  last_event,
+                                  is_demo='false',
+                                  demo_highlights_location='[[],[],[]]'):
 
     documents_json = json.dumps(documents)
     tags_json = json.dumps(tags, sort_keys=True)
@@ -52,6 +54,8 @@ def generate_initial_state_script(user_login,
         f'    let members = {members_json};\n'
         f'    let highlights = {{}};\n'
         f'    let last_event = {last_event};\n'
+        f'    let is_demo = {is_demo};\n'
+        f'    let demo_highlights_location = {demo_highlights_location};\n'
         f'</script>'
     )
 

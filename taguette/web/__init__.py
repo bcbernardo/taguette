@@ -138,6 +138,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
                        name='project_doc'),
         UnbakedURLSpec('/project/([0-9]+)/document/[0-9]+/highlight/'
                        '[0-9]+', views.Project, name='project_doc'),
+        UnbakedURLSpec('/project/([0-9]+)/document/[0-9]+/search/'
+                       '[^/]+/[0-9]+', views.Project, name='project_doc'),
         UnbakedURLSpec('/project/([0-9]+)/highlights/.*', views.Project,
                        name='project_tag'),
 
@@ -166,6 +168,7 @@ def make_app(config, debug=False, xsrf_cookies=True):
 
         # API
         UnbakedURLSpec('/api/check_user', api.CheckUser),
+        UnbakedURLSpec('/api/create_demo_project', api.CreateDemoProject),
         UnbakedURLSpec('/api/import', api.ProjectImport),
         UnbakedURLSpec('/api/project/([0-9]+)', api.ProjectMeta),
         UnbakedURLSpec('/api/project/([0-9]+)/document/new', api.DocumentAdd),
@@ -180,6 +183,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
             api.HighlightUpdate),
         UnbakedURLSpec('/api/project/([0-9]+)/highlights/(.*)',
                        api.Highlights),
+        UnbakedURLSpec('/api/project/([0-9]+)/search/(.*)',
+                       api.Search),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/new', api.TagAdd),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/([0-9]+)', api.TagUpdate),
         UnbakedURLSpec('/api/project/([0-9]+)/tag/merge', api.TagMerge),

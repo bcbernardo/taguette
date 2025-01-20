@@ -1,10 +1,10 @@
-const treeviewTags = 'treeview-tags';
+
 function addContextMenu() {
     $.contextMenu({
         selector: '.tag-context-menu',
         build: function ($trigger) {
             const nodeId = $trigger.attr('id');
-            const node = getNode(treeviewTags, nodeId);
+            const node = getNode(treeview_tags, nodeId);
 
             let items = generateContextMenuItems(node);
 
@@ -18,7 +18,7 @@ function addContextMenu() {
 
 function generateContextMenuItems(node) {
 
-    const tagId = getTagIdFromTreeviewNode(treeviewTags, node.nodeId);
+    const tagId = getTagIdFromTreeviewNode(treeview_tags, node.nodeId);
     const tag = findTag(tagId);
 
     const hasChildren = tag.children.length > 0;
@@ -26,33 +26,41 @@ function generateContextMenuItems(node) {
     const isExpanded = node.state.expanded;
     const isSelected = node.state.selected;
 
-    const selectedNodes = getAllSelectedNodes(treeviewTags).length > 0;
+    const selectedNodes = getAllSelectedNodes(treeview_tags).length > 0;
+    const hasSelectedChildren = checkNodeHasSelectedChildren(node);
+    const hasUnselectedChildren = checkNodeHasUnselectedChildren(node);
 
     return {
         "toggleSelectAll": {
-            name: isSelected ? gettext('unselectAll') : gettext('selectAll'),
-            icon: isSelected ? 'fas fa-eye-slash' : 'fas fa-eye',
-            visible: hasChildren,
-            callback: (key, options) => contextMenuAction(isSelected ? 'unselectAll' : 'selectAll', node.nodeId)
+            name: gettext('selectAll'),
+            icon: 'fas fa-check-square',
+            visible: hasUnselectedChildren && hasChildren,
+            callback: (key, options) => contextMenuAction('selectAll', node.nodeId)
+        },
+        "toggleDeSelectAll": {
+            name: gettext('unselectAll'),
+            icon: 'fas fa-square',
+            visible: hasChildren && hasSelectedChildren,
+            callback: (key, options) => contextMenuAction('unselectAll', node.nodeId)
         },
         "toggleSelect": {
             name: gettext('Select With Condition'),
-            icon: 'fas fa-check',
+            icon: 'fas fa-filter',
             visible: !isSelected && selectedNodes,
             items: {
                 "andSelect": {
                     name: gettext('AND'),
-                    icon: '',
+                    icon: 'fas fa-plus',
                     callback: (key, options) => contextMenuAction('selectAnd', node.nodeId)
                 },
                 "orSelect": {
                     name: gettext('OR'),
-                    icon: 'fas fa-union',
+                    icon: 'fas fa-exchange-alt',
                     callback: (key, options) => contextMenuAction('selectOr', node.nodeId)
                 },
                 "notSelect": {
                     name: gettext('NOT'),
-                    icon: 'fas fa-remove',
+                    icon: 'fas fa-ban',
                     callback: (key, options) => contextMenuAction('selectNot', node.nodeId)
                 }
             }
@@ -65,28 +73,28 @@ function generateContextMenuItems(node) {
         },
         "addChild": {
             name: gettext('Add child'),
-            icon: "add",
+            icon: "fas fa-plus-circle",
             callback: (key, options) => contextMenuAction('addChild', tagId)
         },
         "edit": {
             name: gettext('edit'),
-            icon: "edit",
+            icon: "fas fa-pen",
             callback: (key, options) => contextMenuAction('edit', tagId)
         },
         "merge": {
             name: gettext('merge'),
-            icon: "copy",
+            icon: "fas fa-copy",
             callback: (key, options) => contextMenuAction('merge', tagId)
         },
         "deleteParent": {
             name: gettext('deleteParent'),
-            icon: "delete",
+            icon: "fas fa-times-circle",
             visible: hasParent,
             callback: (key, options) => contextMenuAction('deleteParent', tagId)
         },
         "delete": {
             name: gettext('delete'),
-            icon: "delete",
+            icon: "fas fa-trash",
             callback: (key, options) => contextMenuAction('delete', tagId)
         }
     };
@@ -103,16 +111,16 @@ function contextMenuAction(action, param) {
 }
 
 const actions = {
-    selectAll: nodeId => selectNodeAndChildren(treeviewTags, nodeId),
-    unselectAll: nodeId => unselectNodeAndChildren(treeviewTags, nodeId),
-    selectAnd: nodeId => selectWithCondition(treeviewTags, nodeId, 'and'),
-    selectOr: nodeId => selectWithCondition(treeviewTags, nodeId, 'or'),
-    selectNot: nodeId => selectWithCondition(treeviewTags, nodeId, 'not'),
-    expand: nodeId => expandNode(treeviewTags, nodeId),
-    collapse: nodeId => collapseNode(treeviewTags, nodeId),
-    unselect: nodeId => unselectNode(treeviewTags, nodeId),
+    selectAll: nodeId => selectNodeAndChildren(treeview_tags, nodeId),
+    unselectAll: nodeId => unselectNodeAndChildren(treeview_tags, nodeId),
+    selectAnd: nodeId => selectWithCondition(treeview_tags, nodeId, 'and'),
+    selectOr: nodeId => selectWithCondition(treeview_tags, nodeId, 'or'),
+    selectNot: nodeId => selectWithCondition(treeview_tags, nodeId, 'not'),
+    expand: nodeId => expandNode(treeview_tags, nodeId),
+    collapse: nodeId => collapseNode(treeview_tags, nodeId),
+    unselect: nodeId => unselectNode(treeview_tags, nodeId),
     edit: tagId => editTag(tagId),
-    addChild: tagId => createTag(null, current_selection, tagId),
+    addChild: tagId => createTag(false, current_selection, tagId),
     merge: tagId => mergeTag(tagId),
     delete: tagId => deleteTag(tagId),
     deleteParent: tagId => removeTagParent(tagId)

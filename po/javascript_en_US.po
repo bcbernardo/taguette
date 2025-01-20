@@ -1,100 +1,376 @@
-# Translations template for PROJECT.
-# Copyright (C) 2024 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+# English translations for LibreQDA and Taguette.
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2018 Remi Rampin and Taguette contributors
+# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# PHuN <phun@usherbrooke.ca>, 2023.
+# Remi Rampin <remi@rampin.org>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-02-13 14:10-0500\n"
+"POT-Creation-Date: 2024-12-02 10:14-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.14.0\n"
 
-#: taguette/static/js/polling-event.js:110
+#: taguette/static/js/project/search.js:67
+#, python-format
+msgid "Found in %(nb)s document(s)"
+msgstr "Found in %(nb)s document(s)"
+
+#: taguette/static/js/project/search.js:115
+msgid "Error searching documents!"
+msgstr "Error searching documents!"
+
+#: taguette/static/js/project/intro.js:14
+msgid ""
+"Welcome to LibreQDA, a qualitative data analysis software (QDA) developed"
+" by the Plateforme en humanités numériques (PHuN) at Université de "
+"Sherbrooke."
+msgstr ""
+
+#: taguette/static/js/project/intro.js:15
+msgid ""
+"<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">Gitlab repository</a></p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:19
+msgid "<p>To consult the documentation</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:24
+msgid "<p>A demo project has been added to your home page.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:31
+#: taguette/static/js/project/intro.js:176
+msgid "Next"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:32
+#: taguette/static/js/project/intro.js:177
+msgid "Back"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:33
+msgid "Continue"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:71
+#, fuzzy
+msgid "Your documents"
+msgstr "Documents"
+
+#: taguette/static/js/project/intro.js:72
+msgid "<p>Use this tab to load files and go through them.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:77
+msgid "Codebook"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:78
+msgid ""
+"<p>This tab lists all the codes that have been defined. Add new codes "
+"with the button dedicated to that purpose.</p><br><p>The total number of "
+"uses is indicated by the number on the right, and the number of documents"
+" on the left.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:83
+msgid "Parent codes"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:84
+msgid "<p>You can define codes that include child codes under them.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:89
+msgid "Child codes"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:90
+msgid "<p>These can be expanded or collapsed.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:96
+#, fuzzy
+msgid "Consulting documents"
+msgstr "Documents"
+
+#: taguette/static/js/project/intro.js:97
+msgid ""
+"<p>Click on a document to view its contents. Use the star to save your "
+"bookmarks.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:102
+msgid "Coding"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:103
+msgid ""
+"<p>Select a portion of text with your cursor. Two buttons will appear to "
+"assign a code to the selection.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:112
+msgid "Selecting a code"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:113
+msgid ""
+"<p>From the menu, select one or more codes that correspond to the content"
+" of the selection and save the changes. In this case, the selection "
+"refers to reinforcing social relationships.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:120
+msgid "Exploring the codes"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:121
+msgid ""
+"<p>You can explore the text selections tagged with each code at any time "
+"during or after the coding process.</p><br><p> Show all of the selections"
+" tagged with a code from the codebook by clicking on it.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:126
+msgid "Narrowing your search"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:127
+msgid ""
+"<p>If there are a large number of selections shown, you can refine the "
+"results with an advanced search.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:133
+msgid "Conditional selections"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:134
+msgid ""
+"<p>By right-clicking, you can specify conditions to either add or exclude"
+" additional codes.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:141
+msgid "Exploring the list"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:142
+msgid ""
+"<p>The labels shown with this query indicate that the selections must "
+"necessarily include the codes <i>barriers</i> and <i>skills "
+"development</i>.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:148
+#, fuzzy
+msgid "Navigating to documents"
+msgstr "Documents"
+
+#: taguette/static/js/project/intro.js:149
+msgid ""
+"<p>By clicking on the name of the document, you can return to the "
+"context.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:155
+msgid "Returning to the selections"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:156
+msgid ""
+"<p>After consulting the context, you can return to the list of selections"
+" previously identified using the advanced search.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:162
+msgid "Exporting"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:163
+msgid ""
+"<p>You can choose to download these selections to your computer, as "
+"needed.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:167
+msgid "Time to code!"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:168
+msgid ""
+"<p>Use LibreQDA however you wish, knowing that your data is always saved "
+"to your personal account. Feel free to further familiarize yourself with "
+"these functions by continuing to code and explore these fictional "
+"interviews about board games.</p>"
+msgstr ""
+
+#: taguette/static/js/project/intro.js:178
+msgid "Done"
+msgstr ""
+
+#: taguette/static/js/polling-event.js:111
 msgid "It appears that you have been logged out."
 msgstr "It appears that you have been logged out."
 
-#: taguette/static/js/polling-event.js:113
+#: taguette/static/js/polling-event.js:114
 msgid "You can no longer access this project."
 msgstr "You can no longer access this project."
 
-#: taguette/static/js/taguette.js:118
-msgid "Edit"
-msgstr "Edit"
-
-#: taguette/static/js/taguette.js:126
-msgid "There are no documents in this project yet."
-msgstr "There are no documents in this project yet."
-
-#: taguette/static/js/taguette.js:224
-msgid "Error uploading file!"
-msgstr "Error uploading file!"
-
-#: taguette/static/js/taguette.js:256
+#: taguette/static/js/taguette.js:257
 msgid "Document name cannot be empty"
 msgstr "Document name cannot be empty"
 
-#: taguette/static/js/taguette.js:280
+#: taguette/static/js/taguette.js:282
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Are you sure you want to delete the document '%(doc)s'?"
 
-#: taguette/static/js/taguette.js:394
+#: taguette/static/js/taguette.js:408
 msgid "Invalid tag name"
 msgstr "Invalid code name"
 
-#: taguette/static/js/taguette.js:446
+#: taguette/static/js/taguette.js:413
+msgid "Impossible to define the same tag as parent"
+msgstr "Impossible to define the same code as parent"
+
+#: taguette/static/js/tag/hierarchy-select.js:15
+#: taguette/static/js/taguette.js:454
+msgid "None"
+msgstr "None"
+
+#: taguette/static/js/taguette.js:476
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Are you sure you want to delete the code '%(tag)s'?"
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:529
+msgid "Couldn't merge tags!"
+msgstr "Couldn't merge codes!"
+
+#: taguette/static/js/taguette.js:688
 msgid "Full permissions"
 msgstr "Full permissions"
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:689
 msgid "Can't change collaborators / delete project"
 msgstr "Can't change collaborators / delete project"
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:690
 msgid "View & make changes"
 msgstr "View & make changes"
 
-#: taguette/static/js/taguette.js:640
+#: taguette/static/js/taguette.js:691
 msgid "View only"
 msgstr "View only"
 
-#: taguette/static/js/taguette.js:707
+#: taguette/static/js/taguette.js:763
 msgid "Already a member!"
 msgstr "Already a member!"
 
-#: taguette/static/js/taguette.js:722
+#: taguette/static/js/taguette.js:778
 msgid "This user doesn't exist!"
 msgstr "This user doesn't exist!"
 
-#: taguette/static/js/taguette.js:790
+#: taguette/static/js/taguette.js:846
 msgid "Load a document on the left"
-msgstr "Load a document from you favorites or the side menu"
+msgstr "Load a document from you bookmarks or on the right"
 
-#: taguette/static/js/taguette.js:933
+#: taguette/static/js/taguette.js:1062
 msgid "No highlights with this tag yet."
 msgstr "No highlights with this code yet."
 
-#: taguette/static/js/tag/treeview.js:359
+#: taguette/static/js/taguette.js:1207
+msgid "No tag found"
+msgstr "No code found"
+
+#: taguette/static/js/tag/context-menu.js:35
+msgid "selectAll"
+msgstr "Select all"
+
+#: taguette/static/js/tag/context-menu.js:41
+msgid "unselectAll"
+msgstr "Unselect all"
+
+#: taguette/static/js/tag/context-menu.js:47
+msgid "Select With Condition"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:52
+msgid "AND"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:57
+msgid "OR"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:62
+msgid "NOT"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "collapse"
+msgstr "Collapse"
+
+#: taguette/static/js/tag/context-menu.js:69
+msgid "expand"
+msgstr "Expand"
+
+#: taguette/static/js/tag/context-menu.js:75
+msgid "Add child"
+msgstr ""
+
+#: taguette/static/js/tag/context-menu.js:80
+msgid "edit"
+msgstr "Edit"
+
+#: taguette/static/js/tag/context-menu.js:85
+msgid "merge"
+msgstr "Merge"
+
+#: taguette/static/js/tag/context-menu.js:90
+msgid "deleteParent"
+msgstr "Unlink from parent"
+
+#: taguette/static/js/tag/context-menu.js:96
+msgid "delete"
+msgstr "Delete"
+
+#: taguette/static/js/tag/treeview.js:235
+#, fuzzy
 msgid "Documents"
 msgstr "Documents"
 
-#: taguette/static/js/tag/treeview.js:360
+#: taguette/static/js/tag/treeview.js:241
 msgid "Highlights"
-msgstr "Highlights"
+msgstr ""
 
+#: taguette/static/js/document/manager.js:72
+msgid "Remove from Favorites"
+msgstr "Remove from bookmarks"
 
-#: taguette/static/js/tag/manager.js:362
-msgid "Your selection"
-msgstr "Your selection"
+#: taguette/static/js/document/manager.js:72
+msgid "Add to Favorites"
+msgstr "Add to bookmarks"
+
+#: taguette/static/js/document/manager.js:92
+msgid "There are no documents in this project yet."
+msgstr "There are no documents in this project yet."
+
+#: taguette/static/js/document/manager.js:112
+msgid "Import new document"
+msgstr "Import new document(s)"
+

@@ -21,6 +21,7 @@ from .. import import_codebook
 from ..utils import _f
 from .. import validate
 from .base import BaseHandler, PromMeasureRequest
+from ..demodata import DEMO_DATA
 
 # For CILogon
 from oauth2client.client import OAuth2WebServerFlow
@@ -78,14 +79,21 @@ class Index(BaseHandler):
             user_display_name = user.login
             if user.displayname is not None and user.displayname != "":
                 user_display_name = user.displayname
+
+            is_demo = 'false' if len(user.project_memberships) else 'true'
             return self.render(
                 'index.html',
                 user=user,
+                user_login=Markup(
+                    json.dumps(self.current_user)
+                ),
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
                 can_import_project=(
                     self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
+                demo=False,
+                is_demo=Markup(is_demo)
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)
@@ -784,7 +792,9 @@ class ProjectImport(BaseHandler):
     @authenticated
     @PROM_REQUESTS.sync('import_project')
     def get(self):
-        return self.render('project_import.html')
+        user = self.db.query(database.User).get(self.current_user)
+        return self.render('project_import.html',
+                           user=user)
 
 
 class ProjectDelete(BaseHandler):
@@ -1036,6 +1046,17 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
+        is_demo = self.get_argument('demo', None)
+        demo_highlights_location = []
+        user = self.db.query(database.User).get(self.current_user)
+        if is_demo is not None:
+            is_demo = "true"
+            lang = user.language
+            if lang not in DEMO_DATA.keys():
+                lang = self.config['DEFAULT_LANGUAGE']
+            demo_highlights_location = DEMO_DATA[lang]['tutorial_highlights']
+        else:
+            is_demo = "false"
 
         # Group tags by their parent IDs
         grouped_tags = defaultdict(list)
@@ -1107,5 +1128,8 @@ class Project(BaseHandler):
             members=members_json,
             can_import_codebook=can_import_codebook,
             can_delete_project=can_delete_project,
-            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN']
+            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN'],
+            is_demo=Markup(is_demo),
+            demo_highlights_location=Markup(demo_highlights_location),
+            user=user
         )

@@ -41,6 +41,7 @@ class TestUserBase(MyHTTPTestCase):
             PORT=7465,
             DATABASE=DATABASE_URI,
             REDIS_SERVER=REDIS,
+            ALLOW_EXTERNAL_LOGIN=False,
             TOS_FILE=None,
             EMAIL='test@example.com',
             MAIL_SERVER={'host': 'localhost', 'port': 25},
