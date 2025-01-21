@@ -33,7 +33,8 @@ idps_updated = 0
 if idps[0][0]['id'] is not None:
 
     for idp in idps:
-        idp_id = db.query(database.EdugainIdps).get(idp[0]['id'])
+        idp_id = (db.query(database.EdugainIdps).
+                  filter_by(entityid=idp[0]['entityid']).first())
 
         if idp_id is None:
             # Add a new entry
@@ -59,6 +60,7 @@ if idps[0][0]['id'] is not None:
 
         else:
             # Update existing entry
+            idp_id.id = idp[0]['id']
             idp_id.entityid = idp[0]['entityid']
             idp_id.e_displayname = idp[0]['e_displayname']
             idp_id.regauth = idp[0]['regauth']
@@ -73,6 +75,7 @@ if idps[0][0]['id'] is not None:
             else:
                 idp_id.code = idp[0]['code']
             idp_id.scopes = idp[0]['scopes']
+            idps_updated += 1
 
         db.commit()
 
@@ -80,7 +83,7 @@ if idps[0][0]['id'] is not None:
 if idps_added != 0 or idps_removed != 0 or idps_updated != 0:
 
     ct = "["+str(datetime.datetime.now())+"]"
-    print( ct+" UPDATE EDUGAIN IDPs => IDPs added: {0} ".format(idps_added) )
+    print( f"{ct} UPDATE EDUGAIN IDPs => IDPs added: {idps_added}, updated {idps_updated}, removed {idps_removed}" )
 
 # Close File
 f.close()
