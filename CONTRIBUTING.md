@@ -7,7 +7,7 @@
 
 # Notes
 
-Any contributions received are assumed to be covered by the [BSD 3-Clause license](https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt). We might ask you to sign a Contributor License Agreement before accepting a large contribution. To learn more about Taguette, see the [Taguette Website](https://www.taguette.org/) and the [README](https://gitlab.com/remram44/taguette/blob/master/README.md) in this repository. You can find an introduction to the codebase in [ARCHITECTURE.md](https://gitlab.com/remram44/taguette/blob/master/ARCHITECTURE.md).
+Any contributions received are assumed to be covered by the [BSD 3-Clause license](https://gitlab.cirst.ca/libreqda/libreqda/-/blob/repo_prep/LICENSE.txt). We might ask you to sign a Contributor License Agreement before accepting a large contribution. To learn more about LibreQDA, see the [LibreQDA Website](https://help.libreqda.org/) and the [README](https://gitlab.com/bin-cirst/libreqda/libre-qda/-/blob/main/README.md) in this repository. You can find an introduction to the codebase in [ARCHITECTURE.md](https://gitlab.com/bin-cirst/libreqda/libre-qda/-/blob/main/ARCHITECTURE.md).
 
 # Contributing
 
@@ -15,11 +15,11 @@ Please follow the [Contributor Covenant](CODE_OF_CONDUCT.md) in all your interac
 
 1. Fork the project.
 2. Clone your fork to your computer.
-    * From the command line: `git clone https://gitlab.com/<USERNAME>/taguette.git`
+    * From the command line: `git clone https://gitlab.com/<USERNAME>/libre-qda.git`
 3. Change into your new project folder.
     * From the command line: `cd taguette`
 4. [optional]  Add the upstream repository to your list of remotes.
-    * From the command line: `git remote add upstream https://gitlab.com/remram44/taguette.git`
+    * From the command line: `git remote add upstream https://gitlab.com/bin-cirst/libreqda/libre-qda`
 5. Create a branch for your new feature.
     * From the command line: `git checkout -b my-feature-branch-name`
 6. Make your changes.
@@ -96,7 +96,7 @@ TAGUETTE_TEST_WEBDRIVER=firefox python tests.py
 TAGUETTE_TEST_WEBDRIVER=chromium python tests.py
 ```
 
-## Debugging Taguette with PyCharm
+## Debugging LibreQDA with PyCharm
 
 1. Install the poetry plugin for pycharm: https://plugins.jetbrains.com/plugin/14307-poetry
 2. In PyCharm's menu: Run/Edit Configurations
@@ -110,7 +110,3 @@ You can now just click on _Run/Debug_ (if you only have one run configuration) o
 # Attribution
 
 This CONTRIBUTING.md was adapted from [ProjectPorcupine](https://github.com/TeamPorcupine/ProjectPorcupine)'s [CONTRIBUTING.md](https://github.com/TeamPorcupine/ProjectPorcupine/blob/master/CONTRIBUTING.md)
-
-# Contact info
-
-You are welcome to chat with us in our [Element room](https://app.element.io/#/room/#taguette:matrix.org) or contact the maintainers directly at [hi@taguette.org](mailto:hi@taguette.org).
