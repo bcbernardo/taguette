@@ -100,7 +100,7 @@ class CreateDemoProject(BaseHandler):
         user = self.db.query(database.User).get(self.current_user)
         lang = user.language
         if lang not in DEMO_DATA.keys():
-            lang = self.config['DEFAULT_LANGUAGE']
+            lang = self.application.config['DEFAULT_LANGUAGE']
         for document in DEMO_DATA[lang]['documents']:
             d = database.Document(
                 project_id=project.id,
