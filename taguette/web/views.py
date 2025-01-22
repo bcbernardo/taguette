@@ -81,6 +81,7 @@ class Index(BaseHandler):
                 user_display_name = user.displayname
 
             is_demo = 'false' if len(user.project_memberships) else 'true'
+            _ = self.xsrf_token  # Make sure XSRF cookie is set
             return self.render(
                 'index.html',
                 user=user,
@@ -1053,7 +1054,7 @@ class Project(BaseHandler):
             is_demo = "true"
             lang = user.language
             if lang not in DEMO_DATA.keys():
-                lang = self.config['DEFAULT_LANGUAGE']
+                lang = self.application.config['DEFAULT_LANGUAGE']
             demo_highlights_location = DEMO_DATA[lang]['tutorial_highlights']
         else:
             is_demo = "false"
