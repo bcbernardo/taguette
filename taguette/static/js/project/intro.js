@@ -400,7 +400,8 @@ $(document).ready(function() {
 
     function createDemoProject() {
         log('Create demo project');
-        postJSON('/api/create_demo_project')
+        let postData = {'_xsrf': getCookie('_xsrf')};
+        postJSON('/api/create_demo_project', postData)
             .then(function (result) {
                 if (result.html) {
                     $('#demo-project-container').prepend(result.html);
