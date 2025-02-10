@@ -31,14 +31,19 @@
 body {
   font-family: Montserrat !important;
   font-size:1.11em !important;
+  transition: all 0.3s ease-in-out;
 }
 
 /* Some space before content */
 .container-body {
-  padding-top: 1em;
+  padding-top: 6.50em;
 }
 
-/* Border for the tab container */
+body.scrolled .container-body {
+  padding-top: 6.50em;
+}
+
+    /* Border for the tab container */
 .tab-content {
   border-style: solid;
   border-width: 1px;
@@ -50,7 +55,13 @@ body {
 div.sticky-top {
   overflow-x: hidden;
   overflow-y: auto;
-  height: 100vh;
+  height: calc(100vh - 6.25em - 5.25em);
+  top: 6.25em;
+}
+
+body.scrolled div.sticky-top {
+    height: calc(100vh - 2em - 5.25em);
+    top: 2em;
 }
 
 /* Footer */
@@ -64,6 +75,22 @@ div.sticky-top {
 .navbar.navbar-expand-lg.navbar-dark.bg-primary {
   background-color: #018849 !important;
   margin-bottom: 2em;
+
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary {
+    padding: 0.1em 0 !important;
+    font-size: 0.7em;
+}
+
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary button,
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary input {
+    font-size: 1em;
+    line-height: 1;
 }
 
 body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
@@ -111,8 +138,27 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
     top: 0.5em;
 }
 
-.navbar-brand img {
+.navbar-brand img.not-scrolled {
     max-width: 100px;
+    display: block;
+}
+
+.navbar-brand img.scrolled {
+    display: none;
+}
+
+body.scrolled .navbar-brand img.not-scrolled {
+    display: none;
+}
+
+body.scrolled .navbar-brand img.scrolled {
+    display: block;
+    max-width: 60px;
+}
+
+body.scrolled .navbar-brand {
+    padding: 0;
+    top: 0.1em;
 }
 
 .mr-auto {
@@ -1050,12 +1096,22 @@ Document custom select
 
 .toolbar-container {
     position: sticky;
-    top: 0;
+    top: 3.25em;
     z-index: 10;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f8f9fa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+body.scrolled .toolbar-container {
+    top: 2em;
+}
+
+#project-sidebar-open {
+    color: white;
+    cursor: pointer;
+    font-size: 1.5em;
 }
 
 /* project sidebar */
