@@ -247,7 +247,7 @@ def main():
     if os.path.exists(os.path.join(toplevel, '.git')):
         try:
             version = subprocess.check_output(
-                ['git', '--git-dir=.git', 'describe'],
+                ['git', '--git-dir=.git', 'describe', '--tags'],
                 cwd=toplevel,
                 stderr=subprocess.PIPE,
             ).decode('utf-8').strip()

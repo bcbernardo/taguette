@@ -1361,3 +1361,14 @@ window.addEventListener('resize', debounce(() => {
     // Issue in test
     // loadDocument(current_document);
 }, 250));
+
+let scrollPos = 0;
+window.addEventListener('scroll', function() {
+    let isScrollUp = scrollPos > document.documentElement.scrollTop;
+    if(document.documentElement.scrollTop === 0 || isScrollUp) {
+        $('body').removeClass('scrolled');
+    } else if(!$('body').hasClass('scrolled')) {
+        $('body').addClass('scrolled');
+    }
+    scrollPos = document.documentElement.scrollTop;
+});
