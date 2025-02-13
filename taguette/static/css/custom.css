@@ -40,7 +40,7 @@ body {
 }
 
 body.scrolled .container-body {
-  padding-top: 6.50em;
+  padding-top: 0;
 }
 
     /* Border for the tab container */
@@ -55,13 +55,15 @@ body.scrolled .container-body {
 div.sticky-top {
   overflow-x: hidden;
   overflow-y: auto;
-  height: calc(100vh - 6.25em - 5.25em);
+  height: calc(100vh - 5.25em);
   top: 6.25em;
+  transition: all 0.3s ease-in-out;
 }
 
 body.scrolled div.sticky-top {
-    height: calc(100vh - 2em - 5.25em);
-    top: 2em;
+    height: calc(100vh - 5.25em);
+    top: 0;
+    transition: all 0.3s ease-in-out;
 }
 
 /* Footer */
@@ -75,16 +77,20 @@ body.scrolled div.sticky-top {
 .navbar.navbar-expand-lg.navbar-dark.bg-primary {
   background-color: #018849 !important;
   margin-bottom: 2em;
+  height: 3.5em;
 
   position: fixed;
   top: 0;
   z-index: 100;
   width: 100%;
+  transition: all 0.3s ease-in-out;
 }
 
 body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary {
-    padding: 0.1em 0 !important;
-    font-size: 0.7em;
+    overflow: hidden;
+    margin-bottom: 2em;
+    top: -5.5em;
+    transition: all 0.3s ease-in-out;
 }
 
 body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary button,
@@ -145,15 +151,6 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
 
 .navbar-brand img.scrolled {
     display: none;
-}
-
-body.scrolled .navbar-brand img.not-scrolled {
-    display: none;
-}
-
-body.scrolled .navbar-brand img.scrolled {
-    display: block;
-    max-width: 60px;
 }
 
 body.scrolled .navbar-brand {
@@ -1102,10 +1099,12 @@ Document custom select
     border-radius: 5px;
     background-color: #f8f9fa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
 }
 
 body.scrolled .toolbar-container {
-    top: 2em;
+    top: 0;
+    transition: all 0.3s ease-in-out;
 }
 
 #project-sidebar-open {

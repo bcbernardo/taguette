@@ -1365,7 +1365,7 @@ window.addEventListener('resize', debounce(() => {
 let scrollPos = 0;
 window.addEventListener('scroll', function() {
     let isScrollUp = scrollPos > document.documentElement.scrollTop;
-    if(document.documentElement.scrollTop === 0 || isScrollUp) {
+    if(document.documentElement.scrollTop < 150 || isScrollUp) {
         $('body').removeClass('scrolled');
     } else if(!$('body').hasClass('scrolled')) {
         $('body').addClass('scrolled');
