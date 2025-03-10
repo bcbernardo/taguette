@@ -18,7 +18,10 @@ build_image:
       FROM python:3.11
       RUN apt-get update
       ENV DEBIAN_FRONTEND=noninteractive
-      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync
+      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync curl software-properties-common apt-transport-https ca-certificates
+      RUN curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | sudo tee /usr/share/keyrings/google-chrome.gpg > /dev/null
+      RUN apt-get update
+      RUN apt install google-chrome-stable
       RUN curl -Lo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
       RUN tar -zxf /tmp/geckodriver.tar.gz -C /usr/local/bin geckodriver
       RUN chmod +x /usr/local/bin/geckodriver
