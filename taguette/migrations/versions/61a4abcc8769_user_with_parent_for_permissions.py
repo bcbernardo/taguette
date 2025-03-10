@@ -18,13 +18,23 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('approved_by_user_login', sa.String(length=255), nullable=True))
-        batch_op.create_index(batch_op.f('ix_users_approved_by_user_login'), ['approved_by_user_login'], unique=False)
-        batch_op.create_foreign_key(batch_op.f('fk_users_approved_by_user_login_users'), 'users', ['approved_by_user_login'], ['login'], ondelete='CASCADE')
+        batch_op.add_column(sa.Column('approved_by_user_login',
+                                      sa.String(length=255),
+                                      nullable=True))
+        batch_op.create_index(batch_op.f('ix_users_approved_by_user_login'),
+                              ['approved_by_user_login'],
+                              unique=False)
+        batch_op.create_foreign_key(
+            batch_op.f('fk_users_approved_by_user_login_users'),
+            'users', ['approved_by_user_login'],
+            ['login'],
+            ondelete='CASCADE')
 
 
 def downgrade():
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.drop_constraint(batch_op.f('fk_users_approved_by_user_login_users'), type_='foreignkey')
+        batch_op.drop_constraint(
+            batch_op.f('fk_users_approved_by_user_login_users'),
+            type_='foreignkey')
         batch_op.drop_index(batch_op.f('ix_users_approved_by_user_login'))
         batch_op.drop_column('approved_by_user_login')
