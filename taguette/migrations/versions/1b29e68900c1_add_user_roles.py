@@ -38,7 +38,7 @@ def upgrade():
     )
     op.execute(
         '''\
-        UPDATE users SET role = 'TEAM_MEMBER';
+        UPDATE users SET role = 'ADMIN';
         ''',
     )
 

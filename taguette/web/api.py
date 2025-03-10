@@ -91,7 +91,7 @@ class CreateDemoProject(BaseHandler):
         membership = database.ProjectMember(
             project=project,
             user_login=self.current_user,
-            privileges=database.Privileges.ADMIN
+            privileges=database.Privileges.TAG
         )
         self.db.add(membership)
         self.db.flush()
@@ -1055,7 +1055,9 @@ class MembersUpdate(BaseHandler):
 
 class ProjectImport(BaseHandler):
     def prepare(self):
-        if not self.application.config['SQLITE3_IMPORT_ENABLED']:
+        user = self.db.query(database.User).get(self.current_user)
+        if (not self.application.config['SQLITE3_IMPORT_ENABLED'] or
+                not user.roles.can_create_project()):
             raise HTTPError(403)
 
     @api_auth

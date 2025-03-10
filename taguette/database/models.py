@@ -57,10 +57,10 @@ class Roles(enum.Enum):
     TEAM_MEMBER = 3
 
     def can_create_project(self):
-        return self >= Roles.PROJECT_ADMIN
+        return self in (Roles.ADMIN, Roles.PROJECT_ADMIN)
 
     def can_change_role(self):
-        return self >= Roles.PROJECT_ADMIN
+        return self in (Roles.ADMIN, Roles.PROJECT_ADMIN)
 
 
 class User(Base):
@@ -77,7 +77,7 @@ class User(Base):
     email = Column(String(256), nullable=True, index=True, unique=True)
     email_sent = Column(DateTime, nullable=True)
     external = Column(Boolean, nullable=True, default=False)
-    role = Column(Enum(Roles), nullable=False, default=Roles.TEAM_MEMBER)
+    role = Column(Enum(Roles), nullable=False, default=Roles.ADMIN)
     project_memberships = relationship(
         'ProjectMember',
         cascade='all,delete-orphan',
