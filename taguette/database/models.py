@@ -51,6 +51,18 @@ class JSON(TypeDecorator):
 SCRYPT_MAX_MEM = 64 << 20
 
 
+class Roles(enum.Enum):
+    ADMIN = 1
+    PROJECT_ADMIN = 2
+    TEAM_MEMBER = 3
+
+    def can_create_project(self):
+        return self >= Roles.PROJECT_ADMIN
+
+    def can_change_role(self):
+        return self >= Roles.PROJECT_ADMIN
+
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -65,6 +77,7 @@ class User(Base):
     email = Column(String(256), nullable=True, index=True, unique=True)
     email_sent = Column(DateTime, nullable=True)
     external = Column(Boolean, nullable=True, default=False)
+    role = Column(Enum(Roles), nullable=False, default=Roles.TEAM_MEMBER)
     project_memberships = relationship(
         'ProjectMember',
         cascade='all,delete-orphan',
