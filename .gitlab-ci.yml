@@ -15,7 +15,7 @@ build_image:
   script:
     - |
       echo '
-      FROM python:3.10
+      FROM python:3.11
       RUN apt-get update
       ENV DEBIAN_FRONTEND=noninteractive
       RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync
