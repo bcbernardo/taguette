@@ -78,6 +78,10 @@ class User(Base):
     email_sent = Column(DateTime, nullable=True)
     external = Column(Boolean, nullable=True, default=False)
     role = Column(Enum(Roles), nullable=False, default=Roles.ADMIN)
+    approved_by_user_login = Column(String(255),
+                                 ForeignKey('users.login', ondelete='CASCADE'),
+                                 nullable=True, index=True)
+    approved_by_user = relationship('User')
     project_memberships = relationship(
         'ProjectMember',
         cascade='all,delete-orphan',

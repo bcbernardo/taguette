@@ -40,6 +40,11 @@
             <i class="fas fa-file-download"></i> {% trans %}Import a project file{% endtrans %}
         </a>
         {% endif %}
+        {% if can_import_project and is_multiuser %}
+            <a href="{{ reverse_url('permissions') }}" class="btn btn-secondary me-3">
+                <i class="fas fa-user-lock"></i> {% trans %}Grant permissions{% endtrans %}
+            </a>
+        {% endif %}
         <a href="#" class="btn btn-secondary" id="a-start-demo">
             <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
         </a>
