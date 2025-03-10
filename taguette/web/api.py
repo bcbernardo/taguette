@@ -992,7 +992,7 @@ class PermissionsUpdate(BaseHandler):
                 return self.send_error_json(
                     400,
                     "Invalid role %r" % user_info.get('privileges'),
-                    )
+                )
             user_to_update = self.db.query(database.User).get(login)
             user_to_update.role = role
             if role == database.Roles.TEAM_MEMBER:

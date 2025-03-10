@@ -838,6 +838,7 @@ class ProjectImport(BaseHandler):
     @authenticated
     @PROM_REQUESTS.sync('import_project')
     def get(self):
+        user = self.db.query(database.User).get(self.current_user)
         return self.render('project_import.html',
                            user=user)
 
