@@ -22,7 +22,7 @@ function _memberRow(login, user) {
         '</div>' +
         '<div class="col-md-4 form-group">' +
         '  <select class="form-control">' +
-        '    <option value="PROJECT_ADMIN">' + gettext("Can create projects") + '</option>' +
+        '    <option value="PROJECT_OWNER">' + gettext("Can create projects") + '</option>' +
         '    <option value="TEAM_MEMBER">' + gettext("Can't create projects") + '</option>' +
         '  </select>' +
         '</div>' +
@@ -84,7 +84,7 @@ document.getElementById('members-add').addEventListener('submit', function (e) {
         document.getElementById('members-add').reset();
         return;
     }
-    postJSON('/api/check_user', {login: login})
+    postJSON('/api/check_user', {login: login, permission: true})
         .then(function (result) {
             if (result.exists) {
                 // Add it at the top
@@ -95,7 +95,7 @@ document.getElementById('members-add').addEventListener('submit', function (e) {
 
                 document.getElementById('members-add').reset();
             } else {
-                showAlert(gettext("This user doesn't exist!"));
+                showAlert(gettext("Cannot add this user<br/>Reasons : <ul><li>User cannot be found</li><li>User is already sponsored</li><li>User role cannot be changed</li></ul>"));
             }
         })
 });

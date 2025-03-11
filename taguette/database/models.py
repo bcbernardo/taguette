@@ -55,12 +55,16 @@ class Roles(enum.Enum):
     ADMIN = 1
     PROJECT_ADMIN = 2
     TEAM_MEMBER = 3
+    PROJECT_OWNER = 4
 
     def can_create_project(self):
-        return self in (Roles.ADMIN, Roles.PROJECT_ADMIN)
+        return self in (Roles.ADMIN, Roles.PROJECT_ADMIN, Roles.PROJECT_OWNER)
 
     def can_change_role(self):
         return self in (Roles.ADMIN, Roles.PROJECT_ADMIN)
+
+    def role_can_be_changed(self):
+        return self in (Roles.TEAM_MEMBER, Roles.PROJECT_OWNER)
 
 
 class User(Base):
