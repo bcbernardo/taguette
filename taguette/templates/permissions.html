@@ -31,7 +31,7 @@
     </form>
 
     <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save{% endtrans %}</button>
-    <button type="button" class="btn btn-secondary">{% trans %}Cancel{% endtrans %}</button>
+    <a href="{{ reverse_url('index') }}" class="btn btn-secondary">{% trans %}Cancel{% endtrans %}</a>
 
     <!-- Spinner modal -->
     {% include 'partials/spinner.html' %}

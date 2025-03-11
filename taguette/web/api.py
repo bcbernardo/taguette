@@ -62,14 +62,20 @@ class CheckUser(BaseHandler):
     def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        login = self.get_json()['login']
+        data = self.get_json()
+        login = data['login']
+        permission = data['permission'] if 'permission' in data else False
         try:
             login = validate.fix_user_login(login)
         except validate.InvalidFormat:
             pass
         else:
             user = self.db.query(database.User).get(login)
-            if user is not None and not user.disabled:
+            return_user = True
+            if permission and (not user.role.role_can_be_changed() or
+                               user.approved_by_user_login is not None):
+                return_user = False
+            if return_user and user is not None and not user.disabled:
                 return self.send_json({'exists': True})
         return self.send_json({'exists': False})
 
@@ -972,7 +978,7 @@ class PermissionsUpdate(BaseHandler):
     @PROM_REQUESTS.sync('permissions_update')
     def patch(self):
         user = self.db.query(database.User).get(self.current_user)
-        if not user.role.can_create_project():
+        if not user.role.can_change_role():
             return self.send_error_json(403, self.gettext(
                 "Unauthorized",
             ))
@@ -988,6 +994,11 @@ class PermissionsUpdate(BaseHandler):
 
             try:
                 role = database.Roles[user_info['privileges']]
+                if role not in (database.Roles['TEAM_MEMBER'],
+                                database.Roles['PROJECT_OWNER']):
+                    return self.send_error_json(400, self.gettext(
+                        "Bad request",
+                    ))
             except KeyError:
                 return self.send_error_json(
                     400,

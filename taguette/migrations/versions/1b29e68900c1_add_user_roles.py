@@ -21,7 +21,7 @@ def upgrade():
     connection = op.get_bind()
     if connection.dialect.name == 'postgresql':
         roles_enum = postgresql.ENUM(
-            'ADMIN', 'PROJECT_ADMIN', 'TEAM_MEMBER',
+            'ADMIN', 'PROJECT_ADMIN', 'TEAM_MEMBER', 'PROJECT_OWNER',
             name='roles',
             create_type=False,
         )
@@ -38,7 +38,7 @@ def upgrade():
     )
     op.execute(
         '''\
-        UPDATE users SET role = 'ADMIN';
+        UPDATE users SET role = 'PROJECT_ADMIN';
         ''',
     )
 
