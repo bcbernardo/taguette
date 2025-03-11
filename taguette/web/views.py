@@ -91,6 +91,7 @@ class Index(BaseHandler):
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
                 can_create_project=user.role.can_create_project(),
+                can_change_role=user.role.can_change_role(),
                 can_import_project=(
                     user.role.can_create_project()
                     and self.application.config['SQLITE3_IMPORT_ENABLED']
@@ -288,7 +289,7 @@ class UserPermissions(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
-        if not user.role.can_create_project():
+        if not user.role.can_change_role():
             raise HTTPError(403)
 
     @PROM_REQUESTS.sync('permissions')
