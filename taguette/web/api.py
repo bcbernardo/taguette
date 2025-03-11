@@ -72,7 +72,8 @@ class CheckUser(BaseHandler):
         else:
             user = self.db.query(database.User).get(login)
             return_user = True
-            if permission and (not user.role.role_can_be_changed() or user.approved_by_user_login is not None):
+            if permission and (not user.role.role_can_be_changed() or
+                               user.approved_by_user_login is not None):
                 return_user = False
             if return_user and user is not None and not user.disabled:
                 return self.send_json({'exists': True})
