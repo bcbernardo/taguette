@@ -29,6 +29,7 @@ build_image:
       RUN $HOME/.local/bin/poetry install --no-interaction -E postgres -E mysql
       RUN mkdir -p ./poetry_bin
       RUN rsync -rvah $HOME/.local/bin/* ./poetry_bin
+      RUN ls -la /usr/bin/ | grep chrome
       ' > Dockerfile
     - docker build --pull -t "${CI_REGISTRY_IMAGE}:tests" .
     - docker push "${CI_REGISTRY_IMAGE}:tests"

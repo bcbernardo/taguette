@@ -19,9 +19,10 @@ class SeleniumTest(MyHTTPTestCase):
             options.add_argument('--disable-gpu')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--no-sandbox')
-            options.binary_location = '/usr/bin/google-chrome'
+            options.binary_location = '/usr/bin/google-chrome-stable'
             chrome_driver_binary = "/usr/bin/chromedriver"
-            self.driver = webdriver.Chrome(chrome_driver_binary, options=options)
+            self.driver = webdriver.Chrome(chrome_driver_binary,
+                                           options=options)
         else:
             raise EnvironmentError
         self.driver.set_window_size(1024, 768)
