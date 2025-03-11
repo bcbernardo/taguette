@@ -29,14 +29,21 @@
 
     <!-- Actions list -->
     <div class="d-flex justify-content-start mb-4 mt-4">
+        {% if can_create_project %}
         <a href="{{ reverse_url('new_project') }}" class="btn btn-primary me-3"> <!-- Using `me-3` to add a right margin -->
             <i class="fas fa-plus"></i> {% trans %}Create a new project{% endtrans %}
         </a>
+        {% endif %}
 
         {% if can_import_project %}
         <a href="{{ reverse_url('import_project') }}" class="btn btn-secondary me-3">
             <i class="fas fa-file-download"></i> {% trans %}Import a project file{% endtrans %}
         </a>
+        {% endif %}
+        {% if can_import_project and is_multiuser %}
+            <a href="{{ reverse_url('permissions') }}" class="btn btn-secondary me-3">
+                <i class="fas fa-user-lock"></i> {% trans %}Grant permissions{% endtrans %}
+            </a>
         {% endif %}
         <a href="#" class="btn btn-secondary" id="a-start-demo">
             <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
