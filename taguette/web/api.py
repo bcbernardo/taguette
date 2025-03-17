@@ -62,14 +62,20 @@ class CheckUser(BaseHandler):
     def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        login = self.get_json()['login']
+        data = self.get_json()
+        login = data['login']
+        permission = data['permission'] if 'permission' in data else False
         try:
             login = validate.fix_user_login(login)
         except validate.InvalidFormat:
             pass
         else:
             user = self.db.query(database.User).get(login)
-            if user is not None and not user.disabled:
+            return_user = True
+            if permission and (not user.role.role_can_be_changed() or
+                               user.approved_by_user_login is not None):
+                return_user = False
+            if return_user and user is not None and not user.disabled:
                 return self.send_json({'exists': True})
         return self.send_json({'exists': False})
 
@@ -78,6 +84,7 @@ class CreateDemoProject(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('create_demo_project')
     def post(self):
+        user = self.db.query(database.User).get(self.current_user)
         documents = []
         tags = []
         # Create project
@@ -87,17 +94,19 @@ class CreateDemoProject(BaseHandler):
                 'A demo project to showcase LibreQDA'
             ))
         self.db.add(project)
+        priv = database.Privileges.TAG
+        if user.role.can_create_project():
+            priv = database.Privileges.ADMIN
         # Add user as admin
         membership = database.ProjectMember(
             project=project,
             user_login=self.current_user,
-            privileges=database.Privileges.ADMIN
+            privileges=priv
         )
         self.db.add(membership)
         self.db.flush()
 
         # Select language for demo
-        user = self.db.query(database.User).get(self.current_user)
         lang = user.language
         if lang not in DEMO_DATA.keys():
             lang = self.application.config['DEFAULT_LANGUAGE']
@@ -964,6 +973,49 @@ class Search(BaseHandler):
         })
 
 
+class PermissionsUpdate(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('permissions_update')
+    def patch(self):
+        user = self.db.query(database.User).get(self.current_user)
+        if not user.role.can_change_role():
+            return self.send_error_json(403, self.gettext(
+                "Unauthorized",
+            ))
+        if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        obj = self.get_json()
+
+        for login, user_info in obj.items():
+            try:
+                login = validate.fix_user_login(login)
+            except validate.InvalidFormat as e:
+                return self.send_error_json(400, self.gettext(e.message))
+
+            try:
+                role = database.Roles[user_info['privileges']]
+                if role not in (database.Roles['TEAM_MEMBER'],
+                                database.Roles['PROJECT_OWNER']):
+                    return self.send_error_json(400, self.gettext(
+                        "Bad request",
+                    ))
+            except KeyError:
+                return self.send_error_json(
+                    400,
+                    "Invalid role %r" % user_info.get('privileges'),
+                )
+            user_to_update = self.db.query(database.User).get(login)
+            user_to_update.role = role
+            if role == database.Roles.TEAM_MEMBER:
+                user_to_update.approved_by_user_login = None
+            else:
+                user_to_update.approved_by_user_login = self.current_user
+
+        self.db.commit()
+        self.set_status(204)
+        return self.finish()
+
+
 class MembersUpdate(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('members_update')
@@ -1055,7 +1107,9 @@ class MembersUpdate(BaseHandler):
 
 class ProjectImport(BaseHandler):
     def prepare(self):
-        if not self.application.config['SQLITE3_IMPORT_ENABLED']:
+        user = self.db.query(database.User).get(self.current_user)
+        if (not self.application.config['SQLITE3_IMPORT_ENABLED'] or
+                not user.role.can_create_project()):
             raise HTTPError(403)
 
     @api_auth

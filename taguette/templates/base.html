@@ -20,7 +20,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
       <div class="container">
         <a class="navbar-brand special-brand" href="{{ reverse_url('index') }}">
-            <img src="/static/logo.png" alt="logo_LibreQDA">
+            <img src="/static/logo.png" alt="LibreQDA" class="not-scrolled">
+            <img src="/static/logo-h.png" alt="LibreQDA" class="scrolled">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -32,7 +33,7 @@
                   <a class="nav-link {{ 'active' if active_page == 'project' else '' }} project-name" href="{{ reverse_url('project', project.id) }}">
                       {{ project.name }}
                   </a>
-                  <i id="project-sidebar-open" title="{% trans %}Edit project{% endtrans %}" class="fa fa-briefcase" style="color: white; cursor: pointer; font-size: 30px;"></i>
+                  <i id="project-sidebar-open" title="{% trans %}Edit project{% endtrans %}" class="fa fa-briefcase"></i>
               </li>
             {% endif %}
           </ul>

@@ -123,6 +123,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
                        name='reset_password'),
         UnbakedURLSpec('/new_password', views.SetNewPassword,
                        name='new_password'),
+        UnbakedURLSpec('/permissions', views.UserPermissions,
+                       name='permissions'),
         UnbakedURLSpec('/project/new', views.ProjectAdd, name='new_project'),
         UnbakedURLSpec('/project/import', views.ProjectImport,
                        name='import_project'),
@@ -190,6 +192,7 @@ def make_app(config, debug=False, xsrf_cookies=True):
         UnbakedURLSpec('/api/project/([0-9]+)/tag/merge', api.TagMerge),
         UnbakedURLSpec('/api/project/([0-9]+)/members', api.MembersUpdate),
         UnbakedURLSpec('/api/project/([0-9]+)/events', api.ProjectEvents),
+        UnbakedURLSpec('/api/permissions', api.PermissionsUpdate),
 
         # Translation catalog and functions
         UnbakedURLSpec('/trans\\.js', TranslationJs, name='trans.js'),

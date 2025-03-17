@@ -202,7 +202,7 @@ def get_filename_for_highlights_export(path):
             filename = filename[:max_length]
         return filename
     else:
-        return 'all_tags.html'
+        return 'all_tags'
 
 
 @tracer.start_as_current_span('taguette/export/highlights_csv')

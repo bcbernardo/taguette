@@ -90,11 +90,15 @@ class Index(BaseHandler):
                 ),
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
+                can_create_project=user.role.can_create_project(),
+                can_change_role=user.role.can_change_role(),
                 can_import_project=(
-                    self.application.config['SQLITE3_IMPORT_ENABLED']
+                    user.role.can_create_project()
+                    and self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
                 demo=False,
-                is_demo=Markup(is_demo)
+                is_demo=Markup(is_demo),
+                is_multiuser=self.application.config['MULTIUSER']
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)
@@ -255,6 +259,7 @@ class Register(BaseHandler):
                 raise validate.InvalidFormat(_f("Email address is already "
                                                 "used"))
             user = database.User(login=login)
+            user.role = "PROJECT_ADMIN"
             await user.set_password(password1)
             if email:
                 user.email = email
@@ -277,6 +282,34 @@ class Register(BaseHandler):
                 register=True,
                 register_error=self.gettext(e.message),
             )
+
+
+class UserPermissions(BaseHandler):
+    def prepare(self):
+        if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        user = self.db.query(database.User).get(self.current_user)
+        if not user.role.can_change_role():
+            raise HTTPError(403)
+
+    @PROM_REQUESTS.sync('permissions')
+    def get(self):
+        user = self.db.query(database.User).get(self.current_user)
+        members = (
+            self.db.query(database.User)
+            .filter(database.User.approved_by_user_login == self.current_user)
+        ).all()
+        members_json = Markup(json.dumps(
+            {user.login: {'privileges': user.role.name}
+             for user in members}
+        ))
+        _ = self.xsrf_token  # Make sure XSRF cookie is set
+        return self.render('permissions.html',
+                           members=members_json,
+                           user=user,
+                           user_login=Markup(
+                               json.dumps(self.current_user)
+                           ))
 
 
 class Cilogon(BaseHandler):
@@ -418,6 +451,9 @@ class CilogonCallback(BaseHandler):
         else:
             user_from_google = False
 
+        cil_user_infos['user_from_google'] = user_from_google
+        cil_user_infos['user_from_caf'] = user_from_caf
+
         # For testing
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
@@ -470,6 +506,9 @@ class CilogonCallback(BaseHandler):
             user.email = login
             user.external = True
             user.disabled = False
+            user.role = "PROJECT_ADMIN"
+            if user_info['user_from_google']:
+                user.role = "TEAM_MEMBER"
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie('user', login)
@@ -736,6 +775,11 @@ class SetNewPassword(BaseHandler):
 
 
 class ProjectAdd(BaseHandler):
+    def prepare(self):
+        user = self.db.query(database.User).get(self.current_user)
+        if not user.role.can_create_project():
+            raise HTTPError(403)
+
     @authenticated
     @PROM_REQUESTS.sync('new_project')
     def get(self):
@@ -787,7 +831,9 @@ class ProjectAdd(BaseHandler):
 
 class ProjectImport(BaseHandler):
     def prepare(self):
-        if not self.application.config['SQLITE3_IMPORT_ENABLED']:
+        user = self.db.query(database.User).get(self.current_user)
+        if (not self.application.config['SQLITE3_IMPORT_ENABLED'] or
+                not user.role.can_create_project()):
             raise HTTPError(403)
 
     @authenticated

@@ -15,10 +15,14 @@ build_image:
   script:
     - |
       echo '
-      FROM python:3.10
+      FROM python:3.11
       RUN apt-get update
       ENV DEBIAN_FRONTEND=noninteractive
-      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync
+      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync curl software-properties-common apt-transport-https ca-certificates
+      RUN curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg > /dev/null
+      RUN echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main | tee /etc/apt/sources.list.d/google-chrome.list
+      RUN apt-get update
+      RUN apt install -y google-chrome-stable
       RUN curl -Lo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz
       RUN tar -zxf /tmp/geckodriver.tar.gz -C /usr/local/bin geckodriver
       RUN chmod +x /usr/local/bin/geckodriver
@@ -29,6 +33,7 @@ build_image:
       RUN $HOME/.local/bin/poetry install --no-interaction -E postgres -E mysql
       RUN mkdir -p ./poetry_bin
       RUN rsync -rvah $HOME/.local/bin/* ./poetry_bin
+      RUN ls -la /usr/bin/ | grep chrome
       ' > Dockerfile
     - docker build --pull -t "${CI_REGISTRY_IMAGE}:tests" .
     - docker push "${CI_REGISTRY_IMAGE}:tests"
@@ -105,7 +110,7 @@ sqlite3_latest:
 
 sqlite3_latest_pip:
   stage: test
-  image: python:3.10
+  image: python:3.11
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
@@ -144,7 +149,7 @@ mariadb:
 
 sqlite3_pypy:
   stage: test
-  image: pypy:3.10
+  image: pypy:3.11
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
