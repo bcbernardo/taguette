@@ -110,7 +110,7 @@ sqlite3_latest:
 
 sqlite3_latest_pip:
   stage: test
-  image: python:3.10
+  image: python:3.11
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
@@ -149,7 +149,7 @@ mariadb:
 
 sqlite3_pypy:
   stage: test
-  image: pypy:3.10
+  image: pypy:3.11
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
