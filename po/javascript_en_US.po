@@ -1,7 +1,9 @@
 # English translations for LibreQDA and Taguette.
-# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de
+# Sherbrooke) and contributors
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
-# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# This file is distributed under the same license as the LibreQDA and
+# Taguette projects.
 # PHuN <phun@usherbrooke.ca>, 2023.
 # Remi Rampin <remi@rampin.org>, 2018.
 #
@@ -9,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-12-02 10:14-0500\n"
+"POT-Creation-Date: 2025-03-17 17:25-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -277,7 +279,7 @@ msgstr "View & make changes"
 msgid "View only"
 msgstr "View only"
 
-#: taguette/static/js/taguette.js:763
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:763
 msgid "Already a member!"
 msgstr "Already a member!"
 
@@ -289,11 +291,11 @@ msgstr "This user doesn't exist!"
 msgid "Load a document on the left"
 msgstr "Load a document from you bookmarks or on the right"
 
-#: taguette/static/js/taguette.js:1062
+#: taguette/static/js/taguette.js:1063
 msgid "No highlights with this tag yet."
 msgstr "No highlights with this code yet."
 
-#: taguette/static/js/taguette.js:1207
+#: taguette/static/js/taguette.js:1208
 msgid "No tag found"
 msgstr "No code found"
 
@@ -373,4 +375,22 @@ msgstr "There are no documents in this project yet."
 #: taguette/static/js/document/manager.js:112
 msgid "Import new document"
 msgstr "Import new document(s)"
+
+#: taguette/static/js/permissions.js:25
+msgid "Can create projects"
+msgstr "Can create projects"
+
+#: taguette/static/js/permissions.js:26
+msgid "Can't create projects"
+msgstr "Can't create projects"
+
+#: taguette/static/js/permissions.js:98
+msgid ""
+"Cannot add this user<br/>Reasons : <ul><li>User cannot be "
+"found</li><li>User is already sponsored</li><li>User role cannot be "
+"changed</li></ul>"
+msgstr ""
+"Cannot add this user<br/>Reasons : <ul><li>User cannot be "
+"found</li><li>User is already sponsored</li><li>User role cannot be "
+"changed</li></ul>"
 
