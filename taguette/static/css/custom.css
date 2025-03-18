@@ -902,6 +902,7 @@ Index project view custom
     overflow: hidden;
     text-overflow: clip;
     max-width: 300px;
+    text-decoration: underline;
 }
 
 .empty i.fas,
