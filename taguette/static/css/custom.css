@@ -899,6 +899,7 @@ Index project view custom
     font-weight: 600;
     text-align: left;
     white-space: normal;
+    word-wrap: break-word !important;
     overflow: hidden;
     text-overflow: clip;
     max-width: 300px;
