@@ -404,13 +404,15 @@ def codebook_xlsx(tags, filename):
 
     sheet.write(0, 0, 'tag', header)
     sheet.write(0, 1, 'description', header)
-    sheet.write(0, 2, 'number of highlights', header)
+    sheet.write(0, 2, 'parent', header)
+    sheet.write(0, 3, 'number of highlights', header)
     sheet.set_column(0, 0, 30.0)
     sheet.set_column(1, 1, 80.0)
     for row, tag in enumerate(tags, start=1):
         sheet.write(row, 0, tag.path)
         sheet.write(row, 1, tag.description)
-        sheet.write(row, 2, tag.highlights_count)
+        sheet.write(row, 2, tag.parent.path if tag.parent else '')
+        sheet.write(row, 3, tag.highlights_count)
     workbook.close()
 
 

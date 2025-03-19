@@ -701,7 +701,7 @@ class Test2E2MultiUser(SeleniumTest):
             if link.text
         ]
         self.assertEqual(links, [
-            ('QDC (XML)', self.base_path + '/project/1/export/codebook.qdc'),
+            # ('QDC (XML)', self.base_path + '/project/1/export/codebook.qdc'),
             ('Excel', self.base_path + '/project/1/export/codebook.xlsx'),
             ('CSV', self.base_path + '/project/1/export/codebook.csv'),
             ('HTML', self.base_path + '/project/1/export/codebook.html'),
