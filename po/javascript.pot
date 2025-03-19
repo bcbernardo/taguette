@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2024 ORGANIZATION
+# Copyright (C) 2025 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-12-02 12:08-0500\n"
+"POT-Creation-Date: 2025-03-17 17:46-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -271,7 +271,7 @@ msgstr ""
 msgid "View only"
 msgstr ""
 
-#: taguette/static/js/taguette.js:763
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:763
 msgid "Already a member!"
 msgstr ""
 
@@ -283,11 +283,11 @@ msgstr ""
 msgid "Load a document on the left"
 msgstr ""
 
-#: taguette/static/js/taguette.js:1062
+#: taguette/static/js/taguette.js:1063
 msgid "No highlights with this tag yet."
 msgstr ""
 
-#: taguette/static/js/taguette.js:1207
+#: taguette/static/js/taguette.js:1208
 msgid "No tag found"
 msgstr ""
 
@@ -365,5 +365,20 @@ msgstr ""
 
 #: taguette/static/js/document/manager.js:112
 msgid "Import new document"
+msgstr ""
+
+#: taguette/static/js/permissions.js:25
+msgid "Can create projects"
+msgstr ""
+
+#: taguette/static/js/permissions.js:26
+msgid "Can't create projects"
+msgstr ""
+
+#: taguette/static/js/permissions.js:98
+msgid ""
+"Cannot add this user<br/>Reasons : <ul><li>User cannot be "
+"found</li><li>User is already sponsored</li><li>User role cannot be "
+"changed</li></ul>"
 msgstr ""
 
