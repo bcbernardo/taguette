@@ -166,6 +166,8 @@ body.scrolled .navbar-brand {
 
 .nav-link {
   padding: 0.5rem 0.5rem !important;
+  overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Colors for button primary */
@@ -404,6 +406,9 @@ span.search-item {
 /* Don't show the resize control on textareas */
 textarea.form-control {
   resize: none;
+   height: 150px;
+   padding: 10px;
+   line-height: 1.5;
 }
 
 select.form-control {
@@ -673,9 +678,10 @@ a.dropdown-item:hover {
 }
 
 .tag-badges {
-    position: absolute;
+    /*position: absolute;*/
     right: 10px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 4px;
 }
@@ -690,11 +696,16 @@ a.dropdown-item:hover {
 .tag-text {
     font-size: 1rem !important;
     letter-spacing: -0.5px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
+    white-space: normal !important;
+    overflow: hidden;
     text-overflow: ellipsis !important;
     max-width: 120px !important;
+    max-height: 50px !important;
     display: inline-block;
+}
+
+.tag-text:hover {
+    overflow-y: auto;
 }
 
 /* Spinner animation */
@@ -812,6 +823,7 @@ Index project view custom
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+    padding-left: 15px;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 0;
@@ -882,14 +894,16 @@ Index project view custom
 }
 
 .project-card .name{
-    font-size: 22px;
+    font-size: 20px;
     color: #464e56;
     font-weight: 600;
     text-align: left;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word !important;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    text-overflow: clip;
+    max-width: 300px;
+    text-decoration: underline;
 }
 
 .empty i.fas,
@@ -939,6 +953,7 @@ Index project view custom
     border: 2px solid #ccc;
     border-radius: 8px;
     padding: 10px;
+    overflow: hidden;
     background-color: #fff;
 }
 
@@ -1110,6 +1125,7 @@ body.scrolled .toolbar-container {
 #project-sidebar-open {
     color: white;
     cursor: pointer;
+    padding-right: 10px;
     font-size: 1.5em;
 }
 
