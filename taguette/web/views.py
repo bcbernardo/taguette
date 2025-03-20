@@ -326,12 +326,12 @@ class Cilogon(BaseHandler):
             # The first in the list of selected_idp will be the
             # default choice of idp
             f = OAuth2WebServerFlow(
-                auth_uri='https://cilogon.org/authorize',
-                token_uri='https://cilogon.org/oauth2/token',
-                client_id=self.application.config['CI_LOGON_ID'],
-                client_secret=self.application.config['CI_LOGON_SECRET'],
-                scope=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
-                redirect_uri=self.application.config['CI_LOGON_CALLBACK_URL'],
+                auth_uri=self.application.config['OAUTH_AUTH_URI'],
+                token_uri=self.application.config['OAUTH_TOKEN_URI'],
+                client_id=self.application.config['OAUTH_CLIENT_ID'],
+                client_secret=self.application.config['OAUTH_CLIENT_SECRET'],
+                scope=self.application.config['OAUTH_SCOPE'],
+                redirect_uri=self.application.config['OAUTH_CALLBACK_URL'],
             )
             f.params['access_type'] = 'offline'  # offline access
             f.params['include_granted_scopes'] = 'true'  # incremental auth
@@ -380,13 +380,13 @@ class CilogonCallback(BaseHandler):
 
     def get_ci_token(self, params):
         return requests.get(
-            'https://cilogon.org/oauth2/token',
+            self.application.config['OAUTH_TOKEN_URI'],
             params=params
         )
 
     def get_ci_user_infos(self, access_token):
         return requests.get(
-            'https://cilogon.org/oauth2/userinfo',
+            self.application.config['OAUTH_USERINFO_URI'],
             params={'access_token': access_token}
         )
 
@@ -401,9 +401,9 @@ class CilogonCallback(BaseHandler):
         params = {
             'grant_type': 'authorization_code',
             'code': auth_code,
-            'client_id': self.application.config['CI_LOGON_ID'],
-            'client_secret': self.application.config['CI_LOGON_SECRET'],
-            'redirect_uri': self.application.config['CI_LOGON_CALLBACK_URL']
+            'client_id': self.application.config['OAUTH_CLIENT_ID'],
+            'client_secret': self.application.config['OAUTH_CLIENT_SECRET'],
+            'redirect_uri': self.application.config['OAUTH_CALLBACK_URL']
         }
         error = False
         cil_user_infos = {}
