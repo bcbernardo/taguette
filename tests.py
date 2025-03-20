@@ -2236,9 +2236,14 @@ class TestMultiuserExternal(MyHTTPTestCase):
             MULTIUSER=True,
             SECRET_KEY='2PbQ/5Rs005G/nTuWfibaZTUAo3Isng3QuRirmBK',
             ALLOW_EXTERNAL_LOGIN=True,
-            CI_LOGON_ID="cilogon:/client_id/123456789",
-            CI_LOGON_SECRET="very-secret-secret",
-            CI_LOGON_CALLBACK_URL="http://localhost:7465/ci_callback"
+            OAUTH_AUTH_URI="https://cilogon.org/authorize",
+            OAUTH_TOKEN_URI="https://cilogon.org/oauth2/token",
+            OAUTH_TOKEN_METHOD="get",
+            OAUTH_USERINFO_URI="https://cilogon.org/oauth2/userinfo",
+            OAUTH_CLIENT_ID="cilogon:/client_id/123456789",
+            OAUTH_CLIENT_SECRET="very-secret-secret",
+            OAUTH_SCOPE=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
+            OAUTH_CALLBACK_URL="http://localhost:7465/ci_callback",
         ))
         self.io_loop.run_sync(
             lambda: set_dumb_password(self.application.DBSession)
