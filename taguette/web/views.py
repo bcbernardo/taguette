@@ -379,10 +379,16 @@ class CilogonCallback(BaseHandler):
             self.cilogon_callback(auth_code)
 
     def get_ci_token(self, params):
-        return requests.get(
-            self.application.config['OAUTH_TOKEN_URI'],
-            params=params
-        )
+        if self.application.config['OAUTH_TOKEN_METHOD'].lower() == 'get':
+            return requests.get(
+                self.application.config['OAUTH_TOKEN_URI'],
+                params=params
+            )
+        else:
+            return requests.post(
+                self.application.config['OAUTH_TOKEN_URI'],
+                params=params
+            )
 
     def get_ci_user_infos(self, access_token):
         return requests.get(

@@ -15,6 +15,7 @@ class TestMultiUserLoginExternal(TestMultiUser):
             'OAUTH_CALLBACK_URL': "http://localhost:7465/ci_callback",
             'OAUTH_AUTH_URI': "https://cilogon.org/authorize",
             'OAUTH_TOKEN_URI': "https://cilogon.org/oauth2/token",
+            'OAUTH_TOKEN_METHOD': "get",
             'OAUTH_USERINFO_URI': "https://cilogon.org/oauth2/userinfo",
             'OAUTH_SCOPE': ['profile', 'email', 'openid',
                             'org.cilogon.userinfo'],

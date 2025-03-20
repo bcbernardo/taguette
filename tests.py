@@ -2238,6 +2238,7 @@ class TestMultiuserExternal(MyHTTPTestCase):
             ALLOW_EXTERNAL_LOGIN=True,
             OAUTH_AUTH_URI="https://cilogon.org/authorize",
             OAUTH_TOKEN_URI="https://cilogon.org/oauth2/token",
+            OAUTH_TOKEN_METHOD="get",
             OAUTH_USERINFO_URI="https://cilogon.org/oauth2/userinfo",
             OAUTH_CLIENT_ID="cilogon:/client_id/123456789",
             OAUTH_CLIENT_SECRET="very-secret-secret",
