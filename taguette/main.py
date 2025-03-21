@@ -164,10 +164,15 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 # If True, CI Logon variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
 
-# Replace current authentication by CI_LOGON
-# CI_LOGON_ID=""
-# CI_LOGON_SECRET=""
-# CI_LOGON_CALLBACK_URL=""
+# Replace current authentication with OAUTH
+# OAUTH_AUTH_URI=""
+# OAUTH_TOKEN_URI=""
+# OAUTH_TOKEN_METHOD="get"
+# OAUTH_USERINFO_URI=""
+# OAUTH_CLIENT_ID=""
+# OAUTH_CLIENT_SECRET=""
+# OAUTH_SCOPE=[]
+# OAUTH_CALLBACK_URL="http://localhost:7465/ci_callback"
 
 # Output manifest max size
 # OPF_OUT_SIZE_LIMIT = 5000000
