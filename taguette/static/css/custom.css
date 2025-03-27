@@ -699,8 +699,19 @@ a.dropdown-item:hover {
     text-overflow: ellipsis !important;
 }
 
+.expand-icon {
+  color: #005a20;
+  min-width: 22px;
+  padding: 2px;
+  border-radius: 5px;
+}
+
+.expand-icon:hover {
+  border: 0.25px solid #005a20;
+}
+
 .tag-text {
-    font-size: 0.90rem !important;
+    font-size: 1rem !important;
     letter-spacing: -0.5px !important;
     white-space: normal !important;
     overflow: visible !important;
