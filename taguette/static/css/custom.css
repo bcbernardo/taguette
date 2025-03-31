@@ -598,6 +598,10 @@ a.dropdown-item:hover {
 
 /* Left middle right panel styles */
 
+#middle-panel {
+    padding-bottom: 150px;
+}
+
 .col-md-2-5 {
     width: 20.8333% !important;
     transition: all 0.3s ease-in-out;
@@ -739,6 +743,18 @@ a.dropdown-item:hover {
 #spinner-modal button.cancel {
   display: none;
   margin-top: 1em;
+}
+
+#progress {
+    margin-top: -15vh;
+    margin-bottom: 15vh;
+    width: 20vh;
+    text-align: center;
+    margin-left: 5vh;
+}
+
+.progress-bar {
+    background-color: #018849;
 }
 
 /* --------------------SCROLLBAR FOR MODALS--------------------------*/

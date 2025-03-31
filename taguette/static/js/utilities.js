@@ -396,7 +396,7 @@ function log(message, status = 'info', context = {}) {
     }
 }
 
-function showSpinner(cancel_action=null) {
+function showSpinner(cancel_action=null, show_progress=false) {
     let $spinner_modal = $('#spinner-modal')
     if (typeof $spinner_modal.modal !== 'undefined') {
         $spinner_modal.modal('show');
@@ -404,7 +404,30 @@ function showSpinner(cancel_action=null) {
             $('button.cancel', $spinner_modal).show();
             $('button.cancel', $spinner_modal).bind("click", cancel_action);
         }
+        if(show_progress) {
+            $("#progress", $spinner_modal).show();
+        } else {
+            $("#progress", $spinner_modal).hide();
+        }
     }
+}
+
+function updateProgress(percent) {
+    function doUpdateProgress(){
+        let $spinner_modal = $('#spinner-modal');
+        if (typeof $spinner_modal.modal !== 'undefined') {
+            if (isNaN(percent) || (percent < 0)) {
+                percent = 0;
+            }
+            if (percent > 100) {
+                percent = 100;
+            }
+            $("#progress .progress-bar", $spinner_modal).css('width', percent + '%');
+            $("#progress .progress-bar", $spinner_modal).css('aria-valuenow', percent);
+            log(`Upload progress: ${percent}%`);
+        }
+    }
+    window.requestAnimationFrame(doUpdateProgress);
 }
 
 function hideSpinner() {
