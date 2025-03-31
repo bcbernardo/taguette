@@ -205,6 +205,12 @@ def get_html_body(body):
         else:
             if 'title' in e.attrs:
                 del e.attrs['title']
+
+    # Cleanup empty tags
+    for x in soup.find_all():
+        if len(x.get_text(strip=True)) == 0 and x.name not in ['br', 'img']:
+            x.extract()
+
     # Back to string
     body = str(soup)
     del soup
