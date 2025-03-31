@@ -132,7 +132,7 @@ function basename(filename) {
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function doUpload(form_data) {
+function doUpload(form_data, percent=0) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest(),
             name = form_data.get('name');
@@ -142,7 +142,8 @@ function doUpload(form_data) {
             if (xhr.status === 200) {
                 log("Document upload complete");
                 resolve({
-                    'doc_to_load': xhr.response.created
+                    'doc_to_load': xhr.response.created,
+                    'percent': percent
                 })
             } else {
                 const context = xhr.status;
@@ -156,14 +157,16 @@ function doUpload(form_data) {
                     error = `<p>(${name}) Status ${xhr.status}</p>`;
                 }
                 reject({
-                    'error_msg': error
+                    'error_msg': error,
+                    'percent': percent
                 });
             }
         };
         xhr.onerror = function (e) {
             log("Document upload failed:", 'error', {e});
             reject({
-                'error_msg': `<p>${e}</p>`
+                'error_msg': `<p>${e}</p>`,
+                'percent': percent
             });
         }
         xhr.send(form_data);
@@ -171,17 +174,21 @@ function doUpload(form_data) {
 }
 
 async function uploadFiles(files) {
-    showSpinner(function(){ upload_canceled = true; });
+    showSpinner(function(){ upload_canceled = true; }, true);
     await delay(100); // Trick to refresh dom
     let error_msg = '',
-        doc_to_load = null;
+        doc_to_load = null,
+        num_files = files.length,
+        file_number = 1;
     upload_canceled = false;
     for(let f in files) {
         if(isNaN(f) || upload_canceled) {
             continue;
         }
+        console.log(files[f]);
         let form_data = new FormData(),
-            name = files[f].name;
+            name = files[f].name,
+            percent = Math.ceil(100*file_number/num_files);
         name = name.substring(0, 50);
 
         form_data.append('name', name);
@@ -189,14 +196,17 @@ async function uploadFiles(files) {
         form_data.append('file', files[f]);
         form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
+        file_number++;
 
-        await doUpload(form_data).then(
+        await doUpload(form_data, percent).then(
             function(success) {
+                updateProgress(success.percent);
                 if(doc_to_load === null) {
                     doc_to_load = success.doc_to_load;
                 }
             },
             function(error) {
+                updateProgress(error.percent);
                 error_msg += error.error_msg;
             }
         );

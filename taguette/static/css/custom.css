@@ -745,6 +745,18 @@ a.dropdown-item:hover {
   margin-top: 1em;
 }
 
+#progress {
+    margin-top: -15vh;
+    margin-bottom: 15vh;
+    width: 20vh;
+    text-align: center;
+    margin-left: 5vh;
+}
+
+.progress-bar {
+    background-color: #018849;
+}
+
 /* --------------------SCROLLBAR FOR MODALS--------------------------*/
 
 .modal-body {
