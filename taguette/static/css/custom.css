@@ -598,6 +598,10 @@ a.dropdown-item:hover {
 
 /* Left middle right panel styles */
 
+#middle-panel {
+    padding-bottom: 150px;
+}
+
 .col-md-2-5 {
     width: 20.8333% !important;
     transition: all 0.3s ease-in-out;
