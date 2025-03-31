@@ -931,7 +931,7 @@ function scrollToHighlight(highlight_id, search_text=null) {
                     div_to_highlight = $(`div[data-line--id="${line_id}"]`);
                 div_to_highlight.addClass('flash-once');
                 if(count_lines++ === 0) {
-                    scroll_position = div_to_highlight.offset().top - toolbar_height - 15;
+                    scroll_position = div_to_highlight.offset().top;
                 }
             });
         }
@@ -959,14 +959,14 @@ function scrollToHighlight(highlight_id, search_text=null) {
                 }
             });
             if(goto) {
-                scroll_position = goto.offset().top - toolbar_height - 15;
+                scroll_position = goto.offset().top;
                 goto.addClass('flash-once');
             } else {
                 log('Text container not found..')
             }
         }
         window.scrollTo({
-            top: scroll_position,
+            top: scroll_position - toolbar_height*3,
             behavior: 'instant'
         });
     }, 0);
