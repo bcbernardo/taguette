@@ -447,7 +447,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
         const containsNaN = selection.some(isNaN);
 
         // add highlight if it created from selection
-        if(!containsNaN) {
+        if(!containsNaN && !tag_id) {
             const highlight = {
                 id: undefined, selection, tags: [last_added_tag]
             }
