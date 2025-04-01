@@ -90,11 +90,13 @@
             <div class="row  panel-content">
                 <div class="col-md-12">
                     <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
+                    <input type="text" class="form-control mt-3 mb-3" id="input-search-titles" placeholder="{% trans %}Search titles{% endtrans %}">
                 </div>
             </div>
             <ul class="list-group list-group-flush  panel-content" id="documents-list">
                 <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
             </ul>
+            <div class="alert alert-info mt-2 d-none" role="alert" id="alert-title-search"></div>
         </div>
     </div>
 </div>
