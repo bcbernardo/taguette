@@ -496,7 +496,7 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
                     left: '0',
                     top: '0',
                     bottom: '0',
-                    width: '3px',
+                    width: '5px',
                     backgroundColor: color,
                 }
             }).prependTo(element);

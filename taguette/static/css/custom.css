@@ -683,11 +683,17 @@ a.dropdown-item:hover {
 
 .tag-badges {
     /*position: absolute;*/
-    right: 10px;
+    right: 2px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+}
+
+@media (max-width: 1430px) {
+    .tag-badges {
+        flex-direction: column;
+    }
 }
 
 #dropdownMenuButtonTag {
@@ -697,19 +703,27 @@ a.dropdown-item:hover {
     text-overflow: ellipsis !important;
 }
 
+.expand-icon {
+  color: #005a20;
+  min-width: 22px;
+  padding: 2px;
+  border-radius: 5px;
+}
+
+.expand-icon:hover {
+  border: 0.25px solid #005a20;
+}
+
 .tag-text {
     font-size: 1rem !important;
     letter-spacing: -0.5px !important;
     white-space: normal !important;
-    overflow: hidden;
-    text-overflow: ellipsis !important;
-    max-width: 120px !important;
-    max-height: 50px !important;
+    overflow: visible !important;
+    /*text-overflow: ellipsis !important;*/
+    max-width: 200px !important;
+    max-height: 25px !important;
     display: inline-block;
-}
-
-.tag-text:hover {
-    overflow-y: auto;
+    padding-right: 5px;
 }
 
 /* Spinner animation */
