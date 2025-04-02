@@ -447,7 +447,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
         const containsNaN = selection.some(isNaN);
 
         // add highlight if it created from selection
-        if(!containsNaN) {
+        if(!containsNaN && !tag_id) {
             const highlight = {
                 id: undefined, selection, tags: [last_added_tag]
             }
@@ -1211,6 +1211,50 @@ window.onpopstate = function (e) {
         loadDocument(null);
     }
 };
+
+// documents tab filter
+const DOC_NOT_FOUND_MESSAGE = gettext("No documents found");
+const alert_docs_list = document.getElementById('alert-title-search');
+
+// Function to show no-results message
+function showNoResultsMessage() {
+    alert_docs_list.classList.remove('d-none');
+    alert_docs_list.innerHTML = `<strong>${DOC_NOT_FOUND_MESSAGE}</strong>`;
+}
+
+// Function to hide no-results message
+function hideNoResultsMessage() {
+    alert_docs_list.classList.add('d-none');
+}
+
+// documents tab filter
+function filterTitles() {
+    var input, filter, ul, li, txtValue;
+    var noResults = true;
+    input = document.getElementById("input-search-titles");
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("documents-list");
+    li = ul.getElementsByTagName("li");
+
+    for (var i = 0; i < li.length; i++) {
+        txtValue = li[i].textContent || li[i].innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+            noResults = false;
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+
+    if (noResults) {
+        showNoResultsMessage();
+    } else {
+        hideNoResultsMessage();
+    }
+}
+
+document.getElementById("input-search-titles").addEventListener('input', filterTitles);
+
 
 /*
  * Attach input change for tag search event
