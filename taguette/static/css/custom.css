@@ -173,6 +173,10 @@ html:not([dir="rtl"]) .navbar-nav.t-me-auto {
   border-color: #125368 !important;
 }
 
+.dropdown-toggle {
+    width: 100%;
+}
+
 /* Colors for button info */
 .btn.btn-info {
   background-color: #1d87a9 !important;
@@ -223,6 +227,11 @@ html:not([dir="rtl"]) .navbar-nav.t-me-auto {
 /* Don't show the resize control on textareas */
 textarea.form-control {
   resize: none;
+}
+
+/* To match bs4 css, may be removed in a future release */
+.form-group {
+  margin-bottom: 1rem;
 }
 
 /* Wrap long tag names and long doc names */
@@ -295,6 +304,15 @@ a.dropdown-item:hover {
 #document-view .highlight {
   background-color: #ff0;
   color: black;
+}
+
+.highlight-tag {
+    background-color: #E7F2FF !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-tag.fade-out {
+    background-color: transparent !important;
 }
 
 #hlinfo {
@@ -376,6 +394,11 @@ a.dropdown-item:hover {
 .modal-body {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
+}
+
+.modal-body.no-scroll {
+  max-height: calc(100vh - 210px);
+  overflow-y: unset;
 }
 
 /* --------------------RESPONSIVE DISPLAY HEADINGS--------------------------*/

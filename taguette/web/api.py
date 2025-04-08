@@ -312,9 +312,11 @@ class TagAdd(BaseHandler):
             return self.send_error_json(403, self.gettext("Unauthorized"))
         try:
             obj = self.get_json()
+
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
             tag = database.Tag(project=project,
+                               parent_id=obj['parent_id'],
                                path=obj['path'],
                                description=obj['description'])
             try:
@@ -357,6 +359,8 @@ class TagUpdate(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     tag.description = obj['description']
+                if 'parent_id' in obj:
+                    tag.parent_id = obj['parent_id']
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,

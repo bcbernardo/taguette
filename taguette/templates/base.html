@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{{ static_url('css/custom.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/fa-all.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css') }}">
+    {% block styles %}
+    {% endblock %}
     <title>{% block title %}Taguette{% endblock %}</title>
     <script type="text/javascript">
       var base_path = '{{ base_path }}';
@@ -17,11 +19,11 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
       <div class="container">
         <a class="navbar-brand special-brand" href="{{ reverse_url('index') }}"><span style="font-family:BadScript;">TAGUETTE</span></a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbar">
-          <ul class="navbar-nav t-me-auto">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
               <a class="nav-link {{ 'active' if active_page == 'index' else '' }}" href="{{ reverse_url('index') }}">{% trans "navigation item" %}Home{% endtrans %}</a>
             </li>
@@ -31,7 +33,7 @@
             </li>
             {% endif %}
           </ul>
-          <ul class="navbar-nav t-ms-auto">
+          <ul class="navbar-nav">
             <li class="nav-item">
               {% set external_icon %}<i class="fas fa-external-link-alt"></i>{% endset %}
               <a class="nav-link" href="https://www.taguette.org/getting-started.html" target="_blank" rel="noopener">{% trans "navigation item" %}Taguette Guide {{ external_icon }}{% endtrans %}</a>
@@ -42,14 +44,14 @@
             </li>
             {% elif current_user %}
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle {{ 'active' if active_page == 'account' else '' }}" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{% trans "navigation dropdown menu" %}Account{% endtrans %}</a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <a class="nav-link dropdown-toggle {{ 'active' if active_page == 'account' else '' }}" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{% trans "navigation dropdown menu" %}Account{% endtrans %}</a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <a class="dropdown-item {{ 'active' if active_page == 'account' else '' }}" href="{{ reverse_url('account') }}">{% trans "navigation item" %}Settings{% endtrans %}</a>
                 {% if tos %}
                 <a class="dropdown-item {{ 'active' if active_page == 'tos' else '' }}" href="{{ reverse_url('tos') }}">{% trans "navigation item" %}Terms of Service{% endtrans %}</a>
                 {% endif %}
                 <a class="dropdown-item" href="{{ reverse_url('logout') }}">{% trans "navigation item" %}Log out{% endtrans %}</a>
-              </div>
+              </ul>
             </li>
             {% else %}
             <li class="nav-item {{ 'active' if active_page == 'login' else '' }}">

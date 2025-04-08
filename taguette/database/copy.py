@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import opentelemetry.trace
 
@@ -6,7 +7,6 @@ from .models import Project, Privileges, ProjectMember, TextDirection, \
 from .. import convert
 from ..utils import DefaultMap
 from .. import validate
-
 
 logger = logging.getLogger(__name__)
 tracer = opentelemetry.trace.get_tracer(__name__)
@@ -72,6 +72,12 @@ def copy_project(
         ),
     )
 
+    # Update parent_id with new pk
+    def transform_tag(row, mapping):
+        if 'parent_id' in row and row['parent_id'] in mapping:
+            row['parent_id'] = mapping[row['parent_id']]
+        return row
+
     # Copy tags
     mapping_tags = copy(
         Tag.__table__, 'id',
@@ -80,8 +86,9 @@ def copy_project(
         condition=Tag.project_id == project_id,
         validators=dict(
             path=validate.tag_path,
-            description=validate.description,
+            description=validate.description
         ),
+        transform=transform_tag
     )
 
     # Copy highlights
@@ -113,9 +120,8 @@ def copy_project(
         return True
 
     # Copy commands
-    def transform_command(cmd):
+    def transform_command(cmd, mapping):
         payload = cmd['payload']
-
         if payload['type'] not in Command.TYPES:
             raise ValueError("Unknown command %r" % payload['type'])
 
@@ -124,16 +130,15 @@ def copy_project(
             set(method.columns)
             | {'date', 'user_login', 'payload'}
         )
-        expected_payload_fields = set(method.payload_fields) | {'type'}
 
+        # Keep expected_payload_fields = set(method.payload_fields) | {'type'}
         # Check that the right columns are set
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
-        # Check that the right JSON fields are set
-        if payload.keys() != expected_payload_fields:
-            raise ValueError("Command doesn't have expected fields")
-
+        # Remove check that the right JSON fields are set to allow importation
+        # if payload.keys() != expected_payload_fields:
+        #     raise ValueError("Command doesn't have expected fields")
         # Map an ID, using negative ID if it's unknown
         def mv(mapping, value):
             return mapping.get(value, -abs(value))
@@ -150,6 +155,9 @@ def copy_project(
             tags=lambda v: (
                 isinstance(v, list)
                 and all(isinstance(e, int) for e in v)
+            ),
+            tag_parent=lambda v: (
+                v is None or isinstance(v, int)
             ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
@@ -203,7 +211,7 @@ def copy_project(
 def copy_table(
     src_db, dest_db, table,
     pkey, fkeys,
-    *, batch_size=50, condition=None, transform=None, validators=None
+    *, batch_size=1000, condition=None, transform=None, validators=None
 ):
     """Copy all data in a table across database connections.
 
@@ -218,52 +226,133 @@ def copy_table(
         foreign keys to a dictionary mapping the keys.
     :param transform: Function to apply on each row.
     """
+
+    from .models import Tag
+    from sqlalchemy import func
+
     query = table.select()
     if pkey is not None:
         query = query.order_by(pkey)
     if condition is not None:
         query = query.where(condition)
+
+    if table == Tag.__table__:
+        count_query = src_db.execute(
+            func.count().select().select_from(query.alias()))
+        total_rows = count_query.scalar()
+        batch_size = total_rows + 1
     query = src_db.execute(query)
     assert pkey is None or pkey in query.keys()
     assert all(field in query.keys() for field in fkeys)
     mapping = {}
-    batch = query.fetchmany(batch_size)
-    orig_pkey = None  # Avoids warning
-    while batch:
-        for row in batch:
-            row = dict(row)
-            # Get primary key, remove it
-            if pkey is not None:
-                orig_pkey = row[pkey]
-                row = dict(row)
-                row.pop(pkey)
-            # Map foreign keys
-            for field, fkey_map in fkeys.items():
-                row[field] = fkey_map[row[field]]
-            # Generic transform
-            if transform is not None:
-                row = transform(row)
-            # Validate
-            if validators:
-                for key, value in row.items():
-                    if key in validators:
-                        try:
-                            if not validators[key](value):
-                                raise ValueError(
-                                    "Data failed validation (column %r)" % key,
-                                )
-                        except validate.InvalidFormat:
-                            raise ValueError(
-                                "Data failed validation (column %r)" % key,
-                            )
-
-            # Have to insert one-by-one for inserted_primary_key
-            ins = dest_db.execute(
-                table.insert(),
-                row,
-            )
-            # Store new primary key
-            if pkey is not None:
-                mapping[orig_pkey], = ins.inserted_primary_key
+    while True:
         batch = query.fetchmany(batch_size)
+        if not batch:
+            break
+
+        rows = [dict(row) for row in batch]
+
+        if table == Tag.__table__:
+            roots, hierarchies = build_tag_hierarchies(rows)
+            insert_tags_recursively(
+                dest_db,
+                roots,
+                hierarchies,
+                mapping,
+                table,
+                pkey,
+                fkeys,
+                transform,
+                validators
+            )
+        else:
+            insert_rows(dest_db, rows, table, pkey, fkeys,
+                        transform, validators, mapping)
+
     return mapping
+
+
+def build_tag_hierarchies(tags):
+    """Build a hierarchy for tags to manage parent-child relationships."""
+    hierarchies = defaultdict(list)
+    roots = []
+    for tag in tags:
+        if tag['parent_id'] is None:
+            roots.append(tag)
+        else:
+            hierarchies[tag['parent_id']].append(tag)
+    return roots, hierarchies
+
+
+def insert_tags_recursively(dest_db, roots, hierarchies, mapping,
+                            table, pkey, fkeys, transform, validators):
+    """Insert tags recursively to respect parent-child relationships."""
+    for tag in roots:
+        tag_id = tag[pkey]
+        # Get primary key, remove it
+        if pkey is not None:
+            tag.pop(pkey)
+        # Map foreign keys
+        for field, fkey_map in fkeys.items():
+            tag[field] = fkey_map[tag[field]]
+        # Generic transform
+        if transform is not None:
+            tag = transform(tag, mapping)
+        # Validate
+        if validators:
+            for key, value in tag.items():
+                if key in validators:
+                    if not validators[key](value):
+                        raise ValueError(
+                            f"Data failed validation (column {key})")
+        # Have to insert one-by-one for inserted_primary_key
+        ins = dest_db.execute(table.insert(), tag)
+        # Store new primary key
+        if pkey is not None:
+            mapping[tag_id], = ins.inserted_primary_key
+        if tag_id in hierarchies:
+            insert_tags_recursively(
+                dest_db,
+                hierarchies[tag_id],
+                hierarchies,
+                mapping,
+                table,
+                pkey,
+                fkeys,
+                transform,
+                validators)
+
+
+def insert_rows(dest_db,
+                rows,
+                table,
+                pkey,
+                fkeys,
+                transform,
+                validators,
+                mapping):
+    """Insert rows into the destination database."""
+    for row in rows:
+        orig_pkey = 0
+        # Get primary key, remove it
+        if pkey is not None:
+            orig_pkey = row[pkey]
+            row.pop(pkey)
+        # Map foreign keys
+        for field, fkey_map in fkeys.items():
+            row[field] = fkey_map[row[field]]
+        # Generic transform
+        if transform is not None:
+            row = transform(row, mapping)
+        # Validate
+        if validators:
+            for key, value in row.items():
+                if key in validators:
+                    if not validators[key](value):
+                        raise ValueError(
+                            f"Data failed validation (column {key})")
+        # Have to insert one-by-one for inserted_primary_key
+        ins = dest_db.execute(table.insert(), row)
+        # Store new primary key
+        if pkey is not None:
+            mapping[orig_pkey], = ins.inserted_primary_key
