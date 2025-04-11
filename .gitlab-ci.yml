@@ -97,7 +97,7 @@ frontend_chromium_subdir:
 
 sqlite3_latest:
   stage: test
-  image: python:3.11
+  image: ${CI_REGISTRY_IMAGE}:tests
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
@@ -110,7 +110,7 @@ sqlite3_latest:
 
 sqlite3_latest_pip:
   stage: test
-  image: python:3.11
+  image: ${CI_REGISTRY_IMAGE}:tests
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
@@ -161,12 +161,11 @@ sqlite3_pypy:
     - python -Wd test_main.py -v
 
 deploy_staging:
-  image: ubuntu:latest
+  image: alpine:latest
   stage: deploy
   when: always
   script:
-    - apt-get update
-    - apt-get install -y openssh-client
+    - apk add rsync openssh-client
     - mv $SSH_KEY_DEPLOY /ssh_identity
     - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
     - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
@@ -178,12 +177,11 @@ deploy_staging:
     - Staging
 
 deploy_beta:
-  image: ubuntu:latest
+  image: alpine:latest
   stage: deploy
   when: always
   script:
-    - apt-get update
-    - apt-get install -y openssh-client
+    - apk add rsync openssh-client
     - mv $SSH_KEY_DEPLOY /ssh_identity
     - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
     - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf
@@ -195,12 +193,11 @@ deploy_beta:
     - beta
 
 deploy_prod:
-  image: ubuntu:latest
+  image: alpine:latest
   stage: deploy
   when: manual
   script:
-    - apt-get update
-    - apt-get install -y openssh-client
+    - apk add rsync openssh-client
     - mv $SSH_KEY_DEPLOY /ssh_identity
     - cp .gitlab/config.ssh /etc/ssh/ssh_config.d/project.conf
     - sed -i "s/\[proxy-host\]/${PROXY_HOST}/" /etc/ssh/ssh_config.d/project.conf

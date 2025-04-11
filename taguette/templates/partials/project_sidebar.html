@@ -70,7 +70,9 @@
                             {% trans %}Export codebook{% endtrans %}
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdown-codebook">
+                            <!-- these need to be fixed after changing to a hierarchical tag logic
                             <a href="{{ reverse_url('export_codebook_qdc', project.id) }}" class="dropdown-item">{% trans %}QDC (XML){% endtrans %}</a>
+                            -->
                             <a href="{{ reverse_url('export_codebook_xlsx', project.id) }}" class="dropdown-item">{% trans %}Excel{% endtrans %}</a>
                             <a href="{{ reverse_url('export_codebook_csv', project.id) }}" class="dropdown-item">{% trans %}CSV{% endtrans %}</a>
                             <a href="{{ reverse_url('export_codebook_doc', project.id, 'html') }}" class="dropdown-item">{% trans %}HTML{% endtrans %}</a>
