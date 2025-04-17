@@ -162,8 +162,8 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 # Allow external authentication, MULTIUSER must be set to True
 # If True, OAUTH variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
-# For testing purpose only. 
-# To bypass OAUTH and to use built-in login and register 
+# For testing purpose only.
+# To bypass OAUTH and to use built-in login and register
 # URLs are : /login?bypass=true or /register?bypass=true
 ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
