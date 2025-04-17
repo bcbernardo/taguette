@@ -160,9 +160,12 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 # MULTIUSER = True
 
 # Allow external authentication, MULTIUSER must be set to True
-# (only CILogon, see below)
-# If True, CI Logon variables must be defined
+# If True, OAUTH variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
+# For testing purpose only.
+# To bypass OAUTH and to use built-in login and register
+# URLs are : /login?bypass=true or /register?bypass=true
+ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
 # Replace current authentication with OAUTH
 # OAUTH_AUTH_URI=""
@@ -187,6 +190,7 @@ ALLOW_EXTERNAL_LOGIN = False
 DEFAULT_CONFIG = {
     'MULTIUSER': True,
     'ALLOW_EXTERNAL_LOGIN': False,
+    'ALLOW_EXTERNAL_LOGIN_BYPASS': False,
     'BIND_ADDRESS': '0.0.0.0',
     'BASE_PATH': '',
     'MAINTENANCE_MODE': False,
