@@ -152,7 +152,9 @@ class Login(BaseHandler):
         if self.current_user:
             return self._go_to_next()
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=False,
                                    next=self.get_argument('next', ''))
             else:
@@ -170,7 +172,8 @@ class Login(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config['ALLOW_EXTERNAL_LOGIN'] \
+                and not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
             raise HTTPError(404)
         login = self.get_body_argument('login')
         try:
@@ -220,7 +223,9 @@ class Register(BaseHandler):
         if self.current_user:
             return self.redirect(self.reverse_url('index'))
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=True)
             else:
                 return self.render('auth/cilogon.login.html',
@@ -233,7 +238,8 @@ class Register(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if (self.application.config['ALLOW_EXTERNAL_LOGIN'] and
+                not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']):
             raise HTTPError(404)
         if not self.application.config['REGISTRATION_ENABLED']:
             raise HTTPError(403)
