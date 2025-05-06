@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-03-17 17:25-0400\n"
+"POT-Creation-Date: 2025-05-06 14:58-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -232,70 +232,74 @@ msgstr "It appears that you have been logged out."
 msgid "You can no longer access this project."
 msgstr "You can no longer access this project."
 
-#: taguette/static/js/taguette.js:257
+#: taguette/static/js/taguette.js:267
 msgid "Document name cannot be empty"
 msgstr "Document name cannot be empty"
 
-#: taguette/static/js/taguette.js:282
+#: taguette/static/js/taguette.js:292
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Are you sure you want to delete the document '%(doc)s'?"
 
-#: taguette/static/js/taguette.js:408
+#: taguette/static/js/taguette.js:418
 msgid "Invalid tag name"
 msgstr "Invalid code name"
 
-#: taguette/static/js/taguette.js:413
+#: taguette/static/js/taguette.js:423
 msgid "Impossible to define the same tag as parent"
 msgstr "Impossible to define the same code as parent"
 
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:454
+#: taguette/static/js/taguette.js:464
 msgid "None"
 msgstr "None"
 
-#: taguette/static/js/taguette.js:476
+#: taguette/static/js/taguette.js:486
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Are you sure you want to delete the code '%(tag)s'?"
 
-#: taguette/static/js/taguette.js:529
+#: taguette/static/js/taguette.js:539
 msgid "Couldn't merge tags!"
 msgstr "Couldn't merge codes!"
 
-#: taguette/static/js/taguette.js:688
+#: taguette/static/js/taguette.js:698
 msgid "Full permissions"
 msgstr "Full permissions"
 
-#: taguette/static/js/taguette.js:689
+#: taguette/static/js/taguette.js:699
 msgid "Can't change collaborators / delete project"
 msgstr "Can't change collaborators / delete project"
 
-#: taguette/static/js/taguette.js:690
+#: taguette/static/js/taguette.js:700
 msgid "View & make changes"
 msgstr "View & make changes"
 
-#: taguette/static/js/taguette.js:691
+#: taguette/static/js/taguette.js:701
 msgid "View only"
 msgstr "View only"
 
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:763
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:773
 msgid "Already a member!"
 msgstr "Already a member!"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:788
 msgid "This user doesn't exist!"
 msgstr "This user doesn't exist!"
 
-#: taguette/static/js/taguette.js:846
+#: taguette/static/js/taguette.js:856
 msgid "Load a document on the left"
 msgstr "Load a document from you bookmarks or on the right"
 
-#: taguette/static/js/taguette.js:1063
+#: taguette/static/js/taguette.js:1073
 msgid "No highlights with this tag yet."
 msgstr "No highlights with this code yet."
 
-#: taguette/static/js/taguette.js:1208
+#: taguette/static/js/taguette.js:1216
+msgid "No documents found"
+msgstr ""
+
+#: taguette/static/js/taguette.js:1262
 msgid "No tag found"
 msgstr "No code found"
 
