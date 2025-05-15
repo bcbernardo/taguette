@@ -7,10 +7,12 @@ build_image:
   stage: prepare_image
   image: docker:latest
   services:
-    - name: docker:dind
-      alias: docker_dind
+  - name: docker:dind
+    alias: docker_dind
   variables:
-    DOCKER_HOST=tcp://docker_dind:2375
+    # Tell docker CLI how to talk to Docker daemon; see
+    # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-docker-in-docker-executor
+    DOCKER_HOST: tcp://docker_dind:2375/
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   # Default branch leaves tag empty (= latest tag)
