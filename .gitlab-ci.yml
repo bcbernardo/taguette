@@ -7,7 +7,10 @@ build_image:
   stage: prepare_image
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker_dind
+  variables:
+    DOCKER_HOST=tcp://docker_dind:2375
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   # Default branch leaves tag empty (= latest tag)
