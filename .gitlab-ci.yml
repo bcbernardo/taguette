@@ -38,7 +38,7 @@ build_image:
       RUN rsync -rvah $HOME/.local/bin/* ./poetry_bin
       RUN ls -la /usr/bin/ | grep chrome
       ' > Dockerfile
-    - export DOCKER_HOST=tcp://docker_dind:2375
+    - export DOCKER_HOST=unix:///var/run/docker.sock
     - docker build --pull -t "${CI_REGISTRY_IMAGE}:tests" .
     - docker push "${CI_REGISTRY_IMAGE}:tests"
 
