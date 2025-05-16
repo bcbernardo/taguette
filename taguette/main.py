@@ -448,7 +448,10 @@ def main():
             release='taguette@%s' % exact_version(),
         )
 
-    app = make_app(config, debug=args.debug)
+    xsrf_cookies = True
+    if config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
+        xsrf_cookies = False
+    app = make_app(config, debug=args.debug, xsrf_cookies=xsrf_cookies)
     app.listen(config['PORT'], address=config['BIND_ADDRESS'],
                xheaders=config.get('X_HEADERS', False))
     loop = tornado.ioloop.IOLoop.current()

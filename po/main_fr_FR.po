@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-03-17 17:25-0400\n"
+"POT-Creation-Date: 2025-05-06 14:58-0400\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
 "Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
 "Language: fr\n"
@@ -23,23 +23,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: taguette/main.py:296
+#: taguette/main.py:305
 msgid "Port number on which to listen"
 msgstr "Numéro de port sur lequel écouter"
 
-#: taguette/main.py:298
+#: taguette/main.py:307
 msgid "Address to bind on"
 msgstr "Adresse sur laquelle écouter"
 
-#: taguette/main.py:300
+#: taguette/main.py:309
 msgid "Open web browser to the application"
 msgstr "Ouvrir le navigateur automatiquement"
 
-#: taguette/main.py:302
+#: taguette/main.py:311
 msgid "Don't open the web browser"
 msgstr "Ne pas ouvrir le navigateur automatiquement"
 
-#: taguette/main.py:307
+#: taguette/main.py:316
 #, python-format
 msgid ""
 "Database location or connection string, for example 'project.db' or "
@@ -49,37 +49,37 @@ msgstr ""
 "exemple 'projet.db' ou 'postgresql://moi:mdp@localhost/mabdd' (par défaut"
 " : %(default)r)"
 
-#: taguette/main.py:314
+#: taguette/main.py:323
 msgid "Set the file creation mask (umask) on systems that support it."
 msgstr ""
 "Définit le masque de création de fichers (umask) pour les systèmes qui le"
 " supportent."
 
-#: taguette/main.py:318
+#: taguette/main.py:327
 msgid "Don't change umask on startup"
 msgstr "Ne pas définir l'umask au démarrage"
 
-#: taguette/main.py:324
+#: taguette/main.py:333
 msgid "additional commands"
 msgstr "autres commandes"
 
-#: taguette/main.py:328
+#: taguette/main.py:337
 msgid "Manually trigger a database migration"
 msgstr "Déclencher manuellement une migration de la base de données"
 
-#: taguette/main.py:339
+#: taguette/main.py:348
 msgid "Print the default server configuration"
 msgstr "Afficher la configuration serveur par défaut"
 
-#: taguette/main.py:341
+#: taguette/main.py:350
 msgid "Output to this file rather than stdout"
 msgstr "Écrire dans ce fichier plutôt que la sortie standard"
 
-#: taguette/main.py:347
+#: taguette/main.py:356
 msgid "Run in server mode, suitable for a multi-user deployment"
 msgstr "Démarrer en mode serveur, adapté à un environnement multi-utilisateur"
 
-#: taguette/main.py:349
+#: taguette/main.py:358
 msgid ""
 "Configuration file for the server. The default configuration can be "
 "generated using the `default-config` command"
@@ -87,21 +87,21 @@ msgstr ""
 "Fichier de configuration pour le serveur. La configuration par défaut "
 "peut être générée en utilisant la commande `default-config`"
 
-#: taguette/main.py:361
+#: taguette/main.py:370
 #, python-format
 msgid "Invalid umask: %(arg)s"
 msgstr "Umask invalide : %(arg)s"
 
-#: taguette/main.py:385
+#: taguette/main.py:394
 #, python-format
 msgid "Missing required configuration variable %(var)s"
 msgstr "Variable de configuration requise %(var)s est manquante"
 
-#: taguette/main.py:392
+#: taguette/main.py:401
 msgid "Invalid BASE_PATH"
 msgstr "BASE_PATH invalide"
 
-#: taguette/main.py:466
+#: taguette/main.py:475
 #, python-format
 msgid ""
 "\n"
@@ -236,78 +236,78 @@ msgstr "Le nom du projet est trop long"
 msgid "Invalid file name"
 msgstr "Fichier CSV invalide"
 
-#: taguette/web/views.py:194
+#: taguette/web/views.py:197
 msgid "Invalid login or password"
 msgstr "Nom d'utilisateur ou mot de passe invalide"
 
-#: taguette/web/views.py:250 taguette/web/views.py:596
-#: taguette/web/views.py:762
+#: taguette/web/views.py:256 taguette/web/views.py:608
+#: taguette/web/views.py:774
 msgid "Passwords do not match"
 msgstr "Les mots de passe ne correspondent pas"
 
-#: taguette/web/views.py:252
+#: taguette/web/views.py:258
 msgid "User name is taken"
 msgstr "Le nom d'utilisateur est déja utilisé"
 
-#: taguette/web/views.py:259
+#: taguette/web/views.py:265
 msgid "Email address is already used"
 msgstr "L'adresse email est déja utilisée"
 
-#: taguette/web/views.py:270
+#: taguette/web/views.py:276
 msgid "Terms of Service must be accepted"
 msgstr "Vous devez accepter les conditions d'utilisation"
 
-#: taguette/web/views.py:643
+#: taguette/web/views.py:655
 msgid "This email address is not associated with any user"
 msgstr "Cette adresse email n'est associée à aucun utilisateur"
 
-#: taguette/web/views.py:672
+#: taguette/web/views.py:684
 msgid "Password reset for Taguette"
 msgstr "Réinitialisation de mot de passe pour LibreQDA"
 
-#: taguette/web/views.py:715
+#: taguette/web/views.py:727
 msgid "Invalid token"
 msgstr "Jeton invalide"
 
-#: taguette/web/views.py:719
+#: taguette/web/views.py:731
 msgid "No user associated with that token"
 msgstr "Aucun utilisateur n'est associé avec ce jeton"
 
-#: taguette/web/views.py:722
+#: taguette/web/views.py:734
 msgid "Password has already been changed"
 msgstr "Le mot de passe a déjà été changé"
 
 #. Default tag name
-#: taguette/web/views.py:811
+#: taguette/web/views.py:823
 msgid "interesting"
 msgstr "intéressant"
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:815
+#: taguette/web/views.py:827
 msgid "Further review required"
 msgstr "Plus d'analyse requise"
 
-#: taguette/web/views.py:854
+#: taguette/web/views.py:866
 msgid "You don't have permission to delete this project"
 msgstr "Vous n'êtes pas autorisé à supprimer ce project"
 
-#: taguette/web/views.py:888 taguette/web/views.py:915
+#: taguette/web/views.py:900 taguette/web/views.py:927
 msgid "You don't have permission to import a codebook"
 msgstr "Vous n'avez pas la permission d'importer des codes"
 
-#: taguette/web/views.py:934
+#: taguette/web/views.py:946
 #, python-format
 msgid "Row %d: %s"
 msgstr "Ligne %d : %s"
 
-#: taguette/web/views.py:1072
+#: taguette/web/views.py:1084
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr ""
 "Erreur à l'importation des codes, des changements simultanés ont causé un"
 " conflit"
 
-#: taguette/web/views.py:1087
+#: taguette/web/views.py:1099
 msgid "No file provided"
 msgstr "Aucun fichier sélectionné"
 
@@ -484,11 +484,15 @@ msgstr "Chargez un document sur la droite ou depuis vos favoris"
 msgid "Add a document"
 msgstr "Ajout de documents"
 
-#: taguette/templates/project.html:96
+#: taguette/templates/project.html:93
+msgid "Search titles"
+msgstr "Rechercher dans les titres"
+
+#: taguette/templates/project.html:97
 msgid "Loading..."
 msgstr "Chargement..."
 
-#: taguette/templates/project.html:103
+#: taguette/templates/project.html:105
 msgid "Resume tutorial"
 msgstr "Reprendre le tutoriel"
 
@@ -629,40 +633,40 @@ msgstr "Exporter le projet"
 msgid "Export codebook"
 msgstr "Exporter un arbre de codes"
 
-#: taguette/templates/partials/project_sidebar.html:73
+#: taguette/templates/partials/project_sidebar.html:74
 msgid "QDC (XML)"
 msgstr "QDC (XML)"
 
 #: taguette/templates/partials/document_toolbar.html:24
-#: taguette/templates/partials/project_sidebar.html:74
+#: taguette/templates/partials/project_sidebar.html:76
 msgid "Excel"
 msgstr "Excel"
 
 #: taguette/templates/partials/document_toolbar.html:25
-#: taguette/templates/partials/project_sidebar.html:75
+#: taguette/templates/partials/project_sidebar.html:77
 msgid "CSV"
 msgstr "CSV"
 
 #: taguette/templates/partials/document_toolbar.html:21
-#: taguette/templates/partials/project_sidebar.html:76
+#: taguette/templates/partials/project_sidebar.html:78
 msgid "HTML"
 msgstr "HTML"
 
 #: taguette/templates/partials/document_toolbar.html:22
-#: taguette/templates/partials/project_sidebar.html:77
+#: taguette/templates/partials/project_sidebar.html:79
 msgid "DOCX"
 msgstr "DOCX"
 
 #: taguette/templates/partials/document_toolbar.html:23
-#: taguette/templates/partials/project_sidebar.html:78
+#: taguette/templates/partials/project_sidebar.html:80
 msgid "PDF"
 msgstr "PDF"
 
-#: taguette/templates/partials/project_sidebar.html:83
+#: taguette/templates/partials/project_sidebar.html:85
 msgid "Import codebook"
 msgstr "Importer un arbre de codes"
 
-#: taguette/templates/partials/project_sidebar.html:87
+#: taguette/templates/partials/project_sidebar.html:89
 msgid "Delete project"
 msgstr "Supprimer projet"
 
@@ -681,7 +685,7 @@ msgstr "Exporter"
 #: taguette/templates/modal/create_document.html:33
 #: taguette/templates/modal/create_tag.html:57
 #: taguette/templates/modal/manage_collaborators.html:41
-#: taguette/templates/partials/spinner.html:5
+#: taguette/templates/partials/spinner.html:8
 #: taguette/templates/permissions.html:33
 msgid "Cancel"
 msgstr "Annuler"
@@ -736,8 +740,8 @@ msgstr "Supprimer définitivement"
 #: taguette/templates/export_codebook.html:10
 #: taguette/templates/export_codebook.html:13
 msgctxt "exported codebook document title"
-msgid "Taguette Codebook"
-msgstr "LibreQDA Codebook"
+msgid "LibreQDA Codebook"
+msgstr "Arbre de codes LibreQDA"
 
 #: taguette/templates/export_codebook.html:16
 #, python-format
@@ -1007,10 +1011,10 @@ msgid ""
 "href=\"https://www.canarie.ca/identity/caf/\">Canadian Access Federation "
 "(CAF)</a> must be sponsored"
 msgstr ""
-"Pour utiliser cette instance de LibreQDA, les personnes "
-"connectée via un fournisseur d'identité non-membre de la <a "
-"href=\"https://www.canarie.ca/fr/identite/fca/\">Fédération canadienne d'accès "
-"(FCA)</a> doivent être parrainées"
+"Pour utiliser cette instance de LibreQDA, les personnes connectée via un "
+"fournisseur d'identité non-membre de la <a "
+"href=\"https://www.canarie.ca/fr/identite/fca/\">Fédération canadienne "
+"d'accès (FCA)</a> doivent être parrainées"
 
 #: taguette/templates/permissions.html:21
 msgctxt "permission level"
@@ -1059,13 +1063,13 @@ msgstr "Créer"
 #: taguette/templates/export_highlights.html:18
 #, python-format
 msgctxt "exported highlights document title"
-msgid "Taguette highlights: %(path)s"
+msgid "LibreQDA highlights: %(path)s"
 msgstr "LibreQDA : sélections : %(path)s"
 
 #: taguette/templates/export_highlights.html:8
 #: taguette/templates/export_highlights.html:20
 msgctxt "exported highlights document title"
-msgid "Taguette highlights"
+msgid "LibreQDA highlights"
 msgstr "LibreQDA : sélections"
 
 #: taguette/templates/export_highlights.html:25
@@ -1076,8 +1080,8 @@ msgstr "<strong>Document :</strong> %(doc)s"
 
 #: taguette/templates/export_highlights.html:26
 msgctxt "exported highlight details"
-msgid "Tags:"
-msgstr "Codes :"
+msgid "Codes:"
+msgstr ""
 
 #: taguette/templates/auth/reset_password.html:3
 #: taguette/templates/new_password.html:3
@@ -1139,9 +1143,9 @@ msgstr "Vos projets"
 msgid ""
 "Please note that you cannot create a project at this time. You must be "
 "sponsored by a Canadian Access Federation (CAF) user."
-msgstr "Vous ne pouvez pas créer de projets pour l'instant parce que"
-"vous devez être parrainé par utilisateur membre de la Fédération"
-"canadienne d'accès."
+msgstr ""
+"Vous ne pouvez pas créer de projets pour l'instant parce que vous devez "
+"être parrainé par utilisateur membre de la Fédération canadienne d'accès."
 
 #: taguette/templates/index.html:79
 msgid "No projects available at the moment. Create or import one to get started."
@@ -1524,4 +1528,20 @@ msgstr "En maintenance"
 #~ "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or "
 #~ "<a href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
 #~ msgstr ""
+
+#~ msgctxt "exported codebook document title"
+#~ msgid "Taguette Codebook"
+#~ msgstr "LibreQDA Codebook"
+
+#~ msgctxt "exported highlights document title"
+#~ msgid "Taguette highlights: %(path)s"
+#~ msgstr "LibreQDA : sélections : %(path)s"
+
+#~ msgctxt "exported highlights document title"
+#~ msgid "Taguette highlights"
+#~ msgstr "LibreQDA : sélections"
+
+#~ msgctxt "exported highlight details"
+#~ msgid "Tags:"
+#~ msgstr "Codes :"
 
