@@ -132,7 +132,7 @@ function basename(filename) {
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function doUpload(form_data) {
+function doUpload(form_data, percent=0) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest(),
             name = form_data.get('name');
@@ -142,7 +142,8 @@ function doUpload(form_data) {
             if (xhr.status === 200) {
                 log("Document upload complete");
                 resolve({
-                    'doc_to_load': xhr.response.created
+                    'doc_to_load': xhr.response.created,
+                    'percent': percent
                 })
             } else {
                 const context = xhr.status;
@@ -156,14 +157,16 @@ function doUpload(form_data) {
                     error = `<p>(${name}) Status ${xhr.status}</p>`;
                 }
                 reject({
-                    'error_msg': error
+                    'error_msg': error,
+                    'percent': percent
                 });
             }
         };
         xhr.onerror = function (e) {
             log("Document upload failed:", 'error', {e});
             reject({
-                'error_msg': `<p>${e}</p>`
+                'error_msg': `<p>${e}</p>`,
+                'percent': percent
             });
         }
         xhr.send(form_data);
@@ -171,17 +174,21 @@ function doUpload(form_data) {
 }
 
 async function uploadFiles(files) {
-    showSpinner(function(){ upload_canceled = true; });
+    showSpinner(function(){ upload_canceled = true; }, true);
     await delay(100); // Trick to refresh dom
     let error_msg = '',
-        doc_to_load = null;
+        doc_to_load = null,
+        num_files = files.length,
+        file_number = 1;
     upload_canceled = false;
     for(let f in files) {
         if(isNaN(f) || upload_canceled) {
             continue;
         }
+        console.log(files[f]);
         let form_data = new FormData(),
-            name = files[f].name;
+            name = files[f].name,
+            percent = Math.ceil(100*file_number/num_files);
         name = name.substring(0, 50);
 
         form_data.append('name', name);
@@ -189,14 +196,17 @@ async function uploadFiles(files) {
         form_data.append('file', files[f]);
         form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
+        file_number++;
 
-        await doUpload(form_data).then(
+        await doUpload(form_data, percent).then(
             function(success) {
+                updateProgress(success.percent);
                 if(doc_to_load === null) {
                     doc_to_load = success.doc_to_load;
                 }
             },
             function(error) {
+                updateProgress(error.percent);
                 error_msg += error.error_msg;
             }
         );
@@ -437,7 +447,7 @@ document.getElementById('tag-add-form').addEventListener('submit', function (e) 
         const containsNaN = selection.some(isNaN);
 
         // add highlight if it created from selection
-        if(!containsNaN) {
+        if(!containsNaN && !tag_id) {
             const highlight = {
                 id: undefined, selection, tags: [last_added_tag]
             }
@@ -931,7 +941,7 @@ function scrollToHighlight(highlight_id, search_text=null) {
                     div_to_highlight = $(`div[data-line--id="${line_id}"]`);
                 div_to_highlight.addClass('flash-once');
                 if(count_lines++ === 0) {
-                    scroll_position = div_to_highlight.offset().top - toolbar_height - 15;
+                    scroll_position = div_to_highlight.offset().top;
                 }
             });
         }
@@ -959,14 +969,14 @@ function scrollToHighlight(highlight_id, search_text=null) {
                 }
             });
             if(goto) {
-                scroll_position = goto.offset().top - toolbar_height - 15;
+                scroll_position = goto.offset().top;
                 goto.addClass('flash-once');
             } else {
                 log('Text container not found..')
             }
         }
         window.scrollTo({
-            top: scroll_position,
+            top: scroll_position - toolbar_height*3,
             behavior: 'instant'
         });
     }, 0);
@@ -1202,6 +1212,50 @@ window.onpopstate = function (e) {
     }
 };
 
+// documents tab filter
+const DOC_NOT_FOUND_MESSAGE = gettext("No documents found");
+const alert_docs_list = document.getElementById('alert-title-search');
+
+// Function to show no-results message
+function showNoResultsMessage() {
+    alert_docs_list.classList.remove('d-none');
+    alert_docs_list.innerHTML = `<strong>${DOC_NOT_FOUND_MESSAGE}</strong>`;
+}
+
+// Function to hide no-results message
+function hideNoResultsMessage() {
+    alert_docs_list.classList.add('d-none');
+}
+
+// documents tab filter
+function filterTitles() {
+    var input, filter, ul, li, txtValue;
+    var noResults = true;
+    input = document.getElementById("input-search-titles");
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("documents-list");
+    li = ul.getElementsByTagName("li");
+
+    for (var i = 0; i < li.length; i++) {
+        txtValue = li[i].textContent || li[i].innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+            noResults = false;
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+
+    if (noResults) {
+        showNoResultsMessage();
+    } else {
+        hideNoResultsMessage();
+    }
+}
+
+document.getElementById("input-search-titles").addEventListener('input', filterTitles);
+
+
 /*
  * Attach input change for tag search event
  */
@@ -1361,3 +1415,14 @@ window.addEventListener('resize', debounce(() => {
     // Issue in test
     // loadDocument(current_document);
 }, 250));
+
+let scrollPos = 0;
+window.addEventListener('scroll', function() {
+    let isScrollUp = scrollPos > document.documentElement.scrollTop;
+    if(document.documentElement.scrollTop < 150 || isScrollUp) {
+        $('body').removeClass('scrolled');
+    } else if(!$('body').hasClass('scrolled')) {
+        $('body').addClass('scrolled');
+    }
+    scrollPos = document.documentElement.scrollTop;
+});

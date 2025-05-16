@@ -31,14 +31,19 @@
 body {
   font-family: Montserrat !important;
   font-size:1.11em !important;
+  transition: all 0.3s ease-in-out;
 }
 
 /* Some space before content */
 .container-body {
-  padding-top: 1em;
+  padding-top: 6.50em;
 }
 
-/* Border for the tab container */
+body.scrolled .container-body {
+  padding-top: 0;
+}
+
+    /* Border for the tab container */
 .tab-content {
   border-style: solid;
   border-width: 1px;
@@ -50,7 +55,15 @@ body {
 div.sticky-top {
   overflow-x: hidden;
   overflow-y: auto;
-  height: 100vh;
+  height: calc(100vh - 5.25em);
+  top: 6.25em;
+  transition: all 0.3s ease-in-out;
+}
+
+body.scrolled div.sticky-top {
+    height: calc(100vh - 5.25em);
+    top: 0;
+    transition: all 0.3s ease-in-out;
 }
 
 /* Footer */
@@ -64,6 +77,26 @@ div.sticky-top {
 .navbar.navbar-expand-lg.navbar-dark.bg-primary {
   background-color: #018849 !important;
   margin-bottom: 2em;
+  height: 3.5em;
+
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  transition: all 0.3s ease-in-out;
+}
+
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary {
+    overflow: hidden;
+    margin-bottom: 2em;
+    top: -5.5em;
+    transition: all 0.3s ease-in-out;
+}
+
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary button,
+body.scrolled .navbar.navbar-expand-lg.navbar-dark.bg-primary input {
+    font-size: 1em;
+    line-height: 1;
 }
 
 body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
@@ -111,8 +144,18 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
     top: 0.5em;
 }
 
-.navbar-brand img {
+.navbar-brand img.not-scrolled {
     max-width: 100px;
+    display: block;
+}
+
+.navbar-brand img.scrolled {
+    display: none;
+}
+
+body.scrolled .navbar-brand {
+    padding: 0;
+    top: 0.1em;
 }
 
 .mr-auto {
@@ -123,6 +166,8 @@ body.page-index .navbar.navbar-expand-lg.navbar-dark.bg-primary {
 
 .nav-link {
   padding: 0.5rem 0.5rem !important;
+  overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Colors for button primary */
@@ -361,6 +406,9 @@ span.search-item {
 /* Don't show the resize control on textareas */
 textarea.form-control {
   resize: none;
+   height: 150px;
+   padding: 10px;
+   line-height: 1.5;
 }
 
 select.form-control {
@@ -550,6 +598,10 @@ a.dropdown-item:hover {
 
 /* Left middle right panel styles */
 
+#middle-panel {
+    padding-bottom: 150px;
+}
+
 .col-md-2-5 {
     width: 20.8333% !important;
     transition: all 0.3s ease-in-out;
@@ -630,11 +682,18 @@ a.dropdown-item:hover {
 }
 
 .tag-badges {
-    position: absolute;
-    right: 10px;
+    /*position: absolute;*/
+    right: 2px;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+}
+
+@media (max-width: 1430px) {
+    .tag-badges {
+        flex-direction: column;
+    }
 }
 
 #dropdownMenuButtonTag {
@@ -644,14 +703,27 @@ a.dropdown-item:hover {
     text-overflow: ellipsis !important;
 }
 
+.expand-icon {
+  color: #005a20;
+  min-width: 22px;
+  padding: 2px;
+  border-radius: 5px;
+}
+
+.expand-icon:hover {
+  border: 0.25px solid #005a20;
+}
+
 .tag-text {
     font-size: 1rem !important;
     letter-spacing: -0.5px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 120px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    /*text-overflow: ellipsis !important;*/
+    max-width: 200px !important;
+    max-height: 25px !important;
     display: inline-block;
+    padding-right: 5px;
 }
 
 /* Spinner animation */
@@ -685,6 +757,18 @@ a.dropdown-item:hover {
 #spinner-modal button.cancel {
   display: none;
   margin-top: 1em;
+}
+
+#progress {
+    margin-top: -15vh;
+    margin-bottom: 15vh;
+    width: 20vh;
+    text-align: center;
+    margin-left: 5vh;
+}
+
+.progress-bar {
+    background-color: #018849;
 }
 
 /* --------------------SCROLLBAR FOR MODALS--------------------------*/
@@ -769,6 +853,7 @@ Index project view custom
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+    padding-left: 15px;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 0;
@@ -839,14 +924,16 @@ Index project view custom
 }
 
 .project-card .name{
-    font-size: 22px;
+    font-size: 20px;
     color: #464e56;
     font-weight: 600;
     text-align: left;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word !important;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    text-overflow: clip;
+    max-width: 300px;
+    text-decoration: underline;
 }
 
 .empty i.fas,
@@ -896,6 +983,7 @@ Index project view custom
     border: 2px solid #ccc;
     border-radius: 8px;
     padding: 10px;
+    overflow: hidden;
     background-color: #fff;
 }
 
@@ -1050,12 +1138,25 @@ Document custom select
 
 .toolbar-container {
     position: sticky;
-    top: 0;
+    top: 3.25em;
     z-index: 10;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f8f9fa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+body.scrolled .toolbar-container {
+    top: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+#project-sidebar-open {
+    color: white;
+    cursor: pointer;
+    padding-right: 10px;
+    font-size: 1.5em;
 }
 
 /* project sidebar */

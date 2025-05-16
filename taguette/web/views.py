@@ -81,6 +81,7 @@ class Index(BaseHandler):
                 user_display_name = user.displayname
 
             is_demo = 'false' if len(user.project_memberships) else 'true'
+            _ = self.xsrf_token  # Make sure XSRF cookie is set
             return self.render(
                 'index.html',
                 user=user,
@@ -89,11 +90,15 @@ class Index(BaseHandler):
                 ),
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
+                can_create_project=user.role.can_create_project(),
+                can_change_role=user.role.can_change_role(),
                 can_import_project=(
-                    self.application.config['SQLITE3_IMPORT_ENABLED']
+                    user.role.can_create_project()
+                    and self.application.config['SQLITE3_IMPORT_ENABLED']
                 ),
                 demo=False,
-                is_demo=Markup(is_demo)
+                is_demo=Markup(is_demo),
+                is_multiuser=self.application.config['MULTIUSER']
             )
         elif not self.application.config['MULTIUSER']:
             token = self.get_query_argument('token', None)
@@ -147,7 +152,9 @@ class Login(BaseHandler):
         if self.current_user:
             return self._go_to_next()
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=False,
                                    next=self.get_argument('next', ''))
             else:
@@ -165,7 +172,8 @@ class Login(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config['ALLOW_EXTERNAL_LOGIN'] \
+                and not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
             raise HTTPError(404)
         login = self.get_body_argument('login')
         try:
@@ -215,7 +223,9 @@ class Register(BaseHandler):
         if self.current_user:
             return self.redirect(self.reverse_url('index'))
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=True)
             else:
                 return self.render('auth/cilogon.login.html',
@@ -228,7 +238,8 @@ class Register(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if (self.application.config['ALLOW_EXTERNAL_LOGIN'] and
+                not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']):
             raise HTTPError(404)
         if not self.application.config['REGISTRATION_ENABLED']:
             raise HTTPError(403)
@@ -254,6 +265,7 @@ class Register(BaseHandler):
                 raise validate.InvalidFormat(_f("Email address is already "
                                                 "used"))
             user = database.User(login=login)
+            user.role = "PROJECT_ADMIN"
             await user.set_password(password1)
             if email:
                 user.email = email
@@ -278,6 +290,34 @@ class Register(BaseHandler):
             )
 
 
+class UserPermissions(BaseHandler):
+    def prepare(self):
+        if not self.application.config['MULTIUSER']:
+            raise HTTPError(404)
+        user = self.db.query(database.User).get(self.current_user)
+        if not user.role.can_change_role():
+            raise HTTPError(403)
+
+    @PROM_REQUESTS.sync('permissions')
+    def get(self):
+        user = self.db.query(database.User).get(self.current_user)
+        members = (
+            self.db.query(database.User)
+            .filter(database.User.approved_by_user_login == self.current_user)
+        ).all()
+        members_json = Markup(json.dumps(
+            {user.login: {'privileges': user.role.name}
+             for user in members}
+        ))
+        _ = self.xsrf_token  # Make sure XSRF cookie is set
+        return self.render('permissions.html',
+                           members=members_json,
+                           user=user,
+                           user_login=Markup(
+                               json.dumps(self.current_user)
+                           ))
+
+
 class Cilogon(BaseHandler):
     flow_cilogon = None
 
@@ -292,12 +332,12 @@ class Cilogon(BaseHandler):
             # The first in the list of selected_idp will be the
             # default choice of idp
             f = OAuth2WebServerFlow(
-                auth_uri='https://cilogon.org/authorize',
-                token_uri='https://cilogon.org/oauth2/token',
-                client_id=self.application.config['CI_LOGON_ID'],
-                client_secret=self.application.config['CI_LOGON_SECRET'],
-                scope=['profile', 'email', 'openid', 'org.cilogon.userinfo'],
-                redirect_uri=self.application.config['CI_LOGON_CALLBACK_URL'],
+                auth_uri=self.application.config['OAUTH_AUTH_URI'],
+                token_uri=self.application.config['OAUTH_TOKEN_URI'],
+                client_id=self.application.config['OAUTH_CLIENT_ID'],
+                client_secret=self.application.config['OAUTH_CLIENT_SECRET'],
+                scope=self.application.config['OAUTH_SCOPE'],
+                redirect_uri=self.application.config['OAUTH_CALLBACK_URL'],
             )
             f.params['access_type'] = 'offline'  # offline access
             f.params['include_granted_scopes'] = 'true'  # incremental auth
@@ -345,14 +385,20 @@ class CilogonCallback(BaseHandler):
             self.cilogon_callback(auth_code)
 
     def get_ci_token(self, params):
-        return requests.get(
-            'https://cilogon.org/oauth2/token',
-            params=params
-        )
+        if self.application.config['OAUTH_TOKEN_METHOD'].lower() == 'get':
+            return requests.get(
+                self.application.config['OAUTH_TOKEN_URI'],
+                params=params
+            )
+        else:
+            return requests.post(
+                self.application.config['OAUTH_TOKEN_URI'],
+                params=params
+            )
 
     def get_ci_user_infos(self, access_token):
         return requests.get(
-            'https://cilogon.org/oauth2/userinfo',
+            self.application.config['OAUTH_USERINFO_URI'],
             params={'access_token': access_token}
         )
 
@@ -367,9 +413,9 @@ class CilogonCallback(BaseHandler):
         params = {
             'grant_type': 'authorization_code',
             'code': auth_code,
-            'client_id': self.application.config['CI_LOGON_ID'],
-            'client_secret': self.application.config['CI_LOGON_SECRET'],
-            'redirect_uri': self.application.config['CI_LOGON_CALLBACK_URL']
+            'client_id': self.application.config['OAUTH_CLIENT_ID'],
+            'client_secret': self.application.config['OAUTH_CLIENT_SECRET'],
+            'redirect_uri': self.application.config['OAUTH_CALLBACK_URL']
         }
         error = False
         cil_user_infos = {}
@@ -416,6 +462,9 @@ class CilogonCallback(BaseHandler):
             user_from_google = True
         else:
             user_from_google = False
+
+        cil_user_infos['user_from_google'] = user_from_google
+        cil_user_infos['user_from_caf'] = user_from_caf
 
         # For testing
         logger.info("Dump CILogon information for testing period")
@@ -469,6 +518,9 @@ class CilogonCallback(BaseHandler):
             user.email = login
             user.external = True
             user.disabled = False
+            user.role = "PROJECT_ADMIN"
+            if user_info['user_from_google']:
+                user.role = "TEAM_MEMBER"
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie('user', login)
@@ -735,6 +787,11 @@ class SetNewPassword(BaseHandler):
 
 
 class ProjectAdd(BaseHandler):
+    def prepare(self):
+        user = self.db.query(database.User).get(self.current_user)
+        if not user.role.can_create_project():
+            raise HTTPError(403)
+
     @authenticated
     @PROM_REQUESTS.sync('new_project')
     def get(self):
@@ -786,7 +843,9 @@ class ProjectAdd(BaseHandler):
 
 class ProjectImport(BaseHandler):
     def prepare(self):
-        if not self.application.config['SQLITE3_IMPORT_ENABLED']:
+        user = self.db.query(database.User).get(self.current_user)
+        if (not self.application.config['SQLITE3_IMPORT_ENABLED'] or
+                not user.role.can_create_project()):
             raise HTTPError(403)
 
     @authenticated
@@ -1053,7 +1112,7 @@ class Project(BaseHandler):
             is_demo = "true"
             lang = user.language
             if lang not in DEMO_DATA.keys():
-                lang = self.config['DEFAULT_LANGUAGE']
+                lang = self.application.config['DEFAULT_LANGUAGE']
             demo_highlights_location = DEMO_DATA[lang]['tutorial_highlights']
         else:
             is_demo = "false"

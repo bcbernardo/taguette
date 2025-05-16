@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{% trans %}Grant permissions{% endtrans %} | LibreQDA{% endblock %}
+
+{% block contents %}
+    <p>{% trans %}To use this instance of LibreQDA, users outside the <a href="https://www.canarie.ca/identity/caf/">Canadian Access Federation (CAF)</a> must be sponsored{% endtrans %}.</p>
+
+    <h3>{% trans %}Grant permissions{% endtrans %}:</h3>
+    <form id="members-add">
+        <fieldset id="members-add-fields">
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    {% if is_external_login %}
+                        <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "form label for email address" %}Email{% endtrans %}" required />
+                    {% else %}
+                        <input type="text" class="form-control" id="member-add-name" placeholder="{% trans "project members form placeholder" %}Username{% endtrans %}" required />
+                    {% endif %}
+                </div>
+                <div class="col-md-4 form-group">
+                    <select id="member-add-privileges" class="form-control">
+                        <option value="PROJECT_ADMIN">{% trans "permission level" %}Can create projects{% endtrans %}</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-info col-md-4 form-group">{% trans "form submit button" %}Update role{% endtrans %}</button>
+            </div>
+        </fieldset>
+    </form>
+    <h4>{% trans %}Users that you approved{% endtrans %}</h4>
+    <form id="members-current">
+    </form>
+
+    <button type="button" id="members-submit" class="btn btn-primary">{% trans %}Save{% endtrans %}</button>
+    <a href="{{ reverse_url('index') }}" class="btn btn-secondary">{% trans %}Cancel{% endtrans %}</a>
+
+    <!-- Spinner modal -->
+    {% include 'partials/spinner.html' %}
+
+    <!-- Alert modal -->
+    {% include 'partials/alert.html' %}
+{% endblock %}
+
+
+{% block morejs %}
+    <script type="text/javascript" src="{{ reverse_url('trans.js') }}?lang={{ user.language }}"></script>
+    <!-- Utilities -->
+    <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+    <script type="text/javascript" src="{{ static_url('js/permissions.js') }}"></script>
+
+    <script type="text/javascript">
+        const user_login = {{ user_login }};
+        let members = {{ members }};
+        showMembers();
+    </script>
+{% endblock %}

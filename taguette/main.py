@@ -160,14 +160,22 @@ CONVERT_FROM_HTML_TIMEOUT = 3 * 60  # 3min for exporting from LibreQDA
 # MULTIUSER = True
 
 # Allow external authentication, MULTIUSER must be set to True
-# (only CILogon, see below)
-# If True, CI Logon variables must be defined
+# If True, OAUTH variables must be defined
 ALLOW_EXTERNAL_LOGIN = False
+# For testing purpose only.
+# To bypass OAUTH and to use built-in login and register
+# URLs are : /login?bypass=true or /register?bypass=true
+ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
-# Replace current authentication by CI_LOGON
-# CI_LOGON_ID=""
-# CI_LOGON_SECRET=""
-# CI_LOGON_CALLBACK_URL=""
+# Replace current authentication with OAUTH
+# OAUTH_AUTH_URI=""
+# OAUTH_TOKEN_URI=""
+# OAUTH_TOKEN_METHOD="get"
+# OAUTH_USERINFO_URI=""
+# OAUTH_CLIENT_ID=""
+# OAUTH_CLIENT_SECRET=""
+# OAUTH_SCOPE=[]
+# OAUTH_CALLBACK_URL="http://localhost:7465/ci_callback"
 
 # Output manifest max size
 # OPF_OUT_SIZE_LIMIT = 5000000
@@ -182,6 +190,7 @@ ALLOW_EXTERNAL_LOGIN = False
 DEFAULT_CONFIG = {
     'MULTIUSER': True,
     'ALLOW_EXTERNAL_LOGIN': False,
+    'ALLOW_EXTERNAL_LOGIN_BYPASS': False,
     'BIND_ADDRESS': '0.0.0.0',
     'BASE_PATH': '',
     'MAINTENANCE_MODE': False,
@@ -247,7 +256,7 @@ def main():
     if os.path.exists(os.path.join(toplevel, '.git')):
         try:
             version = subprocess.check_output(
-                ['git', '--git-dir=.git', 'describe'],
+                ['git', '--git-dir=.git', 'describe', '--tags'],
                 cwd=toplevel,
                 stderr=subprocess.PIPE,
             ).decode('utf-8').strip()
@@ -439,7 +448,10 @@ def main():
             release='taguette@%s' % exact_version(),
         )
 
-    app = make_app(config, debug=args.debug)
+    xsrf_cookies = True
+    if config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
+        xsrf_cookies = False
+    app = make_app(config, debug=args.debug, xsrf_cookies=xsrf_cookies)
     app.listen(config['PORT'], address=config['BIND_ADDRESS'],
                xheaders=config.get('X_HEADERS', False))
     loop = tornado.ioloop.IOLoop.current()

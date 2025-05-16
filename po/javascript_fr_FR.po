@@ -1,7 +1,9 @@
 # French translations for LibreQDA and Taguette.
-# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de
+# Sherbrooke) and contributors
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
-# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# This file is distributed under the same license as the LibreQDA and
+# Taguette projects.
 # PHuN <phun@usherbrooke.ca>, 2023.
 # Remi Rampin <remi@rampin.org>, 2018.
 #
@@ -11,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taguette 1.1\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2024-12-02 10:14-0500\n"
+"POT-Creation-Date: 2025-05-06 14:58-0400\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
 "Last-Translator: Rémi Rampin <remirampin@gmail.com>, 2021\n"
 "Language: fr\n"
@@ -268,70 +270,74 @@ msgstr "Il semble que vous vous soyez déconnecté de votre profil."
 msgid "You can no longer access this project."
 msgstr "Vous ne pouvez plus accéder à ce projet."
 
-#: taguette/static/js/taguette.js:257
+#: taguette/static/js/taguette.js:267
 msgid "Document name cannot be empty"
 msgstr "Le nom du document ne peut pas être vide"
 
-#: taguette/static/js/taguette.js:282
+#: taguette/static/js/taguette.js:292
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Êtes-vous sûr de vouloir supprimer le document \"%(doc)s\" ?"
 
-#: taguette/static/js/taguette.js:408
+#: taguette/static/js/taguette.js:418
 msgid "Invalid tag name"
 msgstr "Nom de code invalide"
 
-#: taguette/static/js/taguette.js:413
+#: taguette/static/js/taguette.js:423
 msgid "Impossible to define the same tag as parent"
 msgstr "Impossible de définir la même code comme parent"
 
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:454
+#: taguette/static/js/taguette.js:464
 msgid "None"
 msgstr "Aucun"
 
-#: taguette/static/js/taguette.js:476
+#: taguette/static/js/taguette.js:486
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Êtes-vous sûr de vouloir supprimer le code \"%(tag)s\" ?"
 
-#: taguette/static/js/taguette.js:529
+#: taguette/static/js/taguette.js:539
 msgid "Couldn't merge tags!"
 msgstr "Impossible de fusionner les codes !"
 
-#: taguette/static/js/taguette.js:688
+#: taguette/static/js/taguette.js:698
 msgid "Full permissions"
 msgstr "Toutes les permissions"
 
-#: taguette/static/js/taguette.js:689
+#: taguette/static/js/taguette.js:699
 msgid "Can't change collaborators / delete project"
 msgstr "Ne peut pas changer les collaborateurs / supprimer le projet"
 
-#: taguette/static/js/taguette.js:690
+#: taguette/static/js/taguette.js:700
 msgid "View & make changes"
 msgstr "Voir & faire des changements"
 
-#: taguette/static/js/taguette.js:691
+#: taguette/static/js/taguette.js:701
 msgid "View only"
 msgstr "Voir seulement"
 
-#: taguette/static/js/taguette.js:763
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:773
 msgid "Already a member!"
 msgstr "Déja membre de ce projet !"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:788
 msgid "This user doesn't exist!"
 msgstr "Cet utilisateur n'existe pas !"
 
-#: taguette/static/js/taguette.js:846
+#: taguette/static/js/taguette.js:856
 msgid "Load a document on the left"
 msgstr "Sélectionnez un document sur la gauche"
 
-#: taguette/static/js/taguette.js:1062
+#: taguette/static/js/taguette.js:1073
 msgid "No highlights with this tag yet."
 msgstr "Aucune sélection avec ce code."
 
-#: taguette/static/js/taguette.js:1207
+#: taguette/static/js/taguette.js:1216
+msgid "No documents found"
+msgstr "Aucun document trouvé"
+
+#: taguette/static/js/taguette.js:1262
 #, fuzzy
 msgid "No tag found"
 msgstr "Pas de codes"
@@ -412,4 +418,22 @@ msgstr "Il n'y a pas encore de documents dans ce projet."
 #: taguette/static/js/document/manager.js:112
 msgid "Import new document"
 msgstr "Importer des documents"
+
+#: taguette/static/js/permissions.js:25
+msgid "Can create projects"
+msgstr ""
+
+#: taguette/static/js/permissions.js:26
+msgid "Can't create projects"
+msgstr ""
+
+#: taguette/static/js/permissions.js:98
+msgid ""
+"Cannot add this user<br/>Reasons : <ul><li>User cannot be "
+"found</li><li>User is already sponsored</li><li>User role cannot be "
+"changed</li></ul>"
+msgstr ""
+"Impossible d'ajouter cette personne<br/>Raisons : <ul><li>Noms "
+"d'utilisateur introuvable</li><li>Cette personne est déjà "
+"parrainée</li><li>Le rôle ne peut pas être changé</li></ul>"
 
