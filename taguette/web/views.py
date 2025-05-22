@@ -54,6 +54,7 @@ PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
     "Number of currently active user sessions"
 )
 
+
 def get_idps(db):
     idps = [{'entityid': 'http://google.com/accounts/o8/id',
              'name': 'Google'}]
