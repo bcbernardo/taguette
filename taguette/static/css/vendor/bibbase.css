@@ -1,0 +1,26 @@
+
+#bibbase {
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  background: #fefefe;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-family: inherit;
+}
+
+a.bibbase.doi.link,
+a.bibbase.bibtex.link,
+a.bibbase.bibbase_page,
+a.bibbase_abstract_link,
+span.bibbase_icon_text,
+span.bibbase_stats_paper {
+  display: none !important;
+}
+
+.bibbase_paper {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #ddd;
+}
