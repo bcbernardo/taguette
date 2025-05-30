@@ -8,6 +8,8 @@ taguette.conf
 /alt_templates/*
 !/alt_templates/.gitkeep
 
+/taguette/static/partners/
+
 # Python
 *.py[co]
 .ipynb_checkpoints

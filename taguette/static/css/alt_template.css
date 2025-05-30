@@ -28,9 +28,17 @@
   z-index: -1;
 }
 
-/* logo for welcome page */
+/* logos */
 .hero-logo {
   max-width: 320px;
   width: 100%;
   height: auto;
+}
+
+.partner-logo {
+  max-height: 80px;
+  width: auto;
+  margin: 0 auto;
+  display: block;
+  object-fit: contain;
 }

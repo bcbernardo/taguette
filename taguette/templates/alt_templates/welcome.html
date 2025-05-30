@@ -13,18 +13,14 @@
 
 <h1 class="visually-hidden">{% trans %}Welcome to LibreQDA{% endtrans %}</h1> <!-- for SEO -->
 
-<!-- Announcement Box -->
-<section class="container mt-2">
-  <div class="alert alert-light border py-2 px-3" style="background-color: #f8f9fa; border-color: #dee2e6; border-radius: 8px; font-size: 0.9rem;">
-    <div class="d-flex align-items-center">
-      <i class="fas fa-info-circle text-primary me-2" style="font-size: 1rem;"></i>
-      <span>
-        {% trans %}Firefox and other non-Chromium browsers are not fully supported at this time.{% endtrans %}
-      </span>
-    </div>
-  </div>
+<section class="container mt-2 mb-3 py-2 text-center" style="background-color: #f9faf8; border: 1px solid #e6e6e6; border-radius: 6px;">
+  <p class="mb-1" style="font-size: 0.9rem; color: #555;">
+    {% trans %}This instance of LibreQDA is maintained by the{% endtrans %}
+    <a href="https://www.usherbrooke.ca/flsh/recherche/centres-groupes-et-equipes-de-recherche/phun/" target="_blank" rel="noopener" style="color: #018849; text-decoration: none;">
+      {% trans %}Plateforme en humanités numériques{% endtrans %}
+    </a>
+  </p>
 </section>
-
 
 <section class="pt-1 pb-4 text-center">
   <div class="container">
@@ -71,6 +67,18 @@
     {% trans %}Visit the help website{% endtrans %}
   </a>
 </div>
+  </div>
+</section>
+
+<!-- Announcement Box -->
+<section class="container mt-2">
+  <div class="alert alert-light border py-2 px-3" style="background-color: #f8f9fa; border-color: #dee2e6; border-radius: 8px; font-size: 0.9rem;">
+    <div class="d-flex align-items-center">
+      <i class="fas fa-info-circle text-primary me-2" style="font-size: 1rem;"></i>
+      <span>
+        {% trans %}Firefox and other non-Chromium browsers are not fully supported at this time.{% endtrans %}
+      </span>
+    </div>
   </div>
 </section>
 
@@ -122,6 +130,29 @@
 
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- Partners Section -->
+<section class="container mt-5 text-center">
+  <h3 class="mb-4">{% trans %}Partners{% endtrans %}</h3>
+  <p class="mb-4">{% trans %}This instance of LibreQDA is supported by the following partners:{% endtrans %}</p>
+  <div class="row justify-content-center align-items-center">
+        <div class="col-6 col-sm-4 col-md-3 mb-4">
+      <a href="https://www.usherbrooke.ca/" target="_blank" rel="noopener">
+        <img src="/static/partners/uds.png" alt="Université de Sherbrooke logo" class="img-fluid partner-logo">
+      </a>
+    </div>
+    <div class="col-6 col-sm-4 col-md-3 mb-4">
+      <a href="https://www.calculquebec.ca/" target="_blank" rel="noopener">
+        <img src="/static/partners/calculqc.png" alt="Calcul Québec logo" class="img-fluid partner-logo">
+      </a>
+    </div>
+    <div class="col-6 col-sm-4 col-md-3 mb-4">
+      <a href="https://cirst.uqam.ca/" target="_blank" rel="noopener">
+        <img src="/static/partners/cirst.png" alt="CIRST logo" class="img-fluid partner-logo">
+      </a>
     </div>
   </div>
 </section>
