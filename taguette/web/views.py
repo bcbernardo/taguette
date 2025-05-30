@@ -120,9 +120,18 @@ class Index(BaseHandler):
             else:
                 return self.render('auth/token_needed.html')
 
-        use_alt_welcome = self.application.config.get('USE_ALTERNATE_WELCOME', False)
-        template = 'alt_templates/welcome.html' if use_alt_welcome else 'welcome.html'
-        return self.render(template, use_alt_welcome=use_alt_welcome)
+        use_alt_welcome = self.application.config.get(
+            'USE_ALTERNATE_WELCOME', False
+        )
+        template = (
+            'alt_templates/welcome.html'
+            if use_alt_welcome
+            else 'welcome.html'
+        )
+        return self.render(
+            template,
+            use_alt_welcome=use_alt_welcome
+        )
 
     head = get
 
