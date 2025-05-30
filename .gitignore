@@ -4,9 +4,8 @@
 # Configuration file
 taguette.conf
 
-# alternate templates
-/alt_templates/*
-!/alt_templates/.gitkeep
+# alternate template
+
 
 /taguette/static/partners/
 
