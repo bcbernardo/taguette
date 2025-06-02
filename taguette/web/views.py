@@ -44,6 +44,16 @@ PROM_REQUESTS = PromMeasureRequest(
     ),
 )
 
+PROM_USER_CONNECTIONS = prometheus_client.Counter(
+    'user_connections_total',
+    "User connection total"
+)
+
+PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
+    'active_sessions',
+    "Number of currently active user sessions"
+)
+
 
 def get_idps(db):
     idps = [{'entityid': 'http://google.com/accounts/o8/id',
@@ -152,7 +162,9 @@ class Login(BaseHandler):
         if self.current_user:
             return self._go_to_next()
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=False,
                                    next=self.get_argument('next', ''))
             else:
@@ -170,7 +182,8 @@ class Login(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config['ALLOW_EXTERNAL_LOGIN'] \
+                and not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
             raise HTTPError(404)
         login = self.get_body_argument('login')
         try:
@@ -186,6 +199,8 @@ class Login(BaseHandler):
                 logger.info("Login: invalid password for %r", user.login)
             else:
                 self.login(user.login)
+                PROM_USER_CONNECTIONS.inc()
+                PROM_ACTIVE_SESSIONS.inc()
                 return self._go_to_next()
 
         return self.render(
@@ -207,6 +222,9 @@ class Logout(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         self.logout()
+        current_value = PROM_ACTIVE_SESSIONS._value._value
+        if current_value > 0:
+            PROM_ACTIVE_SESSIONS.dec()
         return self.redirect(self.reverse_url('index'))
 
 
@@ -220,7 +238,9 @@ class Register(BaseHandler):
         if self.current_user:
             return self.redirect(self.reverse_url('index'))
         else:
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
+                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
+                     and self.get_argument('bypass', None) is not None)):
                 return self.render('auth/login.html', register=True)
             else:
                 return self.render('auth/cilogon.login.html',
@@ -233,7 +253,8 @@ class Register(BaseHandler):
     async def post(self):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if (self.application.config['ALLOW_EXTERNAL_LOGIN'] and
+                not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']):
             raise HTTPError(404)
         if not self.application.config['REGISTRATION_ENABLED']:
             raise HTTPError(403)
@@ -518,10 +539,14 @@ class CilogonCallback(BaseHandler):
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie('user', login)
+            PROM_USER_CONNECTIONS.inc()
+            PROM_ACTIVE_SESSIONS.inc()
             return self.redirect(self.reverse_url('index'))
         else:
             logger.info("CILogon Login: Logging in..")
             self.login(user.login)
+            PROM_USER_CONNECTIONS.inc()
+            PROM_ACTIVE_SESSIONS.inc()
             return self._go_to_next()
 
     def _go_to_next(self):

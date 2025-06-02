@@ -7,7 +7,8 @@ build_image:
   stage: prepare_image
   image: docker:latest
   services:
-    - docker:dind
+  - name: docker:dind
+    alias: docker_dind
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   # Default branch leaves tag empty (= latest tag)
@@ -35,6 +36,7 @@ build_image:
       RUN rsync -rvah $HOME/.local/bin/* ./poetry_bin
       RUN ls -la /usr/bin/ | grep chrome
       ' > Dockerfile
+    - export DOCKER_HOST=unix:///var/run/docker.sock
     - docker build --pull -t "${CI_REGISTRY_IMAGE}:tests" .
     - docker push "${CI_REGISTRY_IMAGE}:tests"
 
