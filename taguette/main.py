@@ -76,6 +76,9 @@ def default_config(output):
 # Name of this server
 NAME = "Misconfigured LibreQDA Server"
 
+# Alternate templates
+USE_ALTERNATE_WELCOME = False
+
 # Address and port to listen on
 BIND_ADDRESS = "0.0.0.0"
 PORT = 7465
