@@ -40,6 +40,7 @@ You can install from a local clone of this repository, which will allow you to e
 2. Navigate on the command line to the repository you've just cloned locally, using the `cd` command. To get help using `cd`, use [this tutorial](https://swcarpentry.github.io/shell-novice/02-filedir/index.html).
 3. LibreQDA uses [Poetry](https://python-poetry.org/) for its packaging and dependency management. You will need to [install Poetry](https://python-poetry.org/docs/#installation).
 4. Install LibreQDA and its dependencies by running `poetry install`. Poetry will create a virtual environment for you by default, activate it by running `poetry shell`.
+   - To install dependencies for mysql or postgres, use the following command `poetry install -E postgres`. 
 5. Build translation files using `scripts/update_translations.sh`.
 6. You can start LibreQDA in development mode using `taguette --debug` (or `taguette --debug server <config_file>`). This will start Tornado in debug mode, which means in particular that it will auto-restart every time you make changes. 
    1. A config file can be created by running `taguette default-config > taguette.conf`

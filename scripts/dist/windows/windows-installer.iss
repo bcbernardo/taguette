@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "LibreQDA"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Remi Rampin, PHuN and Taguette contributors"
 #define MyAppURL "https://www.libreqda.org/"
 #define MyAppExeName "libreqda.exe"
