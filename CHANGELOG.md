@@ -1,6 +1,27 @@
 LibreQDA Changelog
 ==================
 
+1.0.1 (2025-06-16)
+------------------
+- OAuth authentication
+- Roles, some users need to be sponsored to create new projects. 
+  - ADMIN : Can do anything
+  - PROJECT_ADMIN : Can create projects and sponsor users
+  - TEAM_MEMBER : Can work in existing projects
+  - PROJECT_OWNER : Can create projects, cannot sponsor users
+- General UI/UX improvements
+  - Code hierarchy
+  - Code color
+  - Layered color bands
+  - Drag & drop codes
+  - Filter documents and codes
+  - Upload multiple documents
+  - Search in documents
+  - Complex queries to explore codes with (AND, OR, NOT)
+- General bug fixes
+- Code refactoring
+- Tests optimization
+
 0.9.0 (2024-04-03)
 ------------------
 
