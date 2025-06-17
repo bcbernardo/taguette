@@ -44,6 +44,16 @@ PROM_REQUESTS = PromMeasureRequest(
     ),
 )
 
+PROM_USER_CONNECTIONS = prometheus_client.Counter(
+    'user_connections_total',
+    "User connection total"
+)
+
+PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
+    'active_sessions',
+    "Number of currently active user sessions"
+)
+
 
 def get_idps(db):
     idps = [{'entityid': 'http://google.com/accounts/o8/id',
@@ -189,6 +199,8 @@ class Login(BaseHandler):
                 logger.info("Login: invalid password for %r", user.login)
             else:
                 self.login(user.login)
+                PROM_USER_CONNECTIONS.inc()
+                PROM_ACTIVE_SESSIONS.inc()
                 return self._go_to_next()
 
         return self.render(
@@ -210,6 +222,9 @@ class Logout(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         self.logout()
+        current_value = PROM_ACTIVE_SESSIONS._value._value
+        if current_value > 0:
+            PROM_ACTIVE_SESSIONS.dec()
         return self.redirect(self.reverse_url('index'))
 
 
@@ -524,10 +539,14 @@ class CilogonCallback(BaseHandler):
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie('user', login)
+            PROM_USER_CONNECTIONS.inc()
+            PROM_ACTIVE_SESSIONS.inc()
             return self.redirect(self.reverse_url('index'))
         else:
             logger.info("CILogon Login: Logging in..")
             self.login(user.login)
+            PROM_USER_CONNECTIONS.inc()
+            PROM_ACTIVE_SESSIONS.inc()
             return self._go_to_next()
 
     def _go_to_next(self):
