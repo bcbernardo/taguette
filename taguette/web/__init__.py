@@ -174,6 +174,7 @@ def make_app(config, debug=False, xsrf_cookies=True):
         UnbakedURLSpec('/api/import', api.ProjectImport),
         UnbakedURLSpec('/api/project/([0-9]+)', api.ProjectMeta),
         UnbakedURLSpec('/api/project/([0-9]+)/document/new', api.DocumentAdd),
+        UnbakedURLSpec('/api/project/([0-9]+)/collection/new', api.CreateCollection),
         UnbakedURLSpec('/api/project/([0-9]+)/document/([0-9]+)',
                        api.Document),
         UnbakedURLSpec('/api/project/([0-9]+)/document/([0-9]+)/contents',

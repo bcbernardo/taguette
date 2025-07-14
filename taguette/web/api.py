@@ -251,6 +251,12 @@ class DocumentAdd(BaseHandler):
                 )
                 self.db.add(doc)
                 self.db.flush()  # Need to flush to get doc.id
+                collection_ids = self.get_arguments('collection_ids')
+                for col_id in collection_ids:
+                    collection = self.db.query(database.Collection).filter_by(id=col_id, project_id=project.id).first()
+                    if collection:
+                        doc.collections.append(collection)
+
                 cmd = database.Command.document_add(
                     self.current_user,
                     doc,
@@ -319,6 +325,12 @@ class Document(BaseHandler):
                             "Invalid text direction",
                         )
                     document.text_direction = direction
+                if 'collections' in obj:
+                    document.collections = []
+                    for col_id in obj['collections']:
+                        collection = self.db.query(database.Collection).filter_by(id=col_id, project_id=document.project_id).first()
+                        if collection:
+                            document.collections.append(collection)
                 cmd = database.Command.document_add(
                     self.current_user,
                     document,
@@ -1341,3 +1353,41 @@ class ProjectEvents(BaseHandler):
                 self.request.remote_ip,
                 1000.0 * self.request.request_time(),
             )
+
+
+class CreateCollection(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('create_collection')
+    def post(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_add_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        try:
+            obj = self.get_json()
+            name = obj.get('name', '').strip()
+            description = obj.get('description', '').strip() if 'description' in obj else ''
+            if not name:
+                return self.send_error_json(400, self.gettext("Collection name is required"))
+            collection = database.Collection(
+                name=name,
+                description=description,
+                project_id=project.id,
+                owner_login=self.current_user
+            )
+            self.db.add(collection)
+            document_ids = obj.get('document_ids', [])
+            for doc_id in document_ids:
+                document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
+                if document:
+                    collection.documents.append(document)
+            self.db.commit()
+            self.db.refresh(collection)
+            return self.send_json({
+                'id': collection.id,
+                'name': collection.name,
+                'description': collection.description,
+                'created': collection.created.isoformat(),
+            })
+        except Exception as e:
+            logger.exception("Error creating collection")
+            return self.send_error_json(500, self.gettext("Internal error: ") + str(e))

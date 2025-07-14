@@ -233,6 +233,37 @@ class User(Base):
         )
 
 
+# Table d'association many-to-many entre collections et documents
+collection_documents = Table(
+    'collection_documents',
+    Base.metadata,
+    Column('collection_id', Integer, ForeignKey('collections.id', ondelete='CASCADE'), primary_key=True),
+    Column('document_id', Integer, ForeignKey('documents.id', ondelete='CASCADE'), primary_key=True),
+)
+
+
+class Collection(Base):
+    __tablename__ = 'collections'
+    __table_args__ = ({'sqlite_autoincrement': True},)
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    created = Column(DateTime, nullable=False, default=lambda: datetime.utcnow())
+    owner_login = Column(String(255), ForeignKey('users.login'), nullable=True)
+    owner = relationship('User')
+    project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    project = relationship('Project', back_populates='collections')
+    documents = relationship(
+        'Document',
+        secondary=collection_documents,
+        back_populates='collections'
+    )
+
+    def __repr__(self):
+        return f'<Collection {self.id} {self.name}>'
+
+
 class Project(Base):
     __tablename__ = 'projects'
     __table_args__ = ({'sqlite_autoincrement': True},)
@@ -252,6 +283,7 @@ class Project(Base):
     tags = relationship('Tag', cascade='all,delete-orphan', order_by='Tag.id',
                         passive_deletes=True,
                         back_populates='project')
+    collections = relationship('Collection', cascade='all,delete-orphan', back_populates='project')
 
     def __repr__(self):
         return '<%s.%s %r %r>' % (
@@ -346,6 +378,11 @@ class Document(Base):
     highlights = relationship('Highlight', cascade='all,delete-orphan',
                               passive_deletes=True)
     favorite = Column(Boolean, nullable=True, default=False)
+    collections = relationship(
+        'Collection',
+        secondary=collection_documents,
+        back_populates='documents'
+    )
 
     def __repr__(self):
         return '<%s.%s %r %r project_id=%r>' % (

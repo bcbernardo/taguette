@@ -1170,12 +1170,28 @@ class Project(BaseHandler):
         # Convert the result to JSON
         tags_json = Markup(json.dumps(result_tree, sort_keys=True))
 
+        collections_json = Markup(json.dumps(
+            {
+                str(c.id): {'id': c.id, 'name': c.name,
+                              'description': c.description,
+                              'created': c.created.isoformat(),
+                              'document_ids': [d.id for d in c.documents],
+                }
+                for c in project.collections
+            },
+            sort_keys=True,
+        ))
+
         documents_json = Markup(json.dumps(
             {
-                str(doc.id): {'id': doc.id, 'name': doc.name,
-                              'description': doc.description,
-                              'favorite': doc.favorite,
-                              'text_direction': doc.text_direction.name}
+                str(doc.id): {
+                    'id': doc.id,
+                    'name': doc.name,
+                    'description': doc.description,
+                    'favorite': doc.favorite,
+                    'text_direction': doc.text_direction.name,
+                    'collections': [c.id for c in doc.collections],
+                }
                 for doc in project.documents
             },
             sort_keys=True,
@@ -1198,6 +1214,7 @@ class Project(BaseHandler):
             last_event=(project.last_event
                         if project.last_event is not None
                         else -1),
+            collections=collections_json,
             documents=documents_json,
             user_login=Markup(
                 json.dumps(self.current_user)
