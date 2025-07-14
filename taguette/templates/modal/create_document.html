@@ -1,6 +1,6 @@
 <!-- Add document modal -->
 <div class="modal fade" id="document-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" >
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <form id="document-add-form" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{% trans "modal window title" %}Add a document{% endtrans %}</h5>
@@ -10,27 +10,43 @@
                 <div class="container">
                     <div class="row">
                         <div class="col form-group">
-                            <input type="file" class="form-control" id="document-add-file" name="document-add-file" required multiple />
+                            <input type="file" class="form-control" id="document-add-file" name="document-add-file"
+                                required multiple />
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12 form-group">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-add-direction" id="document-add-direction-ltr" data-test-id="document-add-direction-ltr-input" value="LEFT_TO_RIGHT" checked />
-                                <label class="form-check-label" for="document-add-direction-ltr">{% trans %}Left to right{% endtrans %}</label>
+                                <input class="form-check-input" type="radio" name="document-add-direction"
+                                    id="document-add-direction-ltr" data-test-id="document-add-direction-ltr-input"
+                                    value="LEFT_TO_RIGHT" checked />
+                                <label class="form-check-label" for="document-add-direction-ltr">{% trans %}Left to
+                                    right{% endtrans %}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-add-direction" id="document-add-direction-rtl" data-test-id="document-add-direction-rtl-input" value="RIGHT_TO_LEFT" />
-                                <label class="form-check-label" for="document-add-direction-rtl" >{% trans %}Right to left{% endtrans %}</label>
+                                <input class="form-check-input" type="radio" name="document-add-direction"
+                                    id="document-add-direction-rtl" data-test-id="document-add-direction-rtl-input"
+                                    value="RIGHT_TO_LEFT" />
+                                <label class="form-check-label" for="document-add-direction-rtl">{% trans %}Right to
+                                    left{% endtrans %}</label>
                             </div>
                         </div>
                     </div>
-                    <textarea class="form-control" id="document-add-description" name="document-add-description" placeholder="{% trans "document add form placeholder" %}Description{% endtrans %}"></textarea>
+                    <div class="row">
+                        <div class="col form-group">
+                            <label>{% trans %}Add to collections{% endtrans %}</label>
+                            <div id="document-add-collections-list"></div>
+                        </div>
+                    </div>
+                    <textarea class="form-control" id="document-add-description" name="document-add-description"
+                        placeholder="{% trans " document add form placeholder" %}Description{% endtrans %}"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-primary" data-test-id="import-document-button">{% trans "submit button" %}Import{% endtrans %}</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+                <button type="submit" class="btn btn-primary" data-test-id="import-document-button">{% trans "submit
+                    button" %}Import{% endtrans %}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans
+                    %}</button>
             </div>
         </form>
     </div>

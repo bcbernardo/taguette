@@ -1,0 +1,39 @@
+<!-- Add collection modal -->
+<div class="modal fade" id="collection-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <form id="collection-add-form" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "modal window title" %}Add a collection{% endtrans %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row mb-3">
+                        <div class="col form-group">
+                            <input type="text" class="form-control" id="collection-add-name" name="collection-add-name"
+                                required maxlength="200" placeholder="{% trans %}Collection name{% endtrans %}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col form-group">
+                            <label>{% trans %}Add documents to this collection{% endtrans %}</label>
+                            <div id="collection-add-documents-list"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col form-group">
+                            <textarea class="form-control" id="collection-add-description"
+                                name="collection-add-description" rows="3" maxlength="1000"
+                                placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">{% trans "submit button" %}Create{% endtrans %}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans
+                    %}</button>
+            </div>
+        </form>
+    </div>
+</div>

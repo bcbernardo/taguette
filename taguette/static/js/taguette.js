@@ -116,6 +116,24 @@ const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
+    const colListDiv = document.getElementById('document-add-collections-list');
+    if (colListDiv) {
+        colListDiv.innerHTML = '';
+        const entries = Object.entries(collections);
+        entries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+        for (let i = 0; i < entries.length; ++i) {
+            let col = entries[i][1];
+            let label = document.createElement('label');
+            label.className = 'form-check-label d-block';
+            let checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input me-2';
+            checkbox.value = col.id;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' ' + col.name));
+            colListDiv.appendChild(label);
+        }
+    }
     $(document_add_modal).modal('show').drags({handle: '.modal-header'});
     customSelect.classList.remove("active");
 }
@@ -196,6 +214,15 @@ async function uploadFiles(files) {
         form_data.append('file', files[f]);
         form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
+
+        const selectedCollections = [];
+        $('#document-add-collections-list input[type=checkbox]:checked').each(function() {
+            selectedCollections.push(this.value);
+        });
+        for (let i = 0; i < selectedCollections.length; ++i) {
+            form_data.append('collection_ids', selectedCollections[i]);
+        }
+
         file_number++;
 
         await doUpload(form_data, percent).then(
@@ -247,6 +274,30 @@ function editDocument(doc_id) {
     document.getElementById('document-change-name').value = '' + documents['' + doc_id].name;
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
+
+    const colListDiv = document.getElementById('document-change-collections-list');
+    if (colListDiv) {
+        colListDiv.innerHTML = '';
+        const entries = Object.entries(collections);
+        entries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+        const docCollections = documents['' + doc_id].collections || [];
+        for (let i = 0; i < entries.length; ++i) {
+            let col = entries[i][1];
+            let label = document.createElement('label');
+            label.className = 'form-check-label d-block';
+            let checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input me-2';
+            checkbox.value = col.id;
+            if (docCollections.includes(col.id) || docCollections.includes(String(col.id))) {
+                checkbox.checked = true;
+            }
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' ' + col.name));
+            colListDiv.appendChild(label);
+        }
+    }
+
     $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
 
@@ -267,6 +318,12 @@ document.getElementById('document-change-form').addEventListener('submit', funct
         showAlert(gettext("Document name cannot be empty"));
         return;
     }
+
+    const selectedCollections = [];
+    $('#document-change-collections-list input[type=checkbox]:checked').each(function() {
+        selectedCollections.push(this.value);
+    });
+    updatedDocument.collections = selectedCollections;
 
     const callbackSuccess = (response) => {
         log("Document update posted");
@@ -1425,4 +1482,59 @@ window.addEventListener('scroll', function() {
         $('body').addClass('scrolled');
     }
     scrollPos = document.documentElement.scrollTop;
+});
+
+// Add collection
+const collection_add_modal = document.getElementById('collection-add-modal');
+
+function createCollection() {
+    document.getElementById('collection-add-form').reset();
+    const docListDiv = document.getElementById('collection-add-documents-list');
+    docListDiv.innerHTML = ''; // Vide la liste
+    const entries = Object.entries(documents);
+    entries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    for (let i = 0; i < entries.length; ++i) {
+        let doc = entries[i][1];
+        let label = document.createElement('label');
+        label.className = 'form-check-label d-block';
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-check-input me-2';
+        checkbox.value = doc.id;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + doc.name));
+        docListDiv.appendChild(label);
+    }
+    $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
+}
+
+$(function() {
+    $('#collection-add-form').on('submit', function(e) {
+        e.preventDefault();
+        const name = $('#collection-add-name').val().trim();
+        const description = $('#collection-add-description').val().trim();
+        if (!name) {
+            showAlert(gettext('Collection name is required'), 'error');
+            return;
+        }
+        const selectedDocs = [];
+        $('#collection-add-documents-list input[type=checkbox]:checked').each(function() {
+            selectedDocs.push(this.value);
+        });
+        const data = {
+            name: name,
+            description: description,
+            document_ids: selectedDocs
+        };
+        postJSON(`/api/project/${project_id}/collection/new`, data)
+            .then(function(response) {
+                $('#collection-add-modal').modal('hide');
+                $('#collection-add-form')[0].reset();
+                showAlert(gettext('Collection created!'), 'success');
+                // TODO: rafraîchir la liste des collections si affichée
+            })
+            .catch(function(error) {
+                showAlert(gettext('Error creating collection: ') + (error.error || error), 'error');
+            });
+    });
 });

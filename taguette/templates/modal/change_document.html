@@ -11,27 +11,42 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <input type="text" class="form-control mb-3" id="document-change-name" name="document-change-name" placeholder="{% trans "document change form placeholder" %}Name{% endtrans %}" required />
+                            <input type="text" class="form-control mb-3" id="document-change-name"
+                                name="document-change-name" placeholder="{% trans " document change form placeholder"
+                                %}Name{% endtrans %}" required />
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12 form-group">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-change-direction" id="document-change-direction-ltr" value="LEFT_TO_RIGHT" checked />
-                                <label class="form-check-label" for="document-change-direction-ltr">{% trans %}Left to right{% endtrans %}</label>
+                                <input class="form-check-input" type="radio" name="document-change-direction"
+                                    id="document-change-direction-ltr" value="LEFT_TO_RIGHT" checked />
+                                <label class="form-check-label" for="document-change-direction-ltr">{% trans %}Left to
+                                    right{% endtrans %}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-change-direction" id="document-change-direction-rtl" value="RIGHT_TO_LEFT" />
-                                <label class="form-check-label" for="document-change-direction-rtl">{% trans %}Right to left{% endtrans %}</label>
+                                <input class="form-check-input" type="radio" name="document-change-direction"
+                                    id="document-change-direction-rtl" value="RIGHT_TO_LEFT" />
+                                <label class="form-check-label" for="document-change-direction-rtl">{% trans %}Right to
+                                    left{% endtrans %}</label>
                             </div>
                         </div>
                     </div>
-                    <textarea class="form-control" id="document-change-description" name="document-change-description" placeholder="{% trans "document change form placeholder" %}Description{% endtrans %}"></textarea>
+                    <div class="row">
+                        <div class="col form-group">
+                            <label>{% trans %}Collections{% endtrans %}</label>
+                            <div id="document-change-collections-list"></div>
+                        </div>
+                    </div>
+                    <textarea class="form-control" id="document-change-description" name="document-change-description"
+                        placeholder="{% trans " document change form placeholder" %}Description{% endtrans
+                        %}"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
-                <button type="button" id="document-change-delete" class="btn btn-danger" data-bs-dismiss="modal">{% trans %}Delete document{% endtrans %}</button>
+                <button type="button" id="document-change-delete" class="btn btn-danger" data-bs-dismiss="modal">{%
+                    trans %}Delete document{% endtrans %}</button>
             </div>
         </form>
     </div>
