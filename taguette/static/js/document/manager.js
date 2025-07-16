@@ -28,10 +28,14 @@ function linkDocument(elem, doc_id, highlight_id=null, search_text=null) {
 function updateDocumentsList() {
 
     generateDocumentSelectPicker();
-    generateDocumentList();
 
     if(typeof addEventListenerToOption === "function") {
         addEventListenerToOption()
+    }
+    
+    // Update documents treeview if the function exists
+    if (typeof initDocumentsTreeview === 'function') {
+        initDocumentsTreeview();
     }
 }
 
@@ -41,7 +45,23 @@ function toggleFavorite(documentId) {
         id: parseInt(documentId),
         favorite: favoriteIcon.classList.contains('far')
     };
-    submitDocumentUpdate(updatedDocument, ()=>{}, ()=>{})
+    
+    submitDocumentUpdate(updatedDocument, function(response) {
+        // Update documents list and treeview after successful update
+        updateDocumentsList();
+        
+        // Find and expand the parent collection after treeview is fully reconstructed
+        if (typeof findDocumentParentCollection === 'function' && typeof expandNode === 'function') {
+            setTimeout(function() {
+                const parentCollectionNodeId = findDocumentParentCollection(documentId);
+                if (parentCollectionNodeId) {
+                    expandNode(treeview_documents, parentCollectionNodeId);
+                }
+            }, 100);
+        }
+    }, function(error) {
+        console.error('Error updating document favorite:', error);
+    });
 }
 
 function generateDocumentList() {

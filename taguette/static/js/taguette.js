@@ -1061,6 +1061,11 @@ function updateDocumentLinkHighlight(current_document) {
     if (document_link) {
         document_link.classList.add('document-link-current');
     }
+    
+    // Also update treeview highlighting if the function exists
+    if (typeof updateDocumentTreeviewHighlight === 'function') {
+        updateDocumentTreeviewHighlight(current_document);
+    }
 }
 
 function loadTag(tag_path, page) {

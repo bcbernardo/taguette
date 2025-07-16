@@ -117,9 +117,10 @@
                         placeholder="{% trans %}Search titles{% endtrans %}">
                 </div>
             </div>
-            <ul class="list-group list-group-flush  panel-content" id="documents-list">
-                <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-            </ul>
+            <!-- Documents treeview -->
+            <div class="panel-content" id="treeview-documents">
+                <div class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</div>
+            </div>
             <div class="alert alert-info mt-2 d-none" role="alert" id="alert-title-search"></div>
         </div>
     </div>
@@ -214,6 +215,7 @@
 <!-- document -->
 <script type="text/javascript" src="{{ static_url('js/document/manager.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/document/custom-select.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/document/treeview.js') }}"></script>
 
 <!-- others -->
 <script type="text/javascript" src="{{ static_url('js/polling-event.js') }}"></script>
@@ -223,6 +225,9 @@
 
         sortTagsBy('path', 'asc');
         addContextMenu();
+
+        // Initialize document treeview
+        initDocumentsTreeview();
 
     });
 
