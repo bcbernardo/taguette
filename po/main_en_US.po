@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-06 14:58-0400\n"
+"POT-Creation-Date: 2025-07-15 19:26-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -97,7 +97,7 @@ msgstr "Missing required configuration variable %(var)s"
 msgid "Invalid BASE_PATH"
 msgstr "Invalid BASE_PATH"
 
-#: taguette/main.py:475
+#: taguette/main.py:478
 #, python-format
 msgid ""
 "\n"
@@ -224,76 +224,76 @@ msgstr "File name is too long"
 msgid "Invalid file name"
 msgstr "Invalid file name"
 
-#: taguette/web/views.py:197
+#: taguette/web/views.py:209
 msgid "Invalid login or password"
 msgstr "Invalid login or password"
 
-#: taguette/web/views.py:256 taguette/web/views.py:608
-#: taguette/web/views.py:774
+#: taguette/web/views.py:271 taguette/web/views.py:627
+#: taguette/web/views.py:793
 msgid "Passwords do not match"
 msgstr "Passwords do not match"
 
-#: taguette/web/views.py:258
+#: taguette/web/views.py:273
 msgid "User name is taken"
 msgstr "User name is taken"
 
-#: taguette/web/views.py:265
+#: taguette/web/views.py:280
 msgid "Email address is already used"
 msgstr "Email address is already used"
 
-#: taguette/web/views.py:276
+#: taguette/web/views.py:291
 msgid "Terms of Service must be accepted"
 msgstr "Terms of Service must be accepted"
 
-#: taguette/web/views.py:655
+#: taguette/web/views.py:674
 msgid "This email address is not associated with any user"
 msgstr "This email address is not associated with any user"
 
-#: taguette/web/views.py:684
+#: taguette/web/views.py:703
 msgid "Password reset for Taguette"
 msgstr "Password reset for LibreQDA"
 
-#: taguette/web/views.py:727
+#: taguette/web/views.py:746
 msgid "Invalid token"
 msgstr "Invalid token"
 
-#: taguette/web/views.py:731
+#: taguette/web/views.py:750
 msgid "No user associated with that token"
 msgstr "No user associated with that token"
 
-#: taguette/web/views.py:734
+#: taguette/web/views.py:753
 msgid "Password has already been changed"
 msgstr "Password has already been changed"
 
 #. Default tag name
-#: taguette/web/views.py:823
+#: taguette/web/views.py:842
 msgid "interesting"
 msgstr "interesting"
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:827
+#: taguette/web/views.py:846
 msgid "Further review required"
 msgstr "Further review required"
 
-#: taguette/web/views.py:866
+#: taguette/web/views.py:885
 msgid "You don't have permission to delete this project"
 msgstr "You don't have permission to delete this project"
 
-#: taguette/web/views.py:900 taguette/web/views.py:927
+#: taguette/web/views.py:919 taguette/web/views.py:946
 msgid "You don't have permission to import a codebook"
 msgstr "You don't have permission to import a codebook"
 
-#: taguette/web/views.py:946
+#: taguette/web/views.py:965
 #, python-format
 msgid "Row %d: %s"
 msgstr "Row %d: %s"
 
-#: taguette/web/views.py:1084
+#: taguette/web/views.py:1103
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr "Error importing codes, concurrent changes caused a conflict"
 
-#: taguette/web/views.py:1099
+#: taguette/web/views.py:1118
 msgid "No file provided"
 msgstr "No file provided"
 
@@ -1164,33 +1164,34 @@ msgid "Log in"
 msgstr "Log in"
 
 #: taguette/templates/auth/cilogon.login.html:9
-msgid "Authentication process by CILogon"
-msgstr ""
-
-#: taguette/templates/auth/cilogon.login.html:10
 msgid ""
-"<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
-"facilitates secure\n"
-"                access to CyberInfrastructures and supports thousands of "
-"identity providers (IdPs) including University\n"
-"                campuses around the world."
+"LibreQDA uses <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
+"by redirecting them to their chosen identity provider."
 msgstr ""
 
-#: taguette/templates/auth/cilogon.login.html:13
+
+#: taguette/templates/auth/cilogon.login.html:11
 msgid ""
-"After you click \"Sign In with CILogon\", simply SELECT your home "
-"institution and then proceed\n"
-"                with the authentication process at your institution."
+"\n"
+"            If your institution is not listed or authentication fails, "
+"please contact your institution's IT department.\n"
+"            You can refer them to <a "
+"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">this "
+"page</a>.\n"
+"            <br>\n"
+"            Do not contact CILogon directly.\n"
+"            "
 msgstr ""
 
-#: taguette/templates/auth/cilogon.login.html:25
-msgid "Select from list"
-msgstr "Select from list"
 
-#: taguette/templates/auth/cilogon.login.html:34
-#, fuzzy
-msgid "Log in with"
-msgstr "Log in"
+#: taguette/templates/auth/cilogon.login.html:30
+msgid "Select your institution"
+msgstr "Select your institution"
+
+#: taguette/templates/auth/cilogon.login.html:45
+msgid "Continue to authentication with"
+msgstr "Continue to authentication with"
 
 #: taguette/templates/auth/account.html:4
 #: taguette/templates/auth/external_account.html:4
@@ -1500,4 +1501,30 @@ msgstr ""
 #~ msgctxt "exported highlight details"
 #~ msgid "Tags:"
 #~ msgstr "Codes:"
+
+#~ msgid "Authentication process by CILogon"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "<a target=\"_blank\" "
+#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilitates"
+#~ " secure\n"
+#~ "                access to CyberInfrastructures "
+#~ "and supports thousands of identity "
+#~ "providers (IdPs) including University\n"
+#~ "                campuses around the world."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "After you click \"Sign In with "
+#~ "CILogon\", simply SELECT your home "
+#~ "institution and then proceed\n"
+#~ "                with the authentication process at your institution."
+#~ msgstr ""
+
+#~ msgid "Select from list"
+#~ msgstr "Select from list"
+
+#~ msgid "Log in with"
+#~ msgstr "Log in"
 
