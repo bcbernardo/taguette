@@ -34,8 +34,23 @@
                     </div>
                     <div class="row">
                         <div class="col form-group">
-                            <label>{% trans %}Collections{% endtrans %}</label>
-                            <div id="document-change-collections-list"></div>
+                            <label for="document-change-collection-hierarchy-select" class="form-label">{% trans
+                                %}Collections{% endtrans %}</label>
+                            <div class='dropdown hierarchy-select' id='document-change-collection-hierarchy-select'>
+                                <button class="btn btn-secondary dropdown-toggle" type="button"
+                                    id="dropdownMenuButtonDocumentChangeCollection" data-bs-toggle="dropdown"
+                                    aria-expanded="false"></button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonDocumentChangeCollection">
+                                    <div class="hs-searchbox">
+                                        <input type="text" class="form-control" autocomplete="off">
+                                    </div>
+                                    <div class='hs-menu-inner'>
+                                    </div>
+                                </ul>
+                                <input class="d-none" id="document-change-collection-id"
+                                    name="document-change-collection-id" readonly="readonly" aria-hidden="true"
+                                    type="text" />
+                            </div>
                         </div>
                     </div>
                     <textarea class="form-control" id="document-change-description" name="document-change-description"

@@ -1170,17 +1170,36 @@ class Project(BaseHandler):
         # Convert the result to JSON
         tags_json = Markup(json.dumps(result_tree, sort_keys=True))
 
-        collections_json = Markup(json.dumps(
-            {
-                str(c.id): {'id': c.id, 'name': c.name,
-                              'description': c.description,
-                              'created': c.created.isoformat(),
-                              'document_ids': [d.id for d in c.documents],
+        # Group collections by their parent IDs
+        grouped_collections = defaultdict(list)
+
+        for collection in project.collections:
+            collection_parent_id = collection.parent.id if collection.parent else None
+            grouped_collections[collection_parent_id].append(collection)
+
+        # Function to build the collection tree structure
+        def build_collection_tree(parent_id):
+            children = []
+            for child_collection in grouped_collections[parent_id]:
+                child_id = child_collection.id
+                collection_parent_id = child_collection.parent.id if child_collection.parent else None
+                child_info = {
+                    "id": child_collection.id,
+                    "name": child_collection.name,
+                    "description": child_collection.description,
+                    "created": child_collection.created.isoformat(),
+                    "parent": collection_parent_id,
+                    "document_ids": [d.id for d in child_collection.documents],
+                    "children": build_collection_tree(child_id)
                 }
-                for c in project.collections
-            },
-            sort_keys=True,
-        ))
+                children.append(child_info)
+            return children
+
+        # Build the tree for collections with parent_id=None (root level)
+        collections_tree = build_collection_tree(None)
+
+        # Convert the result to JSON
+        collections_json = Markup(json.dumps(collections_tree, sort_keys=True))
 
         documents_json = Markup(json.dumps(
             {

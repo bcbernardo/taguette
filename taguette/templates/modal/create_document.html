@@ -34,8 +34,22 @@
                     </div>
                     <div class="row">
                         <div class="col form-group">
-                            <label>{% trans %}Add to collections{% endtrans %}</label>
-                            <div id="document-add-collections-list"></div>
+                            <label for="document-collection-hierarchy-select" class="form-label">{% trans %}Add to
+                                collections{% endtrans %}</label>
+                            <div class='dropdown hierarchy-select' id='document-collection-hierarchy-select'>
+                                <button class="btn btn-secondary dropdown-toggle" type="button"
+                                    id="dropdownMenuButtonDocumentCollection" data-bs-toggle="dropdown"
+                                    aria-expanded="false"></button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonDocumentCollection">
+                                    <div class="hs-searchbox">
+                                        <input type="text" class="form-control" autocomplete="off">
+                                    </div>
+                                    <div class='hs-menu-inner'>
+                                    </div>
+                                </ul>
+                                <input class="d-none" id="document-add-collection-id" name="document-add-collection-id"
+                                    readonly="readonly" aria-hidden="true" type="text" />
+                            </div>
                         </div>
                     </div>
                     <textarea class="form-control" id="document-add-description" name="document-add-description"

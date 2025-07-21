@@ -1366,13 +1366,25 @@ class CreateCollection(BaseHandler):
             obj = self.get_json()
             name = obj.get('name', '').strip()
             description = obj.get('description', '').strip() if 'description' in obj else ''
+            parent_id = obj.get('parent_id', None)
+            
             if not name:
                 return self.send_error_json(400, self.gettext("Collection name is required"))
+            
+            # Validate parent if provided
+            if parent_id is not None:
+                parent_collection = self.db.query(database.Collection).filter_by(
+                    id=parent_id, project_id=project.id
+                ).first()
+                if not parent_collection:
+                    return self.send_error_json(400, self.gettext("Parent collection not found"))
+            
             collection = database.Collection(
                 name=name,
                 description=description,
                 project_id=project.id,
-                owner_login=self.current_user
+                owner_login=self.current_user,
+                parent_id=parent_id
             )
             self.db.add(collection)
             document_ids = obj.get('document_ids', [])
@@ -1391,3 +1403,100 @@ class CreateCollection(BaseHandler):
         except Exception as e:
             logger.exception("Error creating collection")
             return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
+
+
+class CollectionUpdate(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('collection_update')
+    def post(self, project_id, collection_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        try:
+            obj = self.get_json()
+            collection = self.db.query(database.Collection).get(int(collection_id))
+            if collection is None or collection.project_id != project.id:
+                return self.send_error_json(404, self.gettext("No such collection"))
+            if obj:
+                if 'name' in obj:
+                    if not obj['name'].strip():
+                        return self.send_error_json(400, self.gettext("Collection name is required"))
+                    collection.name = obj['name'].strip()
+                if 'description' in obj:
+                    validate.description(obj['description'])
+                    collection.description = obj['description']
+                if 'parent_id' in obj:
+                    parent_id = obj['parent_id']
+                    if parent_id is not None:
+                        parent_collection = self.db.query(database.Collection).filter_by(
+                            id=parent_id, project_id=project.id
+                        ).first()
+                        if not parent_collection:
+                            return self.send_error_json(400, self.gettext("Parent collection not found"))
+                        # Check for circular reference
+                        if parent_id == collection.id:
+                            return self.send_error_json(400, self.gettext("Collection cannot be its own parent"))
+                        # Check for circular reference in hierarchy
+                        if self._would_create_circular_reference(collection, parent_id):
+                            return self.send_error_json(400, self.gettext("Would create circular reference"))
+                    collection.parent_id = parent_id
+                if 'document_ids' in obj:
+                    # Clear existing documents
+                    collection.documents = []
+                    # Add new documents
+                    for doc_id in obj['document_ids']:
+                        document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
+                        if document:
+                            collection.documents.append(document)
+                
+                self.db.commit()
+                self.db.refresh(collection)
+                
+                return self.send_json({
+                    'id': collection.id,
+                    'name': collection.name,
+                    'description': collection.description,
+                    'parent_id': collection.parent_id,
+                    'document_ids': [d.id for d in collection.documents]
+                })
+        except validate.InvalidFormat as e:
+            logger.info("Error validating CollectionUpdate: %r", e)
+            return self.send_error_json(400, self.gettext(e.message))
+        except Exception as e:
+            logger.exception("Error updating collection")
+            return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
+    
+    def _would_create_circular_reference(self, collection, new_parent_id):
+        """Check if setting new_parent_id as parent would create a circular reference"""
+        current_id = new_parent_id
+        while current_id is not None:
+            if current_id == collection.id:
+                return True
+            parent_collection = self.db.query(database.Collection).filter_by(
+                id=current_id, project_id=collection.project_id
+            ).first()
+            if not parent_collection:
+                break
+            current_id = parent_collection.parent_id
+        return False
+    
+    @api_auth
+    @PROM_REQUESTS.sync('collection_delete')
+    def delete(self, project_id, collection_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        collection = self.db.query(database.Collection).get(int(collection_id))
+        if collection is None or collection.project_id != project.id:
+            return self.send_error_json(404, self.gettext("No such collection"))
+        
+        # Check if collection has children
+        has_children = self.db.query(database.Collection).filter_by(parent_id=collection.id).first() is not None
+        if has_children:
+            return self.send_error_json(400, self.gettext("Cannot delete collection with subcollections"))
+        
+        self.db.delete(collection)
+        self.db.commit()
+        
+        self.set_status(204)
+        return self.finish()

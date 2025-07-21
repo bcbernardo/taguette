@@ -254,6 +254,11 @@ class Collection(Base):
     owner = relationship('User')
     project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
     project = relationship('Project', back_populates='collections')
+    
+    parent_id = Column(Integer, ForeignKey('collections.id', ondelete='CASCADE'),
+                       nullable=True, index=True)
+    parent = relationship('Collection', remote_side=[id])
+    
     documents = relationship(
         'Document',
         secondary=collection_documents,

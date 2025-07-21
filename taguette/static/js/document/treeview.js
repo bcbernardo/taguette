@@ -1,23 +1,33 @@
 const treeview_documents = $('#treeview-documents');
 
-// Convert documents and collections data to tree structure
-function convertDocumentsToTreeNode() {
-    const treeData = [];
+// Helper function to flatten hierarchical collections into flat object
+function flattenCollections(collectionsTree) {
+    const flat = {};
     
-    // Get all collections and sort by name
-    const collectionsEntries = Object.entries(collections);
-    collectionsEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    function addToFlat(nodes) {
+        for (let node of nodes) {
+            flat[node.id] = node;
+            if (node.children && node.children.length > 0) {
+                addToFlat(node.children);
+            }
+        }
+    }
     
-    // Add collections as parent nodes
-    for (let [collectionId, collection] of collectionsEntries) {
+    addToFlat(collectionsTree);
+    return flat;
+}
+
+// Convert collections hierarchy to tree nodes (similar to tags)
+function convertCollectionsToTreeNode(data) {
+    return data.map(collection => {
         const collectionNode = {
-            id: 'collection_' + collectionId,
+            id: 'collection_' + collection.id,
             text: collection.name,
             icon: 'fas fa-folder',
             selectable: false,
             nodes: []
         };
-        
+
         // Add documents in this collection
         if (collection.document_ids && collection.document_ids.length > 0) {
             for (let docId of collection.document_ids) {
@@ -33,15 +43,32 @@ function convertDocumentsToTreeNode() {
                 }
             }
         }
-        
-        // Sort documents in collection by name
+
+        // Add child collections recursively
+        if (collection.children && collection.children.length > 0) {
+            const childCollections = convertCollectionsToTreeNode(collection.children);
+            collectionNode.nodes.push(...childCollections);
+        }
+
+        // Sort all nodes (documents and child collections) by name
         collectionNode.nodes.sort((a, b) => a.text.localeCompare(b.text));
-        
-        // Add count badge - even if 0 documents
-        collectionNode.tags = [collectionNode.nodes.length.toString()];
-        
-        // Always add collection, even if empty
-        treeData.push(collectionNode);
+
+        // Add count badge for documents in this collection
+        const documentCount = collection.document_ids ? collection.document_ids.length : 0;
+        collectionNode.tags = [documentCount.toString()];
+
+        return collectionNode;
+    });
+}
+
+// Convert documents and collections data to tree structure
+function convertDocumentsToTreeNode() {
+    const treeData = [];
+    
+    // Add collections as hierarchical parent nodes
+    if (collections && collections.length > 0) {
+        const collectionNodes = convertCollectionsToTreeNode(collections);
+        treeData.push(...collectionNodes);
     }
     
     // Add uncategorized documents
@@ -150,6 +177,9 @@ function customDocumentNodeRow() {
             setTimeout(function() {
                 // For collections (with or without children)
                 if (node.id && node.id.startsWith('collection_')) {
+                    // Add context menu class for collections
+                    element.addClass('collection-context-menu');
+                    
                     // If no expand/collapse icon, add folder icon
                     if (element.find('.expand-icon, .collapse-icon').length === 0) {
                         element.prepend('<i class="node-icon fas fa-folder" style="margin-right: 8px;"></i> ');
