@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-07-15 19:26-0400\n"
+"POT-Creation-Date: 2025-07-21 16:12-0400\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
 "Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
 "Language: fr\n"
@@ -1184,11 +1184,6 @@ msgid ""
 "href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
 "by redirecting them to their chosen identity provider."
 msgstr ""
-"LibreQDA utilise <a target=\"_blank\" "
-"href=\"https://www.cilogon.org/home\">CILogon</a> "
-"pour vous rediriger vers un "
-"partenaire de connexion afin "
-"de vous authentifier."
 
 #: taguette/templates/auth/cilogon.login.html:11
 msgid ""
@@ -1202,24 +1197,18 @@ msgid ""
 "            Do not contact CILogon directly.\n"
 "            "
 msgstr ""
-"\n"
-"            Si vous institution n'est pas listée ou que la connexion échoue, "
-"veuillez contacter le service des TI de votre établissement.\n"
-"            Vous pouvez les référer à <a "
-"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">cette "
-"page</a>.\n"
-"            <br>\n"
-"            Ne contactez pas CILogon directement.\n"
-"            "
 
 #: taguette/templates/auth/cilogon.login.html:30
 msgid "Select your institution"
-msgstr "Sélectionner votre institution"
+msgstr "Sélectionnez votre institution"
 
 #: taguette/templates/auth/cilogon.login.html:45
 msgid "Continue to authentication with"
-msgstr "Continuer vers"
+msgstr "Continuez vers"
 
+#: taguette/templates/auth/cilogon.login.html:73
+msgid "Please select your institution from the list before continuing"
+msgstr "Veuillez sélectionner votre institution avant de continuer"
 
 #: taguette/templates/auth/account.html:4
 #: taguette/templates/auth/external_account.html:4
@@ -1428,165 +1417,4 @@ msgstr ""
 msgctxt "page title"
 msgid "Maintenance"
 msgstr "En maintenance"
-
-#~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
-#~ msgstr ""
-#~ "Bienvenue dans LibreQDA, un logiciel "
-#~ "d’analyse qualitative libre et ouvert."
-
-#~ msgid ""
-#~ "<p>To get the source code: <a "
-#~ "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-#~ " target=\"_blank\">Gitlab</a></p>"
-#~ msgstr ""
-#~ "<p>Pour consulter le code source : "
-#~ "<a href=\"https://gitlab.com/bin-cirst/libreqda/libre-"
-#~ "qda\" target=\"_blank\">Gitlab</a></p>"
-
-#~ msgid "<p>To consult documentation</p>"
-#~ msgstr "<p>Pour consulter la documentation</p>"
-
-#~ msgid ""
-#~ "<p>A mini project has been added "
-#~ "to your home screen to simulate an"
-#~ " analysis approach.</p>"
-#~ msgstr ""
-#~ "<p>Un mini projet a été ajouté à"
-#~ " votre écran d’accueil pour simuler "
-#~ "une démarche d’analyse.</p>"
-
-#~ msgid "Next"
-#~ msgstr "Suivant"
-
-#~ msgid "Back"
-#~ msgstr "Retour"
-
-#~ msgid "Continue"
-#~ msgstr "Continuer"
-
-#~ msgid "No highlights with this tag yet."
-#~ msgstr "No highlights with this tag yet."
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Accueil"
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Documents"
-
-#~ msgctxt "tab"
-#~ msgid "Highlights"
-#~ msgstr "Codes"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Gérer les collaborateurs"
-
-#~ msgid "Backlight"
-#~ msgstr "Rétroéclairage"
-
-#~ msgid "Export this view"
-#~ msgstr "Exporter cette vue"
-
-#~ msgid "Edit document"
-#~ msgstr "Modifier le document"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Search tags"
-#~ msgstr "Filtrer la liste"
-
-#~ msgctxt "modal window title"
-#~ msgid "Change tag"
-#~ msgstr "Modifier le code"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Description"
-#~ msgstr "Description"
-
-#~ msgid "Select tag"
-#~ msgstr "Sélectionner un code"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description demo project"
-#~ msgstr "Pour apprendre à utiliser LibreQDA"
-
-#~ msgid "You have no projects yet."
-#~ msgstr "Vous n'avez pas encore de projet."
-
-#~ msgctxt "button in project list"
-#~ msgid "Create a new project"
-#~ msgstr "Créer un nouveau projet"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description add new project"
-#~ msgstr "Pour débuter un nouveau projet"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description import a project file"
-#~ msgstr "Pour partir d'un projet existant"
-
-#~ msgctxt "button in project list"
-#~ msgid "Import a project file"
-#~ msgstr "Importer un projet depuis un fichier"
-
-#~ msgid "No tag found"
-#~ msgstr "Aucun code trouvé"
-
-#~ msgid ""
-#~ " | Please report issues via <a "
-#~ "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or "
-#~ "<a href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
-#~ msgstr ""
-
-#~ msgctxt "exported codebook document title"
-#~ msgid "Taguette Codebook"
-#~ msgstr "LibreQDA Codebook"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights: %(path)s"
-#~ msgstr "LibreQDA : sélections : %(path)s"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights"
-#~ msgstr "LibreQDA : sélections"
-
-#~ msgctxt "exported highlight details"
-#~ msgid "Tags:"
-#~ msgstr "Codes :"
-
-#~ msgid "Authentication process by CILogon"
-#~ msgstr "Le processus d'authentification est pris en charge par CILogon"
-
-#~ msgid ""
-#~ "<a target=\"_blank\" "
-#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilitates"
-#~ " secure\n"
-#~ "                access to CyberInfrastructures "
-#~ "and supports thousands of identity "
-#~ "providers (IdPs) including University\n"
-#~ "                campuses around the world."
-#~ msgstr ""
-#~ "<a target=\"_blank\" "
-#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilite "
-#~ "l'accès sécuritaire aux cyberinfrastructures "
-#~ "et supporte des milliers de fournisseurs"
-#~ " d'identité (IdPs) tels que les "
-#~ "universités dans le monde entier."
-
-#~ msgid ""
-#~ "After you click \"Sign In with "
-#~ "CILogon\", simply SELECT your home "
-#~ "institution and then proceed\n"
-#~ "                with the authentication process at your institution."
-#~ msgstr ""
-#~ "Après avoir appuyé sur le bouton "
-#~ "\"Connexion avec CILogon\", sélectionnez votre"
-#~ " institution et procédez avec "
-#~ "l'authentification."
-
-#~ msgid "Select from list"
-#~ msgstr "Sélectionnez dans la liste"
-
-#~ msgid "Log in with"
-#~ msgstr "Connexion avec"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-15 21:34-0400\n"
+"POT-Creation-Date: 2025-07-21 16:12-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1126,6 +1126,10 @@ msgstr ""
 
 #: taguette/templates/auth/cilogon.login.html:45
 msgid "Continue to authentication with"
+msgstr ""
+
+#: taguette/templates/auth/cilogon.login.html:73
+msgid "Please select your institution from the list before continuing"
 msgstr ""
 
 #: taguette/templates/auth/account.html:4

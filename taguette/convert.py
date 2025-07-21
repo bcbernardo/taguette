@@ -297,7 +297,11 @@ async def calibre_to_html(input_filename, temp_dir, config):
     cmd = [convert, input_filename, output_dir]
     if os.path.splitext(input_filename)[1].lower() == '.pdf':
         cmd.append('--no-images')
-    cmd_heuristics = cmd + ['--enable-heuristics']
+    cmd_heuristics = (cmd + ['--enable-heuristics']
+                      + ['--disable-unwrap-lines']
+                      + ['--input-encoding']
+                      + ['UTF-8']
+                      )
     logger.info("Running: %s", ' '.join(cmd_heuristics))
     try:
         try:
