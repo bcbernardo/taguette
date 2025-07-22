@@ -1,3 +1,6 @@
+variables:
+  CI_TEST_IMAGE: "moussatoure/libreqda:tests" #Docker Hub use TODO:phun account later
+  #CI_TEST_IMAGE: "${CI_REGISTRY_IMAGE}:tests" #GitLab Registry
 stages:
   - prepare_image
   - test
@@ -7,12 +10,17 @@ build_image:
   stage: prepare_image
   image: docker:latest
   services:
-  - name: docker:dind
-    alias: docker_dind
+    - name: docker:dind
+      alias: docker_dind
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  # Default branch leaves tag empty (= latest tag)
-  # All other branches are tagged with the escaped branch name (commit ref slug)
+    - |
+      if [ "$REGISTRY_TYPE" = "dockerhub" ]; then
+        echo "Using Docker Hub registry"
+        echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER" --password-stdin
+      else
+        echo "Using GitLab registry"
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+      fi
   script:
     - |
       echo '
@@ -37,12 +45,12 @@ build_image:
       RUN ls -la /usr/bin/ | grep chrome
       ' > Dockerfile
     - export DOCKER_HOST=unix:///var/run/docker.sock
-    - docker build --pull -t "${CI_REGISTRY_IMAGE}:tests" .
-    - docker push "${CI_REGISTRY_IMAGE}:tests"
+    - docker build --pull -t "$CI_TEST_IMAGE" .
+    - docker push "$CI_TEST_IMAGE"
 
 sqlite3:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
@@ -61,7 +69,7 @@ sqlite3:
 
 sqlite3_redis:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   services:
     - redis:latest
   script:
@@ -69,7 +77,7 @@ sqlite3_redis:
 
 frontend_firefox:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   script:
     - >
       TAGUETTE_TEST_WEBDRIVER=firefox xvfb-run python -m unittest
@@ -77,7 +85,7 @@ frontend_firefox:
 
 frontend_chromium_redis:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   services:
     - redis:latest
   script:
@@ -89,7 +97,7 @@ frontend_chromium_redis:
 
 frontend_chromium_subdir:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   script:
     - >
       TAGUETTE_TEST_WEBDRIVER=chromium
@@ -99,7 +107,7 @@ frontend_chromium_subdir:
 
 sqlite3_latest:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
@@ -112,7 +120,7 @@ sqlite3_latest:
 
 sqlite3_latest_pip:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   script:
     - curl -sSL https://install.python-poetry.org | python3 -
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
@@ -125,7 +133,7 @@ sqlite3_latest_pip:
 
 postgres:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   services:
     - postgres:latest
   variables:
@@ -137,7 +145,7 @@ postgres:
 
 mariadb:
   stage: test
-  image: ${CI_REGISTRY_IMAGE}:tests
+  image: $CI_TEST_IMAGE
   services:
     - mariadb:latest
   variables:

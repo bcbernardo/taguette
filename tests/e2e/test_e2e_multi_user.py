@@ -307,6 +307,9 @@ class Test2E2MultiUser(SeleniumTest):
         # Check tags
         tag_links = self.find_children_by_id(
             'treeview-tags', 'node-treeview-tags')
+
+        await asyncio.sleep(1)
+
         self.assertEqual(
             [link.text.split('\n')[0] for link in tag_links],
             ['interesting', 'people'],
@@ -537,6 +540,8 @@ class Test2E2MultiUser(SeleniumTest):
         await asyncio.sleep(0.5)
         self.set_value("tag-add-path", "interesting.places")
         await self.s_click_button('save-tag-button')
+
+        await asyncio.sleep(1)
 
         # Finish editing highlight 1 in document 1
         self.assertEqual(
