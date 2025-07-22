@@ -450,7 +450,8 @@ class Command(Base):
 
     TYPES = {'project_meta', 'document_add', 'document_delete',
              'highlight_add', 'highlight_delete', 'tag_add', 'tag_delete',
-             'tag_merge', 'member_add', 'member_remove', 'project_import'}
+             'tag_merge', 'member_add', 'member_remove', 'project_import',
+             'collection_add', 'collection_delete', 'collection_update'}
 
     for n in TYPES:
         PROM_COMMAND.labels(n).inc(0)
@@ -636,6 +637,61 @@ class Command(Base):
             user_login=user_login,
             project_id=project_id,
             payload={'type': 'project_import'}  # keep in sync above
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id',
+                        'collection_name', 'description', 'parent_id', 'document_ids'],
+    )
+    def collection_add(cls, user_login, collection):
+        assert isinstance(collection.id, int)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_add',  # keep in sync above
+                     'collection_id': collection.id,
+                     'collection_name': collection.name,
+                     'description': collection.description,
+                     'parent_id': collection.parent_id,
+                     'document_ids': [d.id for d in collection.documents]}
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id'],
+    )
+    def collection_delete(cls, user_login, collection):
+        assert isinstance(collection, Collection)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_delete',  # keep in sync above
+                     'collection_id': collection.id}
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id',
+                        'collection_name',
+                        'description',
+                        'parent_id',
+                        'document_ids'],
+    )
+    def collection_update(cls, user_login, collection):
+        assert isinstance(collection, Collection)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_update',  # keep in sync above
+                     'collection_id': collection.id,
+                     'collection_name': collection.name,
+                     'description': collection.description,
+                     'parent_id': collection.parent_id,
+                     'document_ids': [d.id for d in collection.documents]}
         )
 
     def __repr__(self):

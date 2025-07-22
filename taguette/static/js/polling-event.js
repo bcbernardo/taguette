@@ -95,6 +95,24 @@ function longPollForEvents() {
                     addMember(event.member, event.privileges);
                 } else if (event.type === 'member_remove') {
                     removeMember(event.member);
+                } else if (event.type === 'collection_add') {
+                    addCollection({
+                        id: event.collection_id,
+                        name: event.collection_name,
+                        description: event.description,
+                        parent_id: event.parent_id,
+                        document_ids: event.document_ids
+                    });
+                } else if (event.type === 'collection_delete') {
+                    removeCollection(event.collection_id);
+                } else if (event.type === 'collection_update') {
+                    updateCollection({
+                        id: event.collection_id,
+                        name: event.collection_name,
+                        description: event.description,
+                        parent_id: event.parent_id,
+                        document_ids: event.document_ids
+                    });
                 }
 
                 if ('tag_count_changes' in event) {

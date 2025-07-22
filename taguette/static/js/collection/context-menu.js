@@ -1,4 +1,3 @@
-// Collection context menu implementation
 function addCollectionContextMenu() {
     $.contextMenu({
         selector: '.collection-context-menu',
@@ -61,16 +60,13 @@ const collectionActions = {
     delete: collectionId => deleteCollection(collectionId)
 };
 
-// Helper function to extract collection ID from node ID
 function extractCollectionId(nodeId) {
     if (!nodeId) return null;
     
-    // Extract from treeview-node-collection_123 format
     const match = nodeId.match(/collection_(\d+)/);
     return match ? parseInt(match[1]) : null;
 }
 
-// Helper function to find collection in the collections tree
 function findCollection(collectionId) {
     function searchInTree(collections) {
         for (let collection of collections) {
@@ -88,7 +84,6 @@ function findCollection(collectionId) {
     return searchInTree(collections);
 }
 
-// Initialize context menu when document is ready
 $(document).ready(function() {
     addCollectionContextMenu();
 }); 

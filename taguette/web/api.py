@@ -1371,7 +1371,6 @@ class CreateCollection(BaseHandler):
             if not name:
                 return self.send_error_json(400, self.gettext("Collection name is required"))
             
-            # Validate parent if provided
             if parent_id is not None:
                 parent_collection = self.db.query(database.Collection).filter_by(
                     id=parent_id, project_id=project.id
@@ -1387,12 +1386,21 @@ class CreateCollection(BaseHandler):
                 parent_id=parent_id
             )
             self.db.add(collection)
+            self.db.flush()
             document_ids = obj.get('document_ids', [])
             for doc_id in document_ids:
                 document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
                 if document:
                     collection.documents.append(document)
+            
+            cmd = database.Command.collection_add(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
             self.db.commit()
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
             self.db.refresh(collection)
             return self.send_json({
                 'id': collection.id,
@@ -1433,23 +1441,26 @@ class CollectionUpdate(BaseHandler):
                         ).first()
                         if not parent_collection:
                             return self.send_error_json(400, self.gettext("Parent collection not found"))
-                        # Check for circular reference
                         if parent_id == collection.id:
                             return self.send_error_json(400, self.gettext("Collection cannot be its own parent"))
-                        # Check for circular reference in hierarchy
                         if self._would_create_circular_reference(collection, parent_id):
                             return self.send_error_json(400, self.gettext("Would create circular reference"))
                     collection.parent_id = parent_id
                 if 'document_ids' in obj:
-                    # Clear existing documents
                     collection.documents = []
-                    # Add new documents
                     for doc_id in obj['document_ids']:
                         document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
                         if document:
                             collection.documents.append(document)
                 
+                cmd = database.Command.collection_update(
+                    self.current_user,
+                    collection,
+                )
+                self.db.add(cmd)
                 self.db.commit()
+                self.db.refresh(cmd)
+                self.application.notify_project(project.id, cmd)
                 self.db.refresh(collection)
                 
                 return self.send_json({
@@ -1467,17 +1478,17 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
     
     def _would_create_circular_reference(self, collection, new_parent_id):
-        """Check if setting new_parent_id as parent would create a circular reference"""
+        # Prevent loops: A → B → C → A
         current_id = new_parent_id
         while current_id is not None:
-            if current_id == collection.id:
+            if current_id == collection.id:  # Loop detected!
                 return True
             parent_collection = self.db.query(database.Collection).filter_by(
                 id=current_id, project_id=collection.project_id
             ).first()
             if not parent_collection:
                 break
-            current_id = parent_collection.parent_id
+            current_id = parent_collection.parent_id  # Go up hierarchy
         return False
     
     @api_auth
@@ -1490,13 +1501,19 @@ class CollectionUpdate(BaseHandler):
         if collection is None or collection.project_id != project.id:
             return self.send_error_json(404, self.gettext("No such collection"))
         
-        # Check if collection has children
         has_children = self.db.query(database.Collection).filter_by(parent_id=collection.id).first() is not None
         if has_children:
             return self.send_error_json(400, self.gettext("Cannot delete collection with subcollections"))
         
+        cmd = database.Command.collection_delete(
+            self.current_user,
+            collection,
+        )
+        self.db.add(cmd)
         self.db.delete(collection)
         self.db.commit()
+        self.db.refresh(cmd)
+        self.application.notify_project(project.id, cmd)
         
         self.set_status(204)
         return self.finish()

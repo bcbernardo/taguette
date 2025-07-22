@@ -21,6 +21,8 @@ function addDefaultValueCollection(parentContainer) {
 // Recursively generates items from collection hierarchy data
 function generateCollectionHierarchyItem(data, parentContainer, level) {
     $.each(data, function (index, item) {
+        if (!item) return;
+        
         const li = $("<li>");
         const a = $("<a>").addClass("dropdown-item")
             .attr("data-value", item.id)
@@ -57,7 +59,7 @@ function initHierarchySelectCollection(menu, select, withDefault = true) {
     });
 }
 
-// Init document collection hierarchy select dropdown
+
 function initDocumentCollectionHierarchySelect(initialValueSet = false) {
     initHierarchySelectCollection(hs_menu_inner_document, document_collection_hierarchy_select, true, initialValueSet);
 }

@@ -112,7 +112,6 @@ function removeDocument(document_id) {
  * Add document
  */
 
-// Helper function to flatten hierarchical collections into flat object
 function flattenCollections(collectionsTree) {
     const flat = {};
     
@@ -134,7 +133,6 @@ const document_add_modal = document.getElementById('document-add-modal');
 function createDocument() {
     document.getElementById('document-add-form').reset();
     
-    // Initialize hierarchy select for collections
     initDocumentCollectionHierarchySelect();
     
     $(document_add_modal).modal('show').drags({handle: '.modal-header'});
@@ -275,7 +273,6 @@ function editDocument(doc_id) {
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
 
-    // Pre-select first collection if document has collections
     const docCollections = documents['' + doc_id].collections || [];
     if (docCollections.length > 0) {
         const firstCollectionId = docCollections[0];
@@ -289,7 +286,6 @@ function editDocument(doc_id) {
         document.getElementById('dropdownMenuButtonDocumentChangeCollection').innerText = gettext('None');
     }
 
-    // Initialize hierarchy select for collections with initial value set
     initDocumentChangeCollectionHierarchySelect(true);
 
     $(document_change_modal).modal('show').drags({handle: '.modal-header'});
@@ -1480,21 +1476,22 @@ window.addEventListener('scroll', function() {
     scrollPos = document.documentElement.scrollTop;
 });
 
-// Collection management functions
 function editCollection(collectionId) {
     const collection = findCollection(collectionId);
     if (!collection) {
         console.error('Collection not found:', collectionId);
         return;
     }
+
+    console.log('editCollection', collection);
     
-    // Reset form and fill with existing data
     document.getElementById('collection-add-form').reset();
     document.getElementById('collection-add-id').value = '' + collectionId;
     document.getElementById('collection-add-name').value = collection.name;
     document.getElementById('collection-add-description').value = collection.description || '';
+
+    initCollectionHierarchySelect();
     
-    // Set parent collection if exists
     if (collection.parent) {
         document.getElementById('collection-add-parent-id').value = collection.parent;
         const parentCollection = findCollection(collection.parent);
@@ -1505,11 +1502,8 @@ function editCollection(collectionId) {
         document.getElementById('collection-add-parent-id').value = '';
         document.getElementById('dropdownMenuButtonCollection').innerText = gettext('None');
     }
+
     
-    // Initialize hierarchy select for parent collections
-    initCollectionHierarchySelect();
-    
-    // Populate documents list with existing selections
     const docListDiv = document.getElementById('collection-add-documents-list');
     docListDiv.innerHTML = '';
     const docEntries = Object.entries(documents);
@@ -1524,7 +1518,7 @@ function editCollection(collectionId) {
         checkbox.type = 'checkbox';
         checkbox.className = 'form-check-input me-2';
         checkbox.value = doc.id;
-        // Check if document is in this collection
+
         if (collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id))) {
             checkbox.checked = true;
         }
@@ -1533,13 +1527,11 @@ function editCollection(collectionId) {
         docListDiv.appendChild(label);
     }
     
-    // Update UI for edit mode
     document.getElementById('collection-add-label-new').style.display = 'none';
     document.getElementById('collection-add-label-change').style.display = '';
     document.getElementById('collection-add-cancel').style.display = 'none';
     document.getElementById('collection-add-delete').style.display = '';
     
-    // Show modal
     $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
 }
 
@@ -1554,7 +1546,6 @@ function deleteCollection(collectionId) {
         deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
             .then(function() {
                 showAlert(gettext('Collection deleted!'), 'success');
-                // TODO: rafraîchir la liste des collections si affichée
             })
             .catch(function(error) {
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
@@ -1568,19 +1559,16 @@ function createChildCollection(parentId) {
         console.error('Parent collection not found:', parentId);
         return;
     }
+
+    initCollectionHierarchySelect();
     
-    // Reset form and pre-select parent
     document.getElementById('collection-add-form').reset();
     document.getElementById('collection-add-id').value = '';
     
-    // Pre-select parent collection
     document.getElementById('collection-add-parent-id').value = parentId;
     document.getElementById('dropdownMenuButtonCollection').innerText = parentCollection.name;
+
     
-    // Initialize hierarchy select for parent collections
-    initCollectionHierarchySelect();
-    
-    // Populate documents list
     const docListDiv = document.getElementById('collection-add-documents-list');
     docListDiv.innerHTML = '';
     const docEntries = Object.entries(documents);
@@ -1598,7 +1586,6 @@ function createChildCollection(parentId) {
         docListDiv.appendChild(label);
     }
     
-    // Update UI for create mode
     document.getElementById('collection-add-label-new').style.display = '';
     document.getElementById('collection-add-label-change').style.display = 'none';
     document.getElementById('collection-add-cancel').style.display = '';
@@ -1607,19 +1594,16 @@ function createChildCollection(parentId) {
     $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
 }
 
-// Add collection
 const collection_add_modal = document.getElementById('collection-add-modal');
 
 function createCollection() {
     document.getElementById('collection-add-form').reset();
     document.getElementById('collection-add-id').value = '';
     
-    // Initialize hierarchy select for parent collections
     initCollectionHierarchySelect();
     
-    // Populate documents list
     const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = ''; // Vide la liste
+    docListDiv.innerHTML = '';
     const docEntries = Object.entries(documents);
     docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
     for (let i = 0; i < docEntries.length; ++i) {
@@ -1635,7 +1619,7 @@ function createCollection() {
         docListDiv.appendChild(label);
     }
     
-    // Update UI for create mode
+
     document.getElementById('collection-add-label-new').style.display = '';
     document.getElementById('collection-add-label-change').style.display = 'none';
     document.getElementById('collection-add-cancel').style.display = '';
@@ -1644,7 +1628,64 @@ function createCollection() {
     $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
 }
 
-$(function() {
+function addCollection(collectionData) {
+    console.log('Adding collection:', collectionData);
+    
+    const newCollection = {
+        id: collectionData.id,
+        name: collectionData.name,
+        description: collectionData.description,
+        parent: collectionData.parent_id,
+        document_ids: collectionData.document_ids,
+        children: []
+    };
+    
+    if (!collections) {
+        collections = [];
+    }
+    collections.push(newCollection);
+    
+    initDocumentsTreeview();
+    
+    console.log('Collection added successfully:', newCollection);
+}
+
+function removeCollection(collectionId) {
+    console.log('Removing collection:', collectionId);
+    
+    if (collections && Array.isArray(collections)) {
+        const index = collections.findIndex(c => c.id === collectionId);
+        if (index !== -1) {
+            collections.splice(index, 1);
+            console.log('Collection removed successfully:', collectionId);
+        } else {
+            console.warn('Collection not found for removal:', collectionId);
+        }
+    }
+    
+    initDocumentsTreeview();
+}
+
+function updateCollection(collectionData) {
+    console.log('Updating collection:', collectionData);
+    
+    if (collections && Array.isArray(collections)) {
+        const collection = collections.find(c => c.id === collectionData.id);
+        if (collection) {
+            collection.name = collectionData.name;
+            collection.description = collectionData.description;
+            collection.parent = collectionData.parent_id;
+            collection.document_ids = collectionData.document_ids;
+            console.log('Collection updated successfully:', collection);
+        } else {
+            console.warn('Collection not found for update:', collectionData.id);
+        }
+    }
+    
+    initDocumentsTreeview();
+}
+
+
     $('#collection-add-form').on('submit', function(e) {
         e.preventDefault();
         const collectionId = $('#collection-add-id').val();
@@ -1671,12 +1712,10 @@ $(function() {
         
         let url, method, successMsg;
         if (collectionId) {
-            // Edit mode
             url = `/api/project/${project_id}/collection/${collectionId}`;
             method = 'POST';
             successMsg = gettext('Collection updated!');
         } else {
-            // Create mode
             url = `/api/project/${project_id}/collection/new`;
             method = 'POST';
             successMsg = gettext('Collection created!');
@@ -1687,7 +1726,6 @@ $(function() {
                 $('#collection-add-modal').modal('hide');
                 $('#collection-add-form')[0].reset();
                 showAlert(successMsg, 'success');
-                // TODO: rafraîchir la liste des collections si affichée
             })
             .catch(function(error) {
                 const errorMsg = collectionId ? 
@@ -1697,7 +1735,7 @@ $(function() {
             });
     });
     
-    // Delete collection button
+
     $('#collection-add-delete').on('click', function(e) {
         e.preventDefault();
         const collectionId = $('#collection-add-id').val();
@@ -1706,17 +1744,15 @@ $(function() {
         const collection = findCollection(parseInt(collectionId));
         if (!collection) return;
         
-        if (confirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}))) {
+        showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function() {
             deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
                 .then(function() {
                     $('#collection-add-modal').modal('hide');
                     $('#collection-add-form')[0].reset();
                     showAlert(gettext('Collection deleted!'), 'success');
-                    // TODO: rafraîchir la liste des collections si affichée
                 })
                 .catch(function(error) {
                     showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
                 });
-        }
+        });
     });
-});
