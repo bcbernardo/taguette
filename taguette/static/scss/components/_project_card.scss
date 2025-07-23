@@ -1,0 +1,164 @@
+/* Project Card Styles */
+
+/*========================
+ Home - Project card
+=========================*/
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: $project-card-height;
+    width: 100%;
+    background-color: $color-bg;
+    text-align: center;
+    border-radius: $border-radius-default;
+    box-shadow: $default-shadow;
+    margin-bottom: $project-card-margin;
+    transition: transform 0.3s ease;
+}
+
+.description-container {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    padding-left: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.stats-container {
+    z-index: 1;
+}
+
+.project-card .fas {
+    color: $color-primary;
+}
+
+.action {
+    background-color: $color-primary;
+}
+
+.project-card:hover {
+    transform: scale(1.05);
+    border : 2px solid $color-primary;
+}
+
+.icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.project{
+    text-align: center;
+    font-size: $project-font-size-title;
+    font-weight: 600;
+    color: $color-bg;
+}
+
+.star{
+    font-size: 20px !important;
+    color: #b1b4b7;
+}
+
+.dot {
+    font-size: 20px !important;
+    color: #b1b4b7;
+}
+
+.project-icon {
+    border-radius: 50%;
+    background-color: $color-primary;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: -10px;
+}
+
+.project-icon span {
+    color: $color-bg;
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.project-card .name{
+    font-size: 20px;
+    color: #464e56;
+    font-weight: 600;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word !important;
+    overflow: hidden;
+    text-overflow: clip;
+    max-width: 300px;
+    text-decoration: underline;
+}
+
+.empty i.fas,
+.empty .project-icon {
+    visibility: hidden;
+}
+
+.quote{
+    text-align: center;
+    font-size: 14px;
+    font-weight: 400;
+    color: $color-bg;
+
+}
+
+.quote2 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #868e94;
+    text-align: left;
+    overflow: auto;
+    max-height: 80px;
+    margin: 0 3px;
+}
+
+.custom-hr {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 3px dotted #ccc !important;
+    text-align: center;
+    justify-content: center;
+    height: 0;
+    width: 100%;
+    background: transparent;
+    margin: 8px 0;
+}
+
+.no-underline,
+.no-underline:hover,
+.no-underline:visited,
+.no-underline:active {
+    text-decoration: none;
+}
+
+.tags-container {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    overflow: hidden;
+    background-color: $color-bg;
+}

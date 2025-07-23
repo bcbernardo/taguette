@@ -1,0 +1,40 @@
+/* Custom Checkbox Component */
+
+.custom-checkbox {
+    display: inline-block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.custom-checkbox .custom-control-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox .custom-control-label:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid $color-primary;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label:after {
+    content: "✓";
+    position: absolute;
+    left: 4px;
+    top: -2px;
+    font-size: 18px;
+    color: $color-primary;
+}
+
+.custom-checkbox:hover .custom-control-input ~ .custom-control-label:before {
+    background-color: #f0f0f0;
+}

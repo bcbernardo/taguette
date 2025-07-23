@@ -7,8 +7,9 @@
     <meta name="Description" content="Free and open source qualitative research tool">
     <link rel="stylesheet" href="{{ static_url('css/fa-all.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap.min.css') }}">
-      <link rel="stylesheet" href="{{ static_url('css/vendor/introjs.min.css') }}">
-      <link rel="stylesheet" href="{{ static_url('css/custom.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/vendor/introjs.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/themed.css') }}">
+
     {% block styles %}
     {% endblock %}
     <title>{% block title %}LibreQDA{% endblock %}</title>
@@ -21,8 +22,8 @@
       <div class="container">
         {% if active_page != "welcome" %}
         <a class="navbar-brand special-brand" href="{{ reverse_url('index') }}">
-            <img src="/static/logo.png" alt="LibreQDA" class="not-scrolled">
-            <img src="/static/logo-h.png" alt="LibreQDA" class="scrolled">
+            <div class="logo not-scrolled" title="LibreQDA"></div>
+            <div class="logo scrolled" title="LibreQDA"></div>
         </a>
         {% endif %}
         {% if not disable_navbar_toggle %}
@@ -117,6 +118,7 @@
     <script src="{{ static_url('js/vendor/jquery-3.7.1.js') }}"></script>
     <script src="{{ static_url('js/vendor/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ static_url('js/vendor/introjs.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ static_url('css/themed.css') }}">
 
     {% block morejs %}
     {% endblock %}

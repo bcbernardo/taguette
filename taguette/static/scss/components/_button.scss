@@ -1,0 +1,169 @@
+/* Button Styles */
+
+/* Colors for button primary */
+.btn.btn-primary {
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+}
+
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
+  background-color: $color-primary-hover !important;
+  border-color: $color-primary-hover !important;
+}
+
+.btn.btn-outline-primary {
+  color: $color-primary;
+  background-color: transparent;
+  background-image: none;
+  border-color: $color-primary;
+}
+
+.btn.btn-outline-primary:hover {
+  color: $color-bg !important;
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+}
+
+.btn.btn-outline-primary:focus, .btn-outline-primary.focus {
+  box-shadow: none !important;
+}
+
+.btn.btn-outline-primary:not(:disabled):not(.disabled).active:focus, .btn-outline-primary:not(:disabled):not(.disabled):active:focus, .show > .btn-outline-primary.dropdown-toggle:focus {
+  box-shadow: none !important;
+}
+
+.btn.btn-outline-secondary:not(:disabled):not(.disabled).active:focus, .btn-outline-secondary:not(:disabled):not(.disabled):active:focus, .show > .btn-outline-secondary.dropdown-toggle:focus {
+  box-shadow: none !important;
+}
+
+.btn.btn-outline-primary:not(:disabled):not(.disabled).active:focus, .btn-outline-primary:not(:disabled):not(.disabled):active:focus, .show > .btn-outline-primary.dropdown-toggle:focus {
+  color: $color-bg !important;
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+}
+
+.btn.btn-outline-primary.disabled, .btn-outline-primary:disabled {
+  color: $color-primary !important;
+  background-color: transparent !important;
+}
+
+.btn.btn-outline-primary:not(:disabled):not(.disabled):active, .btn-outline-primary:not(:disabled):not(.disabled).active,
+.show > .btn-outline-primary.dropdown-toggle {
+  color: $color-bg !important;
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+}
+
+.btn.btn-outline-primary:not(:disabled):not(.disabled):active:focus, .btn-outline-primary:not(:disabled):not(.disabled).active:focus,
+.show > .btn-outline-primary.dropdown-toggle:focus {
+  box-shadow: none !important;
+}
+
+/* Colors for secondary buttons */
+.btn.btn-outline-secondary {
+  background-color: $color-secondary;
+  border-color: $color-secondary;
+  color: $color-bg;
+}
+
+.btn.btn-secondary {
+  background-color: $color-secondary;
+  border-color: $color-secondary;
+  color: $color-bg;
+}
+
+.btn.btn-secondary:hover,
+.btn.btn-secondary:focus,
+.btn.btn-secondary:active {
+  background-color: $color-secondary-hover;
+  border-color: $color-secondary-hover;
+}
+
+.btn.btn-outline-secondary:hover,
+.btn.btn-outline-secondary:focus,
+.btn.btn-outline-secondary:active {
+  background-color: $color-secondary-hover;
+  border-color: $color-secondary-hover;
+}
+
+.btn.btn-secondary.me-3 {
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+}
+
+.btn.btn-secondary.me-3:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
+  background-color: $color-primary-hover !important;
+  border-color: $color-primary-hover !important;
+}
+
+.btn-sm.btn-outline-secondary {
+  color: $color-secondary-hover !important;
+  background-color: $color-bg !important;
+}
+
+.btn-sm.btn-outline-secondary:hover {
+  color: var(--bs-btn-hover-color) !important;
+  background-color: var(--bs-btn-hover-bg) !important;
+  border-color: var(--bs-btn-hover-border-color) !important;
+}
+
+.btn-sm.btn-outline-secondary.my-2 {
+  color: $color-secondary-hover !important;
+  background-color: $color-bg !important;
+}
+
+.btn-sm.btn-outline-secondary.my-2:hover {
+  color: var(--bs-btn-hover-color) !important;
+  background-color: var(--bs-btn-hover-bg) !important;
+  border-color: var(--bs-btn-hover-border-color) !important;
+}
+
+/* Colors for button info */
+.btn.btn-info {
+  background-color: $color-toolbar-highlight !important;
+}
+
+/* Search form button styles */
+form.search button {
+  color: $color-bg !important;
+  border: 1px solid $color-bg !important;
+}
+
+form.search button.btn-outline-primary:hover {
+  color: $color-secondary !important;
+  border-color: $color-bg !important;
+}
+
+/* Page selector buttons */
+button.page-selector {
+  display: none;
+}
+
+button.page-selector:disabled,
+button.page-selector[disabled]{
+  color: $color-toolbar !important;
+  background-color: rgba(245, 245, 245, 0.75) !important;
+}
+
+/* Button group styles for responsive design */
+@media (max-width: 768px) {
+  .btn-outline-secondary i {
+    transform: rotate(180deg);
+  }
+
+  .reduced-col .btn-outline-secondary i {
+    transform: rotate(-360deg) !important;
+  }
+}
+
+.btn-outline-secondary i {
+  transition: transform 0.3s;
+}
+
+.reduced-col .btn-outline-secondary i {
+  transform: rotate(180deg);
+}

@@ -17,6 +17,14 @@
 
 {% block contents %}
 <div class="container py-4">
+    {% if show_credits %}
+    <div class="credits-container">
+        <div class="credits-info-box">
+            <p>{% trans %}Maintained by{% endtrans %}</p>
+            <div class="credits-logo"></div>
+        </div>
+    </div>
+    {% endif %}
     <div id="messages-div"></div>
     {% if show_messages %}
     <script src="{{ reverse_url('messages.js') }}" async></script>

@@ -1,0 +1,62 @@
+/* Styling for Credits Container */
+
+.credits-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.credits-info-box {
+    background-color: rgb(191, 231, 191);
+    border: 1px solid #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: $credits-align-items;
+    margin: $credits-margin;
+    padding: $credits-padding;
+    flex-direction: $credits-flex-direction;
+    gap: $credits-gap;
+    width: 25%;
+    padding-left: 0.8rem;
+    border-radius: 5px;
+
+    @media (max-width: 1200px) {
+        flex-direction: column;
+        text-align: center;
+        max-width: 20%;
+        padding: 5px;
+    }
+
+    @media (max-width: 780px) {
+        flex-direction: column;
+        text-align: center;
+        min-width: 30%;
+        padding: 0.5px;
+        padding-top: 0.25rem;
+    }
+
+    @media (max-width: 350px) {
+        flex-direction: row;
+        min-width: 90%;
+        max-width: 90%;
+        padding: 0.25rem;
+        margin: 0.25rem auto;
+        font-size: 0.7rem;
+    }
+}
+
+.credits-info-box p {
+    font-size: medium;
+    padding:0;
+    margin: 0;
+}
+
+.container .credits-logo{
+    display: block;
+    background-image: url("/static/logo-h.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    min-width: 100px;
+    min-height: 50px;
+    margin: 0;
+}

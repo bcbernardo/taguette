@@ -552,3 +552,21 @@ function restoreSelection(saved) {
 function isFirefox() {
     return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 }
+
+/*
+ * Apply scroll behavior to all pages
+ * Previously page-project only (taguette.js)
+ */
+
+window.addEventListener('load', function() {
+    let scrollPos = 0;
+    window.addEventListener('scroll', function() {
+        let isScrollUp = scrollPos > document.documentElement.scrollTop;
+        if(document.documentElement.scrollTop < 50 || isScrollUp) {
+            document.body.classList.remove('scrolled');
+        } else if(!document.body.classList.contains('scrolled')) {
+            document.body.classList.add('scrolled');
+        }
+        scrollPos = document.documentElement.scrollTop;
+    });
+});
