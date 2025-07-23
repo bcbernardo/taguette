@@ -128,6 +128,13 @@ function addDocument(document) {
     
     updateDocumentsList();
     initDocumentsTreeview();
+    
+    // Expand parent collection and highlight new document
+    if (document.collections && document.collections.length > 0) {
+        const parentCollectionId = document.collections[0];
+        expandNodeParent(parentCollectionId);
+    }
+    highlightDocument(document.id);
 }
 
 function removeDocument(document_id) {
@@ -148,6 +155,12 @@ function removeDocument(document_id) {
     delete documents['' + document_id];
     updateDocumentsList();
     initDocumentsTreeview();
+    
+    // Expand parent collection to show the change
+    if (document && document.collections && document.collections.length > 0) {
+        const parentCollectionId = document.collections[0];
+        expandNodeParent(parentCollectionId);
+    }
     
     if (current_document === document_id) {
         window.history.pushState({}, "Project", base_path + '/project/' + project_id);
@@ -1310,43 +1323,36 @@ window.onpopstate = function (e) {
 };
 
 // documents tab filter
-const DOC_NOT_FOUND_MESSAGE = gettext("No documents found");
-const alert_docs_list = document.getElementById('alert-title-search');
+const DOCUMENT_NOT_FOUND_MESSAGE = gettext("No document or collection found");
+const alert_document_treeview = $('#alert-title-search');
 
-// Function to show no-results message
-function showNoResultsMessage() {
-    alert_docs_list.classList.remove('d-none');
-    alert_docs_list.innerHTML = `<strong>${DOC_NOT_FOUND_MESSAGE}</strong>`;
-}
-
-// Function to hide no-results message
-function hideNoResultsMessage() {
-    alert_docs_list.classList.add('d-none');
-}
-
-// documents tab filter
 function filterTitles() {
-    var input, filter, ul, li, txtValue;
-    var noResults = true;
-    input = document.getElementById("input-search-titles");
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("documents-list");
-    li = ul.getElementsByTagName("li");
-
-    for (var i = 0; i < li.length; i++) {
-        txtValue = li[i].textContent || li[i].innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-            noResults = false;
-        } else {
-            li[i].style.display = "none";
+    const filterText = document.getElementById("input-search-titles").value.toLowerCase();
+    alert_document_treeview.addClass('d-none');
+    
+    if(filterText === '') {
+        initDocumentsTreeview();
+        return;
+    }
+    
+    const filteredCollections = handleDocumentSearch(filterText);
+    
+    // Check if there are uncategorized documents that match the search
+    let hasUncategorizedMatches = false;
+    for (let [docId, document] of Object.entries(documents)) {
+        const docCollections = document.collections || [];
+        if (docCollections.length === 0 && document.name.toLowerCase().includes(filterText)) {
+            hasUncategorizedMatches = true;
+            break;
         }
     }
-
-    if (noResults) {
-        showNoResultsMessage();
-    } else {
-        hideNoResultsMessage();
+    
+    initDocumentsTreeview(filteredCollections);
+    
+    // Only show "no results" message if there are no filtered collections AND no uncategorized matches
+    if (filteredCollections.length === 0 && !hasUncategorizedMatches) {
+        alert_document_treeview.removeClass('d-none');
+        alert_document_treeview.html(`<strong>${DOCUMENT_NOT_FOUND_MESSAGE}</strong>`);
     }
 }
 
@@ -1726,6 +1732,12 @@ function addCollection(collectionData) {
     
     initDocumentsTreeview();
     
+    // Expand parent and highlight new collection
+    if (collectionData.parent_id) {
+        expandNodeParent(parseInt(collectionData.parent_id));
+    }
+    highlightCollection(collectionData.id);
+    
     console.log('Collection added successfully:', newCollection);
 }
 
@@ -1815,6 +1827,15 @@ function updateCollection(collectionData) {
     
     initDocumentsTreeview();
     
+    // Expand parent and highlight updated collection
+    if (collectionData.parent_id) {
+        expandNodeParent(parseInt(collectionData.parent_id));
+    } else if (oldParentId) {
+        // If moved to root, expand the old parent to show the change
+        expandNodeParent(oldParentId);
+    }
+    highlightCollection(collectionData.id);
+    
     console.log('Collection updated successfully:', existingCollection);
 }
 
@@ -1859,6 +1880,11 @@ function removeCollection(collectionId) {
     }
     
     initDocumentsTreeview();
+    
+    // Expand parent to show the change
+    if (collectionToRemove.parent) {
+        expandNodeParent(collectionToRemove.parent);
+    }
     
     console.log('Collection removed successfully:', collectionId);
 }
@@ -1934,3 +1960,65 @@ function removeCollection(collectionId) {
                 });
         });
     });
+
+function handleDocumentSearch(filterText) {
+    function searchInChildren(item) {
+        const filteredChildren = [];
+
+        item.children.forEach(child => {
+            const childMatches = child.name.toLowerCase().includes(filterText);
+            const childDocumentMatches = searchInDocuments(child);
+            const matchingChildren = searchInChildren(child);
+
+            if (childMatches || childDocumentMatches.length > 0 || matchingChildren.length > 0) {
+                filteredChildren.push({
+                    ...child,
+                    document_ids: childMatches ? child.document_ids : childDocumentMatches.map(doc => doc.document_id),
+                    children: matchingChildren
+                });
+            }
+        });
+
+        return filteredChildren;
+    }
+
+    function searchInDocuments(item) {
+        const matchingDocuments = [];
+        
+        if (item.document_ids && item.document_ids.length > 0) {
+            for (let docId of item.document_ids) {
+                const document = documents[docId.toString()];
+                if (document && document.name.toLowerCase().includes(filterText)) {
+                    matchingDocuments.push({
+                        id: 'document_' + docId,
+                        text: document.name,
+                        icon: 'fas fa-file-alt',
+                        selectable: false,
+                        document_id: parseInt(docId)
+                    });
+                }
+            }
+        }
+        
+        return matchingDocuments;
+    }
+
+    return collections
+        .map(item => {
+            const collectionMatches = item.name.toLowerCase().includes(filterText);
+            const documentMatches = searchInDocuments(item);
+            const filteredChildren = searchInChildren(item);
+
+            // Keep the collection if it matches OR if it has matching children OR if it has matching documents
+            if (collectionMatches || documentMatches.length > 0 || filteredChildren.length > 0) {
+                return {
+                    ...item,
+                    document_ids: collectionMatches ? item.document_ids : documentMatches.map(doc => doc.document_id),
+                    children: filteredChildren
+                };
+            }
+
+            return null;
+        })
+        .filter(item => item !== null);
+}

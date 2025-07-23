@@ -55,38 +55,53 @@ function convertCollectionsToTreeNode(data) {
     });
 }
 
-function convertDocumentsToTreeNode() {
+function convertDocumentsToTreeNode(filteredCollections = null) {
     const treeData = [];
     
-    if (collections && collections.length > 0) {
-        const collectionNodes = convertCollectionsToTreeNode(collections);
+    const collectionsToUse = filteredCollections || collections;
+    
+    if (collectionsToUse && collectionsToUse.length > 0) {
+        const collectionNodes = convertCollectionsToTreeNode(collectionsToUse);
         treeData.push(...collectionNodes);
     }
     
-    const uncategorizedDocs = [];
-    for (let [docId, document] of Object.entries(documents)) {
-        const docCollections = document.collections || [];
-        if (docCollections.length === 0) {
-            uncategorizedDocs.push({
-                id: 'document_' + docId,
-                text: document.name,
-                icon: 'fas fa-file-alt',
+    // Only show uncategorized documents if no filtered collections or if searching
+    const shouldShowUncategorized = !filteredCollections || filteredCollections.length === 0;
+    
+    if (shouldShowUncategorized) {
+        const uncategorizedDocs = [];
+        for (let [docId, document] of Object.entries(documents)) {
+            const docCollections = document.collections || [];
+            if (docCollections.length === 0) {
+                // If filtering, only include documents that match the search
+                if (filteredCollections) {
+                    const searchText = window.document.getElementById("input-search-titles")?.value.toLowerCase() || '';
+                    if (searchText && !document.name.toLowerCase().includes(searchText)) {
+                        continue;
+                    }
+                }
+                
+                uncategorizedDocs.push({
+                    id: 'document_' + docId,
+                    text: document.name,
+                    icon: 'fas fa-file-alt',
+                    selectable: false,
+                    document_id: parseInt(docId)
+                });
+            }
+        }
+        
+        if (uncategorizedDocs.length > 0) {
+            uncategorizedDocs.sort((a, b) => a.text.localeCompare(b.text));
+            treeData.push({
+                id: 'uncategorized',
+                text: gettext('Sans collection'),
+                icon: 'fas fa-folder-open',
                 selectable: false,
-                document_id: parseInt(docId)
+                nodes: uncategorizedDocs,
+                tags: [uncategorizedDocs.length.toString()]
             });
         }
-    }
-    
-    if (uncategorizedDocs.length > 0) {
-        uncategorizedDocs.sort((a, b) => a.text.localeCompare(b.text));
-        treeData.push({
-            id: 'uncategorized',
-            text: gettext('Sans collection'),
-            icon: 'fas fa-folder-open',
-            selectable: false,
-            nodes: uncategorizedDocs,
-            tags: [uncategorizedDocs.length.toString()]
-        });
     }
     
     return treeData;
@@ -169,8 +184,8 @@ function customDocumentNodeRow() {
     };
 }
 
-function initDocumentsTreeview() {
-    const treeData = convertDocumentsToTreeNode();
+function initDocumentsTreeview(filteredCollections = null) {
+    const treeData = convertDocumentsToTreeNode(filteredCollections);
     const customNodeOptions = customDocumentNodeRow();
     
     const options = {
@@ -195,7 +210,13 @@ function initDocumentsTreeview() {
     };
     
     treeview_documents.treeview(options);
-    treeview_documents.treeview('collapseAll');
+    
+    // If filtering, expand all nodes to show search results
+    if (filteredCollections) {
+        treeview_documents.treeview('expandAll');
+    } else {
+        treeview_documents.treeview('collapseAll');
+    }
 }
 
 function updateDocumentTreeviewHighlight(current_document) {
@@ -225,4 +246,56 @@ function findDocumentParentCollection(documentId) {
         const uncategorizedNode = allNodes.find(node => node.id === 'uncategorized');
         return uncategorizedNode ? uncategorizedNode.nodeId : null;
     }
+} 
+
+function findRootParent(collectionId) {
+    const collection = findCollection(collectionId);
+    if (collection && collection.parent) {
+        return findRootParent(collection.parent);
+    }
+    return collectionId;
+}
+
+function expandNodeParent(collectionParent) {
+    const rootParentId = findRootParent(collectionParent);
+    const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, rootParentId);
+    expandNode(treeview_documents, nodeId);
+}
+
+function expandNode(treeview, nodeId) {
+    const node = getNode(treeview, nodeId);
+    if (!node.state.expanded) {
+        treeview.treeview('expandNode', [parseInt(nodeId, 10),
+            {levels: 5, silent: false}]);
+    }
+}
+
+function highlightCollection(collectionId) {
+    const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, collectionId);
+    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    nodeElement.addClass('highlight-collection');
+    setTimeout(() => {
+        nodeElement.addClass('fade-out');
+    }, 3000);
+}
+
+function highlightDocument(documentId) {
+    const nodeId = getNodeIdFromTreeviewByDocumentId(treeview_documents, documentId);
+    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    nodeElement.addClass('highlight-document');
+    setTimeout(() => {
+        nodeElement.addClass('fade-out');
+    }, 3000);
+}
+
+function getNodeIdFromTreeviewByCollectionId(treeview, collectionId) {
+    const allNodes = treeview.treeview('getEnabled');
+    const node = allNodes.find(node => node.id === `collection_${collectionId}`);
+    return node ? node.nodeId : null;
+}
+
+function getNodeIdFromTreeviewByDocumentId(treeview, documentId) {
+    const allNodes = treeview.treeview('getEnabled');
+    const node = allNodes.find(node => node.id === `document_${documentId}`);
+    return node ? node.nodeId : null;
 } 
