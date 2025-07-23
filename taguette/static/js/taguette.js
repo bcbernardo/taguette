@@ -94,13 +94,61 @@ function projectMetadataChanged() {
  */
 
 function addDocument(document) {
+    // Save old collections for document updates
+    const oldCollections = documents['' + document.id]?.collections || [];
+    
     documents['' + document.id] = document;
+    
+    // Update collections
+    const newCollections = document.collections || [];
+    
+    // Remove from old collections
+    for (let collectionId of oldCollections) {
+        const collection = findCollection(parseInt(collectionId));
+        if (collection && collection.document_ids) {
+            const index = collection.document_ids.indexOf(document.id);
+            if (index !== -1) {
+                collection.document_ids.splice(index, 1);
+            }
+        }
+    }
+    
+    // Add to new collections
+    for (let collectionId of newCollections) {
+        const collection = findCollection(parseInt(collectionId));
+        if (collection) {
+            if (!collection.document_ids) {
+                collection.document_ids = [];
+            }
+            if (!collection.document_ids.includes(document.id)) {
+                collection.document_ids.push(document.id);
+            }
+        }
+    }
+    
     updateDocumentsList();
+    initDocumentsTreeview();
 }
 
 function removeDocument(document_id) {
+    // Remove from collections
+    const document = documents['' + document_id];
+    if (document && document.collections) {
+        for (let collectionId of document.collections) {
+            const collection = findCollection(parseInt(collectionId));
+            if (collection && collection.document_ids) {
+                const index = collection.document_ids.indexOf(parseInt(document_id));
+                if (index !== -1) {
+                    collection.document_ids.splice(index, 1);
+                }
+            }
+        }
+    }
+    
     delete documents['' + document_id];
     updateDocumentsList();
+    initDocumentsTreeview();
+    
     if (current_document === document_id) {
         window.history.pushState({}, "Project", base_path + '/project/' + project_id);
         loadDocument(null);
@@ -273,6 +321,8 @@ function editDocument(doc_id) {
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
 
+    initDocumentChangeCollectionHierarchySelect(true);
+
     const docCollections = documents['' + doc_id].collections || [];
     if (docCollections.length > 0) {
         const firstCollectionId = docCollections[0];
@@ -285,8 +335,6 @@ function editDocument(doc_id) {
         document.getElementById('document-change-collection-id').value = '';
         document.getElementById('dropdownMenuButtonDocumentChangeCollection').innerText = gettext('None');
     }
-
-    initDocumentChangeCollectionHierarchySelect(true);
 
     $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
@@ -1643,46 +1691,176 @@ function addCollection(collectionData) {
     if (!collections) {
         collections = [];
     }
-    collections.push(newCollection);
+    
+    // Check if collection has parent
+    if (collectionData.parent_id) {
+        const parentCollection = findCollection(parseInt(collectionData.parent_id));
+        if (parentCollection) {
+            if (!parentCollection.children) {
+                parentCollection.children = [];
+            }
+            parentCollection.children.push(newCollection);
+        } else {
+            // Parent not found, add to root level
+            collections.push(newCollection);
+        }
+    } else {
+        // Root level collection
+        collections.push(newCollection);
+    }
+    
+    // Update document collections
+    if (collectionData.document_ids && collectionData.document_ids.length > 0) {
+        for (let docId of collectionData.document_ids) {
+            const document = documents[docId.toString()];
+            if (document) {
+                if (!document.collections) {
+                    document.collections = [];
+                }
+                if (!document.collections.includes(collectionData.id)) {
+                    document.collections.push(collectionData.id);
+                }
+            }
+        }
+    }
     
     initDocumentsTreeview();
     
     console.log('Collection added successfully:', newCollection);
 }
 
-function removeCollection(collectionId) {
-    console.log('Removing collection:', collectionId);
-    
-    if (collections && Array.isArray(collections)) {
-        const index = collections.findIndex(c => c.id === collectionId);
-        if (index !== -1) {
-            collections.splice(index, 1);
-            console.log('Collection removed successfully:', collectionId);
-        } else {
-            console.warn('Collection not found for removal:', collectionId);
-        }
-    }
-    
-    initDocumentsTreeview();
-}
-
 function updateCollection(collectionData) {
     console.log('Updating collection:', collectionData);
     
-    if (collections && Array.isArray(collections)) {
-        const collection = collections.find(c => c.id === collectionData.id);
-        if (collection) {
-            collection.name = collectionData.name;
-            collection.description = collectionData.description;
-            collection.parent = collectionData.parent_id;
-            collection.document_ids = collectionData.document_ids;
-            console.log('Collection updated successfully:', collection);
+    // Find existing collection in hierarchy
+    const existingCollection = findCollection(parseInt(collectionData.id));
+    if (!existingCollection) {
+        console.warn('Collection not found for update:', collectionData.id);
+        return;
+    }
+    
+    const oldDocumentIds = existingCollection.document_ids || [];
+    const oldParentId = existingCollection.parent;
+    
+    // Update basic properties
+    existingCollection.name = collectionData.name;
+    existingCollection.description = collectionData.description;
+    existingCollection.document_ids = collectionData.document_ids;
+    
+    // Handle parent change if necessary
+    if (existingCollection.parent !== (collectionData.parent_id ? parseInt(collectionData.parent_id) : null)) {
+        existingCollection.parent = collectionData.parent_id ? parseInt(collectionData.parent_id) : null;
+        
+        // Remove from old parent
+        if (oldParentId) {
+            const oldParent = findCollection(oldParentId);
+            if (oldParent && oldParent.children) {
+                const index = oldParent.children.findIndex(c => c.id === parseInt(collectionData.id));
+                if (index !== -1) {
+                    oldParent.children.splice(index, 1);
+                }
+            }
         } else {
-            console.warn('Collection not found for update:', collectionData.id);
+            // Remove from root list
+            const index = collections.findIndex(c => c.id === parseInt(collectionData.id));
+            if (index !== -1) {
+                collections.splice(index, 1);
+            }
+        }
+        
+        // Add to new parent
+        if (collectionData.parent_id) {
+            const newParent = findCollection(parseInt(collectionData.parent_id));
+            if (newParent) {
+                if (!newParent.children) {
+                    newParent.children = [];
+                }
+                newParent.children.push(existingCollection);
+            } else {
+                // New parent not found, add to root level
+                collections.push(existingCollection);
+            }
+        } else {
+            // Add to root level
+            collections.push(existingCollection);
+        }
+    }
+    
+    // Update document collections
+    // Remove from old documents
+    for (let docId of oldDocumentIds) {
+        const document = documents[docId.toString()];
+        if (document && document.collections) {
+            const index = document.collections.indexOf(parseInt(collectionData.id));
+            if (index !== -1) {
+                document.collections.splice(index, 1);
+            }
+        }
+    }
+    
+    // Add to new documents
+    if (collectionData.document_ids && collectionData.document_ids.length > 0) {
+        for (let docId of collectionData.document_ids) {
+            const document = documents[docId.toString()];
+            if (document) {
+                if (!document.collections) {
+                    document.collections = [];
+                }
+                if (!document.collections.includes(parseInt(collectionData.id))) {
+                    document.collections.push(parseInt(collectionData.id));
+                }
+            }
         }
     }
     
     initDocumentsTreeview();
+    
+    console.log('Collection updated successfully:', existingCollection);
+}
+
+function removeCollection(collectionId) {
+    console.log('Removing collection:', collectionId);
+    
+    // Find collection in hierarchy
+    const collectionToRemove = findCollection(parseInt(collectionId));
+    if (!collectionToRemove) {
+        console.warn('Collection not found for removal:', collectionId);
+        return;
+    }
+    
+    // Remove from parent or root list
+    if (collectionToRemove.parent) {
+        const parent = findCollection(collectionToRemove.parent);
+        if (parent && parent.children) {
+            const index = parent.children.findIndex(c => c.id === parseInt(collectionId));
+            if (index !== -1) {
+                parent.children.splice(index, 1);
+            }
+        }
+    } else {
+        // Remove from root list
+        const index = collections.findIndex(c => c.id === parseInt(collectionId));
+        if (index !== -1) {
+            collections.splice(index, 1);
+        }
+    }
+    
+    // Remove from documents that belong to it
+    if (collectionToRemove.document_ids && collectionToRemove.document_ids.length > 0) {
+        for (let docId of collectionToRemove.document_ids) {
+            const document = documents[docId.toString()];
+            if (document && document.collections) {
+                const index = document.collections.indexOf(parseInt(collectionId));
+                if (index !== -1) {
+                    document.collections.splice(index, 1);
+                }
+            }
+        }
+    }
+    
+    initDocumentsTreeview();
+    
+    console.log('Collection removed successfully:', collectionId);
 }
 
 

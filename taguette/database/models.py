@@ -476,7 +476,8 @@ class Command(Base):
         payload_fields=['document_name',
                         'description',
                         'favorite',
-                        'text_direction'],
+                        'text_direction',
+                        'collections'],
     )
     def document_add(cls, user_login, document):
         assert isinstance(document.id, int)
@@ -488,7 +489,8 @@ class Command(Base):
                      'document_name': document.name,
                      'description': document.description,
                      'favorite': document.favorite,
-                     'text_direction': document.text_direction.name},
+                     'text_direction': document.text_direction.name,
+                     'collections': [c.id for c in document.collections]},
         )
 
     @classmethod

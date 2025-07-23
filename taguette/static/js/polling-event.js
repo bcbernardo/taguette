@@ -66,7 +66,8 @@ function longPollForEvents() {
                         name: event.document_name,
                         description: event.description,
                         favorite: event.favorite,
-                        text_direction: event.text_direction
+                        text_direction: event.text_direction,
+                        collections: event.collections
                     });
                 } else if (event.type === 'document_delete') {
                     removeDocument(event.document_id);
