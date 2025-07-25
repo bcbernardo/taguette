@@ -16,37 +16,42 @@
             {% endtrans %}
         </div>
 
-        <div class="d-flex align-items-center gap-3 flex-wrap mt-4">
-            <div class="dropdown hierarchy-select" id="entity_id-select">
-                <button class="btn btn-outline-secondary dropdown-toggle py-2 px-3" type="button"
-                        id="entity_idButtonTag" data-bs-toggle="dropdown"
-                        aria-expanded="false"></button>
-                <ul class="dropdown-menu" aria-labelledby="entity_idButtonTag">
-                    <div class="hs-searchbox">
-                        <input type="text" class="form-control" autocomplete="off">
-                    </div>
-                    <div class='hs-menu-inner'>
-                        <a class="dropdown-item" data-value="" data-level="1" href="#">
-                            {% trans %}Select your institution{% endtrans %}
-                        </a>
-                        {% for idp in idps %}
-                            <a class="dropdown-item" data-value="{{ idp['entityid'] }}" data-level="1" href="#"
-                               {% if idp['entityid'] == entity_id %}selected=""{% endif %}>
-                                {{ idp['name'] }}
+        <div class="row mt-4 g-3">
+            <div class="col-12 col-sm">
+                <div class="dropdown hierarchy-select w-100" id="entity_id-select">
+                    <button class="btn btn-outline-secondary dropdown-toggle w-100 py-2 px-3" type="button"
+                            id="entity_idButtonTag" data-bs-toggle="dropdown"
+                            aria-expanded="false"></button>
+                    <ul class="dropdown-menu" aria-labelledby="entity_idButtonTag">
+                        <div class="hs-searchbox">
+                            <input type="text" class="form-control" autocomplete="off">
+                        </div>
+                        <div class="hs-menu-inner">
+                            <a class="dropdown-item" data-value="" data-level="1" href="#">
+                                {% trans %}Select your institution{% endtrans %}
                             </a>
-                        {% endfor %}
-                    </div>
-                </ul>
-                <input class="d-none" id="entity_id" name="entity_id" readonly="readonly" aria-hidden="true"
-                       type="text" {% if entity_id %}value="{{ entity_id }}"{% endif %}/>
+                            {% for idp in idps %}
+                                <a class="dropdown-item" data-value="{{ idp['entityid'] }}" data-level="1" href="#"
+                                   {% if idp['entityid'] == entity_id %}selected=""{% endif %}>
+                                    {{ idp['name'] }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </ul>
+                    <input class="d-none" id="entity_id" name="entity_id" readonly="readonly" aria-hidden="true"
+                           type="text" {% if entity_id %}value="{{ entity_id }}"{% endif %}/>
+                </div>
             </div>
 
-            <a class="btn btn-primary py-2 px-4" id="cilogon" href="/cilogon">
-                {% trans %}Continue to authentication with{% endtrans %} CILogon
-            </a>
+            <div class="col-12 col-sm-auto">
+                <a class="btn btn-primary w-100 py-2 px-4" id="cilogon" href="/cilogon">
+                    {% trans %}Continue to authentication with{% endtrans %} CILogon
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
 
 <!-- Alert modal -->
 {% include 'partials/alert.html' %}
