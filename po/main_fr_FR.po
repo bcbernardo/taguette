@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-05-06 14:58-0400\n"
+"POT-Creation-Date: 2025-07-21 16:12-0400\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
 "Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
 "Language: fr\n"
@@ -101,7 +101,7 @@ msgstr "Variable de configuration requise %(var)s est manquante"
 msgid "Invalid BASE_PATH"
 msgstr "BASE_PATH invalide"
 
-#: taguette/main.py:475
+#: taguette/main.py:478
 #, python-format
 msgid ""
 "\n"
@@ -236,78 +236,78 @@ msgstr "Le nom du projet est trop long"
 msgid "Invalid file name"
 msgstr "Fichier CSV invalide"
 
-#: taguette/web/views.py:197
+#: taguette/web/views.py:209
 msgid "Invalid login or password"
 msgstr "Nom d'utilisateur ou mot de passe invalide"
 
-#: taguette/web/views.py:256 taguette/web/views.py:608
-#: taguette/web/views.py:774
+#: taguette/web/views.py:271 taguette/web/views.py:627
+#: taguette/web/views.py:793
 msgid "Passwords do not match"
 msgstr "Les mots de passe ne correspondent pas"
 
-#: taguette/web/views.py:258
+#: taguette/web/views.py:273
 msgid "User name is taken"
 msgstr "Le nom d'utilisateur est déja utilisé"
 
-#: taguette/web/views.py:265
+#: taguette/web/views.py:280
 msgid "Email address is already used"
 msgstr "L'adresse email est déja utilisée"
 
-#: taguette/web/views.py:276
+#: taguette/web/views.py:291
 msgid "Terms of Service must be accepted"
 msgstr "Vous devez accepter les conditions d'utilisation"
 
-#: taguette/web/views.py:655
+#: taguette/web/views.py:674
 msgid "This email address is not associated with any user"
 msgstr "Cette adresse email n'est associée à aucun utilisateur"
 
-#: taguette/web/views.py:684
+#: taguette/web/views.py:703
 msgid "Password reset for Taguette"
 msgstr "Réinitialisation de mot de passe pour LibreQDA"
 
-#: taguette/web/views.py:727
+#: taguette/web/views.py:746
 msgid "Invalid token"
 msgstr "Jeton invalide"
 
-#: taguette/web/views.py:731
+#: taguette/web/views.py:750
 msgid "No user associated with that token"
 msgstr "Aucun utilisateur n'est associé avec ce jeton"
 
-#: taguette/web/views.py:734
+#: taguette/web/views.py:753
 msgid "Password has already been changed"
 msgstr "Le mot de passe a déjà été changé"
 
 #. Default tag name
-#: taguette/web/views.py:823
+#: taguette/web/views.py:842
 msgid "interesting"
 msgstr "intéressant"
 
 #. Default tag color
 #. Default tag description
-#: taguette/web/views.py:827
+#: taguette/web/views.py:846
 msgid "Further review required"
 msgstr "Plus d'analyse requise"
 
-#: taguette/web/views.py:866
+#: taguette/web/views.py:885
 msgid "You don't have permission to delete this project"
 msgstr "Vous n'êtes pas autorisé à supprimer ce project"
 
-#: taguette/web/views.py:900 taguette/web/views.py:927
+#: taguette/web/views.py:919 taguette/web/views.py:946
 msgid "You don't have permission to import a codebook"
 msgstr "Vous n'avez pas la permission d'importer des codes"
 
-#: taguette/web/views.py:946
+#: taguette/web/views.py:965
 #, python-format
 msgid "Row %d: %s"
 msgstr "Ligne %d : %s"
 
-#: taguette/web/views.py:1084
+#: taguette/web/views.py:1103
 msgid "Error importing tags, concurrent changes caused a conflict"
 msgstr ""
 "Erreur à l'importation des codes, des changements simultanés ont causé un"
 " conflit"
 
-#: taguette/web/views.py:1099
+#: taguette/web/views.py:1118
 msgid "No file provided"
 msgstr "Aucun fichier sélectionné"
 
@@ -1179,38 +1179,36 @@ msgid "Log in"
 msgstr "Connexion"
 
 #: taguette/templates/auth/cilogon.login.html:9
-msgid "Authentication process by CILogon"
-msgstr "Le processus d'authentification est pris en charge par CILogon"
-
-#: taguette/templates/auth/cilogon.login.html:10
 msgid ""
-"<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
-"facilitates secure\n"
-"                access to CyberInfrastructures and supports thousands of "
-"identity providers (IdPs) including University\n"
-"                campuses around the world."
+"LibreQDA uses <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
+"by redirecting them to their chosen identity provider."
 msgstr ""
-"<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
-"facilite l'accès sécuritaire aux cyberinfrastructures et supporte des "
-"milliers de fournisseurs d'identité (IdPs) tels que les universités dans "
-"le monde entier."
 
-#: taguette/templates/auth/cilogon.login.html:13
+#: taguette/templates/auth/cilogon.login.html:11
 msgid ""
-"After you click \"Sign In with CILogon\", simply SELECT your home "
-"institution and then proceed\n"
-"                with the authentication process at your institution."
+"\n"
+"            If your institution is not listed or authentication fails, "
+"please contact your institution's IT department.\n"
+"            You can refer them to <a "
+"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">this "
+"page</a>.\n"
+"            <br>\n"
+"            Do not contact CILogon directly.\n"
+"            "
 msgstr ""
-"Après avoir appuyé sur le bouton \"Connexion avec CILogon\", sélectionnez"
-" votre institution et procédez avec l'authentification."
 
-#: taguette/templates/auth/cilogon.login.html:25
-msgid "Select from list"
-msgstr "Sélectionnez dans la liste"
+#: taguette/templates/auth/cilogon.login.html:30
+msgid "Select your institution"
+msgstr "Sélectionnez votre institution"
 
-#: taguette/templates/auth/cilogon.login.html:34
-msgid "Log in with"
-msgstr "Connexion avec"
+#: taguette/templates/auth/cilogon.login.html:45
+msgid "Continue to authentication with"
+msgstr "Continuez vers"
+
+#: taguette/templates/auth/cilogon.login.html:73
+msgid "Please select your institution from the list before continuing"
+msgstr "Veuillez sélectionner votre institution avant de continuer"
 
 #: taguette/templates/auth/account.html:4
 #: taguette/templates/auth/external_account.html:4
@@ -1419,129 +1417,4 @@ msgstr ""
 msgctxt "page title"
 msgid "Maintenance"
 msgstr "En maintenance"
-
-#~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
-#~ msgstr ""
-#~ "Bienvenue dans LibreQDA, un logiciel "
-#~ "d’analyse qualitative libre et ouvert."
-
-#~ msgid ""
-#~ "<p>To get the source code: <a "
-#~ "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-#~ " target=\"_blank\">Gitlab</a></p>"
-#~ msgstr ""
-#~ "<p>Pour consulter le code source : "
-#~ "<a href=\"https://gitlab.com/bin-cirst/libreqda/libre-"
-#~ "qda\" target=\"_blank\">Gitlab</a></p>"
-
-#~ msgid "<p>To consult documentation</p>"
-#~ msgstr "<p>Pour consulter la documentation</p>"
-
-#~ msgid ""
-#~ "<p>A mini project has been added "
-#~ "to your home screen to simulate an"
-#~ " analysis approach.</p>"
-#~ msgstr ""
-#~ "<p>Un mini projet a été ajouté à"
-#~ " votre écran d’accueil pour simuler "
-#~ "une démarche d’analyse.</p>"
-
-#~ msgid "Next"
-#~ msgstr "Suivant"
-
-#~ msgid "Back"
-#~ msgstr "Retour"
-
-#~ msgid "Continue"
-#~ msgstr "Continuer"
-
-#~ msgid "No highlights with this tag yet."
-#~ msgstr "No highlights with this tag yet."
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Accueil"
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Documents"
-
-#~ msgctxt "tab"
-#~ msgid "Highlights"
-#~ msgstr "Codes"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Gérer les collaborateurs"
-
-#~ msgid "Backlight"
-#~ msgstr "Rétroéclairage"
-
-#~ msgid "Export this view"
-#~ msgstr "Exporter cette vue"
-
-#~ msgid "Edit document"
-#~ msgstr "Modifier le document"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Search tags"
-#~ msgstr "Filtrer la liste"
-
-#~ msgctxt "modal window title"
-#~ msgid "Change tag"
-#~ msgstr "Modifier le code"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Description"
-#~ msgstr "Description"
-
-#~ msgid "Select tag"
-#~ msgstr "Sélectionner un code"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description demo project"
-#~ msgstr "Pour apprendre à utiliser LibreQDA"
-
-#~ msgid "You have no projects yet."
-#~ msgstr "Vous n'avez pas encore de projet."
-
-#~ msgctxt "button in project list"
-#~ msgid "Create a new project"
-#~ msgstr "Créer un nouveau projet"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description add new project"
-#~ msgstr "Pour débuter un nouveau projet"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description import a project file"
-#~ msgstr "Pour partir d'un projet existant"
-
-#~ msgctxt "button in project list"
-#~ msgid "Import a project file"
-#~ msgstr "Importer un projet depuis un fichier"
-
-#~ msgid "No tag found"
-#~ msgstr "Aucun code trouvé"
-
-#~ msgid ""
-#~ " | Please report issues via <a "
-#~ "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or "
-#~ "<a href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
-#~ msgstr ""
-
-#~ msgctxt "exported codebook document title"
-#~ msgid "Taguette Codebook"
-#~ msgstr "LibreQDA Codebook"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights: %(path)s"
-#~ msgstr "LibreQDA : sélections : %(path)s"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights"
-#~ msgstr "LibreQDA : sélections"
-
-#~ msgctxt "exported highlight details"
-#~ msgid "Tags:"
-#~ msgstr "Codes :"
 
