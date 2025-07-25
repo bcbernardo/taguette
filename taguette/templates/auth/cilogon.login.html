@@ -75,7 +75,7 @@
         loginBtn.addEventListener('click', function (e) {
             if (!entityInput.value) {
                 e.preventDefault();
-                showAlert("Please select your institution from the list before continuing.", "error");
+                showAlert("{% trans %}Please select your institution from the list before continuing{% endtrans %}.", "error");
             }
         });
     });
