@@ -13,6 +13,7 @@ To compile a theme, run:
 
 ``` console
 poetry run make-theme <theme_name>
+<<<<<<< HEAD
 ```
 
 ## Customizing the logo
@@ -32,3 +33,6 @@ To customize:
 3. If the `$logo-main` variable is defined in your `_variables.scss`, it will overwrite the default logo. Otherwise, the default logo will be displayed.
 
 4. You can repeat the same steps for the horizontal version of the logo using the `$logo-horizontal` variable.
+=======
+```
+>>>>>>> 17ca13f (add a readme to the style directory)
