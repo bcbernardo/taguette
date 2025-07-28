@@ -1,6 +1,11 @@
 LibreQDA Changelog
 ==================
 
+1.0.2 (2025-07-25)
+------------------
+- Update CILogon authentication template and make it responsive
+- Update translations
+
 1.0.1 (2025-06-16)
 ------------------
 - OAuth authentication
