@@ -56,10 +56,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
+    width: $icon-circle-sm;
+    height: $icon-circle-sm;
     border-radius: 50%;
-    background-color: #f8f9fa;
+    background-color: $color-toolbar;
     color: #333;
     font-size: 24px;
     margin-bottom: 20px;
@@ -85,8 +85,8 @@
 .project-icon {
     border-radius: 50%;
     background-color: $color-primary;
-    width: 70px;
-    height: 70px;
+    width: $icon-circle-lg;
+    height: $icon-circle-lg;
     display: flex;
     align-items: center;
     justify-content: center;
