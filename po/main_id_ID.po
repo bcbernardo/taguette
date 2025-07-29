@@ -176,7 +176,6 @@ msgid "User login is too long"
 msgstr "Nama pengguna terlalu panjang"
 
 #: taguette/validate.py:60
-#, fuzzy
 msgid "User login is not lowercase"
 msgstr "Nama pengguna terlalu panjang"
 
@@ -221,12 +220,10 @@ msgid "Tag path is too long"
 msgstr "Path tag terlalu panjang"
 
 #: taguette/validate.py:115
-#, fuzzy
 msgid "File name is too long"
 msgstr "Nama proyek terlalu panjang"
 
 #: taguette/validate.py:117
-#, fuzzy
 msgid "Invalid file name"
 msgstr "Berkas CSV invalid"
 
@@ -349,7 +346,6 @@ msgid "No such tag"
 msgstr "Tidak ada tag seperti itu"
 
 #: taguette/web/api.py:610
-#, fuzzy
 msgid "Empty highlight"
 msgstr "Hapus sorotan"
 
@@ -412,7 +408,6 @@ msgstr "Syarat Layanan"
 
 #: taguette/templates/modal/create_highlight.html:25
 #: taguette/templates/project.html:28
-#, fuzzy
 msgid "Create a code"
 msgstr "Buat tag"
 
@@ -459,12 +454,10 @@ msgid "Search for a code"
 msgstr ""
 
 #: taguette/templates/project.html:59
-#, fuzzy
 msgid "Back to highlights"
 msgstr "Sorotan"
 
 #: taguette/templates/project.html:74
-#, fuzzy
 msgid "Load a document from your bookmarks or on the right"
 msgstr "Muat dokumen di sebelah kiri"
 
@@ -528,7 +521,6 @@ msgid "Go back"
 msgstr "Kembali"
 
 #: taguette/templates/partials/hlinfo.html:5
-#, fuzzy
 msgid "New code"
 msgstr "Proyek baru"
 
@@ -661,7 +653,6 @@ msgid "..."
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
 msgid "Export"
 msgstr "Impor"
 
@@ -673,19 +664,16 @@ msgid "Cancel"
 msgstr "Batal"
 
 #: taguette/templates/partials/confirm.html:6
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Confirm"
 msgstr "Konfirmasi kata sandi"
 
 #: taguette/templates/partials/confirm.html:12
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Cancel"
 msgstr "Batal"
 
 #: taguette/templates/partials/confirm.html:13
-#, fuzzy
 msgctxt "confirm modal confirm"
 msgid "Confirm"
 msgstr "Konfirmasi kata sandi"
@@ -801,7 +789,6 @@ msgid "Welcome"
 msgstr "Selamat datang"
 
 #: taguette/templates/welcome.html:9
-#, fuzzy
 msgid ""
 "<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
 "open-source web-based document tagging tool for qualitative data "
@@ -813,7 +800,6 @@ msgstr ""
 "kualitatif."
 
 #: taguette/templates/welcome.html:10
-#, fuzzy
 msgid ""
 "Using this tool, you can upload a collection of documents, create a "
 "hierarchy of codes, and annotate portions of documents with codes and "
@@ -916,7 +902,6 @@ msgid "New tag"
 msgstr "Tag baru"
 
 #: taguette/templates/modal/create_tag.html:8
-#, fuzzy
 msgctxt "modal window title"
 msgid "Change code"
 msgstr "Ubah tag"
@@ -939,13 +924,11 @@ msgstr ""
 
 #: taguette/templates/modal/create_tag.html:44
 #: taguette/templates/modal/create_tag.html:47
-#, fuzzy
 msgctxt " tag change form placeholder"
 msgid "Description"
 msgstr "Deskripsi"
 
 #: taguette/templates/modal/create_tag.html:53
-#, fuzzy
 msgctxt ""
 "button\n"
 "                    in tag change modal window"
@@ -1073,22 +1056,18 @@ msgid "Welcome!"
 msgstr "Selamat datang!"
 
 #: taguette/templates/index.html:33
-#, fuzzy
 msgid "Create a new project"
 msgstr "Buat proyek baru"
 
 #: taguette/templates/index.html:38
-#, fuzzy
 msgid "Import a project file"
 msgstr "Impor file proyek"
 
 #: taguette/templates/index.html:42
-#, fuzzy
 msgid "Demo project"
 msgstr "Proyek baru"
 
 #: taguette/templates/index.html:46
-#, fuzzy
 msgid "Here are your projects"
 msgstr "Berikut ini proyek Anda:"
 
@@ -1148,7 +1127,6 @@ msgid "Select from list"
 msgstr ""
 
 #: taguette/templates/auth/cilogon.login.html:34
-#, fuzzy
 msgid "Log in with"
 msgstr "Login"
 
@@ -1289,12 +1267,10 @@ msgid "This link will expire in 1 day."
 msgstr "Tautan ini hanya berlaku 1 hari"
 
 #: taguette/templates/base.html:35
-#, fuzzy
 msgid "Edit project"
 msgstr "Proyek baru"
 
 #: taguette/templates/base.html:42
-#, fuzzy
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Edit dokumen"

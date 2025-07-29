@@ -394,7 +394,6 @@ msgid "delete"
 msgstr "Löschen"
 
 #: taguette/static/js/tag/treeview.js:235
-#, fuzzy
 msgid "Documents"
 msgstr "Dokumente"
 

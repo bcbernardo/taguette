@@ -307,7 +307,6 @@ msgid "This page does not exist."
 msgstr "This page does not exist."
 
 #: taguette/web/base.py:473
-#, fuzzy
 msgid ""
 " | Please report issues via <a href=\"https://gitlab.com/bin-"
 "cirst/libreqda/libre-qda/\">GitLab</a> "
@@ -464,7 +463,6 @@ msgid "Back to highlights"
 msgstr "Back to highlights"
 
 #: taguette/templates/project.html:74
-#, fuzzy
 msgid "Load a document from your bookmarks or on the right"
 msgstr "Load a document from you favorites or the side menu"
 
@@ -665,7 +663,6 @@ msgid "..."
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
 msgid "Export"
 msgstr "Export"
 
@@ -930,7 +927,6 @@ msgstr "Parent code"
 
 #: taguette/templates/modal/create_tag.html:35
 #: taguette/templates/modal/create_tag.html:37
-#, fuzzy
 msgctxt "tag change form placeholder"
 msgid "Name"
 msgstr "Name"
@@ -1103,12 +1099,10 @@ msgid "Welcome!"
 msgstr "Welcome!"
 
 #: taguette/templates/index.html:34
-#, fuzzy
 msgid "Create a new project"
 msgstr "Create a new project"
 
 #: taguette/templates/index.html:40
-#, fuzzy
 msgid "Import a project file"
 msgstr "Import a project file"
 
@@ -1117,12 +1111,10 @@ msgid "Sponsor someone"
 msgstr ""
 
 #: taguette/templates/index.html:49
-#, fuzzy
 msgid "Demo project"
 msgstr "Demo project"
 
 #: taguette/templates/index.html:53
-#, fuzzy
 msgid "Here are your projects"
 msgstr "Here are your projects:"
 
@@ -1327,12 +1319,10 @@ msgid "This link will expire in 1 day."
 msgstr "This link will expire in 1 day."
 
 #: taguette/templates/base.html:36
-#, fuzzy
 msgid "Edit project"
 msgstr "New project"
 
 #: taguette/templates/base.html:43
-#, fuzzy
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Edit document"

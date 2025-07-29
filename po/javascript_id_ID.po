@@ -28,7 +28,6 @@ msgid "Found in %(nb)s document(s)"
 msgstr ""
 
 #: taguette/static/js/project/search.js:115
-#, fuzzy
 msgid "Error searching documents!"
 msgstr "Gagal memuat dokumen!"
 
@@ -104,7 +103,6 @@ msgid "<p>These can be expanded or collapsed.</p>"
 msgstr ""
 
 #: taguette/static/js/project/intro.js:96
-#, fuzzy
 msgid "Consulting documents"
 msgstr "Tidak dapat menghapus dokumen!"
 
@@ -295,7 +293,6 @@ msgid "No highlights with this tag yet."
 msgstr "Belum ada sorotan dengan tag ini."
 
 #: taguette/static/js/taguette.js:1207
-#, fuzzy
 msgid "No tag found"
 msgstr "tidak ada tag"
 
@@ -336,7 +333,6 @@ msgid "Add child"
 msgstr ""
 
 #: taguette/static/js/tag/context-menu.js:80
-#, fuzzy
 msgid "edit"
 msgstr "Sunting"
 
@@ -353,7 +349,6 @@ msgid "delete"
 msgstr ""
 
 #: taguette/static/js/tag/treeview.js:235
-#, fuzzy
 msgid "Documents"
 msgstr "Tidak dapat menghapus dokumen!"
 

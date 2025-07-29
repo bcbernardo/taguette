@@ -96,7 +96,6 @@ msgid "Missing required configuration variable %(var)s"
 msgstr "Vereiste configuratie variabele ontbreekt %(var)s"
 
 #: taguette/main.py:380
-#, fuzzy
 msgid "Invalid BASE_PATH"
 msgstr "Ongeldig teken"
 
@@ -176,7 +175,6 @@ msgid "User login is too long"
 msgstr "Gebruikerslogin is te lang"
 
 #: taguette/validate.py:60
-#, fuzzy
 msgid "User login is not lowercase"
 msgstr "Gebruikerslogin is te lang"
 
@@ -221,12 +219,10 @@ msgid "Tag path is too long"
 msgstr "Label-pad is te lang"
 
 #: taguette/validate.py:115
-#, fuzzy
 msgid "File name is too long"
 msgstr "Projectnaam is te lang"
 
 #: taguette/validate.py:117
-#, fuzzy
 msgid "Invalid file name"
 msgstr "Ongeldig email-adres"
 
@@ -287,7 +283,6 @@ msgid "You don't have permission to delete this project"
 msgstr "Je hebt geen toestemming om dit project te verwijderen"
 
 #: taguette/web/views.py:839 taguette/web/views.py:866
-#, fuzzy
 msgid "You don't have permission to import a codebook"
 msgstr "Je hebt geen toestemming om dit project te verwijderen"
 
@@ -326,7 +321,6 @@ msgid "Error %d"
 msgstr ""
 
 #: taguette/web/api.py:53
-#, fuzzy
 msgid "Not logged in"
 msgstr "Inloggen"
 
@@ -351,12 +345,10 @@ msgid "No such tag"
 msgstr ""
 
 #: taguette/web/api.py:610
-#, fuzzy
 msgid "Empty highlight"
 msgstr "Markering verwijderen"
 
 #: taguette/web/api.py:664 taguette/web/api.py:757
-#, fuzzy
 msgid "No such highlight"
 msgstr "Markeren"
 
@@ -403,7 +395,6 @@ msgid "Empty tag name"
 msgstr ""
 
 #: taguette/import_codebook.py:104
-#, fuzzy
 msgid "Invalid CSV file"
 msgstr "Ongeldig teken"
 
@@ -414,7 +405,6 @@ msgstr ""
 
 #: taguette/templates/modal/create_highlight.html:25
 #: taguette/templates/project.html:28
-#, fuzzy
 msgid "Create a code"
 msgstr "Label aanmaken"
 
@@ -461,12 +451,10 @@ msgid "Search for a code"
 msgstr ""
 
 #: taguette/templates/project.html:59
-#, fuzzy
 msgid "Back to highlights"
 msgstr "Markeringen"
 
 #: taguette/templates/project.html:74
-#, fuzzy
 msgid "Load a document from your bookmarks or on the right"
 msgstr "Laad links een document"
 
@@ -484,14 +472,12 @@ msgstr ""
 
 #: taguette/templates/project_import_codebook.html:3
 #: taguette/templates/project_import_codebook_confirm.html:3
-#, fuzzy
 msgctxt "page title"
 msgid "Import codebook"
 msgstr "Codeboek exporteren"
 
 #: taguette/templates/project_import_codebook.html:6
 #: taguette/templates/project_import_codebook_confirm.html:6
-#, fuzzy
 msgctxt "title"
 msgid "Import a codebook"
 msgstr "Codeboek exporteren"
@@ -508,7 +494,6 @@ msgid "You are about to create the following tags:"
 msgstr ""
 
 #: taguette/templates/project_import_codebook_confirm.html:19
-#, fuzzy
 msgctxt "codebook import tag option"
 msgid "Replace"
 msgstr "Aanmaken"
@@ -519,7 +504,6 @@ msgid "Import"
 msgstr "Importeren"
 
 #: taguette/templates/project_import_codebook_confirm.html:44
-#, fuzzy
 msgctxt "form submit button"
 msgid "Create tags"
 msgstr "Label aanmaken"
@@ -532,7 +516,6 @@ msgid "Go back"
 msgstr "Terug"
 
 #: taguette/templates/partials/hlinfo.html:5
-#, fuzzy
 msgid "New code"
 msgstr "Nieuw project"
 
@@ -649,7 +632,6 @@ msgid "PDF"
 msgstr ""
 
 #: taguette/templates/partials/project_sidebar.html:83
-#, fuzzy
 msgid "Import codebook"
 msgstr "Codeboek exporteren"
 
@@ -666,7 +648,6 @@ msgid "..."
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
 msgid "Export"
 msgstr "Importeren"
 
@@ -678,19 +659,16 @@ msgid "Cancel"
 msgstr "Annuleren"
 
 #: taguette/templates/partials/confirm.html:6
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Confirm"
 msgstr "Wachtwoord bevestigen"
 
 #: taguette/templates/partials/confirm.html:12
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Cancel"
 msgstr "Annuleren"
 
 #: taguette/templates/partials/confirm.html:13
-#, fuzzy
 msgctxt "confirm modal confirm"
 msgid "Confirm"
 msgstr "Wachtwoord bevestigen"
@@ -741,7 +719,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: taguette/templates/project_import.html:3
-#, fuzzy
 msgctxt "page title"
 msgid "Import project"
 msgstr "Project verwijderen"
@@ -778,7 +755,6 @@ msgid ""
 msgstr ""
 
 #: taguette/templates/project_import_codebook.html:15
-#, fuzzy
 msgctxt "form label for project name (readonly)"
 msgid "Project:"
 msgstr "Nieuw project"
@@ -808,7 +784,6 @@ msgid "Welcome"
 msgstr "Welkom"
 
 #: taguette/templates/welcome.html:9
-#, fuzzy
 msgid ""
 "<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
 "open-source web-based document tagging tool for qualitative data "
@@ -820,7 +795,6 @@ msgstr ""
 "kwalitatieve data-analyse."
 
 #: taguette/templates/welcome.html:10
-#, fuzzy
 msgid ""
 "Using this tool, you can upload a collection of documents, create a "
 "hierarchy of codes, and annotate portions of documents with codes and "
@@ -923,7 +897,6 @@ msgid "New tag"
 msgstr "Nieuw label"
 
 #: taguette/templates/modal/create_tag.html:8
-#, fuzzy
 msgctxt "modal window title"
 msgid "Change code"
 msgstr "Label wijzigen"
@@ -946,13 +919,11 @@ msgstr ""
 
 #: taguette/templates/modal/create_tag.html:44
 #: taguette/templates/modal/create_tag.html:47
-#, fuzzy
 msgctxt " tag change form placeholder"
 msgid "Description"
 msgstr "Beschrijving"
 
 #: taguette/templates/modal/create_tag.html:53
-#, fuzzy
 msgctxt ""
 "button\n"
 "                    in tag change modal window"
@@ -1046,7 +1017,6 @@ msgstr "Labels:"
 
 #: taguette/templates/auth/reset_password.html:3
 #: taguette/templates/new_password.html:3
-#, fuzzy
 msgctxt "page title"
 msgid "Reset password"
 msgstr "Nieuw wachtwoord aanmaken"
@@ -1082,7 +1052,6 @@ msgid "Welcome!"
 msgstr "Welkom!"
 
 #: taguette/templates/index.html:33
-#, fuzzy
 msgid "Create a new project"
 msgstr "Nieuw project"
 
@@ -1091,12 +1060,10 @@ msgid "Import a project file"
 msgstr ""
 
 #: taguette/templates/index.html:42
-#, fuzzy
 msgid "Demo project"
 msgstr "Nieuw project"
 
 #: taguette/templates/index.html:46
-#, fuzzy
 msgid "Here are your projects"
 msgstr "Hier zijn je projecten:"
 
@@ -1156,7 +1123,6 @@ msgid "Select from list"
 msgstr ""
 
 #: taguette/templates/auth/cilogon.login.html:34
-#, fuzzy
 msgid "Log in with"
 msgstr "Inloggen"
 
@@ -1296,12 +1262,10 @@ msgid "This link will expire in 1 day."
 msgstr "Deze link verloopt in 1 dag."
 
 #: taguette/templates/base.html:35
-#, fuzzy
 msgid "Edit project"
 msgstr "Nieuw project"
 
 #: taguette/templates/base.html:42
-#, fuzzy
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Document wijzigen"

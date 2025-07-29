@@ -321,7 +321,6 @@ msgid "This page does not exist."
 msgstr "Αυτή η σελίδα δεν υπάρχει."
 
 #: taguette/web/base.py:473
-#, fuzzy
 msgid ""
 " | Please report issues via <a href=\"https://gitlab.com/bin-"
 "cirst/libreqda/libre-qda/\">GitLab</a> "
@@ -424,7 +423,6 @@ msgstr "Όροι Παροχής Υπηρεσιών"
 
 #: taguette/templates/modal/create_highlight.html:25
 #: taguette/templates/project.html:28
-#, fuzzy
 msgid "Create a code"
 msgstr "Δημιουργίας ετικέτας"
 
@@ -471,12 +469,10 @@ msgid "Search for a code"
 msgstr ""
 
 #: taguette/templates/project.html:59
-#, fuzzy
 msgid "Back to highlights"
 msgstr "Επισημάνσεις"
 
 #: taguette/templates/project.html:74
-#, fuzzy
 msgid "Load a document from your bookmarks or on the right"
 msgstr "Τοποθετήστε ένα έγγραφο στα αριστερά"
 
@@ -541,7 +537,6 @@ msgid "Go back"
 msgstr "Πίσω"
 
 #: taguette/templates/partials/hlinfo.html:5
-#, fuzzy
 msgid "New code"
 msgstr "Νέο έργο"
 
@@ -674,7 +669,6 @@ msgid "..."
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
 msgid "Export"
 msgstr "Εισαγωγή"
 
@@ -686,19 +680,16 @@ msgid "Cancel"
 msgstr "Άκυρο"
 
 #: taguette/templates/partials/confirm.html:6
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Confirm"
 msgstr "Επιβεβαίωση κωδικού πρόσβασης"
 
 #: taguette/templates/partials/confirm.html:12
-#, fuzzy
 msgctxt "confirm modal"
 msgid "Cancel"
 msgstr "Άκυρο"
 
 #: taguette/templates/partials/confirm.html:13
-#, fuzzy
 msgctxt "confirm modal confirm"
 msgid "Confirm"
 msgstr "Επιβεβαίωση κωδικού πρόσβασης"
@@ -817,7 +808,6 @@ msgid "Welcome"
 msgstr "Καλωσορίσατε"
 
 #: taguette/templates/welcome.html:9
-#, fuzzy
 msgid ""
 "<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
 "open-source web-based document tagging tool for qualitative data "
@@ -829,7 +819,6 @@ msgstr ""
 "ανάλυση δεδομένων."
 
 #: taguette/templates/welcome.html:10
-#, fuzzy
 msgid ""
 "Using this tool, you can upload a collection of documents, create a "
 "hierarchy of codes, and annotate portions of documents with codes and "
@@ -933,13 +922,11 @@ msgid "New tag"
 msgstr "Νέα ετικέτα"
 
 #: taguette/templates/modal/create_tag.html:8
-#, fuzzy
 msgctxt "modal window title"
 msgid "Change code"
 msgstr "Αλλαγή ετικέτας"
 
 #: taguette/templates/modal/create_tag.html:18
-#, fuzzy
 msgctxt "tag change form placeholder"
 msgid "Parent code"
 msgstr ""
@@ -957,13 +944,11 @@ msgstr ""
 
 #: taguette/templates/modal/create_tag.html:44
 #: taguette/templates/modal/create_tag.html:47
-#, fuzzy
 msgctxt " tag change form placeholder"
 msgid "Description"
 msgstr "Περιγραφή"
 
 #: taguette/templates/modal/create_tag.html:53
-#, fuzzy
 msgctxt ""
 "button\n"
 "                    in tag change modal window"
@@ -1092,22 +1077,18 @@ msgid "Welcome!"
 msgstr "Καλωσορίσατε"
 
 #: taguette/templates/index.html:33
-#, fuzzy
 msgid "Create a new project"
 msgstr "Δημιουργία νέου έργου"
 
 #: taguette/templates/index.html:38
-#, fuzzy
 msgid "Import a project file"
 msgstr "Εισαγωγή ενός αρχείου έργου"
 
 #: taguette/templates/index.html:42
-#, fuzzy
 msgid "Demo project"
 msgstr "Νέο έργο"
 
 #: taguette/templates/index.html:46
-#, fuzzy
 msgid "Here are your projects"
 msgstr "Εδώ βρίσκονται τα έργα σας"
 
@@ -1167,7 +1148,6 @@ msgid "Select from list"
 msgstr ""
 
 #: taguette/templates/auth/cilogon.login.html:34
-#, fuzzy
 msgid "Log in with"
 msgstr "Σύνδεση"
 
@@ -1309,12 +1289,10 @@ msgid "This link will expire in 1 day."
 msgstr "Αυτός ο σύνδεσμος θα λήξει σε 1 ημέρα."
 
 #: taguette/templates/base.html:35
-#, fuzzy
 msgid "Edit project"
 msgstr "Νέο έργο"
 
 #: taguette/templates/base.html:42
-#, fuzzy
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Επεξεργασία εγγράφου"
