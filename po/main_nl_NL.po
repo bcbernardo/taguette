@@ -1336,7 +1336,7 @@ msgid "Search in documents"
 msgstr "Zoeken in documenten"
 
 #: taguette/templates/base.html:54
-#, fuzzy, python-format
+#, python-format
 msgctxt "navigation item"
 msgid "LibreQDA Guide %(external_icon)s"
 msgstr "LibreQDA Gids %(external_icon)s"
@@ -1398,101 +1398,3 @@ msgstr ""
 msgctxt "page title"
 msgid "Maintenance"
 msgstr "Onderhoud"
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Begin"
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Documenten"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Medewerkers beheren"
-
-#~ msgid "Backlight"
-#~ msgstr "Backlight"
-
-#~ msgid "Export this view"
-#~ msgstr "Exporteer dit overzicht"
-
-#~ msgctxt "form placeholder"
-#~ msgid "Enter a document name"
-#~ msgstr "Vul een documentnaam in"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Description"
-#~ msgstr "Beschrijving"
-
-#~ msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-#~ msgstr "<em>n</em>ieuwe markering <span class=\"sr-only\">(shortcut: n)</span>"
-
-#~ msgid "You have no projects yet."
-#~ msgstr "Je hebt nog geen projecten."
-
-#~ msgctxt "button in project list"
-#~ msgid "Create a new project"
-#~ msgstr ""
-
-#~ msgctxt "button in project list"
-#~ msgid "Import a project file"
-#~ msgstr ""
-
-#~ msgid ""
-#~ " | Please report issues via <a "
-#~ "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or "
-#~ "<a href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Taguette %(version)s is released under a"
-#~ " <a "
-#~ "href=\"https://gitlab.com/remram44/taguette/blob/master/LICENSE.txt\">BSD-3-Clause"
-#~ " license</a>, &#169; Rémi Rampin and "
-#~ "Taguette contributors | <a "
-#~ "href=\"https://www.taguette.org/getting-started.html\">User "
-#~ "Documentation</a>"
-#~ msgstr ""
-
-#~ msgctxt "exported codebook document title"
-#~ msgid "Taguette Codebook"
-#~ msgstr "LibreQDA codeboek"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights: %(path)s"
-#~ msgstr "LibreQDA markeringen: %(path)s"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights"
-#~ msgstr "LibreQDA markeringen"
-
-#~ msgctxt "exported highlight details"
-#~ msgid "Tags:"
-#~ msgstr "Labels:"
-
-#~ msgid "Authentication process by CILogon"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<a target=\"_blank\" "
-#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilitates"
-#~ " secure\n"
-#~ "                access to CyberInfrastructures "
-#~ "and supports thousands of identity "
-#~ "providers (IdPs) including University\n"
-#~ "                campuses around the world."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "After you click \"Sign In with "
-#~ "CILogon\", simply SELECT your home "
-#~ "institution and then proceed\n"
-#~ "                with the authentication process at your institution."
-#~ msgstr ""
-
-#~ msgid "Select from list"
-#~ msgstr ""
-
-#~ msgid "Log in with"
-#~ msgstr "Inloggen"
-

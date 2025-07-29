@@ -1324,7 +1324,7 @@ msgid "Search in documents"
 msgstr "Cari di dokumen"
 
 #: taguette/templates/base.html:54
-#, fuzzy, python-format
+#, python-format
 msgctxt "navigation item"
 msgid "LibreQDA Guide %(external_icon)s"
 msgstr "Panduan LibreQDA %(external_icon)s"
@@ -1364,7 +1364,7 @@ msgid "Bug report"
 msgstr "Laporan bug"
 
 #: taguette/templates/base.html:93
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
 "/bin-cirst/libreqda/libre-"
@@ -1386,83 +1386,4 @@ msgstr ""
 msgctxt "page title"
 msgid "Maintenance"
 msgstr "Pemeliharaan"
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Beranda"
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Dokumen"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Kelola kolaborator"
-
-#~ msgid "Backlight"
-#~ msgstr "Backlight"
-
-#~ msgid "Export this view"
-#~ msgstr "Ekspor tampilan ini"
-
-#~ msgctxt "form placeholder"
-#~ msgid "Enter a document name"
-#~ msgstr "Masukkan nama dokumen"
-
-#~ msgctxt "tag change form placeholder"
-#~ msgid "Description"
-#~ msgstr "Deskripsi"
-
-#~ msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-#~ msgstr "sorotan <em>b</em>aru <span class=\"sr-only\">(shortcut: b)</span>"
-
-#~ msgid "You have no projects yet."
-#~ msgstr "Anda belum punya proyek saat ini."
-
-#~ msgid ""
-#~ " | Please report issues via <a "
-#~ "href=\"https://gitlab.com/remram44/taguette\">GitLab</a> or "
-#~ "<a href=\"mailto:hi@taguette.org\">hi@taguette.org</a>!"
-#~ msgstr ""
-
-#~ msgctxt "exported codebook document title"
-#~ msgid "Taguette Codebook"
-#~ msgstr "Kode Buku LibreQDA"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights: %(path)s"
-#~ msgstr "Sorotan LibreQDA: %(path)s"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights"
-#~ msgstr "Sorotan LibreQDA"
-
-#~ msgctxt "exported highlight details"
-#~ msgid "Tags:"
-#~ msgstr "Tag:"
-
-#~ msgid "Authentication process by CILogon"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<a target=\"_blank\" "
-#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilitates"
-#~ " secure\n"
-#~ "                access to CyberInfrastructures "
-#~ "and supports thousands of identity "
-#~ "providers (IdPs) including University\n"
-#~ "                campuses around the world."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "After you click \"Sign In with "
-#~ "CILogon\", simply SELECT your home "
-#~ "institution and then proceed\n"
-#~ "                with the authentication process at your institution."
-#~ msgstr ""
-
-#~ msgid "Select from list"
-#~ msgstr ""
-
-#~ msgid "Log in with"
-#~ msgstr "Login"
 

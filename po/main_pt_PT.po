@@ -1335,7 +1335,7 @@ msgid "Search in documents"
 msgstr "Pesquisar em documentos"
 
 #: taguette/templates/base.html:54
-#, fuzzy, python-format
+#, python-format
 msgctxt "navigation item"
 msgid "LibreQDA Guide %(external_icon)s"
 msgstr "Guia do LibreQDA %(external_icon)s"
@@ -1375,7 +1375,7 @@ msgid "Bug report"
 msgstr "Relatar bug"
 
 #: taguette/templates/base.html:93
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
 "/bin-cirst/libreqda/libre-"

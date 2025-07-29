@@ -1317,7 +1317,7 @@ msgid "Search in documents"
 msgstr "Buscar en documentos"
 
 #: taguette/templates/base.html:54
-#, fuzzy, python-format
+#, python-format
 msgctxt "navigation item"
 msgid "LibreQDA Guide %(external_icon)s"
 msgstr "Guía de LibreQDA %(external_icon)s"
