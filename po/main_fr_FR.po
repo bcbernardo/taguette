@@ -152,7 +152,6 @@ msgid "User login is too long"
 msgstr "Le nom d'utilisateur est trop long"
 
 #: taguette/validate.py:60
-#, fuzzy
 msgid "User login is not lowercase"
 msgstr "Le nom d'utilisateur est trop long"
 
@@ -197,12 +196,10 @@ msgid "Tag path is too long"
 msgstr "Le chemin du code est trop long"
 
 #: taguette/validate.py:115
-#, fuzzy
 msgid "File name is too long"
 msgstr "Le nom du projet est trop long"
 
 #: taguette/validate.py:117
-#, fuzzy
 msgid "Invalid file name"
 msgstr "Fichier CSV invalide"
 
@@ -330,7 +327,6 @@ msgid "No such tag"
 msgstr "Code inconnu"
 
 #: taguette/web/api.py:619
-#, fuzzy
 msgid "Empty highlight"
 msgstr "Créer un code"
 
@@ -523,7 +519,6 @@ msgid "Existing code"
 msgstr "Code existant"
 
 #: taguette/templates/partials/project_sidebar.html:3
-#, fuzzy
 msgid "Close"
 msgstr "Couleur"
 
@@ -925,7 +920,6 @@ msgstr "Couleur"
 
 #: taguette/templates/modal/create_tag.html:44
 #: taguette/templates/modal/create_tag.html:47
-#, fuzzy
 msgctxt " tag change form placeholder"
 msgid "Description"
 msgstr "Description"

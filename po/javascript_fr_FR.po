@@ -338,7 +338,6 @@ msgid "No documents found"
 msgstr "Aucun document trouvé"
 
 #: taguette/static/js/taguette.js:1262
-#, fuzzy
 msgid "No tag found"
 msgstr "Pas de codes"
 
@@ -395,7 +394,6 @@ msgid "delete"
 msgstr "Supprimer"
 
 #: taguette/static/js/tag/treeview.js:235
-#, fuzzy
 msgid "Documents"
 msgstr "Vos documents"
 
