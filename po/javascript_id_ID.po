@@ -1,19 +1,21 @@
 # Indonesian (Indonesia) translations for LibreQDA and Taguette.
-# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de
+# Sherbrooke) and contributors
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
-# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# This file is distributed under the same license as the LibreQDA and
+# Taguette projects.
 # PHuN <phun@usherbrooke.ca>, 2023.
 # Remi Rampin <remi@rampin.org>, 2018.
 #
-# Translators:
+# First translators:
 # Mohammad Rizki <mohammadrizki.md@gmail.com>, 2022
 msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2024-12-02 10:14-0500\n"
+"POT-Creation-Date: 2025-07-29 10:10-0400\n"
 "PO-Revision-Date: 2022-09-30 20:04+0800\n"
-"Last-Translator: Mohammad Rizki <mohammadrizki@unram.ac.id>\n"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca>, with LLM assistance\n"
 "Language: id_ID\n"
 "Language-Team: Bahasa Indonesia <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -25,7 +27,7 @@ msgstr ""
 #: taguette/static/js/project/search.js:67
 #, python-format
 msgid "Found in %(nb)s document(s)"
-msgstr ""
+msgstr "Ditemukan di %(nb)s dokumen"
 
 #: taguette/static/js/project/search.js:115
 msgid "Error searching documents!"
@@ -37,46 +39,51 @@ msgid ""
 " by the Plateforme en humanités numériques (PHuN) at Université de "
 "Sherbrooke."
 msgstr ""
+"Selamat datang di LibreQDA, sebuah perangkat lunak analisis data kualitatif"
+" (QDA) yang dikembangkan oleh Plateforme en humanités numériques (PHuN) di "
+"Université de Sherbrooke."
 
 #: taguette/static/js/project/intro.js:15
 msgid ""
 "<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
 "target=\"_blank\">Gitlab repository</a></p>"
 msgstr ""
+"<p>Kunjungi <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">repositori Gitlab</a> kami</p>"
 
 #: taguette/static/js/project/intro.js:19
 msgid "<p>To consult the documentation</p>"
-msgstr ""
+msgstr "<p>Untuk melihat dokumentasi</p>"
 
 #: taguette/static/js/project/intro.js:24
 msgid "<p>A demo project has been added to your home page.</p>"
-msgstr ""
+msgstr "<p>Proyek demo telah ditambahkan ke beranda Anda.</p>"
 
 #: taguette/static/js/project/intro.js:31
 #: taguette/static/js/project/intro.js:176
 msgid "Next"
-msgstr ""
+msgstr "Berikutnya"
 
 #: taguette/static/js/project/intro.js:32
 #: taguette/static/js/project/intro.js:177
 msgid "Back"
-msgstr ""
+msgstr "Kembali"
 
 #: taguette/static/js/project/intro.js:33
 msgid "Continue"
-msgstr ""
+msgstr "Lanjutkan"
 
 #: taguette/static/js/project/intro.js:71
 msgid "Your documents"
-msgstr ""
+msgstr "Dokumen Anda"
 
 #: taguette/static/js/project/intro.js:72
 msgid "<p>Use this tab to load files and go through them.</p>"
-msgstr ""
+msgstr "<p>Gunakan tab ini untuk memuat dan meninjau file.</p>"
 
 #: taguette/static/js/project/intro.js:77
 msgid "Codebook"
-msgstr ""
+msgstr "Buku Kode"
 
 #: taguette/static/js/project/intro.js:78
 msgid ""
@@ -85,46 +92,53 @@ msgid ""
 "uses is indicated by the number on the right, and the number of documents"
 " on the left.</p>"
 msgstr ""
+"<p>Tab ini mencantumkan semua kode yang telah ditentukan. Tambahkan kode "
+"baru dengan tombol yang disediakan untuk tujuan tersebut.</p><br><p>Jumlah total "
+"penggunaan ditunjukkan dengan angka di kanan, dan jumlah dokumen di kiri.</p>"
 
 #: taguette/static/js/project/intro.js:83
 msgid "Parent codes"
-msgstr ""
+msgstr "Kode induk"
 
 #: taguette/static/js/project/intro.js:84
 msgid "<p>You can define codes that include child codes under them.</p>"
-msgstr ""
+msgstr "<p>Anda dapat menentukan kode yang menyertakan kode anak di bawahnya.</p>"
 
 #: taguette/static/js/project/intro.js:89
 msgid "Child codes"
-msgstr ""
+msgstr "Kode anak"
 
 #: taguette/static/js/project/intro.js:90
 msgid "<p>These can be expanded or collapsed.</p>"
-msgstr ""
+msgstr "<p>Ini bisa diperluas atau diciutkan.</p>"
 
 #: taguette/static/js/project/intro.js:96
 msgid "Consulting documents"
-msgstr "Tidak dapat menghapus dokumen!"
+msgstr "Melihat dokumen"
 
 #: taguette/static/js/project/intro.js:97
 msgid ""
 "<p>Click on a document to view its contents. Use the star to save your "
 "bookmarks.</p>"
 msgstr ""
+"<p>Klik dokumen untuk melihat isinya. Gunakan bintang untuk menyimpan "
+"penanda Anda.</p>"
 
 #: taguette/static/js/project/intro.js:102
 msgid "Coding"
-msgstr ""
+msgstr "Pengodean"
 
 #: taguette/static/js/project/intro.js:103
 msgid ""
 "<p>Select a portion of text with your cursor. Two buttons will appear to "
 "assign a code to the selection.</p>"
 msgstr ""
+"<p>Pilih sebagian teks dengan kursor Anda. Dua tombol akan muncul untuk "
+"menetapkan kode ke pilihan.</p>"
 
 #: taguette/static/js/project/intro.js:112
 msgid "Selecting a code"
-msgstr ""
+msgstr "Memilih kode"
 
 #: taguette/static/js/project/intro.js:113
 msgid ""
@@ -132,10 +146,13 @@ msgid ""
 " of the selection and save the changes. In this case, the selection "
 "refers to reinforcing social relationships.</p>"
 msgstr ""
+"<p>Dari menu, pilih satu atau lebih kode yang sesuai dengan konten "
+"pilihan dan simpan perubahannya. Dalam kasus ini, pilihan mengacu pada "
+"penguatan hubungan sosial.</p>"
 
 #: taguette/static/js/project/intro.js:120
 msgid "Exploring the codes"
-msgstr ""
+msgstr "Menjelajahi kode"
 
 #: taguette/static/js/project/intro.js:121
 msgid ""
@@ -143,30 +160,37 @@ msgid ""
 "during or after the coding process.</p><br><p> Show all of the selections"
 " tagged with a code from the codebook by clicking on it.</p>"
 msgstr ""
+"<p>Anda dapat menjelajahi pilihan teks yang diberi kode kapan saja "
+"selama atau setelah proses pengodean.</p><br><p>Tampilkan semua pilihan "
+"yang diberi kode dari buku kode dengan mengekliknya.</p>"
 
 #: taguette/static/js/project/intro.js:126
 msgid "Narrowing your search"
-msgstr ""
+msgstr "Mempersempit pencarian Anda"
 
 #: taguette/static/js/project/intro.js:127
 msgid ""
 "<p>If there are a large number of selections shown, you can refine the "
 "results with an advanced search.</p>"
 msgstr ""
+"<p>Jika ada banyak pilihan yang ditampilkan, Anda dapat menyaring "
+"hasil dengan pencarian lanjutan.</p>"
 
 #: taguette/static/js/project/intro.js:133
 msgid "Conditional selections"
-msgstr ""
+msgstr "Pilihan bersyarat"
 
 #: taguette/static/js/project/intro.js:134
 msgid ""
 "<p>By right-clicking, you can specify conditions to either add or exclude"
 " additional codes.</p>"
 msgstr ""
+"<p>Dengan mengeklik kanan, Anda dapat menentukan kondisi untuk menambah "
+"atau mengecualikan kode tambahan.</p>"
 
 #: taguette/static/js/project/intro.js:141
 msgid "Exploring the list"
-msgstr ""
+msgstr "Menjelajahi daftar"
 
 #: taguette/static/js/project/intro.js:142
 msgid ""
@@ -174,40 +198,47 @@ msgid ""
 "necessarily include the codes <i>barriers</i> and <i>skills "
 "development</i>.</p>"
 msgstr ""
+"<p>Label yang ditampilkan dengan kueri ini menunjukkan bahwa pilihan "
+"harus menyertakan kode <i>hambatan</i> dan <i>pengembangan keterampilan</i>.</p>"
 
 #: taguette/static/js/project/intro.js:148
 msgid "Navigating to documents"
-msgstr ""
+msgstr "Menavigasi ke dokumen"
 
 #: taguette/static/js/project/intro.js:149
 msgid ""
 "<p>By clicking on the name of the document, you can return to the "
 "context.</p>"
 msgstr ""
+"<p>Dengan mengeklik nama dokumen, Anda dapat kembali ke konteks.</p>"
 
 #: taguette/static/js/project/intro.js:155
 msgid "Returning to the selections"
-msgstr ""
+msgstr "Kembali ke pilihan"
 
 #: taguette/static/js/project/intro.js:156
 msgid ""
 "<p>After consulting the context, you can return to the list of selections"
 " previously identified using the advanced search.</p>"
 msgstr ""
+"<p>Setelah melihat konteks, Anda dapat kembali ke daftar pilihan "
+"yang sebelumnya diidentifikasi menggunakan pencarian lanjutan.</p>"
 
 #: taguette/static/js/project/intro.js:162
 msgid "Exporting"
-msgstr ""
+msgstr "Mengekspor"
 
 #: taguette/static/js/project/intro.js:163
 msgid ""
 "<p>You can choose to download these selections to your computer, as "
 "needed.</p>"
 msgstr ""
+"<p>Anda dapat memilih untuk mengunduh pilihan ini ke komputer Anda, sesuai "
+"kebutuhan.</p>"
 
 #: taguette/static/js/project/intro.js:167
 msgid "Time to code!"
-msgstr ""
+msgstr "Waktunya mengode!"
 
 #: taguette/static/js/project/intro.js:168
 msgid ""
@@ -216,121 +247,129 @@ msgid ""
 "these functions by continuing to code and explore these fictional "
 "interviews about board games.</p>"
 msgstr ""
+"<p>Gunakan LibreQDA sesuka Anda, karena data Anda selalu disimpan "
+"ke akun pribadi Anda. Jangan ragu untuk lebih membiasakan diri dengan "
+"fungsi-fungsi ini dengan terus mengode dan menjelajahi wawancara fiksi "
+"tentang permainan papan ini.</p>"
 
 #: taguette/static/js/project/intro.js:178
 msgid "Done"
-msgstr ""
+msgstr "Selesai"
 
 #: taguette/static/js/polling-event.js:111
 msgid "It appears that you have been logged out."
-msgstr "Sepertinya Anda sudah logout."
+msgstr "Sepertinya Anda telah keluar."
 
 #: taguette/static/js/polling-event.js:114
 msgid "You can no longer access this project."
-msgstr "Anda tidak dapat mengakses proyek ini lagi."
+msgstr "Anda tidak dapat lagi mengakses proyek ini."
 
-#: taguette/static/js/taguette.js:257
+#: taguette/static/js/taguette.js:267
 msgid "Document name cannot be empty"
 msgstr "Nama dokumen tidak boleh kosong"
 
-#: taguette/static/js/taguette.js:282
+#: taguette/static/js/taguette.js:292
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
-msgstr "Anda yakin hendak menghapus dokumen '%(doc)s'?"
+msgstr "Anda yakin ingin menghapus dokumen '%(doc)s'?"
 
-#: taguette/static/js/taguette.js:408
+#: taguette/static/js/taguette.js:418
 msgid "Invalid tag name"
-msgstr "Nama tag invalid"
+msgstr "Nama kode tidak valid"
 
-#: taguette/static/js/taguette.js:413
+#: taguette/static/js/taguette.js:423
 msgid "Impossible to define the same tag as parent"
-msgstr ""
+msgstr "Tidak mungkin mendefinisikan kode yang sama sebagai induk"
 
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:454
+#: taguette/static/js/taguette.js:464
 msgid "None"
-msgstr ""
+msgstr "Tidak ada"
 
-#: taguette/static/js/taguette.js:476
+#: taguette/static/js/taguette.js:486
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
-msgstr "Anda yakin hendak menghapus tag '%(tag)s'?"
+msgstr "Anda yakin ingin menghapus kode '%(tag)s'?"
 
-#: taguette/static/js/taguette.js:529
+#: taguette/static/js/taguette.js:539
 msgid "Couldn't merge tags!"
-msgstr "Tidak dapat menggabungkan tag!"
+msgstr "Tidak dapat menggabungkan kode!"
 
-#: taguette/static/js/taguette.js:688
+#: taguette/static/js/taguette.js:698
 msgid "Full permissions"
-msgstr "Wewenang penuh"
+msgstr "Izin penuh"
 
-#: taguette/static/js/taguette.js:689
+#: taguette/static/js/taguette.js:699
 msgid "Can't change collaborators / delete project"
-msgstr "Tidak dapat mengubah kolaborator/menghapus proyek"
+msgstr "Tidak dapat mengubah kolaborator / menghapus proyek"
 
-#: taguette/static/js/taguette.js:690
+#: taguette/static/js/taguette.js:700
 msgid "View & make changes"
-msgstr "Melihat dan membuat perubahan"
+msgstr "Lihat & buat perubahan"
 
-#: taguette/static/js/taguette.js:691
+#: taguette/static/js/taguette.js:701
 msgid "View only"
-msgstr "Melihat saja"
+msgstr "Lihat saja"
 
-#: taguette/static/js/taguette.js:763
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:773
 msgid "Already a member!"
-msgstr "Sudah terdaftar!"
+msgstr "Sudah menjadi anggota!"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:788
 msgid "This user doesn't exist!"
-msgstr "Pengguna tidak ditemukan"
+msgstr "Pengguna ini tidak ada!"
 
-#: taguette/static/js/taguette.js:846
+#: taguette/static/js/taguette.js:856
 msgid "Load a document on the left"
-msgstr "Muat dokumen di sebelah kiri"
+msgstr "Muat dokumen di kiri"
 
-#: taguette/static/js/taguette.js:1062
+#: taguette/static/js/taguette.js:1073
 msgid "No highlights with this tag yet."
-msgstr "Belum ada sorotan dengan tag ini."
+msgstr "Belum ada sorotan dengan kode ini."
 
-#: taguette/static/js/taguette.js:1207
+#: taguette/static/js/taguette.js:1216
+msgid "No documents found"
+msgstr "Tidak ada dokumen ditemukan"
+
+#: taguette/static/js/taguette.js:1262
 msgid "No tag found"
-msgstr "tidak ada tag"
+msgstr "Tidak ada kode ditemukan"
 
 #: taguette/static/js/tag/context-menu.js:35
 msgid "selectAll"
-msgstr ""
+msgstr "pilihSemua"
 
 #: taguette/static/js/tag/context-menu.js:41
 msgid "unselectAll"
-msgstr ""
+msgstr "batalkanPilihSemua"
 
 #: taguette/static/js/tag/context-menu.js:47
 msgid "Select With Condition"
-msgstr ""
+msgstr "Pilih Dengan Kondisi"
 
 #: taguette/static/js/tag/context-menu.js:52
 msgid "AND"
-msgstr ""
+msgstr "DAN"
 
 #: taguette/static/js/tag/context-menu.js:57
 msgid "OR"
-msgstr ""
+msgstr "ATAU"
 
 #: taguette/static/js/tag/context-menu.js:62
 msgid "NOT"
-msgstr ""
+msgstr "BUKAN"
 
 #: taguette/static/js/tag/context-menu.js:69
 msgid "collapse"
-msgstr ""
+msgstr "ciutkan"
 
 #: taguette/static/js/tag/context-menu.js:69
 msgid "expand"
-msgstr ""
+msgstr "perluas"
 
 #: taguette/static/js/tag/context-menu.js:75
 msgid "Add child"
-msgstr ""
+msgstr "Tambah anak"
 
 #: taguette/static/js/tag/context-menu.js:80
 msgid "edit"
@@ -338,234 +377,54 @@ msgstr "Sunting"
 
 #: taguette/static/js/tag/context-menu.js:85
 msgid "merge"
-msgstr ""
+msgstr "gabungkan"
 
 #: taguette/static/js/tag/context-menu.js:90
 msgid "deleteParent"
-msgstr ""
+msgstr "hapusInduk"
 
 #: taguette/static/js/tag/context-menu.js:96
 msgid "delete"
-msgstr ""
+msgstr "hapus"
 
 #: taguette/static/js/tag/treeview.js:235
 msgid "Documents"
-msgstr "Tidak dapat menghapus dokumen!"
+msgstr "Dokumen"
 
 #: taguette/static/js/tag/treeview.js:241
 msgid "Highlights"
-msgstr ""
+msgstr "Sorotan"
 
 #: taguette/static/js/document/manager.js:72
 msgid "Remove from Favorites"
-msgstr ""
+msgstr "Hapus dari Favorit"
 
 #: taguette/static/js/document/manager.js:72
 msgid "Add to Favorites"
-msgstr ""
+msgstr "Tambahkan ke Favorit"
 
 #: taguette/static/js/document/manager.js:92
 msgid "There are no documents in this project yet."
-msgstr "Belum ada dokumen di proyek ini"
+msgstr "Belum ada dokumen di proyek ini."
 
 #: taguette/static/js/document/manager.js:112
 msgid "Import new document"
+msgstr "Impor dokumen baru"
+
+#: taguette/static/js/permissions.js:25
+msgid "Can create projects"
+msgstr "Dapat membuat proyek"
+
+#: taguette/static/js/permissions.js:26
+msgid "Can't create projects"
+msgstr "Tidak dapat membuat proyek"
+
+#: taguette/static/js/permissions.js:98
+msgid ""
+"Cannot add this user<br/>Reasons : <ul><li>User cannot be "
+"found</li><li>User is already sponsored</li><li>User role cannot be "
+"changed</li></ul>"
 msgstr ""
-
-#~ msgid "Couldn't update project metadata!"
-#~ msgstr "Tidak dapat memperbarui metadata proyek"
-
-#~ msgid "Error uploading file!"
-#~ msgstr "Gagal mengunggah berkas!"
-
-#~ msgid "Couldn't update document!"
-#~ msgstr "Tidak dapat memperbarui dokumen!"
-
-#~ msgid "There are no tags in this project yet."
-#~ msgstr "Belum ada tag di proyek ini."
-
-#~ msgid "Couldn't create tag!"
-#~ msgstr "Tidak dapat membuat tag!"
-
-#~ msgid "Couldn't delete tag!"
-#~ msgstr "Tidak dapat menghapus tag!"
-
-#~ msgid "n"
-#~ msgstr "b"
-
-#~ msgid "Couldn't create highlight!"
-#~ msgstr "Tidak dapat membuat sorotan"
-
-#~ msgid "Couldn't delete highlight!"
-#~ msgstr "Tidak dapat menghapus sorotan!"
-
-#~ msgid "Couldn't update collaborators!"
-#~ msgstr "Tidak dapat memperbarui kolaborator!"
-
-#~ msgid "Error loading tag highlights!"
-#~ msgstr "Gagal memuat sorotan tag!"
-
-#~ msgid ""
-#~ "Bienvenue sur LibreQDA, un logiciel "
-#~ "d'analyse qualitative développé en code "
-#~ "source libre ouvert par la Plateforme"
-#~ " en humanités numériques de l'Université"
-#~ " de Sherbrooke."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Visitez notre dépôt de code <a "
-#~ "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-#~ " target=\"_blank\">Gitlab</a></p>"
-#~ msgstr ""
-
-#~ msgid "<p>Pour consulter la documentation.</p>"
-#~ msgstr ""
-
-#~ msgid "<p>Un projet tutoriel a été ajouté à votre espace personnel.</p>"
-#~ msgstr ""
-
-#~ msgid "Vos documents"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Utilisez cet onglet pour charger des"
-#~ " fichiers et naviguer entre eux</p>"
-#~ msgstr ""
-
-#~ msgid "Arbre de codes"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Cet onglet liste tous les codes "
-#~ "que vous définissez. Ajoutez-en avec "
-#~ "le bouton dédié à cet "
-#~ "effet.</p><br><p>La fréquence totale d'usage "
-#~ "est indiquée dans la pastille de "
-#~ "droite, et le nombre de documents "
-#~ "dans celle de gauche.</p>"
-#~ msgstr ""
-
-#~ msgid "Codes parents"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Vous pouvez définir des codes qui "
-#~ "sont appelés à en contenir d'autres</p>"
-#~ msgstr ""
-
-#~ msgid "Codes enfants"
-#~ msgstr ""
-
-#~ msgid "<p>Ils peuvent être développés ou réduits.</p>"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Cliquez sur un document pour "
-#~ "consulter son contenu. Utilisez l'étoile "
-#~ "pour enregistrer vos favoris.</p>"
-#~ msgstr ""
-
-#~ msgid "Encoder"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Sélectionnez un passage de texte avec"
-#~ " votre curseur. Deux boutons apparaîtront"
-#~ " pour y assigner un code.</p>"
-#~ msgstr ""
-
-#~ msgid "Sélectionner un code"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Depuis le menu, sélectionnez des "
-#~ "codes existants qui correspondent au "
-#~ "contenu de la sélection et sauvegardez"
-#~ " l'opération. Ici, l'extrait concerne le"
-#~ " renforcement des relations sociales.</p>"
-#~ msgstr ""
-
-#~ msgid "Exploration des codes"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Pendant ou après la phase d'encodage,"
-#~ " vous pouvez toujours explorer les "
-#~ "passages de textes auxquels vous avez"
-#~ " assigné des codes.</p><br><p> Affichez "
-#~ "tous les extraits encodés avec un "
-#~ "code de votre arbre en cliquant "
-#~ "dessus.</p>"
-#~ msgstr ""
-
-#~ msgid "Préciser votre besoin d'information"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Si votre liste d'extraits est longue,"
-#~ " vous pouvez la raffiner avec une "
-#~ "recherche avancée.</p>"
-#~ msgstr ""
-
-#~ msgid "Sélection conditionnelle"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>D'un clic droit, vous pouvez "
-#~ "spécifier des conditions pour croiser "
-#~ "des codes, en inclure plus ou en"
-#~ " ignorer certains.</p>"
-#~ msgstr ""
-
-#~ msgid "Analyze"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Les pastilles de la requête montrent"
-#~ " que les extraits récupérés doivent "
-#~ "nécessairement inclure les codes "
-#~ "<i>barrieres</i> et <i>developpment_competences</i>.</p>"
-#~ msgstr ""
-
-#~ msgid "Naviguer vers le document"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>En cliquant sur le nom du "
-#~ "document, vous pouvez retourner au "
-#~ "contexte.</p>"
-#~ msgstr ""
-
-#~ msgid "Retourner aux extraits"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Après avoir consulté le contexte, "
-#~ "vous pouvez retourner `a la liste "
-#~ "d'extraits précédement récupérés à l'aide "
-#~ "d'une recherche avancée.</p>"
-#~ msgstr ""
-
-#~ msgid "Export"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Au besoin, téléchargez cette liste "
-#~ "d'extraits sur votre ordinateur.</p>"
-#~ msgstr ""
-
-#~ msgid "À vous d'encoder!"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<p>Utilisez LibreQDA comme vous le "
-#~ "souhaitez avec l'assurance que vos "
-#~ "donnée seront sauvegardée sur votre "
-#~ "espace personnel. Pour vous familiariser "
-#~ "d'avantage avec les fonctionnalités, "
-#~ "poursuivez l'encodage et l'exploration des "
-#~ "fichiers d'entretiens fictives concernant les"
-#~ " jeux de sociétés.</p>"
-#~ msgstr ""
-
+"Tidak dapat menambahkan pengguna ini<br/>Alasan: <ul><li>Pengguna tidak "
+"ditemukan</li><li>Pengguna sudah disponsori</li><li>Peran pengguna tidak "
+"dapat diubah</li></ul>"
