@@ -26,7 +26,7 @@ function convertCollectionsToTreeNode(data) {
             nodes: []
         };
 
-        if (collection.document_ids && collection.document_ids.length > 0) {
+        if (collection.document_ids && collection.document_ids.length > 0 && typeof documents !== 'undefined') {
             for (let docId of collection.document_ids) {
                 const document = documents[docId.toString()];
                 if (document) {
@@ -46,7 +46,16 @@ function convertCollectionsToTreeNode(data) {
             collectionNode.nodes.push(...childCollections);
         }
 
-        collectionNode.nodes.sort((a, b) => a.text.localeCompare(b.text));
+        // Séparer et trier documents vs sous-collections
+        const documentNodes = collectionNode.nodes.filter(node => node.document_id !== undefined);
+        const subCollections = collectionNode.nodes.filter(node => node.document_id === undefined);
+        
+        // Trier chaque type séparément par ordre alphabétique
+        documentNodes.sort((a, b) => a.text.localeCompare(b.text));
+        subCollections.sort((a, b) => a.text.localeCompare(b.text));
+        
+        // Réorganiser : documents d'abord, puis sous-collections après
+        collectionNode.nodes = [...documentNodes, ...subCollections];
 
         const documentCount = collection.document_ids ? collection.document_ids.length : 0;
         collectionNode.tags = [documentCount.toString()];
@@ -96,7 +105,7 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
             treeData.push({
                 id: 'uncategorized',
                 text: gettext('Sans collection'),
-                icon: 'fas fa-folder-open',
+                icon: 'fas fa-folder',
                 selectable: false,
                 nodes: uncategorizedDocs,
                 tags: [uncategorizedDocs.length.toString()]
@@ -169,11 +178,13 @@ function customDocumentNodeRow() {
             }
             
             setTimeout(function() {
-                if (node.id && node.id.startsWith('collection_')) {
-                    element.addClass('collection-context-menu');
+                if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
+                   element.addClass('collection-context-menu');
                     
                     if (element.find('.expand-icon, .collapse-icon').length === 0) {
-                        element.prepend('<i class="node-icon fas fa-folder" style="margin-right: 8px;"></i> ');
+                        // Ajouter l'icône avec une classe pour pouvoir la modifier plus tard
+                        const folderIconClass = node.state && node.state.expanded ? 'fas fa-folder-open' : 'fas fa-folder';
+                        element.prepend(`<i class="node-icon ${folderIconClass}" style="margin-right: 8px;"></i> `);
                     }
                 }
                 element.find('.expand-icon, .collapse-icon').css('margin-right', '5px');
@@ -217,6 +228,32 @@ function initDocumentsTreeview(filteredCollections = null) {
     } else {
         treeview_documents.treeview('collapseAll');
     }
+    
+    // Re-add drag and drop after treeview changes (like tags do)
+    treeview_documents.on('nodeCollapsed nodeExpanded', function (event, node) {
+        // Add a delay to ensure the treeview recreation is finished
+        setTimeout(function () {
+            console.log('Re-adding document drag and drop...');
+            addDocumentDragDrop();
+            
+            // Update folder icon based on expanded state - ONLY for collections in documents treeview
+            if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
+                const nodeElement = $('#treeview-documents').find(`li[data-nodeid="${node.nodeId}"]`);
+                const folderIcon = nodeElement.find('.node-icon');
+                if (folderIcon.length > 0) {
+                    const newIconClass = node.state.expanded ? 'fas fa-folder-open' : 'fas fa-folder';
+                    folderIcon.removeClass('fas fa-folder fas fa-folder-open').addClass(newIconClass);
+                }
+            }
+        }, 10);
+    });
+    
+    // Add drag and drop functionality
+    setTimeout(function() {
+        addDocumentDragDrop();
+        // Debug: uncomment the line below to see debug info
+        // debugDocumentDragDrop();
+    }, 10);
 }
 
 function updateDocumentTreeviewHighlight(current_document) {
@@ -298,4 +335,138 @@ function getNodeIdFromTreeviewByDocumentId(treeview, documentId) {
     const allNodes = treeview.treeview('getEnabled');
     const node = allNodes.find(node => node.id === `document_${documentId}`);
     return node ? node.nodeId : null;
+}
+
+function getDocumentIdFromTreeviewNode(treeview, nodeId) {
+    const allNodes = treeview.treeview('getEnabled');
+    const node = allNodes.find(item => item.nodeId === parseInt(nodeId));
+    
+    if (node && node.id && node.id.startsWith('document_')) {
+        return parseInt(node.id.replace('document_', ''));
+    }
+    
+    console.log('getDocumentIdFromTreeviewNode - node not a document:', node);
+    return null;
+} 
+
+function addDocumentDragDrop() {
+    
+    $('.node-treeview-documents').on('dragstart', function (event) {
+        const nodeId = $(this).data('nodeid');
+        const documentId = getDocumentIdFromTreeviewNode(treeview_documents, nodeId);
+        
+        // Only allow dragging documents, not collections
+        if (!documentId) {
+            console.log('dragstart blocked - not a document, nodeId:', nodeId);
+            event.preventDefault();
+            return false;
+        }
+        
+        console.log('dragstart - documentId:', documentId, 'nodeId:', nodeId);
+        event.originalEvent.dataTransfer.setData('text', nodeId);
+    });
+
+    $(".node-treeview-documents").each(function (index, element) {
+
+        $(element).off('drop');
+        $(element).off('dragover');
+
+        $(element).on('dragover', function (event) {
+            event.preventDefault();
+        });
+
+        $(element).on('drop', function (event) {
+            event.preventDefault();
+
+            const collectionId = getCollectionIdFromTreeviewNode(treeview_documents, $(element).data("nodeid"));
+            const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
+            
+            console.log('drop - collectionId:', collectionId, 'draggedElementNodeId:', draggedElementNodeId);
+
+            if (!isNaN(parseInt(draggedElementNodeId))) {
+                const documentId = getDocumentIdFromTreeviewNode(treeview_documents, draggedElementNodeId);
+                console.log('documentId from node:', documentId);
+                
+                if (collectionId === documentId) return;
+                
+                moveDocumentToCollection(documentId, collectionId);
+            }
+        });
+    });
+}
+
+function getCollectionIdFromTreeviewNode(treeview, nodeId) {
+    const allNodes = treeview.treeview('getEnabled');
+    const node = allNodes.find(item => item.nodeId === parseInt(nodeId));
+    
+    if (node && node.id && node.id.startsWith('collection_')) {
+        return parseInt(node.id.replace('collection_', ''));
+    }
+    
+    return null;
+}
+
+function isUncategorizedNode(nodeId) {
+    const allNodes = treeview_documents.treeview('getEnabled');
+    const node = allNodes.find(item => item.nodeId === parseInt(nodeId));
+    return node && node.id === 'uncategorized';
+}
+
+function moveDocumentToCollection(documentId, targetCollectionId) {
+    console.log('Moving document', documentId, 'to collection', targetCollectionId);
+    
+    const document = documents[documentId.toString()];
+    if (!document) {
+        console.error('Document not found:', documentId);
+        alert('Erreur: Document non trouvé!');
+        return;
+    }
+    
+    // Update document to have only ONE collection (like editDocument does)
+    const updatedDocument = {
+        id: documentId,
+        collections: targetCollectionId !== null ? [targetCollectionId] : []
+    };
+    
+    submitDocumentUpdate(updatedDocument, 
+        (response) => {
+            console.log('Document moved successfully:', response);
+            const collectionName = targetCollectionId ? findCollection(targetCollectionId).name : 'Sans collection';
+            alert(`Document "${document.name}" déplacé vers "${collectionName}"`);
+        }, 
+        (error) => {
+            console.error('Error moving document:', error);
+            alert('Erreur lors du déplacement du document');
+        }
+    );
+} 
+
+function debugDocumentDragDrop() {
+    console.log('=== Document Drag & Drop Debug ===');
+    
+    // Check draggable documents
+    const draggableDocuments = $('.document-link[draggable="true"]');
+    console.log('Draggable documents found:', draggableDocuments.length);
+    draggableDocuments.each(function() {
+        console.log('- Document ID:', $(this).data('document-id'), 'Element:', this);
+    });
+    
+    // Check droppable areas
+    const droppableAreas = $('.node-treeview-documents');
+    console.log('Droppable areas found:', droppableAreas.length);
+    droppableAreas.each(function() {
+        const nodeId = $(this).data('nodeid');
+        console.log('- Node ID:', nodeId, 'Element:', this);
+    });
+    
+    // Check treeview nodes
+    if (treeview_documents.length) {
+        const allNodes = treeview_documents.treeview('getEnabled');
+        console.log('All treeview nodes:', allNodes.length);
+        allNodes.forEach(node => {
+            console.log('- Node:', node.id, 'Text:', node.text, 'NodeId:', node.nodeId);
+        });
+    }
+    
+    console.log('=== End Debug ===');
 } 

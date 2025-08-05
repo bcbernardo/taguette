@@ -20,6 +20,13 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col form-group">
+                            <textarea class="form-control" id="collection-add-description"
+                                name="collection-add-description" rows="3" maxlength="1000"
+                                placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col form-group">
                             <label for="collection-hierarchy-select" class="form-label">{% trans %}Parent collection{%
                                 endtrans %}</label>
                             <div class='dropdown hierarchy-select' id='collection-hierarchy-select'>
@@ -44,13 +51,7 @@
                             <div id="collection-add-documents-list"></div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col form-group">
-                            <textarea class="form-control" id="collection-add-description"
-                                name="collection-add-description" rows="3" maxlength="1000"
-                                placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
-                        </div>
-                    </div>
+
                 </div>
             </div>
             <div class="modal-footer">

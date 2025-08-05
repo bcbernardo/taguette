@@ -450,6 +450,12 @@ a.document-link-a {
     word-break: break-all;
 }
 
+/* Raccourcis clavier pour les collections */
+.collection-selected {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    border-left: 3px solid #007bff !important;
+}
+
 /* Work-around to make a whole element clickable while it contains links */
 .overlay-outer {
     position: relative;

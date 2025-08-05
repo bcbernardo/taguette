@@ -1566,6 +1566,16 @@ function editCollection(collectionId) {
     
     for (let i = 0; i < docEntries.length; ++i) {
         let doc = docEntries[i][1];
+        
+        const docCollections = doc.collections || [];
+        const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
+        const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
+        
+        // Only show documents that are either in this collection OR in no collection
+        if (isInOtherCollections) {
+            continue; // Skip documents that are in other collections
+        }
+        
         let label = document.createElement('label');
         label.className = 'form-check-label d-block';
         let checkbox = document.createElement('input');
@@ -1573,7 +1583,7 @@ function editCollection(collectionId) {
         checkbox.className = 'form-check-input me-2';
         checkbox.value = doc.id;
 
-        if (collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id))) {
+        if (isInCurrentCollection) {
             checkbox.checked = true;
         }
         label.appendChild(checkbox);
@@ -1629,6 +1639,13 @@ function createChildCollection(parentId) {
     docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
     for (let i = 0; i < docEntries.length; ++i) {
         let doc = docEntries[i][1];
+        
+        // Only show documents that are not in any collection
+        const docCollections = doc.collections || [];
+        if (docCollections.length > 0) {
+            continue; // Skip documents that are already in collections
+        }
+        
         let label = document.createElement('label');
         label.className = 'form-check-label d-block';
         let checkbox = document.createElement('input');
@@ -1662,6 +1679,13 @@ function createCollection() {
     docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
     for (let i = 0; i < docEntries.length; ++i) {
         let doc = docEntries[i][1];
+        
+        // Only show documents that are not in any collection
+        const docCollections = doc.collections || [];
+        if (docCollections.length > 0) {
+            continue; // Skip documents that are already in collections
+        }
+        
         let label = document.createElement('label');
         label.className = 'form-check-label d-block';
         let checkbox = document.createElement('input');
@@ -1683,7 +1707,19 @@ function createCollection() {
 }
 
 function addCollection(collectionData) {
-    console.log('Adding collection:', collectionData);
+    console.log('*** addCollection called for:', collectionData);
+    
+    // Check if collection already exists to prevent duplicates
+    const existingCollection = findCollection(parseInt(collectionData.id));
+    if (existingCollection) {
+        console.log('*** DUPLICATE PREVENTED: Collection already exists, updating instead:', existingCollection);
+        // Update existing collection instead of creating duplicate
+        existingCollection.name = collectionData.name;
+        existingCollection.description = collectionData.description;
+        existingCollection.document_ids = collectionData.document_ids;
+        initDocumentsTreeview();
+        return;
+    }
     
     const newCollection = {
         id: collectionData.id,
@@ -1693,6 +1729,8 @@ function addCollection(collectionData) {
         document_ids: collectionData.document_ids,
         children: []
     };
+    
+    console.log('*** newCollection object created:', newCollection);
     
     if (!collections) {
         collections = [];
@@ -1738,21 +1776,26 @@ function addCollection(collectionData) {
     }
     highlightCollection(collectionData.id);
     
-    console.log('Collection added successfully:', newCollection);
+    console.log('*** Collection added successfully to hierarchy:', newCollection);
+    console.log('*** Final collections structure after add:', collections);
 }
 
 function updateCollection(collectionData) {
-    console.log('Updating collection:', collectionData);
+    console.log('*** updateCollection called for:', collectionData);
     
     // Find existing collection in hierarchy
-    const existingCollection = findCollection(parseInt(collectionData.id));
+    let existingCollection = findCollection(parseInt(collectionData.id));
     if (!existingCollection) {
-        console.warn('Collection not found for update:', collectionData.id);
+        console.warn('*** Collection not found for update, creating it instead:', collectionData.id);
+        // Instead of returning, create the collection via addCollection
+        addCollection(collectionData);
         return;
     }
     
+    console.log('*** existingCollection found for update:', existingCollection);
+    
     const oldDocumentIds = existingCollection.document_ids || [];
-    const oldParentId = existingCollection.parent;
+    const oldParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
     
     // Update basic properties
     existingCollection.name = collectionData.name;
@@ -1760,8 +1803,11 @@ function updateCollection(collectionData) {
     existingCollection.document_ids = collectionData.document_ids;
     
     // Handle parent change if necessary
-    if (existingCollection.parent !== (collectionData.parent_id ? parseInt(collectionData.parent_id) : null)) {
-        existingCollection.parent = collectionData.parent_id ? parseInt(collectionData.parent_id) : null;
+    const newParentId = collectionData.parent_id ? parseInt(collectionData.parent_id) : null;
+    const currentParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
+    if (currentParentId !== newParentId) {
+        console.log(`Parent changed from ${currentParentId} to ${newParentId}`);
+        existingCollection.parent = newParentId;
         
         // Remove from old parent
         if (oldParentId) {
@@ -1788,14 +1834,25 @@ function updateCollection(collectionData) {
                     newParent.children = [];
                 }
                 newParent.children.push(existingCollection);
+                console.log(`Added collection ${existingCollection.id} to parent ${newParent.id}`);
             } else {
                 // New parent not found, add to root level
-                collections.push(existingCollection);
+                const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
+                if (!isAlreadyInRoot) {
+                    collections.push(existingCollection);
+                    console.log(`Added collection ${existingCollection.id} to root (parent not found)`);
+                }
             }
         } else {
             // Add to root level
-            collections.push(existingCollection);
+            const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
+            if (!isAlreadyInRoot) {
+                collections.push(existingCollection);
+                console.log(`Added collection ${existingCollection.id} to root`);
+            }
         }
+    } else {
+        console.log(`Parent unchanged (${currentParentId}), skipping move`);
     }
     
     // Update document collections
