@@ -1187,7 +1187,6 @@ class Project(BaseHandler):
                     "id": child_collection.id,
                     "name": child_collection.name,
                     "description": child_collection.description,
-                    "created": child_collection.created.isoformat(),
                     "parent": collection_parent_id,
                     "document_ids": [d.id for d in child_collection.documents],
                     "children": build_collection_tree(child_id)

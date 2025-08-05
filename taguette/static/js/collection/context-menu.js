@@ -21,9 +21,6 @@ function addCollectionContextMenu() {
 }
 
 function generateCollectionContextMenuItems(collection) {
-    const hasChildren = collection.children && collection.children.length > 0;
-    const hasDocuments = collection.document_ids && collection.document_ids.length > 0;
-    
     return {
         "addChildCollection": {
             name: gettext('Add sub-collection'),
@@ -50,7 +47,7 @@ function collectionContextMenuAction(action, param) {
     if (actionFunction) {
         actionFunction(param);
     } else {
-        console.log('No action found for:', action);
+       log('No action found for:', action);
     }
 }
 
@@ -68,18 +65,14 @@ function extractCollectionId(nodeId) {
 }
 
 function findCollection(collectionId) {
-    console.log(`findCollection called for ID: ${collectionId}`);
-    console.log('Current collections structure:', collections);
-    
+
     function searchInTree(collections) {
         if (!collections || !Array.isArray(collections)) {
-            console.warn('Invalid collections array provided to searchInTree');
             return null;
         }
         
         for (let collection of collections) {
             if (collection.id === collectionId) {
-                console.log(`Found collection: ${collection.name} (ID: ${collection.id})`);
                 return collection;
             }
             if (collection.children && collection.children.length > 0) {
@@ -91,26 +84,20 @@ function findCollection(collectionId) {
     }
     
     const result = searchInTree(collections);
-    if (!result) {
-        console.warn(`Collection with ID ${collectionId} NOT FOUND in structure`);
-        console.log('Available collection IDs:', collections ? flattenCollections(collections) : 'collections is null/undefined');
-    }
     return result;
 }
 
-// Variables globales pour la gestion des raccourcis
+
 let selectedCollectionId = null;
 
-// Fonction pour gérer les raccourcis clavier
+
 function handleCollectionKeyboardShortcuts(e) {
-    // Seulement si on est sur une page avec des collections
+
     if ($('.collection-context-menu').length === 0) return;
     
-    // M : Ouvrir le menu contextuel de la collection sélectionnée
     if (e.key.toLowerCase() === 'm') {
         e.preventDefault();
         if (selectedCollectionId) {
-            // Trouver l'élément et déclencher le menu contextuel
             const element = $(`.collection-context-menu[id*="collection_${selectedCollectionId}"]`);
             if (element.length > 0) {
                 element.contextMenu();
@@ -119,7 +106,6 @@ function handleCollectionKeyboardShortcuts(e) {
         return;
     }
     
-    // Raccourcis pour les actions (seulement si une collection est sélectionnée)
     if (selectedCollectionId) {
         switch(e.key.toLowerCase()) {
             case 'e':
@@ -138,14 +124,11 @@ function handleCollectionKeyboardShortcuts(e) {
     }
 }
 
-// Fonction pour mettre à jour la collection sélectionnée
 function updateSelectedCollection(collectionId) {
     selectedCollectionId = collectionId;
     
-    // Retirer la classe de sélection de tous les éléments
     $('.collection-context-menu').removeClass('collection-selected');
     
-    // Ajouter la classe de sélection à l'élément actuel
     if (collectionId) {
         const element = $(`.collection-context-menu[id*="collection_${collectionId}"]`);
         if (element.length > 0) {
@@ -154,9 +137,7 @@ function updateSelectedCollection(collectionId) {
     }
 }
 
-// Ajouter les event listeners pour la sélection des collections
 function addCollectionSelectionHandlers() {
-    // Sélection au survol
     $(document).on('mouseenter', '.collection-context-menu', function() {
         const nodeId = $(this).attr('id');
         const collectionId = extractCollectionId(nodeId);
@@ -165,7 +146,6 @@ function addCollectionSelectionHandlers() {
         }
     });
     
-    // Désélection quand on clique ailleurs
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.collection-context-menu').length) {
             updateSelectedCollection(null);
@@ -176,8 +156,6 @@ function addCollectionSelectionHandlers() {
 $(document).ready(function() {
     addCollectionContextMenu();
     addCollectionSelectionHandlers();
-    
-    // Ajouter les raccourcis clavier
     $(document).on('keydown', handleCollectionKeyboardShortcuts);
 });
 

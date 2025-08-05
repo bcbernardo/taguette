@@ -38,11 +38,13 @@ def generate_initial_state_script(user_login,
                                   members,
                                   last_event,
                                   is_demo='false',
-                                  demo_highlights_location='[[],[],[]]'):
+                                  demo_highlights_location='[[],[],[]]',
+                                  collections=None):
 
     documents_json = json.dumps(documents)
     tags_json = json.dumps(tags, sort_keys=True)
     members_json = json.dumps(members)
+    collections_json = json.dumps(collections if collections is not None else [], sort_keys=True)
 
     return (
         f'<script type="text/javascript">\n'
@@ -56,6 +58,7 @@ def generate_initial_state_script(user_login,
         f'    let last_event = {last_event};\n'
         f'    let is_demo = {is_demo};\n'
         f'    let demo_highlights_location = {demo_highlights_location};\n'
+        f'    let collections = {collections_json};\n'
         f'</script>'
     )
 
@@ -104,4 +107,47 @@ def build_tag_data(path,
         "parent_id": parent_id,
         "color": color,
         "description": description
+    }
+
+
+def build_collection_pool_response(pool_id,
+                                   collection_id,
+                                   collection_name,
+                                   description='',
+                                   parent_id=None,
+                                   document_ids=None):
+    return {
+        'type': 'collection_add',
+        'id': pool_id,
+        'collection_id': collection_id,
+        'collection_name': collection_name,
+        'description': description,
+        'parent_id': parent_id,
+        'document_ids': document_ids if document_ids is not None else []
+    }
+
+
+def build_collection_response(collection_id,
+                              name,
+                              description='',
+                              parent_id=None,
+                              document_ids=None,
+                              children=None):
+    return {
+        "id": collection_id,
+        "name": name,
+        "description": description,
+        "parent": parent_id,
+        "document_ids": document_ids if document_ids is not None else [],
+        "children": children if children is not None else []
+    }
+
+
+def build_collection_data(name,
+                          description='',
+                          parent_id=None):
+    return {
+        "name": name,
+        "description": description,
+        "parent_id": parent_id
     }

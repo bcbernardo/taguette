@@ -46,15 +46,12 @@ function convertCollectionsToTreeNode(data) {
             collectionNode.nodes.push(...childCollections);
         }
 
-        // Séparer et trier documents vs sous-collections
         const documentNodes = collectionNode.nodes.filter(node => node.document_id !== undefined);
         const subCollections = collectionNode.nodes.filter(node => node.document_id === undefined);
         
-        // Trier chaque type séparément par ordre alphabétique
         documentNodes.sort((a, b) => a.text.localeCompare(b.text));
         subCollections.sort((a, b) => a.text.localeCompare(b.text));
         
-        // Réorganiser : documents d'abord, puis sous-collections après
         collectionNode.nodes = [...documentNodes, ...subCollections];
 
         const documentCount = collection.document_ids ? collection.document_ids.length : 0;
@@ -251,8 +248,6 @@ function initDocumentsTreeview(filteredCollections = null) {
     // Add drag and drop functionality
     setTimeout(function() {
         addDocumentDragDrop();
-        // Debug: uncomment the line below to see debug info
-        // debugDocumentDragDrop();
     }, 10);
 }
 
@@ -380,13 +375,9 @@ function addDocumentDragDrop() {
 
             const collectionId = getCollectionIdFromTreeviewNode(treeview_documents, $(element).data("nodeid"));
             const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
-            
-            console.log('drop - collectionId:', collectionId, 'draggedElementNodeId:', draggedElementNodeId);
 
             if (!isNaN(parseInt(draggedElementNodeId))) {
                 const documentId = getDocumentIdFromTreeviewNode(treeview_documents, draggedElementNodeId);
-                console.log('documentId from node:', documentId);
-                
                 if (collectionId === documentId) return;
                 
                 moveDocumentToCollection(documentId, collectionId);
@@ -417,8 +408,6 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
     
     const document = documents[documentId.toString()];
     if (!document) {
-        console.error('Document not found:', documentId);
-        alert('Erreur: Document non trouvé!');
         return;
     }
     
@@ -430,43 +419,10 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
     
     submitDocumentUpdate(updatedDocument, 
         (response) => {
-            console.log('Document moved successfully:', response);
-            const collectionName = targetCollectionId ? findCollection(targetCollectionId).name : 'Sans collection';
-            alert(`Document "${document.name}" déplacé vers "${collectionName}"`);
+            log('Document moved successfully:', response);
         }, 
         (error) => {
             console.error('Error moving document:', error);
-            alert('Erreur lors du déplacement du document');
         }
     );
-} 
-
-function debugDocumentDragDrop() {
-    console.log('=== Document Drag & Drop Debug ===');
-    
-    // Check draggable documents
-    const draggableDocuments = $('.document-link[draggable="true"]');
-    console.log('Draggable documents found:', draggableDocuments.length);
-    draggableDocuments.each(function() {
-        console.log('- Document ID:', $(this).data('document-id'), 'Element:', this);
-    });
-    
-    // Check droppable areas
-    const droppableAreas = $('.node-treeview-documents');
-    console.log('Droppable areas found:', droppableAreas.length);
-    droppableAreas.each(function() {
-        const nodeId = $(this).data('nodeid');
-        console.log('- Node ID:', nodeId, 'Element:', this);
-    });
-    
-    // Check treeview nodes
-    if (treeview_documents.length) {
-        const allNodes = treeview_documents.treeview('getEnabled');
-        console.log('All treeview nodes:', allNodes.length);
-        allNodes.forEach(node => {
-            console.log('- Node:', node.id, 'Text:', node.text, 'NodeId:', node.nodeId);
-        });
-    }
-    
-    console.log('=== End Debug ===');
-} 
+}

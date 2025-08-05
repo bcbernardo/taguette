@@ -265,7 +265,7 @@ async function uploadFiles(files) {
         if(isNaN(f) || upload_canceled) {
             continue;
         }
-        console.log(files[f]);
+        log(files[f]);
         let form_data = new FormData(),
             name = files[f].name,
             percent = Math.ceil(100*file_number/num_files);
@@ -1530,14 +1530,66 @@ window.addEventListener('scroll', function() {
     scrollPos = document.documentElement.scrollTop;
 });
 
+function populateDocumentsList(collectionId = null) {
+    const docListDiv = document.getElementById('collection-add-documents-list');
+    docListDiv.innerHTML = '';
+    
+    const docEntries = Object.entries(documents);
+    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    
+    let availableDocuments = 0;
+    const collectionDocuments = collectionId ? (findCollection(collectionId)?.document_ids || []) : [];
+    
+    for (let i = 0; i < docEntries.length; ++i) {
+        let doc = docEntries[i][1];
+        const docCollections = doc.collections || [];
+        
+        let shouldShow = false;
+        let isChecked = false;
+        
+        if (collectionId) {
+            const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
+            const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
+            shouldShow = !isInOtherCollections;
+            isChecked = isInCurrentCollection;
+        } else {
+            shouldShow = docCollections.length === 0;
+            isChecked = false;
+        }
+        
+        if (!shouldShow) {
+            continue;
+        }
+        
+        availableDocuments++;
+        
+        let label = document.createElement('label');
+        label.className = 'form-check-label d-block';
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-check-input me-2';
+        checkbox.value = doc.id;
+        checkbox.checked = isChecked;
+        
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + doc.name));
+        docListDiv.appendChild(label);
+    }
+    
+    if (availableDocuments === 0) {
+        const noDocsMessage = document.createElement('p');
+        noDocsMessage.className = 'text-muted text-center';
+        noDocsMessage.textContent = gettext('No documents available');
+        docListDiv.appendChild(noDocsMessage);
+    }
+}
+
 function editCollection(collectionId) {
     const collection = findCollection(collectionId);
     if (!collection) {
         console.error('Collection not found:', collectionId);
         return;
     }
-
-    console.log('editCollection', collection);
     
     document.getElementById('collection-add-form').reset();
     document.getElementById('collection-add-id').value = '' + collectionId;
@@ -1557,39 +1609,7 @@ function editCollection(collectionId) {
         document.getElementById('dropdownMenuButtonCollection').innerText = gettext('None');
     }
 
-    
-    const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = '';
-    const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
-    const collectionDocuments = collection.document_ids || [];
-    
-    for (let i = 0; i < docEntries.length; ++i) {
-        let doc = docEntries[i][1];
-        
-        const docCollections = doc.collections || [];
-        const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
-        const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
-        
-        // Only show documents that are either in this collection OR in no collection
-        if (isInOtherCollections) {
-            continue; // Skip documents that are in other collections
-        }
-        
-        let label = document.createElement('label');
-        label.className = 'form-check-label d-block';
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input me-2';
-        checkbox.value = doc.id;
-
-        if (isInCurrentCollection) {
-            checkbox.checked = true;
-        }
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + doc.name));
-        docListDiv.appendChild(label);
-    }
+    populateDocumentsList(collectionId);
     
     document.getElementById('collection-add-label-new').style.display = 'none';
     document.getElementById('collection-add-label-change').style.display = '';
@@ -1632,30 +1652,7 @@ function createChildCollection(parentId) {
     document.getElementById('collection-add-parent-id').value = parentId;
     document.getElementById('dropdownMenuButtonCollection').innerText = parentCollection.name;
 
-    
-    const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = '';
-    const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
-    for (let i = 0; i < docEntries.length; ++i) {
-        let doc = docEntries[i][1];
-        
-        // Only show documents that are not in any collection
-        const docCollections = doc.collections || [];
-        if (docCollections.length > 0) {
-            continue; // Skip documents that are already in collections
-        }
-        
-        let label = document.createElement('label');
-        label.className = 'form-check-label d-block';
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input me-2';
-        checkbox.value = doc.id;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + doc.name));
-        docListDiv.appendChild(label);
-    }
+    populateDocumentsList();
     
     document.getElementById('collection-add-label-new').style.display = '';
     document.getElementById('collection-add-label-change').style.display = 'none';
@@ -1673,30 +1670,7 @@ function createCollection() {
     
     initCollectionHierarchySelect();
     
-    const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = '';
-    const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
-    for (let i = 0; i < docEntries.length; ++i) {
-        let doc = docEntries[i][1];
-        
-        // Only show documents that are not in any collection
-        const docCollections = doc.collections || [];
-        if (docCollections.length > 0) {
-            continue; // Skip documents that are already in collections
-        }
-        
-        let label = document.createElement('label');
-        label.className = 'form-check-label d-block';
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input me-2';
-        checkbox.value = doc.id;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + doc.name));
-        docListDiv.appendChild(label);
-    }
-    
+    populateDocumentsList();
 
     document.getElementById('collection-add-label-new').style.display = '';
     document.getElementById('collection-add-label-change').style.display = 'none';
@@ -1707,12 +1681,9 @@ function createCollection() {
 }
 
 function addCollection(collectionData) {
-    console.log('*** addCollection called for:', collectionData);
-    
     // Check if collection already exists to prevent duplicates
     const existingCollection = findCollection(parseInt(collectionData.id));
     if (existingCollection) {
-        console.log('*** DUPLICATE PREVENTED: Collection already exists, updating instead:', existingCollection);
         // Update existing collection instead of creating duplicate
         existingCollection.name = collectionData.name;
         existingCollection.description = collectionData.description;
@@ -1729,8 +1700,6 @@ function addCollection(collectionData) {
         document_ids: collectionData.document_ids,
         children: []
     };
-    
-    console.log('*** newCollection object created:', newCollection);
     
     if (!collections) {
         collections = [];
@@ -1775,24 +1744,15 @@ function addCollection(collectionData) {
         expandNodeParent(parseInt(collectionData.parent_id));
     }
     highlightCollection(collectionData.id);
-    
-    console.log('*** Collection added successfully to hierarchy:', newCollection);
-    console.log('*** Final collections structure after add:', collections);
 }
 
 function updateCollection(collectionData) {
-    console.log('*** updateCollection called for:', collectionData);
-    
     // Find existing collection in hierarchy
     let existingCollection = findCollection(parseInt(collectionData.id));
     if (!existingCollection) {
-        console.warn('*** Collection not found for update, creating it instead:', collectionData.id);
-        // Instead of returning, create the collection via addCollection
         addCollection(collectionData);
         return;
     }
-    
-    console.log('*** existingCollection found for update:', existingCollection);
     
     const oldDocumentIds = existingCollection.document_ids || [];
     const oldParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
@@ -1806,7 +1766,6 @@ function updateCollection(collectionData) {
     const newParentId = collectionData.parent_id ? parseInt(collectionData.parent_id) : null;
     const currentParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
     if (currentParentId !== newParentId) {
-        console.log(`Parent changed from ${currentParentId} to ${newParentId}`);
         existingCollection.parent = newParentId;
         
         // Remove from old parent
@@ -1834,13 +1793,11 @@ function updateCollection(collectionData) {
                     newParent.children = [];
                 }
                 newParent.children.push(existingCollection);
-                console.log(`Added collection ${existingCollection.id} to parent ${newParent.id}`);
             } else {
                 // New parent not found, add to root level
                 const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
                 if (!isAlreadyInRoot) {
                     collections.push(existingCollection);
-                    console.log(`Added collection ${existingCollection.id} to root (parent not found)`);
                 }
             }
         } else {
@@ -1848,11 +1805,8 @@ function updateCollection(collectionData) {
             const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
             if (!isAlreadyInRoot) {
                 collections.push(existingCollection);
-                console.log(`Added collection ${existingCollection.id} to root`);
             }
         }
-    } else {
-        console.log(`Parent unchanged (${currentParentId}), skipping move`);
     }
     
     // Update document collections
@@ -1892,17 +1846,12 @@ function updateCollection(collectionData) {
         expandNodeParent(oldParentId);
     }
     highlightCollection(collectionData.id);
-    
-    console.log('Collection updated successfully:', existingCollection);
 }
 
 function removeCollection(collectionId) {
-    console.log('Removing collection:', collectionId);
-    
-    // Find collection in hierarchy
+    // Find collection in hierarchysss
     const collectionToRemove = findCollection(parseInt(collectionId));
     if (!collectionToRemove) {
-        console.warn('Collection not found for removal:', collectionId);
         return;
     }
     
@@ -1942,8 +1891,6 @@ function removeCollection(collectionId) {
     if (collectionToRemove.parent) {
         expandNodeParent(collectionToRemove.parent);
     }
-    
-    console.log('Collection removed successfully:', collectionId);
 }
 
 
