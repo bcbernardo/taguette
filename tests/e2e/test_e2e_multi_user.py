@@ -877,9 +877,11 @@ class Test2E2MultiUser(SeleniumTest):
                     'tag-merge-modal').is_displayed())
                 break
 
-        # Now try to click on the dropdown button
-        ActionChains(self.driver).click(
-            self.find_by_id('dropdownMenuButtonTagMerge')).perform()
+        # Wait for and click on the dropdown button
+        dropdown_button = self.find_by_id('dropdownMenuButtonTagMerge')
+        self.driver.execute_script("arguments[0].scrollIntoView();", dropdown_button)
+        await asyncio.sleep(1)
+        ActionChains(self.driver).click(dropdown_button).perform()
         await asyncio.sleep(1)
         # Select the target tag to merge into
         target_option = self.driver.find_element(
