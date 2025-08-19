@@ -1517,7 +1517,8 @@ class CollectionUpdate(BaseHandler):
             if current_id == collection.id:  # Loop detected!
                 return True
             parent_collection = self.db.query(database.Collection).filter_by(
-                id=current_id, project_id=collection.project_id
+                id=current_id, 
+                project_id=collection.project_id
             ).first()
             if not parent_collection:
                 break
