@@ -362,29 +362,29 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertTrue(doc.filename, docs_2[0]['name'])
 
         # Check documents in TreeView
-        await asyncio.sleep(2)  # Attendre que le TreeView se charge
+        await asyncio.sleep(2)  # Wait for TreeView to load
 
-        # Trouver le groupe "Sans collection"
+        # Find the "Sans collection" group
         sans_collection_group = self.find_by_id('treeview-node-uncategorized')
 
-        # Vérifier le badge qui indique le nombre de documents
+        # Verify the badge showing document count
         badge = sans_collection_group.find_element(By.CSS_SELECTOR, '.badge')
         self.assertEqual(
-            badge.text, '2', "Le badge devrait indiquer 2 documents")
+            badge.text, '2', "Badge should show 2 documents")
 
-        # Cliquer sur "Sans collection" pour l'expandre
+        # Click on "Sans collection" to expand it
         await self.s_click(sans_collection_group)
-        await asyncio.sleep(1)  # Attendre que l'expansion se fasse
+        await asyncio.sleep(1)  # Wait for expansion to complete
 
-        # Maintenant chercher les documents individuels après expansion
+        # Now search for individual documents after expansion
         treeview_documents = self.find_by_id('treeview-documents')
         document_links = treeview_documents.find_elements(
             By.CSS_SELECTOR, '[data-nodeid]:not([data-nodeid="0"])')
 
-        # Vérifier qu'on a bien 2 documents individuels
+        # Verify we have exactly 2 individual documents
         self.assertEqual(len(document_links), 2)
 
-        # Vérifier que les noms des documents sont présents
+        # Verify that document names are present
         document_names = [link.text.split(
             '\n')[0] for link in document_links if link.text.strip()]
         self.assertIn(docs_1[0]['name'], document_names)
