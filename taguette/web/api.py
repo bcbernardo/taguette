@@ -1469,7 +1469,7 @@ class CollectionUpdate(BaseHandler):
                                 400,
                                 self.gettext("Collection cannot be its own parent"))
                         if self._would_create_circular_reference(
-                            collection, parent_id):
+                                collection, parent_id):
                             return self.send_error_json(
                                 400,
                                 self.gettext("Would create circular reference"))
@@ -1478,10 +1478,10 @@ class CollectionUpdate(BaseHandler):
                     collection.documents = []
                     for doc_id in obj['document_ids']:
                         document = (self.db.query(database.Document)
-                                   .filter_by(
-                                       id=doc_id,
-                                       project_id=project.id)
-                                   .first())
+                                    .filter_by(
+                            id=doc_id,
+                            project_id=project.id)
+                            .first())
                         if document:
                             collection.documents.append(document)
 
@@ -1517,10 +1517,10 @@ class CollectionUpdate(BaseHandler):
             if current_id == collection.id:  # Loop detected!
                 return True
             parent_collection = (self.db.query(database.Collection)
-                               .filter_by(
-                                   id=current_id,
-                                   project_id=collection.project_id)
-                               .first())
+                                 .filter_by(
+                id=current_id,
+                project_id=collection.project_id)
+                .first())
             if not parent_collection:
                 break
             current_id = parent_collection.parent_id  # Go up hierarchy
@@ -1538,8 +1538,8 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(404, self.gettext("No such collection"))
 
         has_children = (self.db.query(database.Collection)
-                       .filter_by(parent_id=collection.id)
-                       .first() is not None)
+                        .filter_by(parent_id=collection.id)
+                        .first() is not None)
         if has_children:
             return self.send_error_json(
                 400, self.gettext("Cannot delete collection with subcollections"))
