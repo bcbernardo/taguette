@@ -233,6 +233,47 @@ class User(Base):
         )
 
 
+# Table d'association many-to-many entre collections et documents
+collection_documents = Table(
+    'collection_documents',
+    Base.metadata,
+    Column('collection_id', Integer, ForeignKey(
+        'collections.id', ondelete='CASCADE'), primary_key=True),
+    Column('document_id', Integer, ForeignKey(
+        'documents.id', ondelete='CASCADE'), primary_key=True),
+)
+
+
+class Collection(Base):
+    __tablename__ = 'collections'
+    __table_args__ = ({'sqlite_autoincrement': True},)
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    created = Column(DateTime, nullable=False,
+                     default=lambda: datetime.utcnow())
+    owner_login = Column(String(255), ForeignKey('users.login'), nullable=True)
+    owner = relationship('User')
+    project_id = Column(Integer, ForeignKey(
+        'projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    project = relationship('Project', back_populates='collections')
+
+    parent_id = Column(Integer,
+                       ForeignKey('collections.id', ondelete='CASCADE'),
+                       nullable=True, index=True)
+    parent = relationship('Collection', remote_side=[id])
+
+    documents = relationship(
+        'Document',
+        secondary=collection_documents,
+        back_populates='collections'
+    )
+
+    def __repr__(self):
+        return f'<Collection {self.id} {self.name}>'
+
+
 class Project(Base):
     __tablename__ = 'projects'
     __table_args__ = ({'sqlite_autoincrement': True},)
@@ -252,6 +293,8 @@ class Project(Base):
     tags = relationship('Tag', cascade='all,delete-orphan', order_by='Tag.id',
                         passive_deletes=True,
                         back_populates='project')
+    collections = relationship(
+        'Collection', cascade='all,delete-orphan', back_populates='project')
 
     def __repr__(self):
         return '<%s.%s %r %r>' % (
@@ -346,6 +389,11 @@ class Document(Base):
     highlights = relationship('Highlight', cascade='all,delete-orphan',
                               passive_deletes=True)
     favorite = Column(Boolean, nullable=True, default=False)
+    collections = relationship(
+        'Collection',
+        secondary=collection_documents,
+        back_populates='documents'
+    )
 
     def __repr__(self):
         return '<%s.%s %r %r project_id=%r>' % (
@@ -408,7 +456,8 @@ class Command(Base):
 
     TYPES = {'project_meta', 'document_add', 'document_delete',
              'highlight_add', 'highlight_delete', 'tag_add', 'tag_delete',
-             'tag_merge', 'member_add', 'member_remove', 'project_import'}
+             'tag_merge', 'member_add', 'member_remove', 'project_import',
+             'collection_add', 'collection_delete', 'collection_update'}
 
     for n in TYPES:
         PROM_COMMAND.labels(n).inc(0)
@@ -433,7 +482,8 @@ class Command(Base):
         payload_fields=['document_name',
                         'description',
                         'favorite',
-                        'text_direction'],
+                        'text_direction',
+                        'collections'],
     )
     def document_add(cls, user_login, document):
         assert isinstance(document.id, int)
@@ -445,7 +495,8 @@ class Command(Base):
                      'document_name': document.name,
                      'description': document.description,
                      'favorite': document.favorite,
-                     'text_direction': document.text_direction.name},
+                     'text_direction': document.text_direction.name,
+                     'collections': [c.id for c in document.collections]},
         )
 
     @classmethod
@@ -594,6 +645,61 @@ class Command(Base):
             user_login=user_login,
             project_id=project_id,
             payload={'type': 'project_import'}  # keep in sync above
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id', 'collection_name', 'description',
+                        'parent_id', 'document_ids'],
+    )
+    def collection_add(cls, user_login, collection):
+        assert isinstance(collection.id, int)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_add',  # keep in sync above
+                     'collection_id': collection.id,
+                     'collection_name': collection.name,
+                     'description': collection.description,
+                     'parent_id': collection.parent_id,
+                     'document_ids': [d.id for d in collection.documents]}
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id'],
+    )
+    def collection_delete(cls, user_login, collection):
+        assert isinstance(collection, Collection)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_delete',  # keep in sync above
+                     'collection_id': collection.id}
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['collection_id',
+                        'collection_name',
+                        'description',
+                        'parent_id',
+                        'document_ids'],
+    )
+    def collection_update(cls, user_login, collection):
+        assert isinstance(collection, Collection)
+        return cls(
+            user_login=user_login,
+            project_id=collection.project_id,
+            payload={'type': 'collection_update',  # keep in sync above
+                     'collection_id': collection.id,
+                     'collection_name': collection.name,
+                     'description': collection.description,
+                     'parent_id': collection.parent_id,
+                     'document_ids': [d.id for d in collection.documents]}
         )
 
     def __repr__(self):

@@ -25,34 +25,50 @@
             <div class="row py-1 panel-content">
                 <div class="col-md-12 mb-3 mx-1">
                     <div class="d-flex flex-wrap gap-2">
-                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2" href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {% trans %}Create a code{% endtrans %}</a>
+                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2"
+                            href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {%
+                            trans %}Create a code{% endtrans %}</a>
                         <div class="dropdown ms-2">
-                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
+                                id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true"
+                                aria-expanded="false">
                                 <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
                             </button>
-                            <div class="dropdown-menu" id="tag-menu-more-actions" aria-labelledby="tag-more-action-button">
-                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/" data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans %}Expand all{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans %}Collapse all{% endtrans %}</a>
+                            <div class="dropdown-menu" id="tag-menu-more-actions"
+                                aria-labelledby="tag-more-action-button">
+                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/"
+                                    data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans
+                                    %}</a>
+                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans
+                                    %}Expand all{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans
+                                    %}Collapse all{% endtrans %}</a>
                             </div>
                         </div>
                         <div class="dropdown ms-2">
-                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button" id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
+                                id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true"
+                                aria-expanded="false">
                                 <i class="fa fa-sort"></i> {% trans %}Sort by{% endtrans %}
                             </button>
                             <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
-                                <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans %}Text [a&rarr;z]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text [z&rarr;a]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count [0&rarr;9]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count [9&rarr;0]{% endtrans %}</a>
+                                <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans
+                                    %}Text [a&rarr;z]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text
+                                    [z&rarr;a]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count
+                                    [0&rarr;9]{% endtrans %}</a>
+                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count
+                                    [9&rarr;0]{% endtrans %}</a>
                             </div>
                         </div>
-                   </div>
+                    </div>
                 </div>
             </div>
             <div class="mb-2 panel-content">
                 <div class="form-group">
-                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans "tag change form placeholder" %}Search for a code{% endtrans %}">
+                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans " tag change
+                        form placeholder" %}Search for a code{% endtrans %}">
                 </div>
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
                 </div>
@@ -71,31 +87,40 @@
 
         <div id="document-view" class="document-view">
             <div id="document-contents">
-                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document from your bookmarks or on the right{% endtrans %}</p>
+                <p style="font-style: oblique; text-align: center;">{% trans %}Load a document from your bookmarks or on
+                    the right{% endtrans %}</p>
             </div>
         </div>
 
-        <button id="scroll-to-top-button" class="btn btn-primary rounded-circle scroll-btn d-none" title="Scroll to top">
+        <button id="scroll-to-top-button" class="btn btn-primary rounded-circle scroll-btn d-none"
+            title="Scroll to top">
             <i class="fas fa-arrow-up"></i>
         </button>
 
     </div>
 
     <!-- List of documents -->
-    <div class="col-12 col-md-2-5 order-1 order-md-3"  id="right-panel">
+    <div class="col-12 col-md-2-5 order-1 order-md-3" id="right-panel">
         <div class="bordered-container sticky-top">
             <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Panel">
                 <i class="fas fa-chevron-right"></i>
             </button>
             <div class="row  panel-content">
                 <div class="col-md-12">
-                    <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()" data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{% endtrans %}</a>
-                    <input type="text" class="form-control mt-3 mb-3" id="input-search-titles" placeholder="{% trans %}Search titles{% endtrans %}">
+                    <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()"
+                        data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{%
+                        endtrans %}</a>
+                    <a class="btn btn-sm btn-outline-primary rounded-4 ms-2 float-end mb-3"
+                        href="javascript:createCollection()" data-test-id="create-collection-link"><i
+                            class="fas fa-folder-plus"></i> {% trans %}Add a collection{% endtrans %}</a>
+                    <input type="text" class="form-control mt-3 mb-3" id="input-search-titles"
+                        placeholder="{% trans %}Search titles{% endtrans %}">
                 </div>
             </div>
-            <ul class="list-group list-group-flush  panel-content" id="documents-list">
-                <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-            </ul>
+            <!-- Documents treeview -->
+            <div class="panel-content" id="treeview-documents">
+                <div class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</div>
+            </div>
             <div class="alert alert-info mt-2 d-none" role="alert" id="alert-title-search"></div>
         </div>
     </div>
@@ -110,6 +135,9 @@
 
 <!-- Add document modal -->
 {% include 'modal/create_document.html' %}
+
+<!-- Add collection modal -->
+{% include 'modal/create_collection.html' %}
 
 <!-- Change document modal -->
 {% include 'modal/change_document.html' %}
@@ -147,6 +175,7 @@
     let last_event = {{ last_event }};
     let is_demo = {{ is_demo }};
     let demo_highlights_location = {{ demo_highlights_location }};
+    let collections = {{ collections }};
 </script>
 
 <script type="text/javascript" src="{{ reverse_url('trans.js') }}?lang={{ user.language }}"></script>
@@ -174,6 +203,10 @@
 <script type="text/javascript" src="{{ static_url('js/tag/treeview.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/tag/context-menu.js') }}"></script>
 
+<!-- collection -->
+<script type="text/javascript" src="{{ static_url('js/collection/hierarchy-select.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/collection/context-menu.js') }}"></script>
+
 <!-- highlight -->
 <script type="text/javascript" src="{{ static_url('js/highlight.js') }}"></script>
 
@@ -186,15 +219,19 @@
 <!-- document -->
 <script type="text/javascript" src="{{ static_url('js/document/manager.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/document/custom-select.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/document/treeview.js') }}"></script>
 
 <!-- others -->
 <script type="text/javascript" src="{{ static_url('js/polling-event.js') }}"></script>
 
 <script type="text/javascript">
-    $(document).ready(function(){
+    $(document).ready(function () {
 
         sortTagsBy('path', 'asc');
         addContextMenu();
+
+        // Initialize document treeview
+        initDocumentsTreeview();
 
     });
 

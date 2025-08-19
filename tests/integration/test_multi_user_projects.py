@@ -1,7 +1,6 @@
 import asyncio
 import textwrap
 import time
-import json
 
 from tornado.testing import gen_test
 
@@ -88,7 +87,7 @@ class TestMultiUserProject(TestMultiUser):
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
         idx = body.index('<!-- Initial state -->')
-        init_js = '\n'.join(body[idx:].splitlines()[1:12])
+        init_js = '\n'.join(body[idx:].splitlines()[1:14])
 
         tags = [
             build_tag_response(
@@ -98,15 +97,17 @@ class TestMultiUserProject(TestMultiUser):
         ]
 
         last_event = -1
-        user = self.db.query(database.User).get(user_login)
+        db = self.get_db_session()
+        user = db.query(database.User).get(user_login)
         lang = user.language
         if lang not in DEMO_DATA.keys():
-            lang = self.config['DEFAULT_LANGUAGE']
-        demo_highlights_location = (
-            json.dumps(DEMO_DATA[lang]['tutorial_highlights']))
+            config = self.generate_config()
+            lang = config['DEFAULT_LANGUAGE']
+        # demo_highlights_location = (
+        #     json.dumps(DEMO_DATA[lang]['tutorial_highlights']))
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
-            members, last_event, 'false', demo_highlights_location)
+            members, last_event, 'false', '[]')
 
         self.assertEqual(init_js, init_js_expected)
 
@@ -183,7 +184,7 @@ class TestMultiUserProject(TestMultiUser):
             {'type': 'document_add', 'id': 3, 'document_id': 1,
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': name, 'favorite': False,
-             'description': ''})
+             'description': '', 'collections': []})
 
         poll_proj1 = await self.poll_event(1, 3)
 
@@ -208,7 +209,7 @@ class TestMultiUserProject(TestMultiUser):
             {'type': 'document_add', 'id': 4, 'document_id': 2,
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': 'otherdoc', 'favorite': False,
-             'description': 'Other one'})
+             'description': 'Other one', 'collections': []})
 
         poll_proj2 = await self.poll_event(2, 4)
 
@@ -313,7 +314,7 @@ class TestMultiUserProject(TestMultiUser):
             {'type': 'document_add', 'id': 9, 'document_id': 3,
              'text_direction': 'RIGHT_TO_LEFT',
              'document_name': 'third', 'favorite': False,
-             'description': 'Last one'})
+             'description': 'Last one', 'collections': []})
 
         poll_proj2 = await self.poll_event(2, 9)
 
@@ -825,6 +826,133 @@ class TestMultiUserProject(TestMultiUser):
             self.assertTrue(len(response_json['documents']) > 0)
 
         # TODO: Collaborators
+
+        # Test collections functionality
+        # Create collection 1 in project 1
+        async with self.apost(
+            '/api/project/1/collection/new',
+            json=dict(name='Research Papers',
+                      description='Academic documents'),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertEqual(response_json, {
+                'id': 1,
+                'name': 'Research Papers',
+                'description': 'Academic documents',
+                'created': response_json['created']
+            })
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_add', 'id': 16, 'collection_id': 1,
+             'collection_name': 'Research Papers',
+             'description': 'Academic documents',
+             'parent_id': None, 'document_ids': []})
+
+        poll_proj1 = await self.poll_event(1, 16)
+
+        # Create collection 2 in project 1 (child of collection 1)
+        async with self.apost(
+            '/api/project/1/collection/new',
+            json=dict(name='Published Papers',
+                      description='Peer-reviewed articles',
+                      parent_id=1),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertEqual(response_json, {
+                'id': 2,
+                'name': 'Published Papers',
+                'description': 'Peer-reviewed articles',
+                'created': response_json['created']
+            })
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_add', 'id': 17, 'collection_id': 2,
+             'collection_name': 'Published Papers',
+             'description': 'Peer-reviewed articles',
+             'parent_id': 1, 'document_ids': []})
+
+        poll_proj1 = await self.poll_event(1, 17)
+
+        # Add document 1 to collection 1
+        async with self.apost(
+            '/api/project/1/collection/1',
+            json=dict(document_ids=[1]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertEqual(response_json, {
+                'id': 1,
+                'name': 'Research Papers',
+                'description': 'Academic documents',
+                'parent_id': None,
+                'document_ids': [1]
+            })
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_update', 'id': 18, 'collection_id': 1,
+             'collection_name': 'Research Papers',
+             'description': 'Academic documents',
+             'parent_id': None, 'document_ids': [1]})
+
+        poll_proj1 = await self.poll_event(1, 18)
+
+        # Update collection 1 name
+        async with self.apost(
+            '/api/project/1/collection/1',
+            json=dict(name='Academic Papers',
+                      description='Academic documents'),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertEqual(response_json, {
+                'id': 1,
+                'name': 'Academic Papers',
+                'description': 'Academic documents',
+                'parent_id': None,
+                'document_ids': [1]
+            })
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_update', 'id': 19, 'collection_id': 1,
+             'collection_name': 'Academic Papers',
+             'description': 'Academic documents',
+             'parent_id': None, 'document_ids': [1]})
+
+        poll_proj1 = await self.poll_event(1, 19)
+
+        # Remove document 1 from collection 1
+        async with self.apost(
+            '/api/project/1/collection/1',
+            json=dict(document_ids=[]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            response_json = await response.json()
+            self.assertEqual(response_json, {
+                'id': 1,
+                'name': 'Academic Papers',
+                'description': 'Academic documents',
+                'parent_id': None,
+                'document_ids': []
+            })
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_update', 'id': 20, 'collection_id': 1,
+             'collection_name': 'Academic Papers',
+             'description': 'Academic documents',
+             'parent_id': None, 'document_ids': []})
+
+        poll_proj1 = await self.poll_event(1, 20)
+
+        # Delete collection 2
+        async with self.adelete('/api/project/1/collection/2') as response:
+            self.assertEqual(response.status, 204)
+        self.assertEqual(
+            await poll_proj1,
+            {'type': 'collection_delete', 'id': 21, 'collection_id': 2})
+
+        poll_proj1 = await self.poll_event(1, 21)
 
         await asyncio.sleep(2)
         self.assertFalse(poll_proj1.done())
