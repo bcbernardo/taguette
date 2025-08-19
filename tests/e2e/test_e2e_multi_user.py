@@ -459,7 +459,8 @@ class Test2E2MultiUser(SeleniumTest):
             # No badge is acceptable for empty collections
             pass
 
-        # Test keyboard shortcut Ctrl+E to edit collection and add documents
+        # Test keyboard shortcut Ctrl+E to edit collection
+        # and add documents
         from selenium.webdriver.common.keys import Keys
 
         # Wait for the collection to be ready
@@ -469,7 +470,8 @@ class Test2E2MultiUser(SeleniumTest):
         try:
             alert_modal = self.driver.find_element(By.ID, 'alertModal')
             if alert_modal.is_displayed():
-                # Close the modal by clicking the close button or backdrop
+                # Close the modal by clicking the close button
+                # or backdrop
                 close_button = alert_modal.find_element(
                     By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)

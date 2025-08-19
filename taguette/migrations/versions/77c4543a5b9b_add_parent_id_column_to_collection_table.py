@@ -23,8 +23,9 @@ def upgrade():
             sa.Column('parent_id', sa.Integer(), nullable=True))
         batch_op.create_index(batch_op.f('ix_collections_parent_id'), [
                               'parent_id'], unique=False)
-        batch_op.create_foreign_key(batch_op.f('fk_collections_parent_id_collections'), 'collections', [
-                                    'parent_id'], ['id'], ondelete='CASCADE')
+        batch_op.create_foreign_key(
+            batch_op.f('fk_collections_parent_id_collections'),
+            'collections', ['parent_id'], ['id'], ondelete='CASCADE')
 
     # ### end Alembic commands ###
 

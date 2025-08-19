@@ -128,7 +128,8 @@ class TestMultiUserImport(TestMultiUser):
                 # documents 1, 2, 3 imported as 7, 8, 9
                 # tags 1, 2, 3 imported as 7, 8, -3
                 # highlights 1, 2, 3 imported as 7, 8, -3
-                # commands 1-13 exported as 31-43 (4 additional commands for collections)
+                # commands 1-13 exported as 31-43
+                # (4 additional commands for collections)
                 (31, 'db1user', 3, 7,
                  {'description': '',
                   'document_name': 'db2doc11.txt',
@@ -180,11 +181,13 @@ class TestMultiUserImport(TestMultiUser):
                  {'type': 'highlight_delete', 'highlight_id': -3}),
                 (44, 'db1user', 3, None,
                  {'type': 'collection_add', 'collection_id': 5,
-                  'collection_name': 'db2collection11', 'description': 'Test collection 1',
+                  'collection_name': 'db2collection11',
+                  'description': 'Test collection 1',
                   'parent_id': None, 'document_ids': []}),
                 (45, 'db1user', 3, None,
                  {'type': 'collection_add', 'collection_id': 6,
-                  'collection_name': 'db2collection12', 'description': 'Test collection 2',
+                  'collection_name': 'db2collection12',
+                  'description': 'Test collection 2',
                   'parent_id': None, 'document_ids': []}),
                 (46, 'db1user', 3, None, {'type': 'project_import'}),
             ],
