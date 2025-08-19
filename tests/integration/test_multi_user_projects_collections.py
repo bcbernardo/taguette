@@ -132,7 +132,8 @@ class TestMultiUserProjectCollections(TestMultiUser):
 
         poll_project1 = await self.poll_event(1, 1)
 
-        # Create a collection "Published Papers" in project 1 (child of Research Papers)
+        # Create a collection "Published Papers" in project 1
+        # (child of Research Papers)
         async with self.apost(
             '/api/project/1/collection/new',
             json=build_collection_data(name='Published Papers',

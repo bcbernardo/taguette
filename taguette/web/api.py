@@ -1387,8 +1387,8 @@ class CreateCollection(BaseHandler):
                                      .first())
                 if not parent_collection:
                     return self.send_error_json(
-                    400,
-                    self.gettext("Parent collection not found"))
+                        400,
+                        self.gettext("Parent collection not found"))
 
             collection = database.Collection(
                 name=name,
@@ -1460,16 +1460,16 @@ class CollectionUpdate(BaseHandler):
                                              .first())
                         if not parent_collection:
                             return self.send_error_json(
-                            400,
-                            self.gettext("Parent collection not found"))
+                                400,
+                                self.gettext("Parent collection not found"))
                         if parent_id == collection.id:
                             return self.send_error_json(
-                            400,
-                            self.gettext("Collection cannot be its own parent"))
+                                400,
+                                self.gettext("Collection cannot be its own parent"))
                         if self._would_create_circular_reference(collection, parent_id):
                             return self.send_error_json(
-                            400,
-                            self.gettext("Would create circular reference"))
+                                400,
+                                self.gettext("Would create circular reference"))
                     collection.parent_id = parent_id
                 if 'document_ids' in obj:
                     collection.documents = []
