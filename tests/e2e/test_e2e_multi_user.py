@@ -163,7 +163,6 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(self.s_path, '/account')
 
     def get_highlight_add_tags(self):
-        from selenium.webdriver.common.by import By
         tags = {}
 
         tags_highlight = (
@@ -207,7 +206,6 @@ class Test2E2MultiUser(SeleniumTest):
         # merge tag 2 -> 1
         # highlights: [1, 2, 3]
         from selenium.webdriver import ActionChains
-        from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
 
         # Accept cookies

@@ -1,7 +1,6 @@
 import asyncio
 import textwrap
 import time
-import json
 
 from tornado.testing import gen_test
 
@@ -846,7 +845,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj1,
             {'type': 'collection_add', 'id': 16, 'collection_id': 1,
-             'collection_name': 'Research Papers', 'description': 'Academic documents',
+             'collection_name': 'Research Papers', 
+             'description': 'Academic documents',
              'parent_id': None, 'document_ids': []})
 
         poll_proj1 = await self.poll_event(1, 16)
@@ -854,8 +854,9 @@ class TestMultiUserProject(TestMultiUser):
         # Create collection 2 in project 1 (child of collection 1)
         async with self.apost(
             '/api/project/1/collection/new',
-            json=dict(name='Published Papers', description='Peer-reviewed articles',
-                      parent_id=1),
+            json=dict(name='Published Papers', 
+                     description='Peer-reviewed articles',
+                     parent_id=1),
         ) as response:
             self.assertEqual(response.status, 200)
             response_json = await response.json()
@@ -868,7 +869,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj1,
             {'type': 'collection_add', 'id': 17, 'collection_id': 2,
-             'collection_name': 'Published Papers', 'description': 'Peer-reviewed articles',
+             'collection_name': 'Published Papers', 
+             'description': 'Peer-reviewed articles',
              'parent_id': 1, 'document_ids': []})
 
         poll_proj1 = await self.poll_event(1, 17)
@@ -890,7 +892,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj1,
             {'type': 'collection_update', 'id': 18, 'collection_id': 1,
-             'collection_name': 'Research Papers', 'description': 'Academic documents',
+             'collection_name': 'Research Papers', 
+             'description': 'Academic documents',
              'parent_id': None, 'document_ids': [1]})
 
         poll_proj1 = await self.poll_event(1, 18)
@@ -913,7 +916,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj1,
             {'type': 'collection_update', 'id': 19, 'collection_id': 1,
-             'collection_name': 'Academic Papers', 'description': 'Academic documents',
+             'collection_name': 'Academic Papers', 
+             'description': 'Academic documents',
              'parent_id': None, 'document_ids': [1]})
 
         poll_proj1 = await self.poll_event(1, 19)
@@ -935,7 +939,8 @@ class TestMultiUserProject(TestMultiUser):
         self.assertEqual(
             await poll_proj1,
             {'type': 'collection_update', 'id': 20, 'collection_id': 1,
-             'collection_name': 'Academic Papers', 'description': 'Academic documents',
+             'collection_name': 'Academic Papers', 
+             'description': 'Academic documents',
              'parent_id': None, 'document_ids': []})
 
         poll_proj1 = await self.poll_event(1, 20)

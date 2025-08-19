@@ -329,8 +329,10 @@ class Document(BaseHandler):
                 if 'collections' in obj:
                     document.collections = []
                     for col_id in obj['collections']:
-                        collection = self.db.query(database.Collection).filter_by(
-                            id=col_id, project_id=document.project_id).first()
+                        collection = (self.db.query(database.Collection)
+                                     .filter_by(id=col_id, 
+                                               project_id=document.project_id)
+                                     .first())
                         if collection:
                             document.collections.append(collection)
                 cmd = database.Command.document_add(
@@ -1372,14 +1374,17 @@ class CreateCollection(BaseHandler):
             parent_id = obj.get('parent_id', None)
 
             if not name:
-                return self.send_error_json(400, self.gettext("Collection name is required"))
+                return self.send_error_json(400, 
+                                          self.gettext("Collection name is required"))
 
             if parent_id is not None:
-                parent_collection = self.db.query(database.Collection).filter_by(
-                    id=parent_id, project_id=project.id
-                ).first()
+                parent_collection = (self.db.query(database.Collection)
+                                     .filter_by(id=parent_id, 
+                                               project_id=project.id)
+                                     .first())
                 if not parent_collection:
-                    return self.send_error_json(400, self.gettext("Parent collection not found"))
+                    return self.send_error_json(400, 
+                                              self.gettext("Parent collection not found"))
 
             collection = database.Collection(
                 name=name,
@@ -1426,14 +1431,16 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(403, self.gettext("Unauthorized"))
         try:
             obj = self.get_json()
-            collection = self.db.query(
-                database.Collection).get(int(collection_id))
+            collection = (self.db.query(database.Collection)
+                          .get(int(collection_id)))
             if collection is None or collection.project_id != project.id:
-                return self.send_error_json(404, self.gettext("No such collection"))
+                return self.send_error_json(404, 
+                                          self.gettext("No such collection"))
             if obj:
                 if 'name' in obj:
                     if not obj['name'].strip():
-                        return self.send_error_json(400, self.gettext("Collection name is required"))
+                        return self.send_error_json(400, 
+                                                  self.gettext("Collection name is required"))
                     collection.name = obj['name'].strip()
                 if 'description' in obj:
                     validate.description(obj['description'])
@@ -1441,21 +1448,27 @@ class CollectionUpdate(BaseHandler):
                 if 'parent_id' in obj:
                     parent_id = obj['parent_id']
                     if parent_id is not None:
-                        parent_collection = self.db.query(database.Collection).filter_by(
-                            id=parent_id, project_id=project.id
-                        ).first()
+                        parent_collection = (self.db.query(database.Collection)
+                                             .filter_by(id=parent_id, 
+                                                       project_id=project.id)
+                                             .first())
                         if not parent_collection:
-                            return self.send_error_json(400, self.gettext("Parent collection not found"))
+                            return self.send_error_json(400, 
+                                                      self.gettext("Parent collection not found"))
                         if parent_id == collection.id:
-                            return self.send_error_json(400, self.gettext("Collection cannot be its own parent"))
+                            return self.send_error_json(400, 
+                                                      self.gettext("Collection cannot be its own parent"))
                         if self._would_create_circular_reference(collection, parent_id):
-                            return self.send_error_json(400, self.gettext("Would create circular reference"))
+                            return self.send_error_json(400, 
+                                                      self.gettext("Would create circular reference"))
                     collection.parent_id = parent_id
                 if 'document_ids' in obj:
                     collection.documents = []
                     for doc_id in obj['document_ids']:
-                        document = self.db.query(database.Document).filter_by(
-                            id=doc_id, project_id=project.id).first()
+                        document = (self.db.query(database.Document)
+                                   .filter_by(id=doc_id, 
+                                             project_id=project.id)
+                                   .first())
                         if document:
                             collection.documents.append(document)
 
@@ -1503,7 +1516,8 @@ class CollectionUpdate(BaseHandler):
         project, privileges = self.get_project(project_id)
         if not privileges.can_edit_document():
             return self.send_error_json(403, self.gettext("Unauthorized"))
-        collection = self.db.query(database.Collection).get(int(collection_id))
+        collection = (self.db.query(database.Collection)
+                      .get(int(collection_id)))
         if collection is None or collection.project_id != project.id:
             return self.send_error_json(404, self.gettext("No such collection"))
 

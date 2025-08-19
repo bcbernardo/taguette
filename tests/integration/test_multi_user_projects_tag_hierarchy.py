@@ -1,5 +1,4 @@
 import textwrap
-import json
 
 from tornado.testing import gen_test
 

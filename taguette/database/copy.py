@@ -2,8 +2,9 @@ from collections import defaultdict
 import logging
 import opentelemetry.trace
 
-from .models import Project, Privileges, ProjectMember, TextDirection, \
-    Document, Command, Highlight, Tag, highlight_tags, Collection, collection_documents
+from .models import (Project, Privileges, ProjectMember, TextDirection,
+                     Document, Command, Highlight, Tag, highlight_tags, 
+                     Collection, collection_documents)
 from .. import convert
 from ..utils import DefaultMap
 from .. import validate
@@ -235,7 +236,8 @@ def copy_project(
         # Map JSON fields
         for field, value in list(payload.items()):
             try:
-                if field in field_validators and not field_validators[field](value):
+                if (field in field_validators and 
+                not field_validators[field](value)):
                     print(field, value)
                     if field == 'parent_id':
                         print("mapping_collections:", mapping_collections)
@@ -359,7 +361,8 @@ def validate_item(item, validators):
 
 
 def prepare_item_for_insertion(item, pkey, fkeys, transform, mapping):
-    """Prepare an item for insertion by removing pkey, mapping foreign keys, and applying transform."""
+    """Prepare an item for insertion by removing pkey, mapping foreign keys,
+    and applying transform."""
     item_id = item[pkey]
     # Get primary key, remove it
     if pkey is not None:
