@@ -832,7 +832,8 @@ class TestMultiUserProject(TestMultiUser):
         # Create collection 1 in project 1
         async with self.apost(
             '/api/project/1/collection/new',
-            json=dict(name='Research Papers', description='Academic documents'),
+            json=dict(name='Research Papers',
+                      description='Academic documents'),
         ) as response:
             self.assertEqual(response.status, 200)
             response_json = await response.json()
@@ -897,7 +898,8 @@ class TestMultiUserProject(TestMultiUser):
         # Update collection 1 name
         async with self.apost(
             '/api/project/1/collection/1',
-            json=dict(name='Academic Papers', description='Academic documents'),
+            json=dict(name='Academic Papers',
+                      description='Academic documents'),
         ) as response:
             self.assertEqual(response.status, 200)
             response_json = await response.json()

@@ -365,27 +365,30 @@ class Test2E2MultiUser(SeleniumTest):
 
         # Check documents in TreeView
         await asyncio.sleep(2)  # Attendre que le TreeView se charge
-        
+
         # Trouver le groupe "Sans collection"
         sans_collection_group = self.find_by_id('treeview-node-uncategorized')
-        
+
         # Vérifier le badge qui indique le nombre de documents
         badge = sans_collection_group.find_element(By.CSS_SELECTOR, '.badge')
-        self.assertEqual(badge.text, '2', "Le badge devrait indiquer 2 documents")
-        
+        self.assertEqual(
+            badge.text, '2', "Le badge devrait indiquer 2 documents")
+
         # Cliquer sur "Sans collection" pour l'expandre
         await self.s_click(sans_collection_group)
         await asyncio.sleep(1)  # Attendre que l'expansion se fasse
-        
+
         # Maintenant chercher les documents individuels après expansion
         treeview_documents = self.find_by_id('treeview-documents')
-        document_links = treeview_documents.find_elements(By.CSS_SELECTOR, '[data-nodeid]:not([data-nodeid="0"])')
-        
+        document_links = treeview_documents.find_elements(
+            By.CSS_SELECTOR, '[data-nodeid]:not([data-nodeid="0"])')
+
         # Vérifier qu'on a bien 2 documents individuels
         self.assertEqual(len(document_links), 2)
-        
+
         # Vérifier que les noms des documents sont présents
-        document_names = [link.text.split('\n')[0] for link in document_links if link.text.strip()]
+        document_names = [link.text.split(
+            '\n')[0] for link in document_links if link.text.strip()]
         self.assertIn(docs_1[0]['name'], document_names)
         self.assertIn(docs_2[0]['name'], document_names)
 
@@ -394,59 +397,66 @@ class Test2E2MultiUser(SeleniumTest):
             javascript:createCollection();
         ''')
         await asyncio.sleep(1)
-        
+
         # Fill collection form
         self.set_value('collection-add-name', 'Test Collection')
-        self.set_value('collection-add-description', 'A test collection for E2E testing')
-        
+        self.set_value('collection-add-description',
+                       'A test collection for E2E testing')
+
         # Submit the form using the data-test-id
         await self.s_click_button('collection-add-submit-button')
         await asyncio.sleep(2)
-        
+
         # Verify collection was created in database
         db = self.application.DBSession()
-        collection = db.query(database.Collection).filter_by(name='Test Collection').first()
+        collection = db.query(database.Collection).filter_by(
+            name='Test Collection').first()
         self.assertIsNotNone(collection)
         self.assertEqual(collection.name, 'Test Collection')
-        self.assertEqual(collection.description, 'A test collection for E2E testing')
+        self.assertEqual(collection.description,
+                         'A test collection for E2E testing')
         self.assertIsNone(collection.parent_id)
-        
+
         # Verify collection appears in document TreeView and is empty
         await asyncio.sleep(10)  # Wait for UI to update
-        
+
         # Find the document TreeView (which now includes collections)
         treeview_documents = self.find_by_id('treeview-documents')
         self.assertIsNotNone(treeview_documents)
         # Find all nodes in the TreeView (collections and document groups)
-        all_nodes = self.find_children_by_id('treeview-documents', 'node-treeview-documents')
-        
+        all_nodes = self.find_children_by_id(
+            'treeview-documents', 'node-treeview-documents')
+
         self.assertEqual(len(all_nodes), 2)
-        
+
         # Find both nodes
         node_texts = [node.text for node in all_nodes]
         sans_collection_node = None
         test_collection_node = None
-        
+
         for node in all_nodes:
             if 'Sans collection' in node.text:
                 sans_collection_node = node
             elif 'Test Collection' in node.text:
                 test_collection_node = node
-        
+
         # Verify both nodes exist
         self.assertIsNotNone(sans_collection_node)
         self.assertIsNotNone(test_collection_node)
-        
+
         # Verify "Sans collection" badge shows 2 documents
         try:
-            badge = sans_collection_node.find_element(By.CSS_SELECTOR, '.badge')
+            badge = sans_collection_node.find_element(
+                By.CSS_SELECTOR, '.badge')
             self.assertEqual(badge.text, '2')
         except:
-            self.fail("Sans collection node should have a badge showing document count")
-        
+            self.fail(
+                "Sans collection node should have a badge showing document count")
+
         # Verify "Test Collection" is empty (badge shows 0 or no badge)
         try:
-            badge = test_collection_node.find_element(By.CSS_SELECTOR, '.badge')
+            badge = test_collection_node.find_element(
+                By.CSS_SELECTOR, '.badge')
             self.assertEqual(badge.text, '0')
         except:
             # No badge is acceptable for empty collections
@@ -454,59 +464,66 @@ class Test2E2MultiUser(SeleniumTest):
 
         # Test keyboard shortcut Ctrl+E to edit collection and add documents
         from selenium.webdriver.common.keys import Keys
-        
+
         # Wait for the collection to be ready
         await asyncio.sleep(1)
-        
+
         # Check if there's an alert modal that needs to be closed first
         try:
             alert_modal = self.driver.find_element(By.ID, 'alertModal')
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
-                close_button = alert_modal.find_element(By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                close_button = alert_modal.find_element(
+                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except:
             # No modal found, continue
             pass
-        
+
         # Click on the collection node to select it (this is required for keyboard shortcuts to work)
         await self.s_click(test_collection_node)
         await asyncio.sleep(1)
-        
+
         # Use keyboard shortcut Ctrl+E to edit the collection
         actions = ActionChains(self.driver)
-        actions.key_down(Keys.CONTROL).send_keys('e').key_up(Keys.CONTROL).perform()
+        actions.key_down(Keys.CONTROL).send_keys(
+            'e').key_up(Keys.CONTROL).perform()
         await asyncio.sleep(2)
-        
+
         # Modal should be open - check documents are available to select
-        doc_checkboxes = self.driver.find_elements(By.CSS_SELECTOR, '#collection-add-documents-list input[type="checkbox"]')
-        self.assertEqual(len(doc_checkboxes), 2, "Should have 2 document checkboxes available")
-        
+        doc_checkboxes = self.driver.find_elements(
+            By.CSS_SELECTOR, '#collection-add-documents-list input[type="checkbox"]')
+        self.assertEqual(len(doc_checkboxes), 2,
+                         "Should have 2 document checkboxes available")
+
         # Check both documents to add them to the collection
         for checkbox in doc_checkboxes:
             if not checkbox.is_selected():
                 await self.s_click(checkbox)
         await asyncio.sleep(1)
-        
+
         # Submit the edited collection
         await self.s_click_button('collection-add-submit-button')
         await asyncio.sleep(3)
-        
+
         # Verify collection now contains the 2 documents
         # Re-find the nodes after update
-        all_nodes = self.find_children_by_id('treeview-documents', 'node-treeview-documents')
+        all_nodes = self.find_children_by_id(
+            'treeview-documents', 'node-treeview-documents')
         test_collection_node = None
         for node in all_nodes:
             if 'Test Collection' in node.text:
                 test_collection_node = node
                 break
-        
-        self.assertIsNotNone(test_collection_node, "Should find updated Test Collection node")
-        
+
+        self.assertIsNotNone(test_collection_node,
+                             "Should find updated Test Collection node")
+
         # Verify badge now shows 2 documents
         badge = test_collection_node.find_element(By.CSS_SELECTOR, '.badge')
-        self.assertEqual(badge.text, '2', "Test Collection should now contain 2 documents")
+        self.assertEqual(
+            badge.text, '2', "Test Collection should now contain 2 documents")
 
         await asyncio.sleep(3)
 
@@ -516,12 +533,13 @@ class Test2E2MultiUser(SeleniumTest):
             {1: False, 2: False}
         )
 
-          # Check if there's an alert modal that needs to be closed first
+        # Check if there's an alert modal that needs to be closed first
         try:
             alert_modal = self.driver.find_element(By.ID, 'alertModal')
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
-                close_button = alert_modal.find_element(By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                close_button = alert_modal.find_element(
+                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except:
@@ -568,7 +586,7 @@ class Test2E2MultiUser(SeleniumTest):
             {1: False, 2: False}
         )
 
-         # select tag 1 - interesting
+        # select tag 1 - interesting
         await self.s_click(
             self.find_by_test_id('tag-node-highlight-1'),
         )
@@ -713,19 +731,21 @@ class Test2E2MultiUser(SeleniumTest):
             ['interesting', 'interesting.places', 'people'],
         )
 
-           # Check if there's an alert modal that needs to be closed first
+        # Check if there's an alert modal that needs to be closed first
         try:
             alert_modal = self.driver.find_element(By.ID, 'alertModal')
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
-                close_button = alert_modal.find_element(By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                close_button = alert_modal.find_element(
+                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except:
             # No modal found, continue
             pass
-        
-        all_nodes = self.find_children_by_id('treeview-documents', 'node-treeview-documents')
+
+        all_nodes = self.find_children_by_id(
+            'treeview-documents', 'node-treeview-documents')
         test_collection_node = None
         for node in all_nodes:
             if 'Test Collection' in node.text:
@@ -889,7 +909,8 @@ class Test2E2MultiUser(SeleniumTest):
             if "merge" in item.text:
                 await self.s_click(item)
                 await asyncio.sleep(1)
-                print('is modal open', self.find_by_id('tag-merge-modal').is_displayed())
+                print('is modal open', self.find_by_id(
+                    'tag-merge-modal').is_displayed())
                 break
 
         # Now try to click on the dropdown button
@@ -905,11 +926,11 @@ class Test2E2MultiUser(SeleniumTest):
         )
         await self.s_click(target_option)
         await asyncio.sleep(1)
-        
+
         # Click the merge button
         await self.s_click_button('merge-tag-button')
         await asyncio.sleep(1)
-        
+
         # Verify the tags after merge
         # tag_links = self.find_children_by_id(
         #     'treeview-tags', 'node-treeview-tags')

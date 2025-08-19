@@ -44,7 +44,8 @@ def generate_initial_state_script(user_login,
     documents_json = json.dumps(documents)
     tags_json = json.dumps(tags, sort_keys=True)
     members_json = json.dumps(members)
-    collections_json = json.dumps(collections if collections is not None else [], sort_keys=True)
+    collections_json = json.dumps(
+        collections if collections is not None else [], sort_keys=True)
 
     return (
         f'<script type="text/javascript">\n'

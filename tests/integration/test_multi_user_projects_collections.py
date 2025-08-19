@@ -99,7 +99,7 @@ class TestMultiUserProjectCollections(TestMultiUser):
         if lang not in DEMO_DATA.keys():
             config = self.generate_config()
             lang = config['DEFAULT_LANGUAGE']
-        
+
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
             members, last_event, 'false', '[]', collections)
@@ -112,7 +112,7 @@ class TestMultiUserProjectCollections(TestMultiUser):
         async with self.apost(
             '/api/project/1/collection/new',
             json=build_collection_data(name='Research Papers',
-                                      description="Academic documents"),
+                                       description="Academic documents"),
         ) as response:
             self.assertEqual(response.status, 200)
             response_json = await response.json()
@@ -137,8 +137,8 @@ class TestMultiUserProjectCollections(TestMultiUser):
         async with self.apost(
             '/api/project/1/collection/new',
             json=build_collection_data(name='Published Papers',
-                                      description="Peer-reviewed articles",
-                                      parent_id=1),
+                                       description="Peer-reviewed articles",
+                                       parent_id=1),
         ) as response:
             self.assertEqual(response.status, 200)
             response_json = await response.json()
@@ -186,7 +186,7 @@ class TestMultiUserProjectCollections(TestMultiUser):
         init_js_expected = generate_initial_state_script(
             user_login, project_id, version, documents, tags,
             members, last_event, 'false', '[]', collections)
-        
+
         self.assertEqual(init_js, init_js_expected)
 
         # Export project 1
@@ -199,4 +199,4 @@ class TestMultiUserProjectCollections(TestMultiUser):
 
         async with self.apost('/project/1/delete') as response:
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.headers['Location'], '/') 
+            self.assertEqual(response.headers['Location'], '/')
