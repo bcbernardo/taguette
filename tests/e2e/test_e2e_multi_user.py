@@ -492,7 +492,7 @@ class Test2E2MultiUser(SeleniumTest):
 
         # Modal should be open - check documents are available to select
         doc_checkboxes = self.driver.find_elements(
-            By.CSS_SELECTOR, 
+            By.CSS_SELECTOR,
             '#collection-add-documents-list input[type="checkbox"]')
         self.assertEqual(
             len(doc_checkboxes), 2,

@@ -1423,7 +1423,8 @@ class CreateCollection(BaseHandler):
             })
         except Exception as e:
             logger.exception("Error creating collection")
-            return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
+            return self.send_error_json(
+                500, self.gettext("Internal error: ") + str(e))
 
 
 class CollectionUpdate(BaseHandler):
@@ -1455,8 +1456,9 @@ class CollectionUpdate(BaseHandler):
                     parent_id = obj['parent_id']
                     if parent_id is not None:
                         parent_collection = (self.db.query(database.Collection)
-                                             .filter_by(id=parent_id,
-                                                        project_id=project.id)
+                                             .filter_by(
+                                                 id=parent_id,
+                                                 project_id=project.id)
                                              .first())
                         if not parent_collection:
                             return self.send_error_json(
@@ -1466,7 +1468,8 @@ class CollectionUpdate(BaseHandler):
                             return self.send_error_json(
                                 400,
                                 self.gettext("Collection cannot be its own parent"))
-                        if self._would_create_circular_reference(collection, parent_id):
+                        if self._would_create_circular_reference(
+                                collection, parent_id):
                             return self.send_error_json(
                                 400,
                                 self.gettext("Would create circular reference"))
@@ -1475,8 +1478,9 @@ class CollectionUpdate(BaseHandler):
                     collection.documents = []
                     for doc_id in obj['document_ids']:
                         document = (self.db.query(database.Document)
-                                    .filter_by(id=doc_id,
-                                               project_id=project.id)
+                                    .filter_by(
+                                        id=doc_id,
+                                        project_id=project.id)
                                     .first())
                         if document:
                             collection.documents.append(document)
@@ -1503,7 +1507,8 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(400, self.gettext(e.message))
         except Exception as e:
             logger.exception("Error updating collection")
-            return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
+            return self.send_error_json(
+                500, self.gettext("Internal error: ") + str(e))
 
     def _would_create_circular_reference(self, collection, new_parent_id):
         # Prevent loops: A → B → C → A
