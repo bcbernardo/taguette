@@ -253,7 +253,8 @@ class DocumentAdd(BaseHandler):
                 self.db.flush()  # Need to flush to get doc.id
                 collection_ids = self.get_arguments('collection_ids')
                 for col_id in collection_ids:
-                    collection = self.db.query(database.Collection).filter_by(id=col_id, project_id=project.id).first()
+                    collection = self.db.query(database.Collection).filter_by(
+                        id=col_id, project_id=project.id).first()
                     if collection:
                         doc.collections.append(collection)
 
@@ -328,7 +329,8 @@ class Document(BaseHandler):
                 if 'collections' in obj:
                     document.collections = []
                     for col_id in obj['collections']:
-                        collection = self.db.query(database.Collection).filter_by(id=col_id, project_id=document.project_id).first()
+                        collection = self.db.query(database.Collection).filter_by(
+                            id=col_id, project_id=document.project_id).first()
                         if collection:
                             document.collections.append(collection)
                 cmd = database.Command.document_add(
@@ -1365,19 +1367,20 @@ class CreateCollection(BaseHandler):
         try:
             obj = self.get_json()
             name = obj.get('name', '').strip()
-            description = obj.get('description', '').strip() if 'description' in obj else ''
+            description = obj.get('description', '').strip(
+            ) if 'description' in obj else ''
             parent_id = obj.get('parent_id', None)
-            
+
             if not name:
                 return self.send_error_json(400, self.gettext("Collection name is required"))
-            
+
             if parent_id is not None:
                 parent_collection = self.db.query(database.Collection).filter_by(
                     id=parent_id, project_id=project.id
                 ).first()
                 if not parent_collection:
                     return self.send_error_json(400, self.gettext("Parent collection not found"))
-            
+
             collection = database.Collection(
                 name=name,
                 description=description,
@@ -1389,10 +1392,11 @@ class CreateCollection(BaseHandler):
             self.db.flush()
             document_ids = obj.get('document_ids', [])
             for doc_id in document_ids:
-                document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
+                document = self.db.query(database.Document).filter_by(
+                    id=doc_id, project_id=project.id).first()
                 if document:
                     collection.documents.append(document)
-            
+
             cmd = database.Command.collection_add(
                 self.current_user,
                 collection,
@@ -1422,7 +1426,8 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(403, self.gettext("Unauthorized"))
         try:
             obj = self.get_json()
-            collection = self.db.query(database.Collection).get(int(collection_id))
+            collection = self.db.query(
+                database.Collection).get(int(collection_id))
             if collection is None or collection.project_id != project.id:
                 return self.send_error_json(404, self.gettext("No such collection"))
             if obj:
@@ -1449,10 +1454,11 @@ class CollectionUpdate(BaseHandler):
                 if 'document_ids' in obj:
                     collection.documents = []
                     for doc_id in obj['document_ids']:
-                        document = self.db.query(database.Document).filter_by(id=doc_id, project_id=project.id).first()
+                        document = self.db.query(database.Document).filter_by(
+                            id=doc_id, project_id=project.id).first()
                         if document:
                             collection.documents.append(document)
-                
+
                 cmd = database.Command.collection_update(
                     self.current_user,
                     collection,
@@ -1462,7 +1468,7 @@ class CollectionUpdate(BaseHandler):
                 self.db.refresh(cmd)
                 self.application.notify_project(project.id, cmd)
                 self.db.refresh(collection)
-                
+
                 return self.send_json({
                     'id': collection.id,
                     'name': collection.name,
@@ -1476,7 +1482,7 @@ class CollectionUpdate(BaseHandler):
         except Exception as e:
             logger.exception("Error updating collection")
             return self.send_error_json(500, self.gettext("Internal error: ") + str(e))
-    
+
     def _would_create_circular_reference(self, collection, new_parent_id):
         # Prevent loops: A → B → C → A
         current_id = new_parent_id
@@ -1490,7 +1496,7 @@ class CollectionUpdate(BaseHandler):
                 break
             current_id = parent_collection.parent_id  # Go up hierarchy
         return False
-    
+
     @api_auth
     @PROM_REQUESTS.sync('collection_delete')
     def delete(self, project_id, collection_id):
@@ -1500,11 +1506,12 @@ class CollectionUpdate(BaseHandler):
         collection = self.db.query(database.Collection).get(int(collection_id))
         if collection is None or collection.project_id != project.id:
             return self.send_error_json(404, self.gettext("No such collection"))
-        
-        has_children = self.db.query(database.Collection).filter_by(parent_id=collection.id).first() is not None
+
+        has_children = self.db.query(database.Collection).filter_by(
+            parent_id=collection.id).first() is not None
         if has_children:
             return self.send_error_json(400, self.gettext("Cannot delete collection with subcollections"))
-        
+
         cmd = database.Command.collection_delete(
             self.current_user,
             collection,
@@ -1514,6 +1521,6 @@ class CollectionUpdate(BaseHandler):
         self.db.commit()
         self.db.refresh(cmd)
         self.application.notify_project(project.id, cmd)
-        
+
         self.set_status(204)
         return self.finish()

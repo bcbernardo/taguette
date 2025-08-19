@@ -136,7 +136,8 @@ def copy_project(
         collection_documents, None,
         dict(collection_id=mapping_collections, document_id=mapping_document),
         200,
-        condition=collection_documents.c.collection_id.in_(mapping_collections.keys()),
+        condition=collection_documents.c.collection_id.in_(
+            mapping_collections.keys()),
     )
 
     def validate_text_direction(direction):
@@ -204,9 +205,11 @@ def copy_project(
                 and all(isinstance(e, int) for e in v)
             ),
             collection_id=lambda v: isinstance(v, int),
-            collection_name=lambda v: isinstance(v, str) and len(v.strip()) > 0,
+            collection_name=lambda v: isinstance(
+                v, str) and len(v.strip()) > 0,
             parent_id=lambda v: (
-                v is None or isinstance(v, int) or (isinstance(v, str) and v.isdigit())
+                v is None or isinstance(v, int) or (
+                    isinstance(v, str) and v.isdigit())
             ),
             document_ids=lambda v: (
                 isinstance(v, list)
@@ -220,10 +223,13 @@ def copy_project(
             src_tag_id=lambda v: mv(mapping_tags, v),
             tags=lambda tags: [mv(mapping_tags, t) for t in tags],
             # Collections transformers
-            collections=lambda collections: [mv(mapping_collections, c) for c in collections],
+            collections=lambda collections: [
+                mv(mapping_collections, c) for c in collections],
             collection_id=lambda v: mv(mapping_collections, v),
-            parent_id=lambda v: mv(mapping_collections, int(v)) if v is not None else None,
-            document_ids=lambda document_ids: [mv(mapping_document, d) for d in document_ids],
+            parent_id=lambda v: mv(mapping_collections, int(
+                v)) if v is not None else None,
+            document_ids=lambda document_ids: [
+                mv(mapping_document, d) for d in document_ids],
         )
 
         # Map JSON fields
@@ -233,7 +239,8 @@ def copy_project(
                     print(field, value)
                     if field == 'parent_id':
                         print("mapping_collections:", mapping_collections)
-                        print("validation result:", field_validators[field](value))
+                        print("validation result:",
+                              field_validators[field](value))
                         print("value type:", type(value))
                     raise ValueError("Invalid field %r in command" % field)
             except validate.InvalidFormat:
@@ -367,7 +374,7 @@ def prepare_item_for_insertion(item, pkey, fkeys, transform, mapping):
 
 
 def insert_hierarchically(dest_db, roots, hierarchies, mapping,
-                         table, pkey, fkeys, transform, validators):
+                          table, pkey, fkeys, transform, validators):
     """Insert items recursively to respect parent-child relationships."""
     for item in roots:
         item_id, prepared_item = prepare_item_for_insertion(

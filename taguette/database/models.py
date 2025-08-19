@@ -237,8 +237,10 @@ class User(Base):
 collection_documents = Table(
     'collection_documents',
     Base.metadata,
-    Column('collection_id', Integer, ForeignKey('collections.id', ondelete='CASCADE'), primary_key=True),
-    Column('document_id', Integer, ForeignKey('documents.id', ondelete='CASCADE'), primary_key=True),
+    Column('collection_id', Integer, ForeignKey(
+        'collections.id', ondelete='CASCADE'), primary_key=True),
+    Column('document_id', Integer, ForeignKey(
+        'documents.id', ondelete='CASCADE'), primary_key=True),
 )
 
 
@@ -249,16 +251,18 @@ class Collection(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    created = Column(DateTime, nullable=False, default=lambda: datetime.utcnow())
+    created = Column(DateTime, nullable=False,
+                     default=lambda: datetime.utcnow())
     owner_login = Column(String(255), ForeignKey('users.login'), nullable=True)
     owner = relationship('User')
-    project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey(
+        'projects.id', ondelete='CASCADE'), nullable=False, index=True)
     project = relationship('Project', back_populates='collections')
-    
+
     parent_id = Column(Integer, ForeignKey('collections.id', ondelete='CASCADE'),
                        nullable=True, index=True)
     parent = relationship('Collection', remote_side=[id])
-    
+
     documents = relationship(
         'Document',
         secondary=collection_documents,
@@ -288,7 +292,8 @@ class Project(Base):
     tags = relationship('Tag', cascade='all,delete-orphan', order_by='Tag.id',
                         passive_deletes=True,
                         back_populates='project')
-    collections = relationship('Collection', cascade='all,delete-orphan', back_populates='project')
+    collections = relationship(
+        'Collection', cascade='all,delete-orphan', back_populates='project')
 
     def __repr__(self):
         return '<%s.%s %r %r>' % (
