@@ -448,7 +448,7 @@ class Test2E2MultiUser(SeleniumTest):
             self.assertEqual(badge.text, '2')
         except Exception:
             self.fail(
-            "Sans collection node should have a badge showing document count")
+                "Sans collection node should have a badge showing document count")
 
         # Verify "Test Collection" is empty (badge shows 0 or no badge)
         try:
@@ -472,7 +472,7 @@ class Test2E2MultiUser(SeleniumTest):
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, 
+                    By.CSS_SELECTOR,
                     '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
@@ -540,7 +540,7 @@ class Test2E2MultiUser(SeleniumTest):
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, 
+                    By.CSS_SELECTOR,
                     '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
@@ -739,7 +739,7 @@ class Test2E2MultiUser(SeleniumTest):
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, 
+                    By.CSS_SELECTOR,
                     '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
