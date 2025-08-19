@@ -26,7 +26,7 @@ def upgrade():
                     sa.Column('owner_login', sa.String(length=255),
                               nullable=True),
                     sa.ForeignKeyConstraint(['owner_login'], ['users.login'],
-                                          name=op.f('fk_collections_owner_login_users')),
+                                            name=op.f('fk_collections_owner_login_users')),
                     sa.PrimaryKeyConstraint('id', name=op.f('pk_collections')),
                     sqlite_autoincrement=True
                     )
@@ -34,11 +34,13 @@ def upgrade():
                     sa.Column('collection_id', sa.Integer(), nullable=False),
                     sa.Column('document_id', sa.Integer(), nullable=False),
                     sa.ForeignKeyConstraint(['collection_id'], ['collections.id'],
-                                          name=op.f('fk_collection_documents_collection_id_collections'),
-                                          ondelete='CASCADE'),
+                                            name=op.f(
+                                                'fk_collection_documents_collection_id_collections'),
+                                            ondelete='CASCADE'),
                     sa.ForeignKeyConstraint(['document_id'], ['documents.id'],
-                                          name=op.f('fk_collection_documents_document_id_documents'),
-                                          ondelete='CASCADE'),
+                                            name=op.f(
+                                                'fk_collection_documents_document_id_documents'),
+                                            ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint(
                         'collection_id', 'document_id', name=op.f('pk_collection_documents'))
                     )
