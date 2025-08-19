@@ -448,7 +448,7 @@ class Test2E2MultiUser(SeleniumTest):
             self.assertEqual(badge.text, '2')
         except Exception:
             self.fail(
-                "Sans collection node should have a badge showing document count")
+            "Sans collection node should have a badge showing document count")
 
         # Verify "Test Collection" is empty (badge shows 0 or no badge)
         try:
@@ -470,10 +470,10 @@ class Test2E2MultiUser(SeleniumTest):
         try:
             alert_modal = self.driver.find_element(By.ID, 'alertModal')
             if alert_modal.is_displayed():
-                # Close the modal by clicking the close button
-                # or backdrop
+                # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                    By.CSS_SELECTOR, 
+                    '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except Exception:
@@ -519,8 +519,7 @@ class Test2E2MultiUser(SeleniumTest):
                 break
 
         self.assertIsNotNone(
-            test_collection_node,
-            "Should find updated Test Collection node")
+            test_collection_node, "Should find updated Test Collection node")
 
         # Verify badge now shows 2 documents
         badge = test_collection_node.find_element(By.CSS_SELECTOR, '.badge')
@@ -541,7 +540,8 @@ class Test2E2MultiUser(SeleniumTest):
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                    By.CSS_SELECTOR, 
+                    '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except Exception:
@@ -739,7 +739,8 @@ class Test2E2MultiUser(SeleniumTest):
             if alert_modal.is_displayed():
                 # Close the modal by clicking the close button or backdrop
                 close_button = alert_modal.find_element(
-                    By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
+                    By.CSS_SELECTOR, 
+                    '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
         except Exception:
