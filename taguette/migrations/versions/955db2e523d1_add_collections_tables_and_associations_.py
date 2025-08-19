@@ -37,12 +37,14 @@ def upgrade():
                     sa.ForeignKeyConstraint(
                         ['collection_id'], ['collections.id'],
                         name=op.f(
-                            'fk_collection_documents_collection_id_collections'),
+                            'fk_collection_documents_collection_id_'
+                            'collections'),
                         ondelete='CASCADE'),
                     sa.ForeignKeyConstraint(
                         ['document_id'], ['documents.id'],
                         name=op.f(
-                            'fk_collection_documents_document_id_documents'),
+                            'fk_collection_documents_document_id_'
+                            'documents'),
                         ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint(
                         'collection_id', 'document_id',
