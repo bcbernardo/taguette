@@ -1174,7 +1174,7 @@ class Project(BaseHandler):
         grouped_collections = defaultdict(list)
 
         for collection in project.collections:
-            collection_parent_id = (collection.parent.id 
+            collection_parent_id = (collection.parent.id
                                     if collection.parent else None)
             grouped_collections[collection_parent_id].append(collection)
 
@@ -1183,7 +1183,7 @@ class Project(BaseHandler):
             children = []
             for child_collection in grouped_collections[parent_id]:
                 child_id = child_collection.id
-                collection_parent_id = (child_collection.parent.id 
+                collection_parent_id = (child_collection.parent.id
                                         if child_collection.parent else None)
                 child_info = {
                     "id": child_collection.id,

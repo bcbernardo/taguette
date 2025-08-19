@@ -259,7 +259,7 @@ class Collection(Base):
         'projects.id', ondelete='CASCADE'), nullable=False, index=True)
     project = relationship('Project', back_populates='collections')
 
-    parent_id = Column(Integer, 
+    parent_id = Column(Integer,
                        ForeignKey('collections.id', ondelete='CASCADE'),
                        nullable=True, index=True)
     parent = relationship('Collection', remote_side=[id])
@@ -650,7 +650,7 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id'],
-        payload_fields=['collection_id', 'collection_name', 'description', 
+        payload_fields=['collection_id', 'collection_name', 'description',
                         'parent_id', 'document_ids'],
     )
     def collection_add(cls, user_login, collection):

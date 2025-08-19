@@ -428,7 +428,6 @@ class Test2E2MultiUser(SeleniumTest):
         self.assertEqual(len(all_nodes), 2)
 
         # Find both nodes
-        node_texts = [node.text for node in all_nodes]
         sans_collection_node = None
         test_collection_node = None
 
@@ -447,7 +446,7 @@ class Test2E2MultiUser(SeleniumTest):
             badge = sans_collection_node.find_element(
                 By.CSS_SELECTOR, '.badge')
             self.assertEqual(badge.text, '2')
-        except:
+        except Exception:
             self.fail(
                 "Sans collection node should have a badge showing document count")
 
@@ -456,7 +455,7 @@ class Test2E2MultiUser(SeleniumTest):
             badge = test_collection_node.find_element(
                 By.CSS_SELECTOR, '.badge')
             self.assertEqual(badge.text, '0')
-        except:
+        except Exception:
             # No badge is acceptable for empty collections
             pass
 
@@ -475,7 +474,7 @@ class Test2E2MultiUser(SeleniumTest):
                     By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
-        except:
+        except Exception:
             # No modal found, continue
             pass
 
@@ -540,7 +539,7 @@ class Test2E2MultiUser(SeleniumTest):
                     By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
-        except:
+        except Exception:
             # No modal found, continue
             pass
 
@@ -738,7 +737,7 @@ class Test2E2MultiUser(SeleniumTest):
                     By.CSS_SELECTOR, '.btn-close, .close, [data-dismiss="modal"]')
                 await self.s_click(close_button)
                 await asyncio.sleep(1)
-        except:
+        except Exception:
             # No modal found, continue
             pass
 

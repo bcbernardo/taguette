@@ -3,7 +3,7 @@ import logging
 import opentelemetry.trace
 
 from .models import (Project, Privileges, ProjectMember, TextDirection,
-                     Document, Command, Highlight, Tag, highlight_tags, 
+                     Document, Command, Highlight, Tag, highlight_tags,
                      Collection, collection_documents)
 from .. import convert
 from ..utils import DefaultMap
@@ -236,8 +236,8 @@ def copy_project(
         # Map JSON fields
         for field, value in list(payload.items()):
             try:
-                if (field in field_validators and 
-                not field_validators[field](value)):
+                if (field in field_validators and
+                        not field_validators[field](value)):
                     print(field, value)
                     if field == 'parent_id':
                         print("mapping_collections:", mapping_collections)
