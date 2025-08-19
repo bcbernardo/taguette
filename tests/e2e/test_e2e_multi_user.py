@@ -478,7 +478,8 @@ class Test2E2MultiUser(SeleniumTest):
             # No modal found, continue
             pass
 
-        # Click on the collection node to select it (this is required for keyboard shortcuts to work)
+        # Click on the collection node to select it
+        # (this is required for keyboard shortcuts to work)
         await self.s_click(test_collection_node)
         await asyncio.sleep(1)
 
@@ -491,8 +492,9 @@ class Test2E2MultiUser(SeleniumTest):
         # Modal should be open - check documents are available to select
         doc_checkboxes = self.driver.find_elements(
             By.CSS_SELECTOR, '#collection-add-documents-list input[type="checkbox"]')
-        self.assertEqual(len(doc_checkboxes), 2,
-                         "Should have 2 document checkboxes available")
+        self.assertEqual(
+            len(doc_checkboxes), 2,
+            "Should have 2 document checkboxes available")
 
         # Check both documents to add them to the collection
         for checkbox in doc_checkboxes:
@@ -514,8 +516,9 @@ class Test2E2MultiUser(SeleniumTest):
                 test_collection_node = node
                 break
 
-        self.assertIsNotNone(test_collection_node,
-                             "Should find updated Test Collection node")
+        self.assertIsNotNone(
+            test_collection_node,
+            "Should find updated Test Collection node")
 
         # Verify badge now shows 2 documents
         badge = test_collection_node.find_element(By.CSS_SELECTOR, '.badge')
