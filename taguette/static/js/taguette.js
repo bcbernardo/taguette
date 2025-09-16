@@ -732,9 +732,9 @@ $('#highlight-add-form').off().on('submit', (e) => {
     const highlight_id = document.getElementById('highlight-add-id').value;
     const selection = [parseInt(document.getElementById('highlight-add-start').value), parseInt(document.getElementById('highlight-add-end').value)];
 
-    const selectedTags = treeview_tags_highlight.treeview('getSelected');
+    const selectedTags = highlightSelectedTags;
 
-    const hl_tags = selectedTags.map((tag) => tag.id);
+    const hl_tags = selectedTags;
 
     if (hl_tags.length === 0) return;
 
@@ -1403,6 +1403,7 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         hideSearchErrorMessage();
 
         // save selected tags
+
         const tempSavedSelections = saveSelectedNodes(treeview_tags_highlight);
 
         tempSavedSelections.forEach(id => {
