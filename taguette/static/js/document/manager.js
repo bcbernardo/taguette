@@ -276,4 +276,41 @@ function removeDocument(document_id) {
     }
 }
 
+function buildDocumentPath(documentId) {
+    const document = documents['' + documentId];
+    if (!document) return null;
+    
+    let path = document.name;
+    
+    if (document.collections && document.collections.length > 0) {
+        const collectionId = document.collections[0];
+        const collectionPath = buildCollectionPath(collectionId);
+        if (collectionPath) {
+            path = collectionPath + ' > ' + document.name;
+        }
+    }
+    
+    return path;
+}
+
+function buildCollectionPath(collectionId) {
+    const collection = findCollection(collectionId);
+    if (!collection) return null;
+    
+    let path = collection.name;
+    let currentCollection = collection;
+    
+    while (currentCollection.parent) {
+        const parentCollection = findCollection(currentCollection.parent);
+        if (parentCollection) {
+            path = parentCollection.name + ' > ' + path;
+            currentCollection = parentCollection;
+        } else {
+            break;
+        }
+    }
+    
+    return path;
+}
+
 updateDocumentsList();

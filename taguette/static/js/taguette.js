@@ -1061,7 +1061,9 @@ function loadTag(tag_path, page) {
 
                 let doclink = document.createElement('a');
                 doclink.className = 'badge badge-primary';
-                doclink.textContent = documents['' + hl.document_id].name;
+                
+                const documentPath = buildDocumentPath(hl.document_id);
+                doclink.textContent = documentPath;
                 linkDocument(doclink, hl.document_id, hl.id);
                 elem.appendChild(doclink);
                 elem.appendChild(document.createTextNode(' '));
