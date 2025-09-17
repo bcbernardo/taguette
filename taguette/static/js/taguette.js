@@ -1439,59 +1439,7 @@ window.addEventListener('scroll', function() {
     scrollPos = document.documentElement.scrollTop;
 });
 
-function populateDocumentsList(collectionId = null) {
-    const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = '';
-    
-    const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
-    
-    let availableDocuments = 0;
-    const collectionDocuments = collectionId ? (findCollection(collectionId)?.document_ids || []) : [];
-    
-    for (let i = 0; i < docEntries.length; ++i) {
-        let doc = docEntries[i][1];
-        const docCollections = doc.collections || [];
-        
-        let shouldShow = false;
-        let isChecked = false;
-        
-        if (collectionId) {
-            const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
-            const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
-            shouldShow = !isInOtherCollections;
-            isChecked = isInCurrentCollection;
-        } else {
-            shouldShow = docCollections.length === 0;
-            isChecked = false;
-        }
-        
-        if (!shouldShow) {
-            continue;
-        }
-        
-        availableDocuments++;
-        
-        let label = document.createElement('label');
-        label.className = 'form-check-label d-block';
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input me-2';
-        checkbox.value = doc.id;
-        checkbox.checked = isChecked;
-        
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + doc.name));
-        docListDiv.appendChild(label);
-    }
-    
-    if (availableDocuments === 0) {
-        const noDocsMessage = document.createElement('p');
-        noDocsMessage.className = 'text-muted text-center';
-        noDocsMessage.textContent = gettext('No documents available');
-        docListDiv.appendChild(noDocsMessage);
-    }
-}
+
 
 function editCollection(collectionId) {
     const collection = findCollection(collectionId);
@@ -1816,8 +1764,9 @@ function removeCollection(collectionId) {
         }
         
         const selectedDocs = [];
-        $('#collection-add-documents-list input[type=checkbox]:checked').each(function() {
-            selectedDocs.push(this.value);
+        const selectedItems = document.querySelectorAll('#collection-add-documents-list .document-item.selected');
+        selectedItems.forEach(function(item) {
+            selectedDocs.push(item.dataset.documentId);
         });
         
         const data = {

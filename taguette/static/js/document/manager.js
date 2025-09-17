@@ -313,4 +313,118 @@ function buildCollectionPath(collectionId) {
     return path;
 }
 
+function populateDocumentsList(collectionId = null) {
+    const docListDiv = document.getElementById('collection-add-documents-list');
+    docListDiv.innerHTML = '';
+    
+    const docEntries = Object.entries(documents);
+    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    
+    let availableDocuments = 0;
+    const collectionDocuments = collectionId ? (findCollection(collectionId)?.document_ids || []) : [];
+    
+    for (let i = 0; i < docEntries.length; ++i) {
+        let doc = docEntries[i][1];
+        const docCollections = doc.collections || [];
+        
+        let shouldShow = false;
+        let isChecked = false;
+        
+        if (collectionId) {
+            const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
+            const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
+            shouldShow = !isInOtherCollections;
+            isChecked = isInCurrentCollection;
+        } else {
+            shouldShow = docCollections.length === 0;
+            isChecked = false;
+        }
+        
+        if (!shouldShow) {
+            continue;
+        }
+        
+        availableDocuments++;
+        
+        let docItem = document.createElement('div');
+        docItem.className = 'document-item p-2 mb-1 rounded';
+        docItem.dataset.documentId = doc.id;
+        docItem.textContent = doc.name;
+        
+        // Si déjà sélectionné
+        if (isChecked) {
+            docItem.classList.add('selected');
+        }
+        
+        // Événement de clic
+        docItem.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            updateSelectedDocumentsDisplay();
+        });
+        
+        docListDiv.appendChild(docItem);
+    }
+    
+    if (availableDocuments === 0) {
+        const noDocsMessage = document.createElement('p');
+        noDocsMessage.className = 'text-muted text-center';
+        noDocsMessage.textContent = gettext('No documents available');
+        docListDiv.appendChild(noDocsMessage);
+    }
+    
+    // Ajouter l'événement de recherche
+    const searchInput = document.getElementById('collection-documents-search');
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const docItems = docListDiv.querySelectorAll('.document-item');
+        
+        docItems.forEach(item => {
+            const docName = item.textContent.toLowerCase();
+            if (docName.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Initialiser l'affichage des documents sélectionnés
+    updateSelectedDocumentsDisplay();
+}
+
+function updateSelectedDocumentsDisplay() {
+    const selectedContainer = document.getElementById('collection-selected-documents');
+    const selectedList = document.getElementById('collection-selected-documents-list');
+    const selectedItems = document.querySelectorAll('.document-item.selected');
+    
+    if (selectedItems.length === 0) {
+        selectedContainer.style.display = 'none';
+        return;
+    }
+    
+    selectedContainer.style.display = 'block';
+    selectedList.innerHTML = '';
+    
+    selectedItems.forEach(item => {
+        const badge = document.createElement('span');
+        badge.className = 'selected-document-badge';
+        badge.innerHTML = `
+            ${item.textContent}
+            <span class="remove-btn" data-document-id="${item.dataset.documentId}">×</span>
+        `;
+        
+        // Événement pour supprimer
+        badge.querySelector('.remove-btn').addEventListener('click', function() {
+            const docId = this.dataset.documentId;
+            const docItem = document.querySelector(`[data-document-id="${docId}"]`);
+            if (docItem) {
+                docItem.classList.remove('selected');
+                updateSelectedDocumentsDisplay();
+            }
+        });
+        
+        selectedList.appendChild(badge);
+    });
+}
+
 updateDocumentsList();
