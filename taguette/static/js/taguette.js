@@ -89,105 +89,11 @@ function projectMetadataChanged() {
  project_name_input.addEventListener('blur', projectMetadataChanged);
  project_description_input.addEventListener('blur', projectMetadataChanged);
 
-/*
- * Documents list
- */
-
-function addDocument(document) {
-    // Save old collections for document updates
-    const oldCollections = documents['' + document.id]?.collections || [];
-    
-    documents['' + document.id] = document;
-    
-    // Update collections
-    const newCollections = document.collections || [];
-    
-    // Remove from old collections
-    for (let collectionId of oldCollections) {
-        const collection = findCollection(parseInt(collectionId));
-        if (collection && collection.document_ids) {
-            const index = collection.document_ids.indexOf(document.id);
-            if (index !== -1) {
-                collection.document_ids.splice(index, 1);
-            }
-        }
-    }
-    
-    // Add to new collections
-    for (let collectionId of newCollections) {
-        const collection = findCollection(parseInt(collectionId));
-        if (collection) {
-            if (!collection.document_ids) {
-                collection.document_ids = [];
-            }
-            if (!collection.document_ids.includes(document.id)) {
-                collection.document_ids.push(document.id);
-            }
-        }
-    }
-    
-    updateDocumentsList();
-    initDocumentsTreeview();
-    
-    // Expand parent collection and highlight new document
-    if (document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandNodeParent(parentCollectionId);
-    }
-    highlightDocument(document.id);
-}
-
-function removeDocument(document_id) {
-    // Remove from collections
-    const document = documents['' + document_id];
-    if (document && document.collections) {
-        for (let collectionId of document.collections) {
-            const collection = findCollection(parseInt(collectionId));
-            if (collection && collection.document_ids) {
-                const index = collection.document_ids.indexOf(parseInt(document_id));
-                if (index !== -1) {
-                    collection.document_ids.splice(index, 1);
-                }
-            }
-        }
-    }
-    
-    delete documents['' + document_id];
-    updateDocumentsList();
-    initDocumentsTreeview();
-    
-    // Expand parent collection to show the change
-    if (document && document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandNodeParent(parentCollectionId);
-    }
-    
-    if (current_document === document_id) {
-        window.history.pushState({}, "Project", base_path + '/project/' + project_id);
-        loadDocument(null);
-    }
-}
-
 
 /*
  * Add document
  */
 
-function flattenCollections(collectionsTree) {
-    const flat = {};
-    
-    function addToFlat(nodes) {
-        for (let node of nodes) {
-            flat[node.id] = node;
-            if (node.children && node.children.length > 0) {
-                addToFlat(node.children);
-            }
-        }
-    }
-    
-    addToFlat(collectionsTree);
-    return flat;
-}
 
 const document_add_modal = document.getElementById('document-add-modal');
 
@@ -1919,22 +1825,19 @@ function removeCollection(collectionId) {
             parent_id: parentId || null
         };
         
-        let url, method, successMsg;
+        let url;
         if (collectionId) {
             url = `/api/project/${project_id}/collection/${collectionId}`;
             method = 'POST';
-            successMsg = gettext('Collection updated!');
         } else {
             url = `/api/project/${project_id}/collection/new`;
             method = 'POST';
-            successMsg = gettext('Collection created!');
         }
         
         postJSON(url, data)
             .then(function(response) {
                 $('#collection-add-modal').modal('hide');
                 $('#collection-add-form')[0].reset();
-                showAlert(successMsg, 'success');
             })
             .catch(function(error) {
                 const errorMsg = collectionId ? 

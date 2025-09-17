@@ -280,21 +280,21 @@ function findDocumentParentCollection(documentId) {
     }
 } 
 
-function findRootParent(collectionId) {
+function findDocumentRootParent(collectionId) {
     const collection = findCollection(collectionId);
     if (collection && collection.parent) {
-        return findRootParent(collection.parent);
+        return findDocumentRootParent(collection.parent);
     }
     return collectionId;
 }
 
-function expandNodeParent(collectionParent) {
-    const rootParentId = findRootParent(collectionParent);
+function expandDocumentNodeParent(collectionParent) {
+    const rootParentId = findDocumentRootParent(collectionParent);
     const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, rootParentId);
-    expandNode(treeview_documents, nodeId);
+    expandDocumentNode(treeview_documents, nodeId);
 }
 
-function expandNode(treeview, nodeId) {
+function expandDocumentNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
     if (!node.state.expanded) {
         treeview.treeview('expandNode', [parseInt(nodeId, 10),
