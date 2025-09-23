@@ -351,12 +351,10 @@ function populateDocumentsList(collectionId = null) {
         docItem.dataset.documentId = doc.id;
         docItem.textContent = doc.name;
         
-        // Si déjà sélectionné
         if (isChecked) {
             docItem.classList.add('selected');
         }
         
-        // Événement de clic
         docItem.addEventListener('click', function() {
             this.classList.toggle('selected');
             updateSelectedDocumentsDisplay();
@@ -372,7 +370,6 @@ function populateDocumentsList(collectionId = null) {
         docListDiv.appendChild(noDocsMessage);
     }
     
-    // Ajouter l'événement de recherche
     const searchInput = document.getElementById('collection-documents-search');
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
@@ -388,7 +385,6 @@ function populateDocumentsList(collectionId = null) {
         });
     });
     
-    // Initialiser l'affichage des documents sélectionnés
     updateSelectedDocumentsDisplay();
 }
 
@@ -426,5 +422,396 @@ function updateSelectedDocumentsDisplay() {
         selectedList.appendChild(badge);
     });
 }
+
+function displaySelectedDocuments(files) {
+    const container = document.getElementById('document-files-list-container');
+    const listDiv = document.getElementById('document-files-list');
+    const bulkActionsContainer = document.getElementById('bulk-actions-container');
+    
+    if (!files || files.length === 0) {
+        container.style.display = 'none';
+        bulkActionsContainer.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    bulkActionsContainer.style.display = 'block';
+    listDiv.innerHTML = '';
+    
+    Array.from(files).forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'document-file-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded';
+        fileItem.dataset.fileIndex = index;
+        
+        const fileName = document.createElement('div');
+        fileName.className = 'd-flex align-items-center flex-grow-1';
+        fileName.innerHTML = `
+            <i class="fas fa-file-alt me-2 text-muted"></i>
+            <span class="file-name">${file.name}</span>
+            <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
+        `;
+        
+        const collectionSelector = document.createElement('div');
+        collectionSelector.className = 'collection-selector ms-3 d-flex align-items-center gap-2';
+        collectionSelector.innerHTML = `
+            <select class="form-select form-select-sm" data-file-index="${index}" style="width: 200px; flex-shrink: 0;">
+                <option value="">${gettext('No collection (root)')}</option>
+            </select>
+            <select class="form-select form-select-sm text-direction-selector" data-file-index="${index}" style="width: 90px; flex-shrink: 0;" title="${gettext('Text direction')}">
+                <option value="LEFT_TO_RIGHT">➡️ LTR</option>
+                <option value="RIGHT_TO_LEFT">⬅️ RTL</option>
+            </select>
+            <button type="button" class="btn btn-outline-primary btn-sm create-new-for-file" data-file-index="${index}" title="${gettext('Create new collection for this file')}" style="width: 32px; flex-shrink: 0;">
+                <i class="fas fa-plus"></i>
+            </button>
+        `;
+        
+        fileItem.appendChild(fileName);
+        fileItem.appendChild(collectionSelector);
+        listDiv.appendChild(fileItem);
+        
+        const select = collectionSelector.querySelector('select');
+        select.addEventListener('change', function() {
+            if (this.dataset.createNew === 'true') {
+                resetSelectorStyle(this);
+            }
+        });
+        
+        const createNewBtn = collectionSelector.querySelector('.create-new-for-file');
+        createNewBtn.addEventListener('click', function() {
+            const fileIndex = this.dataset.fileIndex;
+            const fileName = file.name;
+            showCollectionNameInput(fileIndex, fileName);
+        });
+    });
+    
+    populateCollectionOptions();
+    setupTextDirectionDefaults();
+    
+    setupBulkActions();
+}
+
+function populateCollectionOptions() {
+    const selectors = document.querySelectorAll('#document-files-list select:not(.text-direction-selector)');
+    
+    selectors.forEach(select => {
+        while (select.children.length > 1) {
+            select.removeChild(select.children[1]);
+        }
+        
+        if (typeof collections !== 'undefined' && collections.length > 0) {
+            function addCollectionOptions(collectionsList, level = 0) {
+                collectionsList.forEach(collection => {
+                    const option = document.createElement('option');
+                    option.value = collection.id;
+                    
+                    let displayText = '';
+                    if (level > 0) {
+                        displayText = '└─ '.repeat(level) + collection.name;
+                    } else {
+                        displayText = '📁 ' + collection.name;
+                    }
+                    
+                    option.textContent = displayText;
+                    option.style.paddingLeft = (level * 15) + 'px';
+                    select.appendChild(option);
+                    
+                    if (collection.children && collection.children.length > 0) {
+                        addCollectionOptions(collection.children, level + 1);
+                    }
+                });
+            }
+            
+            addCollectionOptions(collections);
+        }
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function setupTextDirectionDefaults() {
+    const globalDirectionValue = document.querySelector('input[name="document-add-direction"]:checked')?.value || 'LEFT_TO_RIGHT';
+    const textDirectionSelectors = document.querySelectorAll('#document-files-list .text-direction-selector');
+    
+    textDirectionSelectors.forEach(select => {
+        select.value = globalDirectionValue;
+    });
+}
+
+
+function setupBulkActions() {
+    document.getElementById('assign-all-to-collection').addEventListener('click', function() {
+        const collectionSelectors = document.querySelectorAll('#document-files-list select:not(.text-direction-selector)');
+        if (collectionSelectors.length === 0) return;
+        
+        const firstSelector = collectionSelectors[0];
+        const selectedValue = firstSelector.value;
+        
+        collectionSelectors.forEach(select => {
+            if (!select.classList.contains('text-direction-selector')) {
+                select.value = selectedValue;
+            }
+        });
+    });
+    
+    document.getElementById('create-new-collection-for-all').addEventListener('click', function() {
+        showGlobalCollectionNameInput();
+    });
+    
+    document.getElementById('apply-global-direction').addEventListener('click', function() {
+        const globalDirectionValue = document.querySelector('input[name="document-add-direction"]:checked')?.value || 'LEFT_TO_RIGHT';
+        const textDirectionSelectors = document.querySelectorAll('#document-files-list .text-direction-selector');
+        
+        textDirectionSelectors.forEach(select => {
+            select.value = globalDirectionValue;
+        });
+    });
+}
+
+function resetSelectorStyle(select) {
+    select.style.backgroundColor = '';
+    select.style.fontStyle = '';
+    delete select.dataset.createNew;
+    delete select.dataset.newCollectionName;
+    
+    const parentDiv = select.closest('.collection-selector');
+    const indicator = parentDiv.querySelector('.new-collection-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+    const inputContainer = parentDiv.querySelector('.collection-name-input-container');
+    if (inputContainer) {
+        inputContainer.remove();
+    }
+}
+
+function showCollectionNameInput(fileIndex, fileName) {
+    const fileItem = document.querySelector(`[data-file-index="${fileIndex}"]`);
+    if (!fileItem) return;
+    
+    const existingInput = fileItem.querySelector('.collection-name-input-container');
+    if (existingInput) {
+        existingInput.remove();
+    }
+    
+    const inputContainer = document.createElement('div');
+    inputContainer.className = 'collection-name-input-container mt-2 p-3 border rounded bg-light';
+    inputContainer.innerHTML = `
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="fas fa-plus-circle text-primary"></i>
+            <label class="form-label mb-0 fw-bold text-primary">${gettext('New collection name:')}</label>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control collection-name-input" 
+                   placeholder="Collection for ${fileName}" value="Collection for ${fileName}">
+            <button type="button" class="btn btn-success confirm-collection-name" title="${gettext('Confirm')}">
+                <i class="fas fa-check me-1"></i>${gettext('Create')}
+            </button>
+            <button type="button" class="btn btn-outline-secondary cancel-collection-name" title="${gettext('Cancel')}">
+                <i class="fas fa-times me-1"></i>${gettext('Cancel')}
+            </button>
+        </div>
+    `;
+    
+    fileItem.insertAdjacentElement('afterend', inputContainer);
+    
+    const input = inputContainer.querySelector('.collection-name-input');
+    input.focus();
+    input.select();
+    
+    const confirmBtn = inputContainer.querySelector('.confirm-collection-name');
+    const cancelBtn = inputContainer.querySelector('.cancel-collection-name');
+    
+    const confirmAction = () => {
+        const collectionName = input.value.trim();
+        if (collectionName) {
+            applyNewCollectionToFile(fileIndex, collectionName);
+        }
+        inputContainer.remove();
+    };
+    
+    const cancelAction = () => {
+        inputContainer.remove();
+    };
+    
+    confirmBtn.addEventListener('click', confirmAction);
+    cancelBtn.addEventListener('click', cancelAction);
+    
+    // Enter pour confirmer, Escape pour annuler
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmAction();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelAction();
+        }
+    });
+}
+
+function applyNewCollectionToFile(fileIndex, collectionName) {
+    const targetSelect = document.querySelector(`#document-files-list select[data-file-index="${fileIndex}"]`);
+    if (targetSelect) {
+        resetSelectorStyle(targetSelect);
+        
+        targetSelect.dataset.newCollectionName = collectionName;
+        targetSelect.dataset.createNew = 'true';
+        targetSelect.value = '';
+        
+        targetSelect.style.backgroundColor = '#e3f2fd';
+        targetSelect.style.fontStyle = 'italic';
+        
+        const parentDiv = targetSelect.closest('.collection-selector');
+        let indicator = parentDiv.querySelector('.new-collection-indicator');
+        if (!indicator) {
+            indicator = document.createElement('small');
+            indicator.className = 'new-collection-indicator text-primary mt-1';
+            indicator.style.display = 'block';
+            indicator.style.position = 'absolute';
+            indicator.style.fontSize = '0.75rem';
+            indicator.style.marginTop = '2px';
+            parentDiv.style.position = 'relative';
+            parentDiv.appendChild(indicator);
+        }
+        indicator.textContent = `→ ${collectionName}`;
+    }
+}
+
+function showGlobalCollectionNameInput() {
+    const bulkActionsContainer = document.getElementById('bulk-actions-container');
+    if (!bulkActionsContainer) return;
+    
+    const existingInput = bulkActionsContainer.querySelector('.global-collection-input-container');
+    if (existingInput) {
+        existingInput.remove();
+    }
+    
+    const inputContainer = document.createElement('div');
+    inputContainer.className = 'global-collection-input-container mt-3 p-3 border rounded bg-primary bg-opacity-10';
+    inputContainer.innerHTML = `
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="fas fa-layer-group text-primary"></i>
+            <label class="form-label mb-0 fw-bold text-primary">${gettext('Create new collection for all files:')}</label>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm global-collection-name-input" 
+                   placeholder="${gettext('Collection name')}" value="New Collection">
+            <button type="button" class="btn btn-success btn-sm confirm-global-collection" title="${gettext('Apply to all')}">
+                <i class="fas fa-check"></i> ${gettext('Apply')}
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm cancel-global-collection" title="${gettext('Cancel')}">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    bulkActionsContainer.appendChild(inputContainer);
+    
+    const input = inputContainer.querySelector('.global-collection-name-input');
+    input.focus();
+    input.select();
+    
+    const confirmBtn = inputContainer.querySelector('.confirm-global-collection');
+    const cancelBtn = inputContainer.querySelector('.cancel-global-collection');
+    
+    const confirmAction = () => {
+        const collectionName = input.value.trim();
+        if (collectionName) {
+            applyNewCollectionToAllFiles(collectionName);
+        }
+        inputContainer.remove();
+    };
+    
+    const cancelAction = () => {
+        inputContainer.remove();
+    };
+    
+    confirmBtn.addEventListener('click', confirmAction);
+    cancelBtn.addEventListener('click', cancelAction);
+    
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmAction();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelAction();
+        }
+    });
+}
+
+function applyNewCollectionToAllFiles(collectionName) {
+    const selectors = document.querySelectorAll('#document-files-list select:not(.text-direction-selector)');
+    selectors.forEach(select => {
+        resetSelectorStyle(select);
+        
+        select.dataset.newCollectionName = collectionName;
+        select.dataset.createNew = 'true';
+        select.value = '';
+        
+        select.style.backgroundColor = '#e3f2fd';
+        select.style.fontStyle = 'italic';
+        
+        const parentDiv = select.closest('.collection-selector');
+        let indicator = parentDiv.querySelector('.new-collection-indicator');
+        if (!indicator) {
+            indicator = document.createElement('small');
+            indicator.className = 'new-collection-indicator text-primary mt-1';
+            indicator.style.display = 'block';
+            indicator.style.position = 'absolute';
+            indicator.style.fontSize = '0.75rem';
+            indicator.style.marginTop = '2px';
+            parentDiv.style.position = 'relative';
+            parentDiv.appendChild(indicator);
+        }
+        indicator.textContent = `→ ${collectionName}`;
+    });
+}
+
+function cleanupDocumentDispatchInterface() {
+    const container = document.getElementById('document-files-list-container');
+    const bulkActionsContainer = document.getElementById('bulk-actions-container');
+    
+    if (container) {
+        container.style.display = 'none';
+    }
+    if (bulkActionsContainer) {
+        bulkActionsContainer.style.display = 'none';
+    }
+    
+    const listDiv = document.getElementById('document-files-list');
+    if (listDiv) {
+        listDiv.innerHTML = '';
+    }
+    
+    const globalInput = document.querySelector('.global-collection-input-container');
+    if (globalInput) {
+        globalInput.remove();
+    }
+    
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('document-add-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            displaySelectedDocuments(e.target.files);
+        });
+    }
+    
+    const modal = document.getElementById('document-add-modal');
+    if (modal) {
+        $(modal).on('hidden.bs.modal', function() {
+            cleanupDocumentDispatchInterface();
+        });
+    }
+});
 
 updateDocumentsList();

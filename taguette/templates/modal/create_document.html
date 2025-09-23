@@ -1,6 +1,6 @@
 <!-- Add document modal -->
 <div class="modal fade" id="document-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 60vw;">
         <form id="document-add-form" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{% trans "modal window title" %}Add a document{% endtrans %}</h5>
@@ -16,39 +16,52 @@
                     </div>
                     <div class="row">
                         <div class="col-12 form-group">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-add-direction"
-                                    id="document-add-direction-ltr" data-test-id="document-add-direction-ltr-input"
-                                    value="LEFT_TO_RIGHT" checked />
-                                <label class="form-check-label" for="document-add-direction-ltr">{% trans %}Left to
-                                    right{% endtrans %}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="document-add-direction"
-                                    id="document-add-direction-rtl" data-test-id="document-add-direction-rtl-input"
-                                    value="RIGHT_TO_LEFT" />
-                                <label class="form-check-label" for="document-add-direction-rtl">{% trans %}Right to
-                                    left{% endtrans %}</label>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="document-add-direction"
+                                        id="document-add-direction-ltr" data-test-id="document-add-direction-ltr-input"
+                                        value="LEFT_TO_RIGHT" checked />
+                                    <label class="form-check-label" for="document-add-direction-ltr">{% trans %}Left to
+                                        right{% endtrans %}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="document-add-direction"
+                                        id="document-add-direction-rtl" data-test-id="document-add-direction-rtl-input"
+                                        value="RIGHT_TO_LEFT" />
+                                    <label class="form-check-label" for="document-add-direction-rtl">{% trans %}Right to
+                                        left{% endtrans %}</label>
+                                </div>
+                                <div class="vr"></div>
+                                <button type="button" class="btn btn-outline-info btn-sm" id="apply-global-direction">
+                                    {% trans %}Apply global text direction{% endtrans %}
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <!-- Liste des documents sélectionnés -->
+                    <div class="row" id="document-files-list-container" style="display: none;">
                         <div class="col form-group">
-                            <label for="document-collection-hierarchy-select" class="form-label">{% trans %}Add to
-                                collections{% endtrans %}</label>
-                            <div class='dropdown hierarchy-select' id='document-collection-hierarchy-select'>
-                                <button class="btn btn-secondary dropdown-toggle" type="button"
-                                    id="dropdownMenuButtonDocumentCollection" data-bs-toggle="dropdown"
-                                    aria-expanded="false"></button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonDocumentCollection">
-                                    <div class="hs-searchbox">
-                                        <input type="text" class="form-control" autocomplete="off">
-                                    </div>
-                                    <div class='hs-menu-inner'>
-                                    </div>
-                                </ul>
-                                <input class="d-none" id="document-add-collection-id" name="document-add-collection-id"
-                                    readonly="readonly" aria-hidden="true" type="text" />
+                            <label class="form-label">{% trans %}Selected documents and collections{% endtrans
+                                %}</label>
+                            <div id="document-files-list" class="border rounded p-3"
+                                style="max-height: 300px; overflow-y: auto;">
+                                <!-- La liste sera générée dynamiquement -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions rapides -->
+                    <div class="row" id="bulk-actions-container" style="display: none;">
+                        <div class="col form-group">
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    id="assign-all-to-collection">
+                                    {% trans %}Assign all to same collection{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                    id="create-new-collection-for-all">
+                                    {% trans %}Create new collection for all{% endtrans %}
+                                </button>
                             </div>
                         </div>
                     </div>

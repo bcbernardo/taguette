@@ -177,16 +177,13 @@ function customDocumentNodeRow() {
             setTimeout(function() {
                 if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
                    element.addClass('collection-context-menu');
-                    
-                    if (element.find('.expand-icon, .collapse-icon').length === 0) {
-                        // Ajouter l'icône avec une classe pour pouvoir la modifier plus tard
-                        const folderIconClass = node.state && node.state.expanded ? 'fas fa-folder-open' : 'fas fa-folder';
-                        element.prepend(`<i class="node-icon ${folderIconClass}" style="margin-right: 8px;"></i> `);
-                    }
+                   
+                   if (element.find('.expand-icon, .collapse-icon, i[class*="fa-folder"]').length === 0) {
+                       element.prepend('<i class="fas fa-folder" style="margin-right: 10px;"></i>');
+                   }
                 }
-                element.find('.expand-icon, .collapse-icon').css('margin-right', '5px');
-                element.find('.node-icon').css('margin-right', '8px');
-                element.find('i[class*="fa-chevron"], i[class*="fa-folder"], i[class*="fa-file"]').css('margin-right', '8px');
+                element.find('.expand-icon, .collapse-icon').css('margin-right', '10px');
+                element.find('i[class*="fa-chevron"], i[class*="fa-folder"], i[class*="fa-file"]').css('margin-right', '10px');
             }, 10);
         }
     };

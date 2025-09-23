@@ -100,6 +100,8 @@ const document_add_modal = document.getElementById('document-add-modal');
 function createDocument() {
     document.getElementById('document-add-form').reset();
     
+    cleanupDocumentDispatchInterface();
+    
     initDocumentCollectionHierarchySelect();
     
     $(document_add_modal).modal('show').drags({handle: '.modal-header'});
@@ -122,6 +124,8 @@ function doUpload(form_data, percent=0) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest(),
             name = form_data.get('name');
+        
+        
         xhr.responseType = 'json';
         xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
         xhr.onload = function () {
@@ -155,11 +159,13 @@ function doUpload(form_data, percent=0) {
                 'percent': percent
             });
         }
+        
         xhr.send(form_data);
     });
 }
 
 async function uploadFiles(files) {
+    
     showSpinner(function(){ upload_canceled = true; }, true);
     await delay(100); // Trick to refresh dom
     let error_msg = '',
@@ -180,12 +186,26 @@ async function uploadFiles(files) {
         form_data.append('name', name);
         form_data.append('description', document.getElementById('document-add-description').value);
         form_data.append('file', files[f]);
-        form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
 
-        const selectedCollectionId = document.getElementById('document-add-collection-id').value;
-        if (selectedCollectionId) {
-            form_data.append('collection_ids', selectedCollectionId);
+        const fileIndex = parseInt(f);
+        const fileSelector = document.querySelector(`#document-files-list select[data-file-index="${fileIndex}"]:not(.text-direction-selector)`);
+        const textDirectionSelector = document.querySelector(`#document-files-list .text-direction-selector[data-file-index="${fileIndex}"]`);
+        
+        // Use individual text direction if available, otherwise fall back to global
+        const textDirection = textDirectionSelector?.value || document.getElementById('document-add-form').elements['document-add-direction'].value;
+        form_data.append('text_direction', textDirection);
+        
+        if (fileSelector) {
+            if (fileSelector.dataset.createNew === 'true') {
+                const newCollectionName = fileSelector.dataset.newCollectionName || `Collection for ${name}`;
+                form_data.append('create_collection_name', newCollectionName);
+            } else {
+                const selectedCollectionId = fileSelector.value;
+                if (selectedCollectionId) {
+                    form_data.append('collection_ids', selectedCollectionId);
+                }
+            }
         }
 
         file_number++;
@@ -212,6 +232,9 @@ async function uploadFiles(files) {
     if(doc_to_load !== null) {
         $(document_add_modal).modal('hide');
         document.getElementById('document-add-form').reset();
+        
+        cleanupDocumentDispatchInterface();
+        
         const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
         window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
         updateDocumentsList();
@@ -1486,7 +1509,7 @@ function deleteCollection(collectionId) {
     showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
         deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
             .then(function() {
-                showAlert(gettext('Collection deleted!'), 'success');
+                // showAlert(gettext('Collection deleted!'), 'success');
             })
             .catch(function(error) {
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
