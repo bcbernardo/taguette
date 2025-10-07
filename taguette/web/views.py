@@ -116,8 +116,12 @@ class Index(BaseHandler):
             else:
                 return self.render("auth/token_needed.html")
 
-        use_alt_welcome = self.application.config.get("USE_ALTERNATE_WELCOME", False)
-        template = "alt_templates/welcome.html" if use_alt_welcome else "welcome.html"
+        use_alt_welcome = self.application.config.get(
+            "USE_ALTERNATE_WELCOME", False
+        )
+        template = (
+            "alt_templates/welcome.html" if use_alt_welcome else "welcome.html"
+        )
         return self.render(template, use_alt_welcome=use_alt_welcome)
 
     head = get
@@ -126,7 +130,9 @@ class Index(BaseHandler):
 class CookiesPrompt(BaseHandler):
     @PROM_REQUESTS.sync("cookies_prompt")
     def get(self):
-        return self.render("cookies_prompt.html", next=self.get_argument("next", ""))
+        return self.render(
+            "cookies_prompt.html", next=self.get_argument("next", "")
+        )
 
     @PROM_REQUESTS.sync("cookies_prompt")
     def post(self):
@@ -145,11 +151,11 @@ class BrokenBasePath(BaseHandler):
         self.set_header("Content-Type", "text/plain")
         return self.finish(
             (
-                "Error: BASE_PATH is set to {0} so you shouldn't be reaching this "
-                + "page.\n"
-                + "\n"
-                + "You might need to fix your reverse proxy's configuration or "
-                + "LibreQDA's BASE_PATH setting.\n"
+                "Error: BASE_PATH is set to {0} so you shouldn't be"
+                "reaching this page.\n"
+                "\n"
+                "You might need to fix your reverse proxy's configuration"
+                "or LibreQDA's BASE_PATH setting.\n"
             ).format(self.application.config["BASE_PATH"])
         )
 
@@ -289,7 +295,9 @@ class Register(BaseHandler):
                 .count()
                 > 0
             ):
-                raise validate.InvalidFormat(_f("Email address is already used"))
+                raise validate.InvalidFormat(
+                    _f("Email address is already used")
+                )
             user = database.User(login=login)
             user.role = "PROJECT_ADMIN"
             await user.set_password(password1)
@@ -335,7 +343,12 @@ class UserPermissions(BaseHandler):
             )
         ).all()
         members_json = Markup(
-            json.dumps({user.login: {"privileges": user.role.name} for user in members})
+            json.dumps(
+                {
+                    user.login: {"privileges": user.role.name}
+                    for user in members
+                }
+            )
         )
         _ = self.xsrf_token  # Make sure XSRF cookie is set
         return self.render(
@@ -379,7 +392,9 @@ class Cilogon(BaseHandler):
         state_encoded_str = str(
             base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8"
         )
-        auth_uri = self.flow_cilogon().step1_get_authorize_url(state=state_encoded_str)
+        auth_uri = self.flow_cilogon().step1_get_authorize_url(
+            state=state_encoded_str
+        )
         if entity_id is not None:
             auth_uri += f"&idphint={entity_id}"
         return self.redirect(auth_uri, status=301)
@@ -398,7 +413,9 @@ class CilogonCallback(BaseHandler):
         error = self.get_argument("error", None)
         error_description = self.get_argument("error_description", "")
         if error:
-            logger.error(f"CILogon : ERROR : {error}, MESSAGE: {error_description}")
+            logger.error(
+                f"CILogon : ERROR : {error}, MESSAGE: {error_description}"
+            )
             error = url_escape(error)
             error_description = url_escape(error_description)
             return self.redirect(
@@ -502,7 +519,8 @@ class CilogonCallback(BaseHandler):
                 "Canadian Access Federation (CAF)."
             )
             return self.redirect(
-                self.reverse_url("login") + f"?error=error&error_msg={error_msg}"
+                self.reverse_url("login")
+                + f"?error=error&error_msg={error_msg}"
             )
 
         if "email" in cil_user_infos.keys():
@@ -516,20 +534,24 @@ class CilogonCallback(BaseHandler):
             logger.error(json.dumps(cil_user_infos, indent=3))
             error_msg = url_escape("No email provided from CI Logon")
             return self.redirect(
-                self.reverse_url("login") + f"?error=error&error_msg={error_msg}"
+                self.reverse_url("login")
+                + f"?error=error&error_msg={error_msg}"
             )
 
         self.init_session(cil_user_infos)
 
         # Log information
-        logger.info(f"LOGIN SUCCESS : Using CILogon : email={cil_user_infos['email']}")
+        logger.info(
+            f"LOGIN SUCCESS : Using CILogon : email={cil_user_infos['email']}"
+        )
 
     def init_session(self, user_info):
         login = user_info["email"].lower()
         user = self.db.query(database.User).get(login)
         if user is None:
             logger.info(
-                f"CILogon Login: User login not found: {login}, searching email."
+                f"CILogon Login: User login not found: {login}, "
+                "searching email."
             )
             user = (
                 self.db.query(database.User)
@@ -546,7 +568,9 @@ class CilogonCallback(BaseHandler):
                 user.external = True
                 self.db.commit()
         if user is None:
-            logger.info(f"CILogon Login: non-existent user, create user {login}")
+            logger.info(
+                f"CILogon Login: non-existent user, create user {login}"
+            )
             user = database.User(login=login)
             user.displayname = user_info["name"]
             user.login = login
@@ -649,7 +673,9 @@ class Account(BaseHandler):
                 if password1 or password2:
                     validate.user_password(password1)
                     if password1 != password2:
-                        raise validate.InvalidFormat(_f("Passwords do not match"))
+                        raise validate.InvalidFormat(
+                            _f("Passwords do not match")
+                        )
                     await user.set_password(password1)
             if language not in tornado.locale.get_supported_locales():
                 language = None
@@ -718,7 +744,14 @@ class AskResetPassword(BaseHandler):
                 path = path[:-15]
             path = path + "/new_password"
             reset_link = urlunparse(
-                ["https", self.request.host, path, "", "reset_token=" + reset_token, ""]
+                [
+                    "https",
+                    self.request.host,
+                    path,
+                    "",
+                    "reset_token=" + reset_token,
+                    "",
+                ]
             )
 
             msg = EmailMessage()
@@ -756,7 +789,9 @@ class AskResetPassword(BaseHandler):
                 user.login,
                 user.email,
             )
-        return await self.render("auth/reset_password.html", message="Email sent!")
+        return await self.render(
+            "auth/reset_password.html", message="Email sent!"
+        )
 
 
 class SetNewPassword(BaseHandler):
@@ -1109,7 +1144,10 @@ class ImportCodebook(BaseHandler):
                         tag.color = tag_update["color"]
                         tag_parent = (
                             self.db.query(database.Tag)
-                            .filter_by(path=tag_update["parent"], project_id=project.id)
+                            .filter_by(
+                                path=tag_update["parent"],
+                                project_id=project.id,
+                            )
                             .first()
                         )
                         tag.parent_id = tag_parent.id if tag_parent else None
@@ -1121,7 +1159,9 @@ class ImportCodebook(BaseHandler):
                 for tag_insert in insert_tags:
                     tag_parent = (
                         self.db.query(database.Tag)
-                        .filter_by(path=tag_insert["parent"], project_id=project.id)
+                        .filter_by(
+                            path=tag_insert["parent"], project_id=project.id
+                        )
                         .first()
                     )
                     tag = database.Tag(
@@ -1152,7 +1192,8 @@ class ImportCodebook(BaseHandler):
                 logger.warning("Error importing codebook", exc_info=True)
                 self.db.rollback()
                 error = self.gettext(
-                    "Error importing tags, concurrent changes caused a " + "conflict",
+                    "Error importing tags, concurrent changes caused a "
+                    + "conflict",
                 )
                 self.set_status(409)
                 return self._show_confirmation_form(
@@ -1227,7 +1268,9 @@ class Project(BaseHandler):
         grouped_collections = defaultdict(list)
 
         for collection in project.collections:
-            collection_parent_id = collection.parent.id if collection.parent else None
+            collection_parent_id = (
+                collection.parent.id if collection.parent else None
+            )
             grouped_collections[collection_parent_id].append(collection)
 
         # Function to build the collection tree structure
@@ -1236,7 +1279,9 @@ class Project(BaseHandler):
             for child_collection in grouped_collections[parent_id]:
                 child_id = child_collection.id
                 collection_parent_id = (
-                    child_collection.parent.id if child_collection.parent else None
+                    child_collection.parent.id
+                    if child_collection.parent
+                    else None
                 )
                 child_info = {
                     "id": child_collection.id,
@@ -1291,7 +1336,9 @@ class Project(BaseHandler):
         return self.render(
             "project.html",
             project=project,
-            last_event=(project.last_event if project.last_event is not None else -1),
+            last_event=(
+                project.last_event if project.last_event is not None else -1
+            ),
             collections=collections_json,
             documents=documents_json,
             user_login=Markup(json.dumps(self.current_user)),

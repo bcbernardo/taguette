@@ -24,8 +24,9 @@ from .web import make_app
 
 logger = logging.getLogger(__name__)
 
-
-PROM_VERSION = prometheus_client.Gauge("version", "Application version", ["version"])
+PROM_VERSION = prometheus_client.Gauge(
+    "version", "Application version", ["version"]
+)
 
 
 def prepare_db(database):
@@ -233,7 +234,9 @@ async def _set_password(user):
     try:
         passwd = getpass.getpass("Enter password for user %r: " % user.login)
     except (OSError, EOFError):
-        character_set = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        character_set = (
+            string.ascii_lowercase + string.ascii_uppercase + string.digits
+        )
         passwd = "".join(secrets.choice(character_set) for _ in range(16))
         logger.warning(
             "Can't prompt for a password, setting admin password to: %s",
@@ -279,9 +282,13 @@ def main():
                 .strip()
             )
         except (OSError, subprocess.CalledProcessError):
-            logger.info("Can't get version from Git, using version=%s", exact_version())
+            logger.info(
+                "Can't get version from Git, using version=%s", exact_version()
+            )
         else:
-            logger.info("Running from Git repository, using version=%s", version)
+            logger.info(
+                "Running from Git repository, using version=%s", version
+            )
             if version.startswith("v"):
                 taguette._exact_version = version[1:]
             if version.startswith("libreqda-v"):
@@ -318,10 +325,15 @@ def main():
         description="Document tagger for qualitative analysis",
     )
     parser.add_argument(
-        "--version", action="version", version="LibreQDA version %s" % exact_version()
+        "--version",
+        action="version",
+        version="LibreQDA version %s" % exact_version(),
     )
     parser.add_argument(
-        "-p", "--port", default="7465", help=_("Port number on which to listen")
+        "-p",
+        "--port",
+        default="7465",
+        help=_("Port number on which to listen"),
     )
     parser.add_argument(
         "-b", "--bind", default="127.0.0.1", help=_("Address to bind on")
@@ -358,7 +370,9 @@ def main():
         action="store",
         dest="umask",
         default="077",
-        help=_("Set the file creation mask (umask) on systems that support it."),
+        help=_(
+            "Set the file creation mask (umask)on systems that support it."
+        ),
     )
     parser.add_argument(
         "--dont-set-umask",
@@ -402,7 +416,8 @@ def main():
     parser_config.set_defaults(func1=lambda args: default_config(args.output))
 
     parser_server = subparsers.add_parser(
-        "server", help=_("Run in server mode, suitable for a multi-user deployment")
+        "server",
+        help=_("Run in server mode, suitable for a multi-user deployment"),
     )
     parser_server.add_argument(
         "config_file",
