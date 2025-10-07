@@ -205,6 +205,7 @@ DEFAULT_CONFIG = {
     'CONVERT_TO_HTML_TIMEOUT': 3 * 60,
     'OPF_OUT_SIZE_LIMIT': 5000000,  # 5 MB
     'HTML_OUT_SIZE_LIMIT': 2000000,  # 2 MB
+    'LOKI_URL': 'http://localhost:3100',
 }
 
 REQUIRED_CONFIG = ['NAME', 'PORT', 'SECRET_KEY', 'DATABASE', 'TOS_FILE',
@@ -233,6 +234,7 @@ def main():
     logging.root.handlers.clear()
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s: %(message)s")
+
     locale.setlocale(locale.LC_ALL, '')
     lang = locale.getlocale()[0]
     lang = [lang] if lang else []
@@ -424,6 +426,14 @@ def main():
             COOKIES_PROMPT=False,
             HTML_OUT_SIZE_LIMIT=5000000,  # 5 MB
         )
+
+    # Loki integration
+    try:
+        from taguette.loki_handler import setup_loki_logging
+        loki_url = config.get('LOKI_URL', DEFAULT_CONFIG['LOKI_URL'])
+        setup_loki_logging(loki_url)
+    except ImportError:
+        pass
 
     if 'PROMETHEUS_LISTEN' in config:
         p_addr = None

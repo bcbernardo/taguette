@@ -95,16 +95,16 @@ function handleCollectionKeyboardShortcuts(e) {
 
     if ($('.collection-context-menu').length === 0) return;
     
-    if (e.key.toLowerCase() === 'm') {
-        e.preventDefault();
-        if (selectedCollectionId) {
-            const element = $(`.collection-context-menu[id*="collection_${selectedCollectionId}"]`);
-            if (element.length > 0) {
-                element.contextMenu();
-            }
-        }
-        return;
-    }
+    // if (e.key.toLowerCase() === 'm') {
+    //     e.preventDefault();
+    //     if (selectedCollectionId) {
+    //         const element = $(`.collection-context-menu[id*="collection_${selectedCollectionId}"]`);
+    //         if (element.length > 0) {
+    //             element.contextMenu();
+    //         }
+    //     }
+    //     return;
+    // }
     
     if (selectedCollectionId) {
         switch(e.key.toLowerCase()) {

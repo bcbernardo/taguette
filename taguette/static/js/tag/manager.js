@@ -59,7 +59,7 @@ const findTagAndDelete = (id) => {
 
     if (tag.parent) {
         const parent = findTag(tag.parent);
-        const indexToDelete = tag.children.findIndex(item => item.id === tag.id);
+        const indexToDelete = parent.children.findIndex(item => item.id === tag.id);
         parent.children.splice(indexToDelete, SPLICE_DEFAULT_INDEX);
     } else {
         const indexToDelete = tags.findIndex(item => item.id === tag.id);
