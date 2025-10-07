@@ -488,7 +488,8 @@ class Test2E2MultiUser(SeleniumTest):
 
         # badge = test_collection_node.find_element(By.CSS_SELECTOR, '.badge')
         # self.assertEqual(
-        #     badge.text, '2', "Test Collection should now contain 2 documents")
+        #     badge.text, '2',
+        #     "Test Collection should now contain 2 documents")
 
         # await asyncio.sleep(3)
 
@@ -582,7 +583,8 @@ class Test2E2MultiUser(SeleniumTest):
         #         'transform="translate(0, 20)">'
         #         '<text x="0" y="0" text-anchor="start">'
         #         'different content</text>'
-        #         '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
+        #         '<line data-highlight-id="1" '
+        #         'data-parent-line-id="line-0-17" '
         #         'x1="2" x2="25.3125" y1="10" y2="10" '
         #         'stroke="#000000" stroke-linecap="round" '
         #         'stroke-width="4" pointer-events="all" '
@@ -592,7 +594,8 @@ class Test2E2MultiUser(SeleniumTest):
         #         '<stop offset="0%" stop-color="#000000"></stop>'
         #         '<stop offset="100%" stop-color="#000000"></stop>'
         #         '</linearGradient>'
-        #         '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
+        #         '<line data-highlight-id="2" '
+        #         'data-parent-line-id="line-0-17" '
         #         'x1="90.84375" x2="117.46875" y1="25" y2="25.1" '
         #         'stroke="url(#gradient-2)" stroke-linecap="round" '
         #         'stroke-width="4" pointer-events="all" '
@@ -615,7 +618,8 @@ class Test2E2MultiUser(SeleniumTest):
         #         '<use href="#highlights-0-17">'
         #         '</use></svg></div></div><defs>'
         #         '<g id="highlights-0-17" class="highlights">'
-        #         '<line data-highlight-id="1" data-parent-line-id="line-0-17" '
+        #         '<line data-highlight-id="1" '
+        #         'data-parent-line-id="line-0-17" '
         #         'x1="1" x2="30.666671752929688" y1="30" y2="30" '
         #         'stroke="#000000" stroke-linecap="round" '
         #         'stroke-width="4" pointer-events="all" '
@@ -624,7 +628,8 @@ class Test2E2MultiUser(SeleniumTest):
         #         'showLineTooltip.call(this, this, \'1\', true);" '
         #         'onmouseout="this.style.strokeWidth=\'4\'; '
         #         'hideLineTooltip();"></line>'
-        #         '<line data-highlight-id="2" data-parent-line-id="line-0-17" '
+        #         '<line data-highlight-id="2" '
+        #         'data-parent-line-id="line-0-17" '
         #         'x1="116.53334045410156" x2="152.76666259765625" '
         #         'y1="45" y2="45.1" stroke="url(#gradient-2)" '
         #         'stroke-linecap="round" '
@@ -668,7 +673,8 @@ class Test2E2MultiUser(SeleniumTest):
         # # Finish editing highlight 1 in document 1
         # self.assertEqual(
         #     self.get_highlight_add_tags(),
-        #     # 3 was created while this modal was opened, it should be selected
+        #     # 3 was created while this modal was opened,
+        #     # it should be selected
         #     {1: True, 3: True, 2: False},
         # )
 
@@ -818,7 +824,8 @@ class Test2E2MultiUser(SeleniumTest):
         # await asyncio.sleep(1)  # Wait for XHR
         # self.assertNotEqual(self.s_get_scroll_height(), 0)
 
-        # # Check export options for highlights in project 1 under 'interesting'
+        # # Check export options for highlights in project 1
+        # # under 'interesting'
         # await self.s_get('/project/1/highlights/interesting')
         # await asyncio.sleep(1)  # Wait for XHR
         # await self.s_click_button('document-dropdown-export')
@@ -853,7 +860,8 @@ class Test2E2MultiUser(SeleniumTest):
         #     if link.text
         # ]
         # self.assertEqual(links, [
-        #     # ('QDC (XML)', self.base_path + '/project/1/export/codebook.qdc'),
+        #     # ('QDC (XML)', self.base_path +
+        #     #  '/project/1/export/codebook.qdc'),
         #     ('Excel', self.base_path + '/project/1/export/codebook.xlsx'),
         #     ('CSV', self.base_path + '/project/1/export/codebook.csv'),
         #     ('HTML', self.base_path + '/project/1/export/codebook.html'),
