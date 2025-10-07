@@ -251,6 +251,8 @@ class DocumentAdd(BaseHandler):
                 )
                 self.db.add(doc)
                 self.db.flush()  # Need to flush to get doc.id
+
+                # Handle existing collections
                 collection_ids = self.get_arguments('collection_ids')
                 for col_id in collection_ids:
                     collection = self.db.query(database.Collection).filter_by(
@@ -258,15 +260,72 @@ class DocumentAdd(BaseHandler):
                     if collection:
                         doc.collections.append(collection)
 
+                # Handle new collection creation
+                create_collection_name = self.get_body_argument(
+                    'create_collection_name', None)
+                if create_collection_name:
+                    create_collection_name = create_collection_name.strip()
+                    if create_collection_name:
+                        # Check if collection with this name already exists
+                        existing_collection = self.db.query(
+                            database.Collection
+                        ).filter_by(
+                            name=create_collection_name,
+                            project_id=project.id,
+                            owner_login=self.current_user
+                        ).first()
+
+                        if existing_collection:
+                            # Use existing collection
+                            doc.collections.append(existing_collection)
+                            logger.info(
+                                "Added document %r to existing collection %r",
+                                doc.name, create_collection_name
+                            )
+                        else:
+                            # Create new collection
+                            new_collection = database.Collection(
+                                name=create_collection_name,
+                                description="",
+                                project_id=project.id,
+                                owner_login=self.current_user,
+                                parent_id=None
+                            )
+                            self.db.add(new_collection)
+                            self.db.flush()  # Get collection.id
+                            doc.collections.append(new_collection)
+                            logger.info(
+                                "Created new collection %r for document %r",
+                                create_collection_name, doc.name
+                            )
+
+                            # Add command for collection creation
+                            collection_cmd = database.Command.collection_add(
+                                self.current_user,
+                                new_collection,
+                            )
+                            self.db.add(collection_cmd)
+
                 cmd = database.Command.document_add(
                     self.current_user,
                     doc,
                 )
                 self.db.add(cmd)
-                logger.info("Document added to project %r: %r %r (%d bytes)",
-                            project.id, doc.id, doc.name, len(doc.contents))
+                logger.info(
+                    "Document added to project %r: %r %r (%d bytes)",
+                    project.id, doc.id, doc.name, len(doc.contents)
+                )
                 self.db.commit()
                 self.db.refresh(cmd)
+
+                if (create_collection_name and
+                        create_collection_name.strip() and
+                        'collection_cmd' in locals()):
+                    self.db.refresh(collection_cmd)
+                    self.application.notify_project(
+                        project.id, collection_cmd
+                    )
+
                 self.application.notify_project(project.id, cmd)
                 return await self.send_json({'created': doc.id})
         except validate.InvalidFormat as e:

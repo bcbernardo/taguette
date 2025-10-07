@@ -89,110 +89,18 @@ function projectMetadataChanged() {
  project_name_input.addEventListener('blur', projectMetadataChanged);
  project_description_input.addEventListener('blur', projectMetadataChanged);
 
-/*
- * Documents list
- */
-
-function addDocument(document) {
-    // Save old collections for document updates
-    const oldCollections = documents['' + document.id]?.collections || [];
-    
-    documents['' + document.id] = document;
-    
-    // Update collections
-    const newCollections = document.collections || [];
-    
-    // Remove from old collections
-    for (let collectionId of oldCollections) {
-        const collection = findCollection(parseInt(collectionId));
-        if (collection && collection.document_ids) {
-            const index = collection.document_ids.indexOf(document.id);
-            if (index !== -1) {
-                collection.document_ids.splice(index, 1);
-            }
-        }
-    }
-    
-    // Add to new collections
-    for (let collectionId of newCollections) {
-        const collection = findCollection(parseInt(collectionId));
-        if (collection) {
-            if (!collection.document_ids) {
-                collection.document_ids = [];
-            }
-            if (!collection.document_ids.includes(document.id)) {
-                collection.document_ids.push(document.id);
-            }
-        }
-    }
-    
-    updateDocumentsList();
-    initDocumentsTreeview();
-    
-    // Expand parent collection and highlight new document
-    if (document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandNodeParent(parentCollectionId);
-    }
-    highlightDocument(document.id);
-}
-
-function removeDocument(document_id) {
-    // Remove from collections
-    const document = documents['' + document_id];
-    if (document && document.collections) {
-        for (let collectionId of document.collections) {
-            const collection = findCollection(parseInt(collectionId));
-            if (collection && collection.document_ids) {
-                const index = collection.document_ids.indexOf(parseInt(document_id));
-                if (index !== -1) {
-                    collection.document_ids.splice(index, 1);
-                }
-            }
-        }
-    }
-    
-    delete documents['' + document_id];
-    updateDocumentsList();
-    initDocumentsTreeview();
-    
-    // Expand parent collection to show the change
-    if (document && document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandNodeParent(parentCollectionId);
-    }
-    
-    if (current_document === document_id) {
-        window.history.pushState({}, "Project", base_path + '/project/' + project_id);
-        loadDocument(null);
-    }
-}
-
 
 /*
  * Add document
  */
 
-function flattenCollections(collectionsTree) {
-    const flat = {};
-    
-    function addToFlat(nodes) {
-        for (let node of nodes) {
-            flat[node.id] = node;
-            if (node.children && node.children.length > 0) {
-                addToFlat(node.children);
-            }
-        }
-    }
-    
-    addToFlat(collectionsTree);
-    return flat;
-}
 
 const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
+    
+    cleanupDocumentDispatchInterface();
     
     initDocumentCollectionHierarchySelect();
     
@@ -216,6 +124,8 @@ function doUpload(form_data, percent=0) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest(),
             name = form_data.get('name');
+        
+        
         xhr.responseType = 'json';
         xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
         xhr.onload = function () {
@@ -249,11 +159,13 @@ function doUpload(form_data, percent=0) {
                 'percent': percent
             });
         }
+        
         xhr.send(form_data);
     });
 }
 
 async function uploadFiles(files) {
+    
     showSpinner(function(){ upload_canceled = true; }, true);
     await delay(100); // Trick to refresh dom
     let error_msg = '',
@@ -274,12 +186,26 @@ async function uploadFiles(files) {
         form_data.append('name', name);
         form_data.append('description', document.getElementById('document-add-description').value);
         form_data.append('file', files[f]);
-        form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
 
-        const selectedCollectionId = document.getElementById('document-add-collection-id').value;
-        if (selectedCollectionId) {
-            form_data.append('collection_ids', selectedCollectionId);
+        const fileIndex = parseInt(f);
+        const fileSelector = document.querySelector(`#document-files-list select[data-file-index="${fileIndex}"]:not(.text-direction-selector)`);
+        const textDirectionSelector = document.querySelector(`#document-files-list .text-direction-selector[data-file-index="${fileIndex}"]`);
+        
+        // Use individual text direction if available, otherwise fall back to global
+        const textDirection = textDirectionSelector?.value || document.getElementById('document-add-form').elements['document-add-direction'].value;
+        form_data.append('text_direction', textDirection);
+        
+        if (fileSelector) {
+            if (fileSelector.dataset.createNew === 'true') {
+                const newCollectionName = fileSelector.dataset.newCollectionName || `Collection for ${name}`;
+                form_data.append('create_collection_name', newCollectionName);
+            } else {
+                const selectedCollectionId = fileSelector.value;
+                if (selectedCollectionId) {
+                    form_data.append('collection_ids', selectedCollectionId);
+                }
+            }
         }
 
         file_number++;
@@ -306,6 +232,9 @@ async function uploadFiles(files) {
     if(doc_to_load !== null) {
         $(document_add_modal).modal('hide');
         document.getElementById('document-add-form').reset();
+        
+        cleanupDocumentDispatchInterface();
+        
         const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
         window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
         updateDocumentsList();
@@ -732,9 +661,9 @@ $('#highlight-add-form').off().on('submit', (e) => {
     const highlight_id = document.getElementById('highlight-add-id').value;
     const selection = [parseInt(document.getElementById('highlight-add-start').value), parseInt(document.getElementById('highlight-add-end').value)];
 
-    const selectedTags = treeview_tags_highlight.treeview('getSelected');
+    const selectedTags = highlightSelectedTags;
 
-    const hl_tags = selectedTags.map((tag) => tag.id);
+    const hl_tags = selectedTags;
 
     if (hl_tags.length === 0) return;
 
@@ -1155,7 +1084,9 @@ function loadTag(tag_path, page) {
 
                 let doclink = document.createElement('a');
                 doclink.className = 'badge badge-primary';
-                doclink.textContent = documents['' + hl.document_id].name;
+                
+                const documentPath = buildDocumentPath(hl.document_id);
+                doclink.textContent = documentPath;
                 linkDocument(doclink, hl.document_id, hl.id);
                 elem.appendChild(doclink);
                 elem.appendChild(document.createTextNode(' '));
@@ -1403,6 +1334,7 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         hideSearchErrorMessage();
 
         // save selected tags
+
         const tempSavedSelections = saveSelectedNodes(treeview_tags_highlight);
 
         tempSavedSelections.forEach(id => {
@@ -1530,59 +1462,7 @@ window.addEventListener('scroll', function() {
     scrollPos = document.documentElement.scrollTop;
 });
 
-function populateDocumentsList(collectionId = null) {
-    const docListDiv = document.getElementById('collection-add-documents-list');
-    docListDiv.innerHTML = '';
-    
-    const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
-    
-    let availableDocuments = 0;
-    const collectionDocuments = collectionId ? (findCollection(collectionId)?.document_ids || []) : [];
-    
-    for (let i = 0; i < docEntries.length; ++i) {
-        let doc = docEntries[i][1];
-        const docCollections = doc.collections || [];
-        
-        let shouldShow = false;
-        let isChecked = false;
-        
-        if (collectionId) {
-            const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
-            const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
-            shouldShow = !isInOtherCollections;
-            isChecked = isInCurrentCollection;
-        } else {
-            shouldShow = docCollections.length === 0;
-            isChecked = false;
-        }
-        
-        if (!shouldShow) {
-            continue;
-        }
-        
-        availableDocuments++;
-        
-        let label = document.createElement('label');
-        label.className = 'form-check-label d-block';
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input me-2';
-        checkbox.value = doc.id;
-        checkbox.checked = isChecked;
-        
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + doc.name));
-        docListDiv.appendChild(label);
-    }
-    
-    if (availableDocuments === 0) {
-        const noDocsMessage = document.createElement('p');
-        noDocsMessage.className = 'text-muted text-center';
-        noDocsMessage.textContent = gettext('No documents available');
-        docListDiv.appendChild(noDocsMessage);
-    }
-}
+
 
 function editCollection(collectionId) {
     const collection = findCollection(collectionId);
@@ -1629,7 +1509,7 @@ function deleteCollection(collectionId) {
     showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
         deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
             .then(function() {
-                showAlert(gettext('Collection deleted!'), 'success');
+                // showAlert(gettext('Collection deleted!'), 'success');
             })
             .catch(function(error) {
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
@@ -1907,8 +1787,9 @@ function removeCollection(collectionId) {
         }
         
         const selectedDocs = [];
-        $('#collection-add-documents-list input[type=checkbox]:checked').each(function() {
-            selectedDocs.push(this.value);
+        const selectedItems = document.querySelectorAll('#collection-add-documents-list .document-item.selected');
+        selectedItems.forEach(function(item) {
+            selectedDocs.push(item.dataset.documentId);
         });
         
         const data = {
@@ -1918,22 +1799,19 @@ function removeCollection(collectionId) {
             parent_id: parentId || null
         };
         
-        let url, method, successMsg;
+        let url;
         if (collectionId) {
             url = `/api/project/${project_id}/collection/${collectionId}`;
             method = 'POST';
-            successMsg = gettext('Collection updated!');
         } else {
             url = `/api/project/${project_id}/collection/new`;
             method = 'POST';
-            successMsg = gettext('Collection created!');
         }
         
         postJSON(url, data)
             .then(function(response) {
                 $('#collection-add-modal').modal('hide');
                 $('#collection-add-form')[0].reset();
-                showAlert(successMsg, 'success');
             })
             .catch(function(error) {
                 const errorMsg = collectionId ? 
