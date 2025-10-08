@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
 
+import os
+import shutil
 import sys
 from pathlib import Path
 import sass
 
-def compile_scss(theme_name):
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+static_dir = project_root / "taguette" / "static"
+templates_dir = project_root / "taguette" / "templates"
 
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    static_dir = project_root / "taguette" / "static"
-    
-    scss_input = static_dir / "scss" / "themes" / theme_name / "theme.scss"
-    css_output = static_dir / "css" / "themed.css"
+
+def get_theme_dir(theme_name):
+    return static_dir / "scss" / "themes" / theme_name
+
+
+def get_template_dir(theme_name):
+    return templates_dir / "alt_templates" / theme_name
+
+
+def compile_scss(theme_name):
+    theme_dir = get_theme_dir(theme_name)
+    scss_input = theme_dir / "theme.scss"
+    css_output = theme_dir / "theme.css"
     
     if not scss_input.exists():
         print(f"Error: input SCSS not found: {scss_input}")
@@ -39,9 +51,29 @@ def compile_scss(theme_name):
         sys.exit(1)
 
 
+def copy_default_theme(destination_theme_name):
+    from_theme_dir = get_theme_dir("default")
+    to_theme_dir = get_theme_dir(destination_theme_name)
+    shutil.copytree(from_theme_dir, to_theme_dir, dirs_exist_ok=True)
+    return destination_theme_name
+
+
+def create_directories(theme_name):
+    theme_dir = get_theme_dir(theme_name)
+    template_dir = get_template_dir(theme_name)
+    os.makedirs(theme_dir, exist_ok=True)
+    os.makedirs(template_dir, exist_ok=True)
+    copy_default_theme(theme_name)
+
+    print(f"Theme folder created : {theme_dir}")
+    print(f"Templates folder created : {template_dir}")
+
+
 def main():
     theme = sys.argv[1] if len(sys.argv) > 1 else "default"
+    create_directories(theme)
     compile_scss(theme)
+
 
 if __name__ == "__main__":
     main()

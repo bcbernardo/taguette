@@ -506,6 +506,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ngettext=self.ngettext,
                 pgettext=self.pgettext,
                 base_path=self.application.config['BASE_PATH'],
+                theme=self.application.config['THEME'],
                 **kwargs)
 
     def get_project(self, project_id):

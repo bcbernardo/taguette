@@ -104,7 +104,7 @@ class Index(BaseHandler):
                 demo=False,
                 is_demo=Markup(is_demo),
                 is_multiuser=self.application.config["MULTIUSER"],
-                show_credits=self.application.config.get("SHOW_CREDITS", True),
+                show_credits=self.application.config["SHOW_CREDITS"]
             )
         elif not self.application.config["MULTIUSER"]:
             token = self.get_query_argument("token", None)

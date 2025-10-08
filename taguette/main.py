@@ -76,6 +76,7 @@ def default_config(output):
 
 # Name of this server
 NAME = "Misconfigured LibreQDA Server"
+# THEME = "default"
 
 # Alternate templates
 USE_ALTERNATE_WELCOME = False
@@ -201,6 +202,8 @@ DEFAULT_CONFIG = {
     "ALLOW_EXTERNAL_LOGIN_BYPASS": False,
     "BIND_ADDRESS": "0.0.0.0",
     "BASE_PATH": "",
+    "SHOW_CREDITS": True,
+    "THEME": "default",
     "MAINTENANCE_MODE": False,
     "MAINTENANCE_MESSAGE": "",
     "BUG_REPORT_URL": None,

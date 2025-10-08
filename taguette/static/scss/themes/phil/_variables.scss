@@ -1,0 +1,79 @@
+/* Common Design */
+
+/* Typography */
+$font-family-brand: BadScript;
+$font-family-body: Montserrat;
+$font-family-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, 
+  "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+   "Noto Color Emoji";
+   
+$font-size-body: 1.11em;
+$font-size-title: 22px;
+$font-size-footer: 0.82em;
+
+/* Color Patterns */
+$color-bg: #ffffff;
+$color-bg-accent: #ceeadd;
+$color-bg-text: #000000;
+
+$color-primary: #018849;
+$color-primary-text: #212529;
+$color-primary-hover: #4f9b4b;
+
+$color-secondary: #3a3a3a;
+$color-secondary-text: #ffffff; 
+$color-secondary-hover: #6c757d;
+
+$color-tertiary: #005a20;
+
+$color-alert: #e2e3e5;
+$color-alert-border: rgb(196.2, 199.8, 203);
+$color-link-disabled: #edbd9d;
+$color-link-disabled-hover: #e9ad85;
+
+$color-badge: #1a252f;
+$color-badge-text: #abacaf;
+
+$color-toolbar: #f8f9fa;
+$color-toolbar-focus: #F8F9FA;
+$color-toolbar-highlight: #BCC3AC;
+
+$default-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+/* Credits Container Layout */
+$credits-justify-content: flex-end;
+$credits-align-items: center;
+$credits-margin: 0 0 1rem 0;
+$credits-padding: 0;
+$credits-flex-direction: row;
+$credits-gap: 0.2rem;
+
+/* Contex Menu JQuery Override */
+$color-context-menu: $color-bg;
+$color-context-menu-hover: $color-primary;
+$context-menu-max-width: 26em;
+$context-menu-min-width: 13em;
+$color-context-menu-text: #2f2f2f;
+$context-menu-icon: $color-primary;
+
+/* Layout */
+$navbar-height: 3.5em;
+$navbar-offset-large: 6.50em;
+$navbar-offset-small: 5.25em;
+$navbar-padding: 115px;
+
+$project-card-height: 230px;
+$project-card-margin: 20px;
+$project-font-size-title: 22px;
+
+$border-radius-default: 10px;
+
+$icon-circle-sm: 60px;
+$icon-circle-lg: 70px;
+
+$btn-height-default: 40px;
+
+$dropdown-max-height: 200px;
+
+/* Animation */
+$color-flash: #92b2cb;

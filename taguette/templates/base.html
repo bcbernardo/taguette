@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="{{ static_url('css/fa-all.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/vendor/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/vendor/introjs.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('css/themed.css') }}">
+    {% if theme %}
+        <link rel="stylesheet" href="{{ static_url('scss/themes/' + theme + '/theme.css') }}">
+    {% endif %}
 
     {% block styles %}
     {% endblock %}
@@ -118,7 +120,6 @@
     <script src="{{ static_url('js/vendor/jquery-3.7.1.js') }}"></script>
     <script src="{{ static_url('js/vendor/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ static_url('js/vendor/introjs.min.js') }}"></script>
-    <link rel="stylesheet" href="{{ static_url('css/themed.css') }}">
 
     {% block morejs %}
     {% endblock %}
