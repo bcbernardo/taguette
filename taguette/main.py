@@ -431,9 +431,11 @@ def main():
     try:
         from taguette.loki_handler import setup_loki_logging
         loki_url = config.get('LOKI_URL', DEFAULT_CONFIG['LOKI_URL'])
+        logger.info("Loki URL: %s", loki_url)
         setup_loki_logging(loki_url)
+        logger.info("Loki handler configured")
     except ImportError:
-        pass
+        logger.warning("loki_handler module not available")
 
     if 'PROMETHEUS_LISTEN' in config:
         p_addr = None
