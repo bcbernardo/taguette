@@ -34,7 +34,7 @@ function convertCollectionsToTreeNode(data) {
                         id: 'document_' + docId,
                         text: document.name,
                         icon: 'fas fa-file-alt',
-                        selectable: false,
+                        selectable: true,
                         document_id: parseInt(docId)
                     });
                 }
@@ -91,7 +91,7 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
                     id: 'document_' + docId,
                     text: document.name,
                     icon: 'fas fa-file-alt',
-                    selectable: false,
+                    selectable: true,
                     document_id: parseInt(docId)
                 });
             }
@@ -177,16 +177,13 @@ function customDocumentNodeRow() {
             setTimeout(function() {
                 if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
                    element.addClass('collection-context-menu');
-                    
-                    if (element.find('.expand-icon, .collapse-icon').length === 0) {
-                        // Ajouter l'icône avec une classe pour pouvoir la modifier plus tard
-                        const folderIconClass = node.state && node.state.expanded ? 'fas fa-folder-open' : 'fas fa-folder';
-                        element.prepend(`<i class="node-icon ${folderIconClass}" style="margin-right: 8px;"></i> `);
-                    }
+                   
+                   if (element.find('.expand-icon, .collapse-icon, i[class*="fa-folder"]').length === 0) {
+                       element.prepend('<i class="fas fa-folder" style="margin-right: 10px;"></i>');
+                   }
                 }
-                element.find('.expand-icon, .collapse-icon').css('margin-right', '5px');
-                element.find('.node-icon').css('margin-right', '8px');
-                element.find('i[class*="fa-chevron"], i[class*="fa-folder"], i[class*="fa-file"]').css('margin-right', '8px');
+                element.find('.expand-icon, .collapse-icon').css('margin-right', '10px');
+                element.find('i[class*="fa-chevron"], i[class*="fa-folder"], i[class*="fa-file"]').css('margin-right', '10px');
             }, 10);
         }
     };
@@ -217,6 +214,8 @@ function initDocumentsTreeview(filteredCollections = null) {
         }
     };
     
+    options.multiSelect = true;
+    
     treeview_documents.treeview(options);
     
     // If filtering, expand all nodes to show search results
@@ -227,10 +226,31 @@ function initDocumentsTreeview(filteredCollections = null) {
     }
     
     // Re-add drag and drop after treeview changes (like tags do)
-    treeview_documents.on('nodeCollapsed nodeExpanded', function (event, node) {
+    treeview_documents.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
+        // Clear selection when collapsing or expanding
+        if (event.type === 'nodeCollapsed' || event.type === 'nodeExpanded') {
+            deselectAllDocumentNodes();
+            hideDragHint();
+        }
+        
+        // Show/hide drag hint based on selection count
+        if (event.type === 'nodeSelected' || event.type === 'nodeUnselected') {
+            const selectedNodes = treeview_documents.treeview('getSelected');
+            const selectedDocuments = selectedNodes.filter(node => 
+                node.id && node.id.startsWith('document_')
+            );
+            
+            if (event.type === 'nodeSelected' && node.id && node.id.startsWith('document_')) {
+                // Show hint next to the last selected document
+                showDragHint(selectedDocuments.length, node.nodeId);
+            } else if (selectedDocuments.length <= 1) {
+                // Hide hint if only one or no documents selected
+                hideDragHint();
+            }
+        }
+        
         // Add a delay to ensure the treeview recreation is finished
         setTimeout(function () {
-            console.log('Re-adding document drag and drop...');
             addDocumentDragDrop();
             
             // Update folder icon based on expanded state - ONLY for collections in documents treeview
@@ -280,21 +300,21 @@ function findDocumentParentCollection(documentId) {
     }
 } 
 
-function findRootParent(collectionId) {
+function findDocumentRootParent(collectionId) {
     const collection = findCollection(collectionId);
     if (collection && collection.parent) {
-        return findRootParent(collection.parent);
+        return findDocumentRootParent(collection.parent);
     }
     return collectionId;
 }
 
-function expandNodeParent(collectionParent) {
-    const rootParentId = findRootParent(collectionParent);
+function expandDocumentNodeParent(collectionParent) {
+    const rootParentId = findDocumentRootParent(collectionParent);
     const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, rootParentId);
-    expandNode(treeview_documents, nodeId);
+    expandDocumentNode(treeview_documents, nodeId);
 }
 
-function expandNode(treeview, nodeId) {
+function expandDocumentNode(treeview, nodeId) {
     const node = getNode(treeview, nodeId);
     if (!node.state.expanded) {
         treeview.treeview('expandNode', [parseInt(nodeId, 10),
@@ -342,6 +362,41 @@ function getDocumentIdFromTreeviewNode(treeview, nodeId) {
     
     console.log('getDocumentIdFromTreeviewNode - node not a document:', node);
     return null;
+}
+
+function deselectAllDocumentNodes() {
+    const allNodes = treeview_documents.treeview('getEnabled');
+    allNodes.forEach(node => {
+        if (node.state.selected) {
+            treeview_documents.treeview('unselectNode', [node.nodeId, {silent: false}]);
+        }
+    });
+}
+
+function showDragHint(selectedCount, lastSelectedNodeId) {
+
+    $('#drag-hint').remove();
+    
+    if (selectedCount > 1) {
+        const message = `Vous pouvez glisser-déposer ${selectedCount} documents vers une collection`;
+        const popup = $('<div id="drag-hint" class="drag-hint-popup">' +
+          '<i class="fas fa-grip-vertical"></i> ' + message +
+          '</div>');
+        
+        $('#treeview-documents').before(popup);
+        
+        setTimeout(() => {
+            $('#drag-hint').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+}
+
+function hideDragHint() {
+    $('#drag-hint').fadeOut(200, function() {
+        $(this).remove();
+    });
 } 
 
 function addDocumentDragDrop() {
@@ -352,13 +407,21 @@ function addDocumentDragDrop() {
         
         // Only allow dragging documents, not collections
         if (!documentId) {
-            console.log('dragstart blocked - not a document, nodeId:', nodeId);
             event.preventDefault();
             return false;
         }
         
-        console.log('dragstart - documentId:', documentId, 'nodeId:', nodeId);
-        event.originalEvent.dataTransfer.setData('text', nodeId);
+        // Get all selected documents
+        const selectedNodes = treeview_documents.treeview('getSelected');
+        const selectedDocumentIds = selectedNodes
+            .map(node => getDocumentIdFromTreeviewNode(treeview_documents, node.nodeId))
+            .filter(id => id !== null);
+        
+        // If no documents are selected, use only the dragged document
+        const documentsToMove = selectedDocumentIds.length > 0 ? selectedDocumentIds : [documentId];
+        
+        // Store document IDs in dataTransfer
+        event.originalEvent.dataTransfer.setData('text', JSON.stringify(documentsToMove));
     });
 
     $(".node-treeview-documents").each(function (index, element) {
@@ -374,13 +437,42 @@ function addDocumentDragDrop() {
             event.preventDefault();
 
             const collectionId = getCollectionIdFromTreeviewNode(treeview_documents, $(element).data("nodeid"));
-            const draggedElementNodeId = event.originalEvent.dataTransfer.getData('text');
+            const draggedData = event.originalEvent.dataTransfer.getData('text');
 
-            if (!isNaN(parseInt(draggedElementNodeId))) {
-                const documentId = getDocumentIdFromTreeviewNode(treeview_documents, draggedElementNodeId);
-                if (collectionId === documentId) return;
-                
-                moveDocumentToCollection(documentId, collectionId);
+            // Hide drag hint after drop
+            hideDragHint();
+
+            try {
+                // Try to parse as JSON (multiple documents)
+                const selectedDocumentIds = JSON.parse(draggedData);
+                if (Array.isArray(selectedDocumentIds)) {
+                    // Move all selected documents with sequential delay
+                    selectedDocumentIds.forEach((documentId, index) => {
+                        // Check if document is already in this collection
+                        const document = documents[documentId.toString()];
+                        const currentCollections = document ? document.collections || [] : [];
+                        const isAlreadyInCollection = currentCollections.includes(collectionId);
+                        
+                        if (!isAlreadyInCollection) {
+                            setTimeout(() => {
+                                moveDocumentToCollection(documentId, collectionId);
+                            }, index * 200); // 200ms delay between each document
+                        }
+                    });
+                }
+            } catch (e) {
+                // Fallback to single document (old format)
+                const documentId = parseInt(draggedData);
+                if (!isNaN(documentId)) {
+                    // Check if document is already in this collection
+                    const document = documents[documentId.toString()];
+                    const currentCollections = document ? document.collections || [] : [];
+                    const isAlreadyInCollection = currentCollections.includes(collectionId);
+                    
+                    if (!isAlreadyInCollection) {
+                        moveDocumentToCollection(documentId, collectionId);
+                    }
+                }
             }
         });
     });
@@ -404,14 +496,15 @@ function isUncategorizedNode(nodeId) {
 }
 
 function moveDocumentToCollection(documentId, targetCollectionId) {
-    console.log('Moving document', documentId, 'to collection', targetCollectionId);
-    
     const document = documents[documentId.toString()];
     if (!document) {
         return;
     }
+    if (targetCollectionId === undefined || targetCollectionId === null) {
+        log('Target collection ID not provided');
+        return;
+    }
     
-    // Update document to have only ONE collection (like editDocument does)
     const updatedDocument = {
         id: documentId,
         collections: targetCollectionId !== null ? [targetCollectionId] : []
@@ -419,10 +512,10 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
     
     submitDocumentUpdate(updatedDocument, 
         (response) => {
-            log('Document moved successfully:', response);
+            log('Document moved successfully:', 'success', {response});
         }, 
         (error) => {
-            console.error('Error moving document:', error);
+            log('Error moving document:', 'error', {error});
         }
     );
 }
