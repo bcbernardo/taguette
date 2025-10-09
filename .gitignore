@@ -5,7 +5,7 @@
 taguette.conf
 
 # alternate template
-
+/taguette/templates/alt_templates/*
 
 /taguette/static/partners/
 
