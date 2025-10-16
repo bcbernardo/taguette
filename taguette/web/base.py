@@ -384,7 +384,6 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         if not self.language:
             self.language = self.application.config['DEFAULT_LANGUAGE']
             self.set_cookie('language', self.language)
-        logger.info(self.language)
 
     def set_default_headers(self):
         self.set_header('Server', 'LibreQDA/%s' % exact_version())
@@ -428,6 +427,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             if user is None or user.disabled:
                 return None
             self.language = user.language
+            if not self.language:
+                self.language = self.application.config['DEFAULT_LANGUAGE']
             self.set_cookie('language', self.language)
             return user.login
         else:
