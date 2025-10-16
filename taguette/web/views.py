@@ -119,7 +119,6 @@ class Index(BaseHandler):
                 return self.redirect(self.reverse_url('index'))
             else:
                 return self.render('auth/token_needed.html')
-        logger.info(self.language)
         return self.render(
             'welcome.html',
             languages=get_languages(),
