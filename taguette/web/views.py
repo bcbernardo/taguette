@@ -119,7 +119,17 @@ class Index(BaseHandler):
                 return self.redirect(self.reverse_url('index'))
             else:
                 return self.render('auth/token_needed.html')
-        return self.render('welcome.html')
+        logger.info(self.language)
+        return self.render(
+            'welcome.html',
+            languages=get_languages(),
+            current_language=self.language
+        )
+
+    def post(self):
+        language = self.get_body_argument('language')
+        self.set_cookie('language', language)
+        return self.redirect(self.reverse_url('index'))
 
     head = get
 
@@ -567,17 +577,17 @@ class TermsOfService(BaseHandler):
         else:
             raise HTTPError(404)
 
+def get_languages():
+    locale_list = [
+        (loc_code,
+         tornado.locale.get(loc_code).name
+         if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
+        for loc_code in tornado.locale.get_supported_locales()
+    ]
+    return locale_list
+
 
 class Account(BaseHandler):
-    def get_languages(self):
-        locale_list = [
-            (loc_code,
-             tornado.locale.get(loc_code).name
-             if tornado.locale.get(loc_code).name != 'Unknown' else loc_code)
-            for loc_code in tornado.locale.get_supported_locales()
-        ]
-        # locale_list.append(('en', self.gettext("English")))
-        return locale_list
 
     @authenticated
     @PROM_REQUESTS.sync('account')
@@ -585,18 +595,17 @@ class Account(BaseHandler):
         if not self.application.config['MULTIUSER']:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
-        logger.info(self.get_languages())
         if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
             return self.render(
                 'auth/account.html',
                 user=user,
-                languages=self.get_languages(),
+                languages=get_languages(),
                 current_language=user.language,
                 is_external=self.application.config['ALLOW_EXTERNAL_LOGIN']
             )
         else:
             return self.render('auth/external_account.html', user=user,
-                               languages=self.get_languages(),
+                               languages=get_languages(),
                                current_language=user.language)
 
     @authenticated
@@ -641,7 +650,7 @@ class Account(BaseHandler):
             return await self.render(
                 template,
                 user=user,
-                languages=self.get_languages(),
+                languages=get_languages(),
                 current_language=user.language,
                 error=self.gettext(e.message),
             )
