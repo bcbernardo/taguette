@@ -380,7 +380,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         super(BaseHandler, self).__init__(application, request, **kwargs)
         self._db = None
         self._gettext = None
-        self.language = self.get_cookie('language', self.get_browser_locale().code)
+        self.language = self.get_cookie('language',
+                                        self.get_browser_locale().code)
         if not self.language:
             self.language = self.application.config['DEFAULT_LANGUAGE']
             self.set_cookie('language', self.language)

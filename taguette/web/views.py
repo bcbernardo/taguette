@@ -576,6 +576,7 @@ class TermsOfService(BaseHandler):
         else:
             raise HTTPError(404)
 
+
 def get_languages():
     locale_list = [
         (loc_code,
