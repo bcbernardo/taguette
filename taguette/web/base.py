@@ -426,7 +426,6 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             user = self.db.query(database.User).get(user.decode('utf-8'))
             if user is None or user.disabled:
                 return None
-            logger.info("dffffffffffffffffffffffff")
             self.language = user.language
             self.set_cookie('language', self.language)
             return user.login
