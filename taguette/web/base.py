@@ -23,6 +23,7 @@ import tornado.locale
 import tornado.iostream
 from tornado.web import HTTPError, RequestHandler
 from urllib.parse import urlencode
+from pathlib import Path
 
 from .. import __version__, exact_version
 from .. import database
@@ -474,6 +475,15 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         logger.info("Logged out")
         self.clear_cookie('user')
 
+    def render(self, template_name, **kwargs):
+        script_dir = Path(__file__).parent
+        templates_dir = script_dir.parent / "templates"
+        theme = self.application.config['THEME']
+        theme_template_name = f"alt_templates/{theme}/{template_name}"
+        if os.path.isfile(templates_dir / theme_template_name):
+            template_name = theme_template_name
+        return super(BaseHandler, self).render(template_name, **kwargs)
+
     def render_string(self, template_name, **kwargs):
         extra_footer = self.application.config['EXTRA_FOOTER']
         if not extra_footer:
@@ -513,6 +523,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ngettext=self.ngettext,
                 pgettext=self.pgettext,
                 base_path=self.application.config['BASE_PATH'],
+                theme=self.application.config['THEME'],
                 **kwargs)
 
     def get_project(self, project_id):

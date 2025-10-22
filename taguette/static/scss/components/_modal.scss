@@ -1,0 +1,57 @@
+/* Modal and Spinner Components */
+
+/* Spinner animation */
+#spinner {
+  border: 3vh solid #dcdcdc;
+  border-top: 3vh solid $color-primary;
+  border-radius: 50%;
+  width: 30vh;
+  height: 30vh;
+  animation: spinneranim 2s linear infinite;
+}
+
+@keyframes spinneranim {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#spinner-modal .modal-dialog {
+  display: table;
+  position: relative;
+  margin: 0 auto;
+  top: calc(50% - 15vh);
+}
+
+#spinner-modal .modal-dialog .modal-content{
+  background-color: transparent;
+  border: none;
+  width: 30vh;
+}
+
+#spinner-modal button.cancel {
+  display: none;
+  margin-top: 1em;
+}
+
+#progress {
+    margin-top: -15vh;
+    margin-bottom: 15vh;
+    width: 20vh;
+    text-align: center;
+    margin-left: 5vh;
+}
+
+.progress-bar {
+    background-color: $color-primary;
+}
+
+/* Modal scrollbar styles */
+.modal-body {
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+}
+
+.modal-body.no-scroll {
+  max-height: calc(100vh - 210px);
+  overflow-y: unset;
+}

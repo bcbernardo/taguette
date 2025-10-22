@@ -4,6 +4,11 @@
 # Configuration file
 taguette.conf
 
+# alternate template
+/taguette/templates/alt_templates/*
+
+/taguette/static/partners/
+
 # Python
 *.py[co]
 .ipynb_checkpoints
@@ -67,6 +72,8 @@ edugain_idps.json
 # Venv
 venv
 taguette3.10
+taguette3.11
 
 loki-compactor
 .gitlab-ci-local.yml
+>>>>>>> origin/develop

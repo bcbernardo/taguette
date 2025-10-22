@@ -33,90 +33,86 @@ logger = logging.getLogger(__name__)
 
 PROM_REQUESTS = PromMeasureRequest(
     count=prometheus_client.Counter(
-        'pages_total',
+        "pages_total",
         "Page requests",
-        ['name'],
+        ["name"],
     ),
     time=prometheus_client.Histogram(
-        'page_seconds',
+        "page_seconds",
         "Page request time",
-        ['name'],
+        ["name"],
     ),
 )
 
 PROM_USER_CONNECTIONS = prometheus_client.Counter(
-    'user_connections_total',
-    "User connection total"
+    "user_connections_total", "User connection total"
 )
 
 PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
-    'active_sessions',
-    "Number of currently active user sessions"
+    "active_sessions", "Number of currently active user sessions"
 )
 
 
 def get_idps(db):
-    idps = [{'entityid': 'http://google.com/accounts/o8/id',
-             'name': 'Google'}]
+    idps = [{"entityid": "http://google.com/accounts/o8/id", "name": "Google"}]
 
-    idps_query = (db.query(database.EdugainIdps)
-                  .filter(database.EdugainIdps.code == 'CAF')
-                  .order_by(database.EdugainIdps.e_displayname)).all()
+    idps_query = (
+        db.query(database.EdugainIdps)
+        .filter(database.EdugainIdps.code == "CAF")
+        .order_by(database.EdugainIdps.e_displayname)
+    ).all()
     for idp in idps_query:
-        displayname = idp.e_displayname.split(';')
+        displayname = idp.e_displayname.split(";")
         if len(displayname) > 1:
             displayname = displayname[1]
         else:
             displayname = displayname[0]
-        displayname = re.sub(r'==[a-z]{2}$', '', displayname)
-        idps.append({'entityid': idp.entityid,
-                     'name': displayname})
+        displayname = re.sub(r"==[a-z]{2}$", "", displayname)
+        idps.append({"entityid": idp.entityid, "name": displayname})
 
     return idps
 
 
 class Index(BaseHandler):
-    """Index page, shows welcome message and user's projects.
-    """
+    """Index page, shows welcome message and user's projects."""
 
-    @PROM_REQUESTS.sync('index')
+    @PROM_REQUESTS.sync("index")
     def get(self):
         if self.current_user is not None:
-            if self.get_query_argument('token', None):
+            if self.get_query_argument("token", None):
                 # Remove the token from the URL
-                return self.redirect(self.reverse_url('index'))
+                return self.redirect(self.reverse_url("index"))
             user = self.db.query(database.User).get(self.current_user)
             user_display_name = user.login
             if user.displayname is not None and user.displayname != "":
                 user_display_name = user.displayname
 
-            is_demo = 'false' if len(user.project_memberships) else 'true'
+            is_demo = "false" if len(user.project_memberships) else "true"
             _ = self.xsrf_token  # Make sure XSRF cookie is set
             return self.render(
-                'index.html',
+                "index.html",
                 user=user,
-                user_login=Markup(
-                    json.dumps(self.current_user)
-                ),
+                user_login=Markup(json.dumps(self.current_user)),
                 user_display_name=user_display_name,
                 projects=[m.project for m in user.project_memberships],
                 can_create_project=user.role.can_create_project(),
                 can_change_role=user.role.can_change_role(),
                 can_import_project=(
                     user.role.can_create_project()
-                    and self.application.config['SQLITE3_IMPORT_ENABLED']
+                    and self.application.config["SQLITE3_IMPORT_ENABLED"]
                 ),
                 demo=False,
                 is_demo=Markup(is_demo),
-                is_multiuser=self.application.config['MULTIUSER']
+                is_multiuser=self.application.config["MULTIUSER"],
+                show_credits=self.application.config["SHOW_CREDITS"]
             )
-        elif not self.application.config['MULTIUSER']:
-            token = self.get_query_argument('token', None)
+        elif not self.application.config["MULTIUSER"]:
+            token = self.get_query_argument("token", None)
             if token and token == self.application.single_user_token:
-                self.login('admin')
-                return self.redirect(self.reverse_url('index'))
+                self.login("admin")
+                return self.redirect(self.reverse_url("index"))
             elif token:
-                return self.redirect(self.reverse_url('index'))
+                return self.redirect(self.reverse_url("index"))
             else:
                 return self.render('auth/token_needed.html')
         return self.render(
@@ -134,17 +130,18 @@ class Index(BaseHandler):
 
 
 class CookiesPrompt(BaseHandler):
-    @PROM_REQUESTS.sync('cookies_prompt')
+    @PROM_REQUESTS.sync("cookies_prompt")
     def get(self):
-        return self.render('cookies_prompt.html',
-                           next=self.get_argument('next', ''))
+        return self.render(
+            "cookies_prompt.html", next=self.get_argument("next", "")
+        )
 
-    @PROM_REQUESTS.sync('cookies_prompt')
+    @PROM_REQUESTS.sync("cookies_prompt")
     def post(self):
-        self.set_cookie('cookies_accepted', 'yes', dont_check=True)
-        next_ = self.get_argument('next', '')
+        self.set_cookie("cookies_accepted", "yes", dont_check=True)
+        next_ = self.get_argument("next", "")
         if not next_:
-            next_ = self.reverse_url('index')
+            next_ = self.reverse_url("index")
         return self.redirect(next_)
 
     def check_xsrf_cookie(self):
@@ -153,54 +150,63 @@ class CookiesPrompt(BaseHandler):
 
 class BrokenBasePath(BaseHandler):
     def get(self):
-        self.set_header('Content-Type', 'text/plain')
-        return self.finish((
-            "Error: BASE_PATH is set to {0} so you shouldn't be reaching this "
-            + "page.\n"
-            + "\n"
-            + "You might need to fix your reverse proxy's configuration or "
-            + "LibreQDA's BASE_PATH setting.\n"
-        ).format(self.application.config['BASE_PATH']))
+        self.set_header("Content-Type", "text/plain")
+        return self.finish(
+            (
+                "Error: BASE_PATH is set to {0} so you shouldn't be"
+                "reaching this page.\n"
+                "\n"
+                "You might need to fix your reverse proxy's configuration"
+                "or LibreQDA's BASE_PATH setting.\n"
+            ).format(self.application.config["BASE_PATH"])
+        )
 
 
 class Login(BaseHandler):
-    @PROM_REQUESTS.sync('login')
+    @PROM_REQUESTS.sync("login")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
         if self.current_user:
             return self._go_to_next()
         else:
-            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
-                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
-                     and self.get_argument('bypass', None) is not None)):
-                return self.render('auth/login.html', register=False,
-                                   next=self.get_argument('next', ''))
+            if not self.application.config["ALLOW_EXTERNAL_LOGIN"] or (
+                self.application.config["ALLOW_EXTERNAL_LOGIN_BYPASS"]
+                and self.get_argument("bypass", None) is not None
+            ):
+                return self.render(
+                    "auth/login.html",
+                    register=False,
+                    next=self.get_argument("next", ""),
+                )
             else:
-                error = self.get_argument('error', '')
-                error_msg = self.get_argument('error_msg', '')
-                return self.render('auth/cilogon.login.html',
-                                   next=self.get_argument('next', ''),
-                                   error=error, error_msg=error_msg,
-                                   idps=get_idps(self.db),
-                                   entity_id=self.get_cookie('entity_id',
-                                                             None)
-                                   )
+                error = self.get_argument("error", "")
+                error_msg = self.get_argument("error_msg", "")
+                return self.render(
+                    "auth/cilogon.login.html",
+                    next=self.get_argument("next", ""),
+                    error=error,
+                    error_msg=error_msg,
+                    idps=get_idps(self.db),
+                    entity_id=self.get_cookie("entity_id", None),
+                )
 
-    @PROM_REQUESTS.async_('login')
+    @PROM_REQUESTS.async_("login")
     async def post(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN'] \
-                and not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
+        if (
+            self.application.config["ALLOW_EXTERNAL_LOGIN"]
+            and not self.application.config["ALLOW_EXTERNAL_LOGIN_BYPASS"]
+        ):
             raise HTTPError(404)
-        login = self.get_body_argument('login')
+        login = self.get_body_argument("login")
         try:
             login = validate.fix_user_login(login)
         except validate.InvalidFormat:
             logger.info("Login: invalid login")
         else:
-            password = self.get_body_argument('password')
+            password = self.get_body_argument("password")
             user = self.db.query(database.User).get(login)
             if user is None or user.disabled:
                 logger.info("Login: non-existent user")
@@ -213,67 +219,71 @@ class Login(BaseHandler):
                 return self._go_to_next()
 
         return self.render(
-            'auth/login.html', register=False,
-            next=self.get_argument('next', ''),
+            "auth/login.html",
+            register=False,
+            next=self.get_argument("next", ""),
             login_error=self.gettext("Invalid login or password"),
         )
 
     def _go_to_next(self):
-        next_ = self.get_argument('next', '')
+        next_ = self.get_argument("next", "")
         if not next_:
-            next_ = self.reverse_url('index')
+            next_ = self.reverse_url("index")
         return self.redirect(next_)
 
 
 class Logout(BaseHandler):
-    @PROM_REQUESTS.sync('logout')
+    @PROM_REQUESTS.sync("logout")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
         self.logout()
         current_value = PROM_ACTIVE_SESSIONS._value._value
         if current_value > 0:
             PROM_ACTIVE_SESSIONS.dec()
-        return self.redirect(self.reverse_url('index'))
+        return self.redirect(self.reverse_url("index"))
 
 
 class Register(BaseHandler):
-    @PROM_REQUESTS.sync('register')
+    @PROM_REQUESTS.sync("register")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if not self.application.config['REGISTRATION_ENABLED']:
+        if not self.application.config["REGISTRATION_ENABLED"]:
             raise HTTPError(403)
         if self.current_user:
-            return self.redirect(self.reverse_url('index'))
+            return self.redirect(self.reverse_url("index"))
         else:
-            if (not self.application.config['ALLOW_EXTERNAL_LOGIN'] or
-                    (self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']
-                     and self.get_argument('bypass', None) is not None)):
-                return self.render('auth/login.html', register=True)
+            if not self.application.config["ALLOW_EXTERNAL_LOGIN"] or (
+                self.application.config["ALLOW_EXTERNAL_LOGIN_BYPASS"]
+                and self.get_argument("bypass", None) is not None
+            ):
+                return self.render("auth/login.html", register=True)
             else:
-                return self.render('auth/cilogon.login.html',
-                                   idps=get_idps(self.db),
-                                   entity_id=self.get_cookie('entity_id',
-                                                             None)
-                                   )
+                return self.render(
+                    "auth/cilogon.login.html",
+                    idps=get_idps(self.db),
+                    entity_id=self.get_cookie("entity_id", None),
+                )
 
-    @PROM_REQUESTS.async_('register')
+    @PROM_REQUESTS.async_("register")
     async def post(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if (self.application.config['ALLOW_EXTERNAL_LOGIN'] and
-                not self.application.config['ALLOW_EXTERNAL_LOGIN_BYPASS']):
+        if (
+            self.application.config["ALLOW_EXTERNAL_LOGIN"]
+            and not self.application.config["ALLOW_EXTERNAL_LOGIN_BYPASS"]
+        ):
             raise HTTPError(404)
-        if not self.application.config['REGISTRATION_ENABLED']:
+        if not self.application.config["REGISTRATION_ENABLED"]:
             raise HTTPError(403)
         try:
-            login = self.get_body_argument('login')
-            password1 = self.get_body_argument('password1')
-            password2 = self.get_body_argument('password2')
+            login = self.get_body_argument("login")
+            password1 = self.get_body_argument("password1")
+            password2 = self.get_body_argument("password2")
             login = validate.fix_user_login(login, new=True)
             validate.user_password(password1)
-            email = self.get_body_argument('email', '')
+            email = self.get_body_argument("email", "")
             if email:
                 validate.user_email(email)
             if password1 != password2:
@@ -281,13 +291,15 @@ class Register(BaseHandler):
             if self.db.query(database.User).get(login) is not None:
                 raise validate.InvalidFormat(_f("User name is taken"))
             if (
-                email and
-                self.db.query(database.User)
-                    .filter(database.User.email == email)
-                    .count() > 0
+                email
+                and self.db.query(database.User)
+                .filter(database.User.email == email)
+                .count()
+                > 0
             ):
-                raise validate.InvalidFormat(_f("Email address is already "
-                                                "used"))
+                raise validate.InvalidFormat(
+                    _f("Email address is already used")
+                )
             user = database.User(login=login)
             user.role = "PROJECT_ADMIN"
             await user.set_password(password1)
@@ -295,20 +307,22 @@ class Register(BaseHandler):
                 user.email = email
             if (
                 self.application.terms_of_service is not None
-                and self.get_body_argument('tos', None) != 'accepted'
+                and self.get_body_argument("tos", None) != "accepted"
             ):
-                raise validate.InvalidFormat(_f(
-                    "Terms of Service must be accepted",
-                ))
+                raise validate.InvalidFormat(
+                    _f(
+                        "Terms of Service must be accepted",
+                    )
+                )
             self.db.add(user)
             self.db.commit()
             logger.info("User registered: %r", login)
-            self.set_secure_cookie('user', login)
-            return self.redirect(self.reverse_url('index'))
+            self.set_secure_cookie("user", login)
+            return self.redirect(self.reverse_url("index"))
         except validate.InvalidFormat as e:
             logger.info("Error validating Register: %r", e)
             return await self.render(
-                'auth/login.html',
+                "auth/login.html",
                 register=True,
                 register_error=self.gettext(e.message),
             )
@@ -316,30 +330,35 @@ class Register(BaseHandler):
 
 class UserPermissions(BaseHandler):
     def prepare(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
         if not user.role.can_change_role():
             raise HTTPError(403)
 
-    @PROM_REQUESTS.sync('permissions')
+    @PROM_REQUESTS.sync("permissions")
     def get(self):
         user = self.db.query(database.User).get(self.current_user)
         members = (
-            self.db.query(database.User)
-            .filter(database.User.approved_by_user_login == self.current_user)
+            self.db.query(database.User).filter(
+                database.User.approved_by_user_login == self.current_user
+            )
         ).all()
-        members_json = Markup(json.dumps(
-            {user.login: {'privileges': user.role.name}
-             for user in members}
-        ))
+        members_json = Markup(
+            json.dumps(
+                {
+                    user.login: {"privileges": user.role.name}
+                    for user in members
+                }
+            )
+        )
         _ = self.xsrf_token  # Make sure XSRF cookie is set
-        return self.render('permissions.html',
-                           members=members_json,
-                           user=user,
-                           user_login=Markup(
-                               json.dumps(self.current_user)
-                           ))
+        return self.render(
+            "permissions.html",
+            members=members_json,
+            user=user,
+            user_login=Markup(json.dumps(self.current_user)),
+        )
 
 
 class Cilogon(BaseHandler):
@@ -356,90 +375,91 @@ class Cilogon(BaseHandler):
             # The first in the list of selected_idp will be the
             # default choice of idp
             f = OAuth2WebServerFlow(
-                auth_uri=self.application.config['OAUTH_AUTH_URI'],
-                token_uri=self.application.config['OAUTH_TOKEN_URI'],
-                client_id=self.application.config['OAUTH_CLIENT_ID'],
-                client_secret=self.application.config['OAUTH_CLIENT_SECRET'],
-                scope=self.application.config['OAUTH_SCOPE'],
-                redirect_uri=self.application.config['OAUTH_CALLBACK_URL'],
+                auth_uri=self.application.config["OAUTH_AUTH_URI"],
+                token_uri=self.application.config["OAUTH_TOKEN_URI"],
+                client_id=self.application.config["OAUTH_CLIENT_ID"],
+                client_secret=self.application.config["OAUTH_CLIENT_SECRET"],
+                scope=self.application.config["OAUTH_SCOPE"],
+                redirect_uri=self.application.config["OAUTH_CALLBACK_URL"],
             )
-            f.params['access_type'] = 'offline'  # offline access
-            f.params['include_granted_scopes'] = 'true'  # incremental auth
+            f.params["access_type"] = "offline"  # offline access
+            f.params["include_granted_scopes"] = "true"  # incremental auth
 
             d["FLOW"] = f
             return f
 
         return get_flow
 
-    def login_cilogon(self, entity_id=None, appredirecturl='None'):
-        state_encoded_str = (
-            str(base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8")
+    def login_cilogon(self, entity_id=None, appredirecturl="None"):
+        state_encoded_str = str(
+            base64.b64encode(str(appredirecturl).encode("utf-8")), "utf-8"
         )
-        auth_uri = (self.flow_cilogon()
-                    .step1_get_authorize_url(state=state_encoded_str))
+        auth_uri = self.flow_cilogon().step1_get_authorize_url(
+            state=state_encoded_str
+        )
         if entity_id is not None:
             auth_uri += f"&idphint={entity_id}"
         return self.redirect(auth_uri, status=301)
 
-    @PROM_REQUESTS.sync('cilogon')
+    @PROM_REQUESTS.sync("cilogon")
     def get(self):
-        entity_id = self.get_argument('entity_id', None)
-        self.set_cookie('entity_id', entity_id)
+        entity_id = self.get_argument("entity_id", None)
+        self.set_cookie("entity_id", entity_id)
         self.flow_cilogon = self.flow_func_cilogon()
         self.login_cilogon(entity_id=entity_id)
 
 
 class CilogonCallback(BaseHandler):
-    @PROM_REQUESTS.sync('ci_callback')
+    @PROM_REQUESTS.sync("ci_callback")
     def get(self):
-        error = self.get_argument('error', None)
-        error_description = self.get_argument('error_description', '')
+        error = self.get_argument("error", None)
+        error_description = self.get_argument("error_description", "")
         if error:
-            logger.error(f"CILogon : ERROR : {error}, "
-                         f"MESSAGE: {error_description}")
+            logger.error(
+                f"CILogon : ERROR : {error}, MESSAGE: {error_description}"
+            )
             error = url_escape(error)
             error_description = url_escape(error_description)
             return self.redirect(
-                self.reverse_url('login')
+                self.reverse_url("login")
                 + f"?error={error}&error_msg={error_description}"
             )
         else:
             logger.info("CILogon : Success")
-            auth_code = self.get_argument('code', None)
+            auth_code = self.get_argument("code", None)
             self.cilogon_callback(auth_code)
 
     def get_ci_token(self, params):
-        if self.application.config['OAUTH_TOKEN_METHOD'].lower() == 'get':
+        if self.application.config["OAUTH_TOKEN_METHOD"].lower() == "get":
             return requests.get(
-                self.application.config['OAUTH_TOKEN_URI'],
-                params=params
+                self.application.config["OAUTH_TOKEN_URI"], params=params
             )
         else:
             return requests.post(
-                self.application.config['OAUTH_TOKEN_URI'],
-                params=params
+                self.application.config["OAUTH_TOKEN_URI"], params=params
             )
 
     def get_ci_user_infos(self, access_token):
         return requests.get(
-            self.application.config['OAUTH_USERINFO_URI'],
-            params={'access_token': access_token}
+            self.application.config["OAUTH_USERINFO_URI"],
+            params={"access_token": access_token},
         )
 
-    def cilogon_callback(self, auth_code=''):
+    def cilogon_callback(self, auth_code=""):
         if not auth_code:
-            login_url = self.reverse_url('login')
+            login_url = self.reverse_url("login")
             error_description = url_escape("Invalid authorization code")
             return self.redirect(
-                f"{login_url}?error=error&error_msg={error_description}")
+                f"{login_url}?error=error&error_msg={error_description}"
+            )
         #######################################################################
         # Get user informations from CILogon
         params = {
-            'grant_type': 'authorization_code',
-            'code': auth_code,
-            'client_id': self.application.config['OAUTH_CLIENT_ID'],
-            'client_secret': self.application.config['OAUTH_CLIENT_SECRET'],
-            'redirect_uri': self.application.config['OAUTH_CALLBACK_URL']
+            "grant_type": "authorization_code",
+            "code": auth_code,
+            "client_id": self.application.config["OAUTH_CLIENT_ID"],
+            "client_secret": self.application.config["OAUTH_CLIENT_SECRET"],
+            "redirect_uri": self.application.config["OAUTH_CALLBACK_URL"],
         }
         error = False
         cil_user_infos = {}
@@ -447,7 +467,7 @@ class CilogonCallback(BaseHandler):
         tok = self.get_ci_token(params)
         if tok.status_code == 200:
             tok = tok.json()
-            r = self.get_ci_user_infos(tok['access_token'])
+            r = self.get_ci_user_infos(tok["access_token"])
             logger.info(r)
             if r.status_code == 200:
                 cil_user_infos = r.json()
@@ -458,7 +478,7 @@ class CilogonCallback(BaseHandler):
             error = True
 
         if error:
-            login_url = self.reverse_url('login')
+            login_url = self.reverse_url("login")
             error_description = url_escape("Invalid CI Logon response")
             return self.redirect(
                 f"{login_url}?error=error&error_msg={error_description}"
@@ -467,14 +487,15 @@ class CilogonCallback(BaseHandler):
         #######################################################################
         # Set user provenances.
         # We use local cached list of Edugain IDPs (updated weekly)
-        edugain_idp = (self.db.query(database.EdugainIdps)
-                       .filter(database.EdugainIdps.entityid
-                               == cil_user_infos['idp'])
-                       .first())
+        edugain_idp = (
+            self.db.query(database.EdugainIdps)
+            .filter(database.EdugainIdps.entityid == cil_user_infos["idp"])
+            .first()
+        )
 
         # From Canadian Access Federation
         if edugain_idp is not None:
-            if edugain_idp.code == 'CAF':
+            if edugain_idp.code == "CAF":
                 user_from_caf = True
             else:
                 user_from_caf = False
@@ -482,75 +503,91 @@ class CilogonCallback(BaseHandler):
             user_from_caf = False
 
         # From Google
-        if cil_user_infos['idp_name'] == 'Google':
+        if cil_user_infos["idp_name"] == "Google":
             user_from_google = True
         else:
             user_from_google = False
 
-        cil_user_infos['user_from_google'] = user_from_google
-        cil_user_infos['user_from_caf'] = user_from_caf
+        cil_user_infos["user_from_google"] = user_from_google
+        cil_user_infos["user_from_caf"] = user_from_caf
 
         # For testing
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
 
         if not user_from_caf and not user_from_google:
-            error_msg = url_escape("Restricted access. Users must comes from "
-                                   "Canadian Access Federation (CAF).")
-            return self.redirect(self.reverse_url('login')
-                                 + f"?error=error&error_msg={error_msg}")
+            error_msg = url_escape(
+                "Restricted access. Users must comes from "
+                "Canadian Access Federation (CAF)."
+            )
+            return self.redirect(
+                self.reverse_url("login")
+                + f"?error=error&error_msg={error_msg}"
+            )
 
-        if 'email' in cil_user_infos.keys():
+        if "email" in cil_user_infos.keys():
             logger.info("OK CILogon provided email")
         else:
-            logger.error("LOGIN FAILED : Using CILogon : "
-                         "CILogon user email= !!! Email not provided !!!")
+            logger.error(
+                "LOGIN FAILED : Using CILogon : "
+                "CILogon user email= !!! Email not provided !!!"
+            )
             logger.error("Dump CILogon information")
             logger.error(json.dumps(cil_user_infos, indent=3))
             error_msg = url_escape("No email provided from CI Logon")
-            return self.redirect(self.reverse_url('login')
-                                 + f"?error=error&error_msg={error_msg}")
+            return self.redirect(
+                self.reverse_url("login")
+                + f"?error=error&error_msg={error_msg}"
+            )
 
         self.init_session(cil_user_infos)
 
         # Log information
-        logger.info(f"LOGIN SUCCESS : Using CILogon : "
-                    f"email={cil_user_infos['email']}")
+        logger.info(
+            f"LOGIN SUCCESS : Using CILogon : email={cil_user_infos['email']}"
+        )
 
     def init_session(self, user_info):
-        login = user_info['email'].lower()
+        login = user_info["email"].lower()
         user = self.db.query(database.User).get(login)
         if user is None:
-            logger.info(f"CILogon Login: User login not found: {login}, "
-                        f"searching email.")
-            user = (self.db.query(database.User)
-                    .filter(database.User.email == login)
-                    .first())
+            logger.info(
+                f"CILogon Login: User login not found: {login}, "
+                "searching email."
+            )
+            user = (
+                self.db.query(database.User)
+                .filter(database.User.email == login)
+                .first()
+            )
             if user:
-                logger.info(f"CILogon Login: Updating user info for existing "
-                            f"user: {user.login} -> {login}.")
+                logger.info(
+                    f"CILogon Login: Updating user info for existing "
+                    f"user: {user.login} -> {login}."
+                )
                 user.login = login
-                user.displayname = user_info['name']
+                user.displayname = user_info["name"]
                 user.external = True
                 self.db.commit()
         if user is None:
-            logger.info(f"CILogon Login: non-existent user, "
-                        f"create user {login}")
+            logger.info(
+                f"CILogon Login: non-existent user, create user {login}"
+            )
             user = database.User(login=login)
-            user.displayname = user_info['name']
+            user.displayname = user_info["name"]
             user.login = login
             user.email = login
             user.external = True
             user.disabled = False
             user.role = "PROJECT_ADMIN"
-            if user_info['user_from_google']:
+            if user_info["user_from_google"]:
                 user.role = "TEAM_MEMBER"
             self.db.add(user)
             self.db.commit()
-            self.set_secure_cookie('user', login)
+            self.set_secure_cookie("user", login)
             PROM_USER_CONNECTIONS.inc()
             PROM_ACTIVE_SESSIONS.inc()
-            return self.redirect(self.reverse_url('index'))
+            return self.redirect(self.reverse_url("index"))
         else:
             logger.info("CILogon Login: Logging in..")
             self.login(user.login)
@@ -559,18 +596,18 @@ class CilogonCallback(BaseHandler):
             return self._go_to_next()
 
     def _go_to_next(self):
-        next_ = self.get_argument('next', '')
+        next_ = self.get_argument("next", "")
         if not next_:
-            next_ = self.reverse_url('index')
+            next_ = self.reverse_url("index")
         return self.redirect(next_)
 
 
 class TermsOfService(BaseHandler):
-    @PROM_REQUESTS.sync('tos')
+    @PROM_REQUESTS.sync("tos")
     def get(self):
         if self.application.terms_of_service:
             return self.render(
-                'tos.html',
+                "tos.html",
                 tos_text=Markup(self.application.terms_of_service),
             )
         else:
@@ -588,38 +625,51 @@ def get_languages():
 
 
 class Account(BaseHandler):
+    def get_languages(self):
+        locale_list = [
+            (
+                loc_code,
+                tornado.locale.get(loc_code).name
+                if tornado.locale.get(loc_code).name != "Unknown"
+                else loc_code,
+            )
+            for loc_code in tornado.locale.get_supported_locales()
+        ]
+        # locale_list.append(('en', self.gettext("English")))
+        return locale_list
 
     @authenticated
-    @PROM_REQUESTS.sync('account')
+    @PROM_REQUESTS.sync("account")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
         if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
             return self.render(
-                'auth/account.html',
+                "auth/account.html",
                 user=user,
                 languages=get_languages(),
                 current_language=user.language,
-                is_external=self.application.config['ALLOW_EXTERNAL_LOGIN']
+                is_external=self.application.config["ALLOW_EXTERNAL_LOGIN"],
             )
         else:
-            return self.render('auth/external_account.html', user=user,
+            return self.render('auth/external_account.html',
+                               user=user,
                                languages=get_languages(),
                                current_language=user.language)
 
     @authenticated
-    @PROM_REQUESTS.async_('account')
+    @PROM_REQUESTS.async_("account")
     async def post(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
         user = self.db.query(database.User).get(self.current_user)
         try:
-            displayname = self.get_body_argument('displayname', None)
-            email = self.get_body_argument('email', None)
-            language = self.get_body_argument('language', None)
-            password1 = self.get_body_argument('password1', None)
-            password2 = self.get_body_argument('password2', None)
+            displayname = self.get_body_argument("displayname", None)
+            email = self.get_body_argument("email", None)
+            language = self.get_body_argument("language", None)
+            password1 = self.get_body_argument("password1", None)
+            password2 = self.get_body_argument("password2", None)
             if displayname is not None:
                 user.displayname = displayname
             if displayname == "":
@@ -628,7 +678,7 @@ class Account(BaseHandler):
                 if email:
                     validate.user_email(email)
                 user.email = email.lower() or None
-            if not self.application.config['ALLOW_EXTERNAL_LOGIN']:
+            if not self.application.config["ALLOW_EXTERNAL_LOGIN"]:
                 if password1 or password2:
                     validate.user_password(password1)
                     if password1 != password2:
@@ -640,12 +690,12 @@ class Account(BaseHandler):
                 language = None
             user.language = language
             self.db.commit()
-            return self.redirect(self.reverse_url('account'))
+            return self.redirect(self.reverse_url("account"))
         except validate.InvalidFormat as e:
             logger.info("Error validating Account: %r", e)
-            template = 'auth/account.html'
-            if self.application.config['ALLOW_EXTERNAL_LOGIN']:
-                template = 'auth/external_account.html'
+            template = "auth/account.html"
+            if self.application.config["ALLOW_EXTERNAL_LOGIN"]:
+                template = "auth/external_account.html"
 
             return await self.render(
                 template,
@@ -657,21 +707,21 @@ class Account(BaseHandler):
 
 
 class AskResetPassword(BaseHandler):
-    @PROM_REQUESTS.sync('reset_password')
+    @PROM_REQUESTS.sync("reset_password")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config["ALLOW_EXTERNAL_LOGIN"]:
             raise HTTPError(404)
-        return self.render('auth/reset_password.html')
+        return self.render("auth/reset_password.html")
 
-    @PROM_REQUESTS.async_('reset_password')
+    @PROM_REQUESTS.async_("reset_password")
     async def post(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config["ALLOW_EXTERNAL_LOGIN"]:
             raise HTTPError(404)
-        email = self.get_body_argument('email')
+        email = self.get_body_argument("email")
         user = (
             self.db.query(database.User)
             .filter(database.User.email == email)
@@ -679,55 +729,63 @@ class AskResetPassword(BaseHandler):
         ).one_or_none()
         if user is None:
             return await self.render(
-                'auth/reset_password.html',
-                error=self.gettext("This email address is not associated with "
-                                   "any user"),
+                "auth/reset_password.html",
+                error=self.gettext(
+                    "This email address is not associated with any user"
+                ),
             )
         elif (
             user.email_sent is None
             or user.email_sent + timedelta(days=1) < datetime.utcnow()
         ):
             # Generate a signed token
-            reset_token = '%s|%s|%s' % (
+            reset_token = "%s|%s|%s" % (
                 int(time.time()),
                 user.login,
                 user.email,
             )
-            reset_token = self.create_signed_value('reset_token', reset_token)
-            reset_token = reset_token.decode('utf-8')
+            reset_token = self.create_signed_value("reset_token", reset_token)
+            reset_token = reset_token.decode("utf-8")
 
             # Reset link
             path = self.request.path
-            if path.endswith('/reset_password'):
+            if path.endswith("/reset_password"):
                 path = path[:-15]
-            path = path + '/new_password'
-            reset_link = urlunparse(['https',
-                                     self.request.host,
-                                     path,
-                                     '',
-                                     'reset_token=' + reset_token,
-                                     ''])
+            path = path + "/new_password"
+            reset_link = urlunparse(
+                [
+                    "https",
+                    self.request.host,
+                    path,
+                    "",
+                    "reset_token=" + reset_token,
+                    "",
+                ]
+            )
 
             msg = EmailMessage()
-            msg['Subject'] = self.gettext("Password reset for Taguette")
-            msg['From'] = self.application.config['EMAIL']
-            msg['To'] = "{} <{}>".format(user.login, user.email)
-            msg.set_content(self.render_string(
-                'email_reset_password.txt',
-                link=reset_link,
-                login=user.login,
-            ))
+            msg["Subject"] = self.gettext("Password reset for Taguette")
+            msg["From"] = self.application.config["EMAIL"]
+            msg["To"] = "{} <{}>".format(user.login, user.email)
+            msg.set_content(
+                self.render_string(
+                    "email_reset_password.txt",
+                    link=reset_link,
+                    login=user.login,
+                )
+            )
             msg.add_alternative(
                 self.render_string(
-                    'auth/email_reset_password.html',
+                    "auth/email_reset_password.html",
                     link=reset_link,
                     login=user.login,
                 ),
-                subtype='html',
+                subtype="html",
             )
 
-            logger.warning("Sending reset password email to %s %s",
-                           user.login, user.email)
+            logger.warning(
+                "Sending reset password email to %s %s", user.login, user.email
+            )
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.application.send_mail(msg),
@@ -737,23 +795,25 @@ class AskResetPassword(BaseHandler):
         else:
             logger.warning(
                 "NOT Sending reset password email to %s %s (rate limited)",
-                user.login, user.email,
+                user.login,
+                user.email,
             )
-        return await self.render('auth/reset_password.html',
-                                 message="Email sent!")
+        return await self.render(
+            "auth/reset_password.html", message="Email sent!"
+        )
 
 
 class SetNewPassword(BaseHandler):
     def decode_reset_token(self, reset_token):
         reset_token_clear = self.get_secure_cookie(
-            'reset_token',
+            "reset_token",
             reset_token,
             min_version=2,
             max_age_days=1,
         )
         if reset_token_clear is None:
             raise HTTPError(403, _f("Invalid token"))
-        ts, login, email = reset_token_clear.decode('utf-8').split('|', 2)
+        ts, login, email = reset_token_clear.decode("utf-8").split("|", 2)
         user = self.db.query(database.User).get(login)
         if not user or user.disabled or user.email != email:
             raise HTTPError(403, _f("No user associated with that token"))
@@ -762,53 +822,54 @@ class SetNewPassword(BaseHandler):
             raise HTTPError(403, _f("Password has already been changed"))
         return user
 
-    @PROM_REQUESTS.sync('new_password')
+    @PROM_REQUESTS.sync("new_password")
     def get(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config["ALLOW_EXTERNAL_LOGIN"]:
             raise HTTPError(404)
-        reset_token = self.get_query_argument('reset_token')
+        reset_token = self.get_query_argument("reset_token")
         try:
             self.decode_reset_token(reset_token)
         except HTTPError as e:
             self.set_status(403)
             return self.render(
-                'auth/login.html', register=False,
+                "auth/login.html",
+                register=False,
                 login_error=self.gettext(e.log_message),
             )
-        return self.render('new_password.html', reset_token=reset_token)
+        return self.render("new_password.html", reset_token=reset_token)
 
-    @PROM_REQUESTS.async_('new_password')
+    @PROM_REQUESTS.async_("new_password")
     async def post(self):
-        if not self.application.config['MULTIUSER']:
+        if not self.application.config["MULTIUSER"]:
             raise HTTPError(404)
-        if self.application.config['ALLOW_EXTERNAL_LOGIN']:
+        if self.application.config["ALLOW_EXTERNAL_LOGIN"]:
             raise HTTPError(404)
-        reset_token = self.get_body_argument('reset_token')
+        reset_token = self.get_body_argument("reset_token")
         try:
             user = self.decode_reset_token(reset_token)
         except HTTPError as e:
             self.set_status(403)
             return await self.render(
-                'auth/login.html', register=False,
+                "auth/login.html",
+                register=False,
                 login_error=self.gettext(e.log_message),
             )
         try:
-            password1 = self.get_body_argument('password1')
-            password2 = self.get_body_argument('password2')
+            password1 = self.get_body_argument("password1")
+            password2 = self.get_body_argument("password2")
             validate.user_password(password1)
             if password1 != password2:
                 raise validate.InvalidFormat(_f("Passwords do not match"))
-            logger.info("Password reset: changing password for %r",
-                        user.login)
+            logger.info("Password reset: changing password for %r", user.login)
             await user.set_password(password1)
             self.db.commit()
-            return self.redirect(self.reverse_url('index'))
+            return self.redirect(self.reverse_url("index"))
         except validate.InvalidFormat as e:
             logger.info("Error validating SetNewPassword: %r", e)
             return await self.render(
-                'new_password.html',
+                "new_password.html",
                 reset_token=reset_token,
                 error=self.gettext(e.message),
             )
@@ -821,15 +882,15 @@ class ProjectAdd(BaseHandler):
             raise HTTPError(403)
 
     @authenticated
-    @PROM_REQUESTS.sync('new_project')
+    @PROM_REQUESTS.sync("new_project")
     def get(self):
-        return self.render('project_new.html')
+        return self.render("project_new.html")
 
     @authenticated
-    @PROM_REQUESTS.sync('new_project')
+    @PROM_REQUESTS.sync("new_project")
     def post(self):
-        name = self.get_body_argument('name', '')
-        description = self.get_body_argument('description', '')
+        name = self.get_body_argument("name", "")
+        description = self.get_body_argument("description", "")
         try:
             validate.project_name(name)
             validate.description(description)
@@ -841,124 +902,141 @@ class ProjectAdd(BaseHandler):
             membership = database.ProjectMember(
                 project=project,
                 user_login=self.current_user,
-                privileges=database.Privileges.ADMIN
+                privileges=database.Privileges.ADMIN,
             )
             self.db.add(membership)
             # Add default tags
-            self.db.add(database.Tag(
-                project=project,
-                # TRANSLATORS: Default tag name
-                path=self.gettext("interesting"),
-                # TRANSLATORS: Default tag color
-                color=self.application.tag_default_color,
-                # TRANSLATORS: Default tag description
-                description=self.gettext("Further review required")),
+            self.db.add(
+                database.Tag(
+                    project=project,
+                    # TRANSLATORS: Default tag name
+                    path=self.gettext("interesting"),
+                    # TRANSLATORS: Default tag color
+                    color=self.application.tag_default_color,
+                    # TRANSLATORS: Default tag description
+                    description=self.gettext("Further review required"),
+                ),
             )
 
             self.db.commit()
-            return self.redirect(self.reverse_url('project', project.id))
+            return self.redirect(self.reverse_url("project", project.id))
         except validate.InvalidFormat as e:
             logger.info("Error validating ProjectAdd: %r", e)
-            return self.render('project_new.html',
-                               name=name, description=description,
-                               error=self.gettext(e.message))
+            return self.render(
+                "project_new.html",
+                name=name,
+                description=description,
+                error=self.gettext(e.message),
+            )
 
     def render(self, template_name, **kwargs):
-        for name in ('name', 'description', 'error'):
-            kwargs.setdefault(name, '')
+        for name in ("name", "description", "error"):
+            kwargs.setdefault(name, "")
         super(ProjectAdd, self).render(template_name, **kwargs)
 
 
 class ProjectImport(BaseHandler):
     def prepare(self):
         user = self.db.query(database.User).get(self.current_user)
-        if (not self.application.config['SQLITE3_IMPORT_ENABLED'] or
-                not user.role.can_create_project()):
+        if (
+            not self.application.config["SQLITE3_IMPORT_ENABLED"]
+            or not user.role.can_create_project()
+        ):
             raise HTTPError(403)
 
     @authenticated
-    @PROM_REQUESTS.sync('import_project')
+    @PROM_REQUESTS.sync("import_project")
     def get(self):
         user = self.db.query(database.User).get(self.current_user)
-        return self.render('project_import.html',
-                           user=user)
+        return self.render("project_import.html", user=user)
 
 
 class ProjectDelete(BaseHandler):
     @authenticated
-    @PROM_REQUESTS.sync('delete_project')
+    @PROM_REQUESTS.sync("delete_project")
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
         if not privileges.can_delete_project():
             self.set_status(403)
-            return self.finish(self.gettext(
-                "You don't have permission to delete this project",
-            ))
+            return self.finish(
+                self.gettext(
+                    "You don't have permission to delete this project",
+                )
+            )
         doc = aliased(database.Document)
         highlights = (
             self.db.query(database.Highlight)
             .join(doc, database.Highlight.document_id == doc.id)
             .filter(doc.project_id == project.id)
         ).count()
-        return self.render('project_delete.html', project=project,
-                           documents=len(project.documents),
-                           tags=len(project.tags),
-                           highlights=highlights)
+        return self.render(
+            "project_delete.html",
+            project=project,
+            documents=len(project.documents),
+            tags=len(project.tags),
+            highlights=highlights,
+        )
 
     @authenticated
-    @PROM_REQUESTS.sync('delete_project')
+    @PROM_REQUESTS.sync("delete_project")
     def post(self, project_id):
         project, privileges = self.get_project(project_id)
         if not privileges.can_delete_project():
             raise HTTPError(403)
-        logger.warning("Deleting project %d %r user=%r",
-                       project.id, project.name, self.current_user)
+        logger.warning(
+            "Deleting project %d %r user=%r",
+            project.id,
+            project.name,
+            self.current_user,
+        )
         self.db.delete(project)
         self.db.commit()
-        return self.redirect(self.reverse_url('index'))
+        return self.redirect(self.reverse_url("index"))
 
 
 class ImportCodebook(BaseHandler):
     @authenticated
-    @PROM_REQUESTS.sync('import_codebook')
+    @PROM_REQUESTS.sync("import_codebook")
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
         if not privileges.can_import_codebook():
             self.set_status(403)
-            return self.finish(self.gettext(
-                "You don't have permission to import a codebook",
-            ))
-        return self.render('project_import_codebook.html', project=project)
+            return self.finish(
+                self.gettext(
+                    "You don't have permission to import a codebook",
+                )
+            )
+        return self.render("project_import_codebook.html", project=project)
 
     def _show_confirmation_form(self, project, tags, errors=[]):
         # Load tags from project, to set whether they exist
         project_tags = set(tag.path for tag in project.tags)
         for tag in tags:
-            tag['exists'] = tag['path'] in project_tags
+            tag["exists"] = tag["path"] in project_tags
 
         return self.render(
-            'project_import_codebook_confirm.html',
+            "project_import_codebook_confirm.html",
             project=project,
             tags=tags,
             errors=errors,
         )
 
     @authenticated
-    @PROM_REQUESTS.sync('import_codebook')
+    @PROM_REQUESTS.sync("import_codebook")
     def post(self, project_id):
         project, privileges = self.get_project(project_id)
         if not privileges.can_import_codebook():
             self.set_status(403)
             return self.render(
-                'project_import_codebook.html',
+                "project_import_codebook.html",
                 project=project,
                 error=self.gettext(
                     "You don't have permission to import a codebook",
                 ),
             )
 
-        if 'file' in self.request.files and len(self.request.files) >= 1:
-            uploaded_file = self.request.files['file'][0]
+        if "file" in self.request.files and len(self.request.files) >= 1:
+            uploaded_file = self.request.files["file"][0]
 
             reader = io.BytesIO(uploaded_file.body)
             try:
@@ -967,14 +1045,14 @@ class ImportCodebook(BaseHandler):
                 logger.warning(
                     "Invalid codebook: %s%s",
                     e.message,
-                    (" (row %d)" % e.row) if e.row is not None else '',
+                    (" (row %d)" % e.row) if e.row is not None else "",
                 )
                 msg = self.gettext(e.message)
                 if e.row is not None:
                     msg = self.gettext("Row %d: %s") % (e.row, msg)
                 self.set_status(400)
                 return self.render(
-                    'project_import_codebook.html',
+                    "project_import_codebook.html",
                     project=project,
                     error=msg,
                 )
@@ -982,14 +1060,14 @@ class ImportCodebook(BaseHandler):
             # Disable duplicates
             seen_paths = set()
             for tag in tags:
-                tag['enabled'] = tag['path'] not in seen_paths
-                seen_paths.add(tag['path'])
+                tag["enabled"] = tag["path"] not in seen_paths
+                seen_paths.add(tag["path"])
 
             # Sort by path, keeping the enabled one first
-            tags = sorted(tags, key=lambda t: (t['path'], not t['enabled']))
+            tags = sorted(tags, key=lambda t: (t["path"], not t["enabled"]))
 
             return self._show_confirmation_form(project, tags)
-        elif self.get_body_argument('tag0-path', None):
+        elif self.get_body_argument("tag0-path", None):
             # Accumulate validation errors
             errors = []
             # What to insert/update into database
@@ -999,20 +1077,20 @@ class ImportCodebook(BaseHandler):
             tags = []
 
             for i in itertools.count():
-                path = self.get_body_argument('tag%d-path' % i, None)
-                parent = self.get_body_argument('tag%d-parent' % i, None)
-                color = self.get_body_argument('tag%d-color' % i, '')
+                path = self.get_body_argument("tag%d-path" % i, None)
+                parent = self.get_body_argument("tag%d-parent" % i, None)
+                color = self.get_body_argument("tag%d-color" % i, "")
                 description = self.get_body_argument(
-                    'tag%d-description' % i,
-                    '',
+                    "tag%d-description" % i,
+                    "",
                 )
                 if path is None:
                     break
 
                 replace = enabled = True
-                if self.get_body_argument('tag%d-replace' % i, ''):
+                if self.get_body_argument("tag%d-replace" % i, ""):
                     replace = True
-                elif self.get_body_argument('tag%d-import' % i, ''):
+                elif self.get_body_argument("tag%d-import" % i, ""):
                     replace = False
                 else:
                     enabled = False
@@ -1025,32 +1103,38 @@ class ImportCodebook(BaseHandler):
                     errors.append(self.gettext(e.message))
                     continue
 
-                tags.append({
-                    'path': path,
-                    'description': description,
-                    'color': color,
-                    'parent': parent,
-                    'enabled': enabled,
-                })
+                tags.append(
+                    {
+                        "path": path,
+                        "description": description,
+                        "color": color,
+                        "parent": parent,
+                        "enabled": enabled,
+                    }
+                )
                 if not enabled:
                     continue
 
                 if replace:
-                    replace_tags[path] = {'description': description,
-                                          'parent': parent,
-                                          'color': color}
+                    replace_tags[path] = {
+                        "description": description,
+                        "parent": parent,
+                        "color": color,
+                    }
                 else:  # Insert
-                    insert_tags.append({
-                        'path': path,
-                        'description': description,
-                        'color': color,
-                        'parent': parent,
-                    })
+                    insert_tags.append(
+                        {
+                            "path": path,
+                            "description": description,
+                            "color": color,
+                            "parent": parent,
+                        }
+                    )
 
             if errors:
                 self.set_status(400)
                 return self.render(
-                    'project_import_codebook_confirm.html',
+                    "project_import_codebook_confirm.html",
                     project=project,
                     errors=errors,
                 )
@@ -1065,12 +1149,16 @@ class ImportCodebook(BaseHandler):
                     except KeyError:
                         pass
                     else:
-                        tag.description = tag_update['description']
-                        tag.color = tag_update['color']
-                        tag_parent = (self.db.query(database.Tag)
-                                      .filter_by(path=tag_update['parent'],
-                                                 project_id=project.id)
-                                      .first())
+                        tag.description = tag_update["description"]
+                        tag.color = tag_update["color"]
+                        tag_parent = (
+                            self.db.query(database.Tag)
+                            .filter_by(
+                                path=tag_update["parent"],
+                                project_id=project.id,
+                            )
+                            .first()
+                        )
                         tag.parent_id = tag_parent.id if tag_parent else None
                         changed_tags.append(tag)
                 if replace_tags:
@@ -1078,15 +1166,18 @@ class ImportCodebook(BaseHandler):
 
                 # Do inserts
                 for tag_insert in insert_tags:
-                    tag_parent = (self.db.query(database.Tag)
-                                  .filter_by(path=tag_insert['parent'],
-                                             project_id=project.id)
-                                  .first())
+                    tag_parent = (
+                        self.db.query(database.Tag)
+                        .filter_by(
+                            path=tag_insert["parent"], project_id=project.id
+                        )
+                        .first()
+                    )
                     tag = database.Tag(
                         project_id=project.id,
-                        path=tag_insert['path'],
-                        description=tag_insert['description'],
-                        color=tag_insert['color'],
+                        path=tag_insert["path"],
+                        description=tag_insert["description"],
+                        color=tag_insert["color"],
                         parent_id=tag_parent.id if tag_parent else None,
                     )
                     self.db.add(tag)
@@ -1105,7 +1196,7 @@ class ImportCodebook(BaseHandler):
                 self.db.commit()
                 for cmd in commands:
                     self.application.notify_project(project.id, cmd)
-                return self.redirect(self.reverse_url('project', project.id))
+                return self.redirect(self.reverse_url("project", project.id))
             except (IntegrityError, KeyError):
                 logger.warning("Error importing codebook", exc_info=True)
                 self.db.rollback()
@@ -1122,7 +1213,7 @@ class ImportCodebook(BaseHandler):
         else:
             self.set_status(400)
             return self.render(
-                'project_import_codebook.html',
+                "project_import_codebook.html",
                 project=project,
                 error=self.gettext("No file provided"),
             )
@@ -1130,18 +1221,18 @@ class ImportCodebook(BaseHandler):
 
 class Project(BaseHandler):
     @authenticated
-    @PROM_REQUESTS.sync('project')
+    @PROM_REQUESTS.sync("project")
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
-        is_demo = self.get_argument('demo', None)
+        is_demo = self.get_argument("demo", None)
         demo_highlights_location = []
         user = self.db.query(database.User).get(self.current_user)
         if is_demo is not None:
             is_demo = "true"
             lang = user.language
             if lang not in DEMO_DATA.keys():
-                lang = self.application.config['DEFAULT_LANGUAGE']
-            demo_highlights_location = DEMO_DATA[lang]['tutorial_highlights']
+                lang = self.application.config["DEFAULT_LANGUAGE"]
+            demo_highlights_location = DEMO_DATA[lang]["tutorial_highlights"]
         else:
             is_demo = "false"
 
@@ -1158,8 +1249,11 @@ class Project(BaseHandler):
             for child_tag in grouped_tags[parent_id]:
                 child_id = child_tag.id
                 parent_id = child_tag.parent.id if child_tag.parent else None
-                color = (child_tag.color if child_tag.color
-                         else self.application.tag_default_color)
+                color = (
+                    child_tag.color
+                    if child_tag.color
+                    else self.application.tag_default_color
+                )
                 child_info = {
                     "id": child_tag.id,
                     "path": child_tag.path,
@@ -1168,7 +1262,7 @@ class Project(BaseHandler):
                     "parent": parent_id,
                     "count": child_tag.highlights_count,
                     "count_document": child_tag.documents_count,
-                    "children": build_tree(child_id)
+                    "children": build_tree(child_id),
                 }
                 children.append(child_info)
             return children
@@ -1183,8 +1277,9 @@ class Project(BaseHandler):
         grouped_collections = defaultdict(list)
 
         for collection in project.collections:
-            collection_parent_id = (collection.parent.id
-                                    if collection.parent else None)
+            collection_parent_id = (
+                collection.parent.id if collection.parent else None
+            )
             grouped_collections[collection_parent_id].append(collection)
 
         # Function to build the collection tree structure
@@ -1192,15 +1287,18 @@ class Project(BaseHandler):
             children = []
             for child_collection in grouped_collections[parent_id]:
                 child_id = child_collection.id
-                collection_parent_id = (child_collection.parent.id
-                                        if child_collection.parent else None)
+                collection_parent_id = (
+                    child_collection.parent.id
+                    if child_collection.parent
+                    else None
+                )
                 child_info = {
                     "id": child_collection.id,
                     "name": child_collection.name,
                     "description": child_collection.description,
                     "parent": collection_parent_id,
                     "document_ids": [d.id for d in child_collection.documents],
-                    "children": build_collection_tree(child_id)
+                    "children": build_collection_tree(child_id),
                 }
                 children.append(child_info)
             return children
@@ -1211,49 +1309,54 @@ class Project(BaseHandler):
         # Convert the result to JSON
         collections_json = Markup(json.dumps(collections_tree, sort_keys=True))
 
-        documents_json = Markup(json.dumps(
-            {
-                str(doc.id): {
-                    'id': doc.id,
-                    'name': doc.name,
-                    'description': doc.description,
-                    'favorite': doc.favorite,
-                    'text_direction': doc.text_direction.name,
-                    'collections': [c.id for c in doc.collections],
-                }
-                for doc in project.documents
-            },
-            sort_keys=True,
-        ))
+        documents_json = Markup(
+            json.dumps(
+                {
+                    str(doc.id): {
+                        "id": doc.id,
+                        "name": doc.name,
+                        "description": doc.description,
+                        "favorite": doc.favorite,
+                        "text_direction": doc.text_direction.name,
+                        "collections": [c.id for c in doc.collections],
+                    }
+                    for doc in project.documents
+                },
+                sort_keys=True,
+            )
+        )
 
         members = (
-            self.db.query(database.ProjectMember)
-            .filter(database.ProjectMember.project_id == project_id)
+            self.db.query(database.ProjectMember).filter(
+                database.ProjectMember.project_id == project_id
+            )
         ).all()
         can_import_codebook = privileges.can_import_codebook()
         can_delete_project = privileges.can_delete_project()
-        members_json = Markup(json.dumps(
-            {member.user_login: {'privileges': member.privileges.name}
-             for member in members}
-        ))
+        members_json = Markup(
+            json.dumps(
+                {
+                    member.user_login: {"privileges": member.privileges.name}
+                    for member in members
+                }
+            )
+        )
         _ = self.xsrf_token  # Make sure XSRF cookie is set
         return self.render(
-            'project.html',
+            "project.html",
             project=project,
-            last_event=(project.last_event
-                        if project.last_event is not None
-                        else -1),
+            last_event=(
+                project.last_event if project.last_event is not None else -1
+            ),
             collections=collections_json,
             documents=documents_json,
-            user_login=Markup(
-                json.dumps(self.current_user)
-            ),
+            user_login=Markup(json.dumps(self.current_user)),
             tags=tags_json,
             members=members_json,
             can_import_codebook=can_import_codebook,
             can_delete_project=can_delete_project,
-            is_external_login=self.application.config['ALLOW_EXTERNAL_LOGIN'],
+            is_external_login=self.application.config["ALLOW_EXTERNAL_LOGIN"],
             is_demo=Markup(is_demo),
             demo_highlights_location=Markup(demo_highlights_location),
-            user=user
+            user=user,
         )

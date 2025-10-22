@@ -1,0 +1,44 @@
+/* highlight-like text decoration */
+.underline-brown,
+.underline-green {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px; /* adjust for thickness below text */
+}
+
+.underline-brown::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #A9714B;
+  z-index: -1;
+}
+
+.underline-green::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #018849;
+  z-index: -1;
+}
+
+/* logos */
+.hero-logo {
+  max-width: 320px;
+  width: 100%;
+  height: auto;
+}
+
+.partner-logo {
+  max-height: 80px;
+  width: auto;
+  margin: 0 auto;
+  display: block;
+  object-fit: contain;
+}

@@ -1,0 +1,42 @@
+
+/* Colors for badges */
+.badge-secondary {
+  color: $color-bg !important;
+}
+
+.badge-info {
+  color: $color-bg !important;
+}
+
+.badge-dark {
+  color: $color-bg !important;
+}
+
+.badge-warning {
+  color: $color-bg !important;
+}
+
+.badge-danger {
+  color: $color-bg !important;
+}
+
+.badge-secondary {
+  color: $color-bg !important;
+  background-color: $color-tertiary !important;
+}
+
+.badge-primary {
+  color: $color-bg !important;
+  background-color: $color-primary !important;
+}
+
+.badge-primary[href]:hover, .badge-primary[href]:focus {
+  color: $color-bg !important;
+  text-decoration: none !important;
+  background-color: $color-badge !important;
+}
+
+.badge-dark[href]:focus, .badge-dark[href]:hover {
+  color: $color-badge-text !important;
+  text-decoration: none !important;
+}
