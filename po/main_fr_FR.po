@@ -1110,6 +1110,10 @@ msgctxt "form submit button"
 msgid "Set new password"
 msgstr "Changer le mot de passe"
 
+#: taguette/templates/index.html:22
+msgid "Maintained by"
+msgstr "Maintenu par"
+
 #: taguette/templates/index.html:25
 #, python-format
 msgid "Welcome %(user_display_name)s"

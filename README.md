@@ -46,6 +46,16 @@ You can install from a local clone of this repository, which will allow you to e
    1. A config file can be created by running `taguette default-config > taguette.conf`
 7. Navigate to [localhost:7465](http://localhost:7465/) to use LibreQDA!
 
+Create custom theme
+-------------------
+
+You can entirely configure LibreQDA interface by creating a theme.
+
+1. Run `poetry run make-theme [theme-name]`. That will create 2 folders :
+   - `taguette/static/scss/themes/[theme-name]` where the custom css are stored
+   - `taguette/templates/alt_templates/[theme-name]` where you can override templates with the same hierarchy as in the `templates` folder
+2. Add this line in `taguette.conf`: `THEME = "theme-name"`
+
 License
 -------
 * Copyright (c) 2023, Plateforme en humanités numériques (Université de Sherbrooke) and contributors

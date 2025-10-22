@@ -1,0 +1,43 @@
+/* Dropdown Components */
+
+ul.dropdown-menu {
+    z-index: 1030;
+    max-height: 75vh;
+    overflow: scroll;
+}
+
+ul.dropdown-menu.show:empty {
+    display: none !important;
+}
+
+span.search-item {
+    color: $color-bg;
+    background-color: $color-tertiary;
+    display: inline-block;
+    border-radius: 0.375rem;
+    padding: 0 0.2rem;
+}
+
+#export-button .dropdown-toggle {
+  padding: 0.125rem 0.25rem;
+}
+
+a.dropdown-item:hover {
+  color: $color-bg !important;
+  text-decoration: none;
+}
+
+.dropdown-item.active {
+  background-color: #e7f2ff !important;
+}
+
+.dropdown-toggle {
+    width: 100%;
+}
+
+#dropdownMenuButtonTag {
+    letter-spacing: -0.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
