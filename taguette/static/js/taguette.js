@@ -885,6 +885,9 @@ const document_contents = document.getElementById('document-contents');
 
 let globalDefs = null;
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
+    if (getHighlightVersion() === 'v2' && typeof ntv_loadDocument === 'function') {
+        return ntv_loadDocument(document_id, highlight_id, splitParagraphs, search_text);
+    }
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -912,7 +915,7 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
                 const textStructure = extractFormattedContent(chunk.contents);
                 setHighlights(textStructure, elem, info.highlights, info.text_direction);
                 globalDefs = null;
-                wordTracker = [];
+                wordTracker = {};
                 chunk_offsets.push(chunk.offset);
             }
 
@@ -931,7 +934,7 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
 
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Mettre à jour le bouton d'exportation du document
+            // Update document export button
             updateDocumentExportButton(project_id, document_id);
 
             // Scroll up
@@ -1334,7 +1337,6 @@ document.getElementById('input-search-tags-highlight').addEventListener('input',
         hideSearchErrorMessage();
 
         // save selected tags
-
         const tempSavedSelections = saveSelectedNodes(treeview_tags_highlight);
 
         tempSavedSelections.forEach(id => {
@@ -1467,7 +1469,7 @@ window.addEventListener('scroll', function() {
 function editCollection(collectionId) {
     const collection = findCollection(collectionId);
     if (!collection) {
-        console.error('Collection not found:', collectionId);
+        log('Collection not found:', 'error', {collectionId});
         return;
     }
     
@@ -1502,14 +1504,13 @@ function editCollection(collectionId) {
 function deleteCollection(collectionId) {
     const collection = findCollection(collectionId);
     if (!collection) {
-        console.error('Collection not found:', collectionId);
+        log('Collection not found:', 'error', {collectionId});
         return;
     }
     
     showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
         deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
             .then(function() {
-                // showAlert(gettext('Collection deleted!'), 'success');
             })
             .catch(function(error) {
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
@@ -1520,11 +1521,12 @@ function deleteCollection(collectionId) {
 function createChildCollection(parentId) {
     const parentCollection = findCollection(parentId);
     if (!parentCollection) {
-        console.error('Parent collection not found:', parentId);
+        log('Parent collection not found:', 'error', {parentId});
         return;
     }
 
     initCollectionHierarchySelect();
+    resetCollectionUI();
     
     document.getElementById('collection-add-form').reset();
     document.getElementById('collection-add-id').value = '';
@@ -1556,223 +1558,11 @@ function createCollection() {
     document.getElementById('collection-add-label-change').style.display = 'none';
     document.getElementById('collection-add-cancel').style.display = '';
     document.getElementById('collection-add-delete').style.display = 'none';
+
+    resetCollectionUI();
     
     $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
 }
-
-function addCollection(collectionData) {
-    // Check if collection already exists to prevent duplicates
-    const existingCollection = findCollection(parseInt(collectionData.id));
-    if (existingCollection) {
-        // Update existing collection instead of creating duplicate
-        existingCollection.name = collectionData.name;
-        existingCollection.description = collectionData.description;
-        existingCollection.document_ids = collectionData.document_ids;
-        initDocumentsTreeview();
-        return;
-    }
-    
-    const newCollection = {
-        id: collectionData.id,
-        name: collectionData.name,
-        description: collectionData.description,
-        parent: collectionData.parent_id,
-        document_ids: collectionData.document_ids,
-        children: []
-    };
-    
-    if (!collections) {
-        collections = [];
-    }
-    
-    // Check if collection has parent
-    if (collectionData.parent_id) {
-        const parentCollection = findCollection(parseInt(collectionData.parent_id));
-        if (parentCollection) {
-            if (!parentCollection.children) {
-                parentCollection.children = [];
-            }
-            parentCollection.children.push(newCollection);
-        } else {
-            // Parent not found, add to root level
-            collections.push(newCollection);
-        }
-    } else {
-        // Root level collection
-        collections.push(newCollection);
-    }
-    
-    // Update document collections
-    if (collectionData.document_ids && collectionData.document_ids.length > 0) {
-        for (let docId of collectionData.document_ids) {
-            const document = documents[docId.toString()];
-            if (document) {
-                if (!document.collections) {
-                    document.collections = [];
-                }
-                if (!document.collections.includes(collectionData.id)) {
-                    document.collections.push(collectionData.id);
-                }
-            }
-        }
-    }
-    
-    initDocumentsTreeview();
-    
-    // Expand parent and highlight new collection
-    if (collectionData.parent_id) {
-        expandNodeParent(parseInt(collectionData.parent_id));
-    }
-    highlightCollection(collectionData.id);
-}
-
-function updateCollection(collectionData) {
-    // Find existing collection in hierarchy
-    let existingCollection = findCollection(parseInt(collectionData.id));
-    if (!existingCollection) {
-        addCollection(collectionData);
-        return;
-    }
-    
-    const oldDocumentIds = existingCollection.document_ids || [];
-    const oldParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
-    
-    // Update basic properties
-    existingCollection.name = collectionData.name;
-    existingCollection.description = collectionData.description;
-    existingCollection.document_ids = collectionData.document_ids;
-    
-    // Handle parent change if necessary
-    const newParentId = collectionData.parent_id ? parseInt(collectionData.parent_id) : null;
-    const currentParentId = existingCollection.parent ? parseInt(existingCollection.parent) : null;
-    if (currentParentId !== newParentId) {
-        existingCollection.parent = newParentId;
-        
-        // Remove from old parent
-        if (oldParentId) {
-            const oldParent = findCollection(oldParentId);
-            if (oldParent && oldParent.children) {
-                const index = oldParent.children.findIndex(c => c.id === parseInt(collectionData.id));
-                if (index !== -1) {
-                    oldParent.children.splice(index, 1);
-                }
-            }
-        } else {
-            // Remove from root list
-            const index = collections.findIndex(c => c.id === parseInt(collectionData.id));
-            if (index !== -1) {
-                collections.splice(index, 1);
-            }
-        }
-        
-        // Add to new parent
-        if (collectionData.parent_id) {
-            const newParent = findCollection(parseInt(collectionData.parent_id));
-            if (newParent) {
-                if (!newParent.children) {
-                    newParent.children = [];
-                }
-                newParent.children.push(existingCollection);
-            } else {
-                // New parent not found, add to root level
-                const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
-                if (!isAlreadyInRoot) {
-                    collections.push(existingCollection);
-                }
-            }
-        } else {
-            // Add to root level
-            const isAlreadyInRoot = collections.some(col => col.id === existingCollection.id);
-            if (!isAlreadyInRoot) {
-                collections.push(existingCollection);
-            }
-        }
-    }
-    
-    // Update document collections
-    // Remove from old documents
-    for (let docId of oldDocumentIds) {
-        const document = documents[docId.toString()];
-        if (document && document.collections) {
-            const index = document.collections.indexOf(parseInt(collectionData.id));
-            if (index !== -1) {
-                document.collections.splice(index, 1);
-            }
-        }
-    }
-    
-    // Add to new documents
-    if (collectionData.document_ids && collectionData.document_ids.length > 0) {
-        for (let docId of collectionData.document_ids) {
-            const document = documents[docId.toString()];
-            if (document) {
-                if (!document.collections) {
-                    document.collections = [];
-                }
-                if (!document.collections.includes(parseInt(collectionData.id))) {
-                    document.collections.push(parseInt(collectionData.id));
-                }
-            }
-        }
-    }
-    
-    initDocumentsTreeview();
-    
-    // Expand parent and highlight updated collection
-    if (collectionData.parent_id) {
-        expandNodeParent(parseInt(collectionData.parent_id));
-    } else if (oldParentId) {
-        // If moved to root, expand the old parent to show the change
-        expandNodeParent(oldParentId);
-    }
-    highlightCollection(collectionData.id);
-}
-
-function removeCollection(collectionId) {
-    // Find collection in hierarchysss
-    const collectionToRemove = findCollection(parseInt(collectionId));
-    if (!collectionToRemove) {
-        return;
-    }
-    
-    // Remove from parent or root list
-    if (collectionToRemove.parent) {
-        const parent = findCollection(collectionToRemove.parent);
-        if (parent && parent.children) {
-            const index = parent.children.findIndex(c => c.id === parseInt(collectionId));
-            if (index !== -1) {
-                parent.children.splice(index, 1);
-            }
-        }
-    } else {
-        // Remove from root list
-        const index = collections.findIndex(c => c.id === parseInt(collectionId));
-        if (index !== -1) {
-            collections.splice(index, 1);
-        }
-    }
-    
-    // Remove from documents that belong to it
-    if (collectionToRemove.document_ids && collectionToRemove.document_ids.length > 0) {
-        for (let docId of collectionToRemove.document_ids) {
-            const document = documents[docId.toString()];
-            if (document && document.collections) {
-                const index = document.collections.indexOf(parseInt(collectionId));
-                if (index !== -1) {
-                    document.collections.splice(index, 1);
-                }
-            }
-        }
-    }
-    
-    initDocumentsTreeview();
-    
-    // Expand parent to show the change
-    if (collectionToRemove.parent) {
-        expandNodeParent(collectionToRemove.parent);
-    }
-}
-
 
     $('#collection-add-form').on('submit', function(e) {
         e.preventDefault();
@@ -1786,11 +1576,7 @@ function removeCollection(collectionId) {
             return;
         }
         
-        const selectedDocs = [];
-        const selectedItems = document.querySelectorAll('#collection-add-documents-list .document-item.selected');
-        selectedItems.forEach(function(item) {
-            selectedDocs.push(item.dataset.documentId);
-        });
+        const selectedDocs = Array.from(selectedDocuments);
         
         const data = {
             name: name,
