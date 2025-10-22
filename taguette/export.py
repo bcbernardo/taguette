@@ -17,6 +17,7 @@ from . import exact_version
 from . import convert
 from . import database
 from . import extract
+from .database.models import collection_documents
 from .utils import get_path_informations
 
 tracer = opentelemetry.trace.get_tracer(__name__)
@@ -77,6 +78,8 @@ def _get_highlights_for_export(db, project_id, paths):
     t_highlight_tag = database.highlight_tags
     t_tag = database.Tag.__table__
     t_document = database.Document.__table__
+    t_collection_documents = collection_documents
+    t_collection = database.Collection.__table__
     t_highlight_tag_m = t_highlight_tag.alias()
     t_tag_m = t_tag.alias()
 
@@ -86,12 +89,17 @@ def _get_highlights_for_export(db, project_id, paths):
         t_highlight.c.snippet,
         t_document.c.name,
         t_tag.c.path,
+        t_collection.c.name.label('collection_name'),
     ]).select_from(
         t_highlight
         .join(t_highlight_tag,
               t_highlight.c.id == t_highlight_tag.c.highlight_id)
         .join(t_tag, t_tag.c.id == t_highlight_tag.c.tag_id)
         .join(t_document, t_document.c.id == t_highlight.c.document_id)
+        .outerjoin(t_collection_documents,
+                   t_document.c.id == t_collection_documents.c.document_id)
+        .outerjoin(t_collection,
+                   t_collection.c.id == t_collection_documents.c.collection_id)
     ).where(t_document.c.project_id == project_id)
 
     if operator_type == 'or' and any(list_of_paths):
@@ -177,20 +185,75 @@ def _get_highlights_for_export(db, project_id, paths):
     # Collect highlights
     highlights = []
     for row in db.execute(query).fetchall():
-        highlight_id, snippet, document, tag_path = row
+        highlight_id, snippet, document, tag_path, collection_name = row
+
+        # Build full collection path if collection exists
+        collection_path = ''
+        if collection_name:
+            collection_path = _build_collection_path(
+                db, collection_name, project_id)
+
         if highlights and highlights[-1][0] == highlight_id:
             if tag_path not in highlights[-1][3]:
                 highlights[-1][3].append(tag_path)
         else:
             highlights.append((highlight_id, snippet, document, [
-                tag_path] if tag_path else []))
+                tag_path] if tag_path else [], collection_path))
 
     return highlights
 
 
+def _build_collection_path(db, collection_name, project_id):
+    """Build the full path of a collection including all parents.
+
+    Returns a string like "Parent > Child > Grandchild" or just "Collection"
+    if no parents.
+    """
+    t_collection = database.Collection.__table__
+
+    # Find the collection by name and project
+    collection_query = select([
+        t_collection.c.id,
+        t_collection.c.name,
+        t_collection.c.parent_id
+    ]).where(
+        and_(
+            t_collection.c.name == collection_name,
+            t_collection.c.project_id == project_id
+        )
+    )
+
+    collection_row = db.execute(collection_query).fetchone()
+    if not collection_row:
+        return collection_name
+
+    _, name, parent_id = collection_row
+
+    # Build path by traversing up the hierarchy
+    path_parts = [name]
+    current_parent_id = parent_id
+
+    while current_parent_id:
+        parent_query = select([
+            t_collection.c.name,
+            t_collection.c.parent_id
+        ]).where(
+            t_collection.c.id == current_parent_id
+        )
+        parent_row = db.execute(parent_query).fetchone()
+
+        if parent_row:
+            parent_name, current_parent_id = parent_row
+            path_parts.insert(0, parent_name)
+        else:
+            break
+
+    return ' > '.join(path_parts)
+
+
 def get_filename_for_highlights_export(path):
-    """Génère un nom de fichier approprié pour
-        l'exportation des surlignages basé sur les tags.
+    """Generates an appropriate filename for
+        exporting highlights based on tags.
     """
     if path:
         filename = (path.replace('∪', '_or_')
@@ -211,13 +274,13 @@ def highlights_csv(db, project_id, path, file):
     """
     highlights = _get_highlights_for_export(db, project_id, path)
     writer = csv.writer(file)
-    writer.writerow(['id', 'document', 'tag', 'content'])
-    for id, snippet, document, tags in highlights:
+    writer.writerow(['id', 'document', 'collection', 'tag', 'content'])
+    for id, snippet, document, tags, collection in highlights:
         if not tags:
             tags = ['']
         for tag_path in tags:
             writer.writerow([
-                id, document, tag_path,
+                id, document, collection, tag_path,
                 convert.html_to_plaintext(snippet),
             ])
 
@@ -235,21 +298,24 @@ def highlights_xslx(db, project_id, path, filename):
 
     sheet.write(0, 0, 'id', header)
     sheet.write(0, 1, 'document', header)
-    sheet.write(0, 2, 'tag', header)
-    sheet.write(0, 3, 'content', header)
+    sheet.write(0, 2, 'collection', header)
+    sheet.write(0, 3, 'tag', header)
+    sheet.write(0, 4, 'content', header)
     sheet.set_column(0, 0, 5.0)
     sheet.set_column(1, 1, 15.0)
     sheet.set_column(2, 2, 15.0)
-    sheet.set_column(3, 3, 80.0)
+    sheet.set_column(3, 3, 15.0)
+    sheet.set_column(4, 4, 80.0)
     row = 1
-    for id, snippet, document, tags in highlights:
+    for id, snippet, document, tags, collection in highlights:
         if not tags:
             tags = ['']
         for tag_path in tags:
             sheet.write(row, 0, str(id))
             sheet.write(row, 1, document)
-            sheet.write(row, 2, tag_path)
-            sheet.write(row, 3, convert.html_to_plaintext(snippet))
+            sheet.write(row, 2, collection)
+            sheet.write(row, 3, tag_path)
+            sheet.write(row, 4, convert.html_to_plaintext(snippet))
             row += 1
     workbook.close()
 

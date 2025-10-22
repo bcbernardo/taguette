@@ -54,6 +54,21 @@ function convertCollectionsToTreeNode(data) {
         
         collectionNode.nodes = [...documentNodes, ...subCollections];
 
+        // fake node to force chevron display (for icon alignment)
+        if (collectionNode.nodes.length === 0) {
+            collectionNode.nodes.push({
+                id: 'dummy_' + collection.id,
+                text: '',
+                icon: '',
+                selectable: false,
+                hideCheckbox: true,
+                isDummy: true,
+                state: {
+                    disabled: true
+                }
+            });
+        }
+
         const documentCount = collection.document_ids ? collection.document_ids.length : 0;
         collectionNode.tags = [documentCount.toString()];
 
@@ -225,6 +240,16 @@ function initDocumentsTreeview(filteredCollections = null) {
         treeview_documents.treeview('collapseAll');
     }
     
+    // Prevent expanding empty collections
+    treeview_documents.on('nodeExpanded', function(event, node) {
+        if (node.nodes && node.nodes.length === 1 && node.nodes[0].isDummy) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            treeview_documents.treeview('collapseNode', [node.nodeId, {silent: true}]);
+            return false;
+        }
+    });
+    
     // Re-add drag and drop after treeview changes (like tags do)
     treeview_documents.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
         // Clear selection when collapsing or expanding
@@ -360,7 +385,7 @@ function getDocumentIdFromTreeviewNode(treeview, nodeId) {
         return parseInt(node.id.replace('document_', ''));
     }
     
-    console.log('getDocumentIdFromTreeviewNode - node not a document:', node);
+    log('getDocumentIdFromTreeviewNode - node not a document:', 'warn', node);
     return null;
 }
 
@@ -378,7 +403,7 @@ function showDragHint(selectedCount, lastSelectedNodeId) {
     $('#drag-hint').remove();
     
     if (selectedCount > 1) {
-        const message = `Vous pouvez glisser-déposer ${selectedCount} documents vers une collection`;
+        const message = gettext("You can drag and drop %s documents to a collection").replace('%s', selectedCount);
         const popup = $('<div id="drag-hint" class="drag-hint-popup">' +
           '<i class="fas fa-grip-vertical"></i> ' + message +
           '</div>');

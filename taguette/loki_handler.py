@@ -62,7 +62,31 @@ class LokiHandler(logging.Handler):
         super().close()
 
 
+def test_loki_connectivity(loki_url: str):
+    """Test if Loki is accessible and ready"""
+    try:
+        import requests
+        response = requests.get(f"{loki_url}/ready", timeout=5)
+        if response.status_code == 200:
+            return True, "Loki is ready"
+        else:
+            return False, f"Loki not ready (status: {response.status_code})"
+    except requests.exceptions.ConnectionError:
+        return False, f"Loki not accessible at {loki_url}"
+    except Exception as e:
+        return False, f"Loki test error: {e}"
+
+
 def setup_loki_logging(loki_url: str):
+    # Test connectivity first
+    is_ready, message = test_loki_connectivity(loki_url)
+    logger = logging.getLogger(__name__)
+
+    if is_ready:
+        logger.info(message)
+    else:
+        logger.warning(message)
+
     loki_handler = LokiHandler(loki_url)
     formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
     loki_handler.setFormatter(formatter)
@@ -72,5 +96,8 @@ def setup_loki_logging(loki_url: str):
 
     tornado_logger = logging.getLogger("tornado.access")
     tornado_logger.addHandler(loki_handler)
+
+    # Test log
+    logger.info("Loki test log - %s", loki_url)
 
     return loki_handler

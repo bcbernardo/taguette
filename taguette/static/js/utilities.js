@@ -2,6 +2,11 @@
  * Utilities
  */
 
+// Get current highlight version (V2 is default)
+function getHighlightVersion() {
+    return localStorage.getItem('highlightVersion') || 'v2';
+}
+
 // NEW selector
 jQuery.expr[':'].contains_insensitive = function(a, i, m) {
     return jQuery(a).text().toUpperCase()
@@ -493,6 +498,10 @@ let current_selection = null;
 
 // Describe the selection e.g. [14, 56]
 function describeSelection() {
+    if (getHighlightVersion() === 'v2' && typeof ntv_describeSelection === 'function') {
+        return ntv_describeSelection();
+    }
+    
     const sel = window.getSelection();
     if (sel.rangeCount !== 0) {
         const range = sel.getRangeAt(0);

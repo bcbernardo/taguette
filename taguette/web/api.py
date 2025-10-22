@@ -345,7 +345,6 @@ class Document(BaseHandler):
 
         highlights = (
             self.db.query(database.Highlight)
-            .options(defer('snippet'))
             .filter(database.Highlight.document_id == document.id)
             .order_by(database.Highlight.start_offset)
             .options(joinedload(database.Highlight.tags))
@@ -357,6 +356,7 @@ class Document(BaseHandler):
                 {'id': hl.id,
                  'start_offset': hl.start_offset,
                  'end_offset': hl.end_offset,
+                 'snippet': hl.snippet,
                  'tags': [t.id for t in hl.tags]}
                 for hl in highlights
             ],
@@ -1467,6 +1467,7 @@ class CreateCollection(BaseHandler):
                 document = self.db.query(database.Document).filter_by(
                     id=doc_id, project_id=project.id).first()
                 if document:
+                    document.collections.clear()
                     collection.documents.append(document)
 
             cmd = database.Command.collection_add(
