@@ -96,8 +96,10 @@ def _get_highlights_for_export(db, project_id, paths):
               t_highlight.c.id == t_highlight_tag.c.highlight_id)
         .join(t_tag, t_tag.c.id == t_highlight_tag.c.tag_id)
         .join(t_document, t_document.c.id == t_highlight.c.document_id)
-        .outerjoin(t_collection_documents, t_document.c.id == t_collection_documents.c.document_id)
-        .outerjoin(t_collection, t_collection.c.id == t_collection_documents.c.collection_id)
+        .outerjoin(t_collection_documents,
+                   t_document.c.id == t_collection_documents.c.document_id)
+        .outerjoin(t_collection,
+                   t_collection.c.id == t_collection_documents.c.collection_id)
     ).where(t_document.c.project_id == project_id)
 
     if operator_type == 'or' and any(list_of_paths):
@@ -184,12 +186,13 @@ def _get_highlights_for_export(db, project_id, paths):
     highlights = []
     for row in db.execute(query).fetchall():
         highlight_id, snippet, document, tag_path, collection_name = row
-        
+
         # Build full collection path if collection exists
         collection_path = ''
         if collection_name:
-            collection_path = _build_collection_path(db, collection_name, project_id)
-        
+            collection_path = _build_collection_path(
+                db, collection_name, project_id)
+
         if highlights and highlights[-1][0] == highlight_id:
             if tag_path not in highlights[-1][3]:
                 highlights[-1][3].append(tag_path)
@@ -202,49 +205,49 @@ def _get_highlights_for_export(db, project_id, paths):
 
 def _build_collection_path(db, collection_name, project_id):
     """Build the full path of a collection including all parents.
-    
-    Returns a string like "Parent > Child > Grandchild" or just "Collection" 
+
+    Returns a string like "Parent > Child > Grandchild" or just "Collection"
     if no parents.
     """
     t_collection = database.Collection.__table__
-    
+
     # Find the collection by name and project
     collection_query = select([
-        t_collection.c.id, 
-        t_collection.c.name, 
+        t_collection.c.id,
+        t_collection.c.name,
         t_collection.c.parent_id
     ]).where(
         and_(
-            t_collection.c.name == collection_name, 
+            t_collection.c.name == collection_name,
             t_collection.c.project_id == project_id
         )
     )
-    
+
     collection_row = db.execute(collection_query).fetchone()
     if not collection_row:
         return collection_name
-    
+
     _, name, parent_id = collection_row
-    
+
     # Build path by traversing up the hierarchy
     path_parts = [name]
     current_parent_id = parent_id
-    
+
     while current_parent_id:
         parent_query = select([
-            t_collection.c.name, 
+            t_collection.c.name,
             t_collection.c.parent_id
         ]).where(
             t_collection.c.id == current_parent_id
         )
         parent_row = db.execute(parent_query).fetchone()
-        
+
         if parent_row:
             parent_name, current_parent_id = parent_row
             path_parts.insert(0, parent_name)
         else:
             break
-    
+
     return ' > '.join(path_parts)
 
 

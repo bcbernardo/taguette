@@ -31,37 +31,41 @@
                                     <label class="form-check-label" for="document-add-direction-rtl">{% trans %}Right to
                                         left{% endtrans %}</label>
                                 </div>
-                                <div class="vr"></div>
-                                <button type="button" class="btn btn-outline-info btn-sm" id="apply-global-direction">
-                                    {% trans %}Apply global text direction{% endtrans %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick actions section -->
+                    <div class="row" id="bulk-actions-container" style="display: none;">
+                        <div class="col form-group">
+                            <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="form-label mb-0">{% trans %}Assign all to:{% endtrans %}</label>
+                                    <select class="form-select form-select-sm" id="assign-all-collection-select"
+                                        style="width: 200px;">
+                                        <option value="" selected>{% trans %}No collection (root){% endtrans %}</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                    id="create-new-collection-for-all">
+                                    {% trans %}Create new collection for all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    id="reset-all-collections"
+                                    title="{% trans %}Reset all to no collection{% endtrans %}">
+                                    <i class="fas fa-undo me-1"></i>{% trans %}Reset{% endtrans %}
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <!-- Liste des documents sélectionnés -->
+
+                    <!-- Selected documents list section -->
                     <div class="row" id="document-files-list-container" style="display: none;">
                         <div class="col form-group">
                             <label class="form-label">{% trans %}Selected documents and collections{% endtrans
                                 %}</label>
                             <div id="document-files-list" class="border rounded p-3"
                                 style="max-height: 300px; overflow-y: auto;">
-                                <!-- La liste sera générée dynamiquement -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions rapides -->
-                    <div class="row" id="bulk-actions-container" style="display: none;">
-                        <div class="col form-group">
-                            <div class="d-flex gap-2 align-items-center flex-wrap">
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
-                                    id="assign-all-to-collection">
-                                    {% trans %}Assign all to same collection{% endtrans %}
-                                </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm"
-                                    id="create-new-collection-for-all">
-                                    {% trans %}Create new collection for all{% endtrans %}
-                                </button>
                             </div>
                         </div>
                     </div>

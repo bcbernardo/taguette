@@ -60,7 +60,7 @@ function toggleFavorite(documentId) {
             }, 100);
         }
     }, function(error) {
-        console.error('Error updating document favorite:', error);
+        log('Error updating document favorite:', 'error', error);
     });
 }
 
@@ -163,7 +163,6 @@ function generateDocumentSelectPicker() {
 
         dropdown.appendChild(listItem);
     });
-    console.log("Documents list in dropdown updated");
 }
 
 function submitDocumentUpdate(document, callbackSuccess, callbackFail) {
@@ -173,7 +172,6 @@ function submitDocumentUpdate(document, callbackSuccess, callbackFail) {
     let request;
 
     if (id) {
-        console.log(`Posting update for document ${id}`);
         request = postJSON(`/api/project/${project_id}/document/${id}`, document);
     }
 
@@ -313,51 +311,137 @@ function buildCollectionPath(collectionId) {
     return path;
 }
 
+
+// ADD COLLECTION WITH SELECTED DOCUMENTS
+let selectedDocuments = new Set();
+
+function resetCollectionUI() {
+    // Clear selected documents
+    selectedDocuments.clear();
+    
+    // Clear search input
+    const searchInput = document.getElementById('collection-documents-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Clear selected documents display
+    const selectedContainer = document.getElementById('collection-selected-documents');
+    if (selectedContainer) {
+        selectedContainer.style.display = 'none';
+    }
+    
+    // Reset form
+    const form = document.getElementById('collection-add-form');
+    if (form) {
+        form.reset();
+    }
+}
+
 function populateDocumentsList(collectionId = null) {
     const docListDiv = document.getElementById('collection-add-documents-list');
     docListDiv.innerHTML = '';
     
+    // If editing a collection, pre-select existing documents
+    if (collectionId) {
+        const collection = findCollection(parseInt(collectionId));
+        if (collection && collection.document_ids) {
+            selectedDocuments.clear();
+            collection.document_ids.forEach(docId => {
+                selectedDocuments.add(docId);
+            });
+        }
+    }
+    
+    // legend
+    const legendDiv = document.createElement('div');
+    legendDiv.className = 'mb-3 p-2 bg-light rounded';
+    legendDiv.innerHTML = `
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-1">
+                <i class="fas fa-file-alt text-primary"></i>
+                <small>${gettext('Document without collection (will be added)')}</small>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <i class="fas fa-folder text-warning"></i>
+                <small>${gettext('Document with collection (will be moved)')}</small>
+            </div>
+        </div>
+    `;
+    docListDiv.appendChild(legendDiv);
+    
     const docEntries = Object.entries(documents);
-    docEntries.sort((a, b) => a[1].name.localeCompare(b[1].name));
+    docEntries.sort((a, b) => {
+        const aCollections = a[1].collections || [];
+        const bCollections = b[1].collections || [];
+        
+        // Sort: documents without collection first, then documents with collection
+        if (aCollections.length === 0 && bCollections.length > 0) return -1;
+        if (aCollections.length > 0 && bCollections.length === 0) return 1;
+        
+        // Within same category, sort by name
+        return a[1].name.localeCompare(b[1].name);
+    });
     
     let availableDocuments = 0;
-    const collectionDocuments = collectionId ? (findCollection(collectionId)?.document_ids || []) : [];
     
     for (let i = 0; i < docEntries.length; ++i) {
         let doc = docEntries[i][1];
         const docCollections = doc.collections || [];
         
-        let shouldShow = false;
-        let isChecked = false;
-        
-        if (collectionId) {
-            const isInCurrentCollection = collectionDocuments.includes(doc.id) || collectionDocuments.includes(String(doc.id));
-            const isInOtherCollections = docCollections.length > 0 && !isInCurrentCollection;
-            shouldShow = !isInOtherCollections;
-            isChecked = isInCurrentCollection;
-        } else {
-            shouldShow = docCollections.length === 0;
-            isChecked = false;
+        // Skip selected documents
+        if (selectedDocuments.has(doc.id)) {
+            continue;
         }
         
-        if (!shouldShow) {
-            continue;
+        // Get current collection name for documents that have collections
+        let currentCollectionName = '';
+        if (docCollections.length > 0) {
+            const currentCollection = findCollection(docCollections[0]);
+            currentCollectionName = currentCollection ? currentCollection.name : '';
         }
         
         availableDocuments++;
         
         let docItem = document.createElement('div');
-        docItem.className = 'document-item p-2 mb-1 rounded';
+        docItem.className = 'document-item p-2 mb-1 rounded d-flex align-items-center justify-content-between';
         docItem.dataset.documentId = doc.id;
-        docItem.textContent = doc.name;
         
-        if (isChecked) {
-            docItem.classList.add('selected');
+        // Create content div
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'd-flex align-items-center gap-2 flex-grow-1';
+        
+        // Add icon based on collection status
+        const iconDiv = document.createElement('div');
+        if (docCollections.length === 0) {
+            iconDiv.innerHTML = '<i class="fas fa-file-alt text-primary"></i>';
+        } else {
+            iconDiv.innerHTML = '<i class="fas fa-folder text-warning"></i>';
         }
         
+        // Add document name and collection info
+        const textDiv = document.createElement('div');
+        textDiv.innerHTML = `
+            <div class="fw-bold">${doc.name}</div>
+            ${currentCollectionName ? `<small class="text-muted">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
+        `;
+        
+        contentDiv.appendChild(iconDiv);
+        contentDiv.appendChild(textDiv);
+        docItem.appendChild(contentDiv);
+        
         docItem.addEventListener('click', function() {
-            this.classList.toggle('selected');
+            const docId = Number(this.dataset.documentId);
+            
+            if (selectedDocuments.has(docId)) {
+                selectedDocuments.delete(docId);
+            } else {
+                selectedDocuments.add(docId);
+            }
+            
+            // Update both lists
             updateSelectedDocumentsDisplay();
+            populateDocumentsList();
         });
         
         docListDiv.appendChild(docItem);
@@ -370,30 +454,48 @@ function populateDocumentsList(collectionId = null) {
         docListDiv.appendChild(noDocsMessage);
     }
     
-    const searchInput = document.getElementById('collection-documents-search');
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const docItems = docListDiv.querySelectorAll('.document-item');
-        
-        docItems.forEach(item => {
-            const docName = item.textContent.toLowerCase();
-            if (docName.includes(searchTerm)) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    });
+    setupCollectionSearch();
     
-    updateSelectedDocumentsDisplay();
+    // Update selected documents display if we're editing
+    if (collectionId) {
+        updateSelectedDocumentsDisplay();
+    }
+}
+
+function setupCollectionSearch() {
+    const searchInput = document.getElementById('collection-documents-search');
+    if (searchInput) {
+        searchInput.removeEventListener('input', handleCollectionSearch);
+        searchInput.addEventListener('input', handleCollectionSearch);
+    }
+}
+
+function handleCollectionSearch() {
+    const searchTerm = this.value.toLowerCase();
+    const docListDiv = document.getElementById('collection-add-documents-list');
+    const docItems = docListDiv.querySelectorAll('.document-item');
+    
+    docItems.forEach(item => {
+        const docId = item.dataset.documentId;
+        const doc = documents[docId];
+        if (doc) {
+            const docName = doc.name.toLowerCase();
+            const shouldShow = docName.includes(searchTerm);
+            
+            if (shouldShow) {
+                item.style.setProperty('display', 'block', 'important');
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+        }
+    });
 }
 
 function updateSelectedDocumentsDisplay() {
     const selectedContainer = document.getElementById('collection-selected-documents');
     const selectedList = document.getElementById('collection-selected-documents-list');
-    const selectedItems = document.querySelectorAll('.document-item.selected');
     
-    if (selectedItems.length === 0) {
+    if (selectedDocuments.size === 0) {
         selectedContainer.style.display = 'none';
         return;
     }
@@ -401,27 +503,39 @@ function updateSelectedDocumentsDisplay() {
     selectedContainer.style.display = 'block';
     selectedList.innerHTML = '';
     
-    selectedItems.forEach(item => {
+    selectedDocuments.forEach(docId => {
+        const doc = documents[docId];
+        const docCollections = doc.collections || [];
+        
+        let currentCollectionName = '';
+        if (docCollections.length > 0) {
+            const currentCollection = findCollection(docCollections[0]);
+            currentCollectionName = currentCollection ? currentCollection.name : '';
+        }
+        
         const badge = document.createElement('span');
         badge.className = 'selected-document-badge';
         badge.innerHTML = `
-            ${item.textContent}
-            <span class="remove-btn" data-document-id="${item.dataset.documentId}">×</span>
+            <div class="d-flex align-items-center gap-1">
+                <i class="fas ${docCollections.length === 0 ? 'fa-file-alt text-primary' : 'fa-folder text-warning'}"></i>
+                <span>${doc.name}</span>
+                <span class="remove-btn" data-document-id="${docId}">×</span>
+            </div>
+            ${currentCollectionName ? `<small class="text-muted d-block">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
         `;
         
-        // Événement pour supprimer
         badge.querySelector('.remove-btn').addEventListener('click', function() {
-            const docId = this.dataset.documentId;
-            const docItem = document.querySelector(`[data-document-id="${docId}"]`);
-            if (docItem) {
-                docItem.classList.remove('selected');
-                updateSelectedDocumentsDisplay();
-            }
+            const docId = Number(this.dataset.documentId);
+            selectedDocuments.delete(docId);
+            updateSelectedDocumentsDisplay();
+            populateDocumentsList();
         });
         
         selectedList.appendChild(badge);
     });
 }
+
+// ADD DOCUMENT WITH DISPATCH INTERFACE
 
 function displaySelectedDocuments(files) {
     const container = document.getElementById('document-files-list-container');
@@ -452,16 +566,12 @@ function displaySelectedDocuments(files) {
         `;
         
         const collectionSelector = document.createElement('div');
-        collectionSelector.className = 'collection-selector ms-3 d-flex align-items-center gap-2';
+        collectionSelector.className = 'collection-selector d-flex align-items-end flex-shrink-0';
         collectionSelector.innerHTML = `
-            <select class="form-select form-select-sm" data-file-index="${index}" style="width: 200px; flex-shrink: 0;">
+            <select class="form-select form-select-sm me-2" data-file-index="${index}" style="width: 300px;">
                 <option value="">${gettext('No collection (root)')}</option>
             </select>
-            <select class="form-select form-select-sm text-direction-selector" data-file-index="${index}" style="width: 90px; flex-shrink: 0;" title="${gettext('Text direction')}">
-                <option value="LEFT_TO_RIGHT">➡️ LTR</option>
-                <option value="RIGHT_TO_LEFT">⬅️ RTL</option>
-            </select>
-            <button type="button" class="btn btn-outline-primary btn-sm create-new-for-file" data-file-index="${index}" title="${gettext('Create new collection for this file')}" style="width: 32px; flex-shrink: 0;">
+            <button type="button" class="btn btn-outline-primary btn-sm create-new-for-file" data-file-index="${index}" title="${gettext('Create new collection for this file')}" style="width: 32px;">
                 <i class="fas fa-plus"></i>
             </button>
         `;
@@ -486,13 +596,48 @@ function displaySelectedDocuments(files) {
     });
     
     populateCollectionOptions();
-    setupTextDirectionDefaults();
+    populateAssignAllSelect();
     
     setupBulkActions();
 }
 
+function populateAssignAllSelect() {
+    const assignAllSelect = document.getElementById('assign-all-collection-select');
+    if (!assignAllSelect) return;
+    
+    while (assignAllSelect.children.length > 1) {
+        assignAllSelect.removeChild(assignAllSelect.children[1]);
+    }
+    
+    if (typeof collections !== 'undefined' && collections.length > 0) {
+        function addCollectionOptions(collectionsList, level = 0) {
+            collectionsList.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection.id;
+                
+                let displayText = '';
+                if (level > 0) {
+                    displayText = '└─ '.repeat(level) + collection.name;
+                } else {
+                    displayText = '📁 ' + collection.name;
+                }
+                
+                option.textContent = displayText;
+                option.style.paddingLeft = (level * 15) + 'px';
+                assignAllSelect.appendChild(option);
+                
+                if (collection.children && collection.children.length > 0) {
+                    addCollectionOptions(collection.children, level + 1);
+                }
+            });
+        }
+        
+        addCollectionOptions(collections);
+    }
+}
+
 function populateCollectionOptions() {
-    const selectors = document.querySelectorAll('#document-files-list select:not(.text-direction-selector)');
+    const selectors = document.querySelectorAll('#document-files-list select');
     
     selectors.forEach(select => {
         while (select.children.length > 1) {
@@ -535,42 +680,34 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function setupTextDirectionDefaults() {
-    const globalDirectionValue = document.querySelector('input[name="document-add-direction"]:checked')?.value || 'LEFT_TO_RIGHT';
-    const textDirectionSelectors = document.querySelectorAll('#document-files-list .text-direction-selector');
-    
-    textDirectionSelectors.forEach(select => {
-        select.value = globalDirectionValue;
-    });
-}
-
-
 function setupBulkActions() {
-    document.getElementById('assign-all-to-collection').addEventListener('click', function() {
-        const collectionSelectors = document.querySelectorAll('#document-files-list select:not(.text-direction-selector)');
-        if (collectionSelectors.length === 0) return;
-        
-        const firstSelector = collectionSelectors[0];
-        const selectedValue = firstSelector.value;
-        
-        collectionSelectors.forEach(select => {
-            if (!select.classList.contains('text-direction-selector')) {
+    const assignAllSelect = document.getElementById('assign-all-collection-select');
+    if (assignAllSelect) {
+        assignAllSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const collectionSelectors = document.querySelectorAll('#document-files-list select');
+            
+            collectionSelectors.forEach(select => {
                 select.value = selectedValue;
-            }
+            });
         });
-    });
+    }
+    
+    const resetButton = document.getElementById('reset-all-collections');
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            assignAllSelect.value = '';
+            
+            const collectionSelectors = document.querySelectorAll('#document-files-list select');
+            collectionSelectors.forEach(select => {
+                select.value = '';
+                resetSelectorStyle(select);
+            });
+        });
+    }
     
     document.getElementById('create-new-collection-for-all').addEventListener('click', function() {
         showGlobalCollectionNameInput();
-    });
-    
-    document.getElementById('apply-global-direction').addEventListener('click', function() {
-        const globalDirectionValue = document.querySelector('input[name="document-add-direction"]:checked')?.value || 'LEFT_TO_RIGHT';
-        const textDirectionSelectors = document.querySelectorAll('#document-files-list .text-direction-selector');
-        
-        textDirectionSelectors.forEach(select => {
-            select.value = globalDirectionValue;
-        });
     });
 }
 

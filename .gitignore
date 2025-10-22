@@ -67,3 +67,6 @@ edugain_idps.json
 # Venv
 venv
 taguette3.10
+
+loki-compactor
+.gitlab-ci-local.yml

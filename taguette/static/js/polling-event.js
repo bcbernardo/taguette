@@ -72,14 +72,25 @@ function longPollForEvents() {
                 } else if (event.type === 'document_delete') {
                     removeDocument(event.document_id);
                 } else if (event.type === 'highlight_add') {
-                    addHighlight({
+                    const highlightData = {
                         id: event.highlight_id,
                         start_offset: event.start_offset,
                         end_offset: event.end_offset,
+                        snippet: event.snippet,
                         tags: event.tags
-                    });
+                    };
+                    
+                    if (getHighlightVersion() === 'v2' && typeof ntv_addHighlight === 'function') {
+                        ntv_addHighlight(highlightData);
+                    } else if (typeof addHighlight === 'function') {
+                        addHighlight(highlightData);
+                    }
                 } else if (event.type === 'highlight_delete') {
-                    removeHighlight(event.highlight_id);
+                    if (getHighlightVersion() === 'v2' && typeof ntv_removeHighlight === 'function') {
+                        ntv_removeHighlight(event.highlight_id);
+                    } else if (typeof removeHighlight === 'function') {
+                        removeHighlight(event.highlight_id);
+                    }
                 } else if (event.type === 'tag_add') {
                     addTag({
                         id: event.tag_id,
