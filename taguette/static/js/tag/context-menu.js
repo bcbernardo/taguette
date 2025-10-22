@@ -106,7 +106,7 @@ function contextMenuAction(action, param) {
     if (actionFunction) {
         actionFunction(param);
     } else {
-        console.log('No action found for:', action);
+        log('No action found for:', 'warn', {action});
     }
 }
 

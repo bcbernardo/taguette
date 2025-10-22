@@ -363,10 +363,8 @@ function submitTagCreation(tag, callbackSuccess, callbackFail) {
 
     let request;
     if (id) {
-        console.log(`Posting update for tag ${id}`);
         request = postJSON(`/api/project/${project_id}/tag/${id}`, newTag);
     } else {
-        console.log("Posting new tag");
         request = postJSON(`/api/project/${project_id}/tag/new`, newTag);
     }
 

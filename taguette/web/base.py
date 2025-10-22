@@ -380,6 +380,11 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         super(BaseHandler, self).__init__(application, request, **kwargs)
         self._db = None
         self._gettext = None
+        self.language = self.get_cookie('language',
+                                        self.get_browser_locale().code)
+        if not self.language:
+            self.language = self.application.config['DEFAULT_LANGUAGE']
+            self.set_cookie('language', self.language)
 
     def set_default_headers(self):
         self.set_header('Server', 'LibreQDA/%s' % exact_version())
@@ -423,6 +428,9 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             if user is None or user.disabled:
                 return None
             self.language = user.language
+            if not self.language:
+                self.language = self.application.config['DEFAULT_LANGUAGE']
+            self.set_cookie('language', self.language)
             return user.login
         else:
             return None
@@ -455,9 +463,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         def get_user_locale(self):
             # Note that reading current_user first is important, it will
             # call get_current_user() which sets self.language
-            if self.current_user is not None:
-                if self.language is not None:
-                    return tornado.locale.get(self.language)
+            if self.language is not None:
+                return tornado.locale.get(self.language)
 
     def login(self, username):
         logger.info("Logged in as %r", username)
