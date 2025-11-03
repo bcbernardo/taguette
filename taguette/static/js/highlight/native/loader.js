@@ -53,7 +53,7 @@ function ntv_loadDocument(document_id, highlight_id = null, splitParagraphs = tr
             svg.style.width = '100%';
             svg.style.height = '100%';
             svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '10';
+            svg.style.zIndex = '9';
             svg.style.overflow = 'visible';
             
             mainContainer.appendChild(svg);
