@@ -1118,7 +1118,7 @@ body {
 
 /* Some space before content */
 .container-body {
-  padding-top: 8em;
+  padding-top: 7em;
 }
 
 body.scrolled .container-body {
@@ -1137,7 +1137,7 @@ body.scrolled .container-body {
 div.sticky-top {
   overflow-x: hidden;
   overflow-y: auto;
-  height: calc(100vh - 5.25em);
+  height: calc(100vh - 14em);
   top: 6.25em;
   transition: all 0.3s ease-in-out;
 }
