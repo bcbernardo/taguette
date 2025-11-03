@@ -937,6 +937,8 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
             // Update document export button
             updateDocumentExportButton(project_id, document_id);
 
+            updateLinksTarget(document_contents);
+
             // Scroll up
             scrollToHighlight(highlight_id, search_text);
         })
@@ -1003,7 +1005,6 @@ function scrollToHighlight(highlight_id, search_text=null) {
                         });
                         scroll_position = data_highlight_selector.offset().top - 25;
                     }
-
             }
         }
 
@@ -1041,6 +1042,12 @@ function scrollToHighlight(highlight_id, search_text=null) {
             behavior: 'instant'
         });
     }, 0);
+}
+
+function updateLinksTarget(document_contents) {
+    $("A", document_contents).each(function(){
+        $(this).attr('target', '_blank');
+    });
 }
 
 function updateDocumentExportButton(project_id, document_id) {

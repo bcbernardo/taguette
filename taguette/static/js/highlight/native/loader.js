@@ -76,6 +76,7 @@ function ntv_loadDocument(document_id, highlight_id = null, splitParagraphs = tr
             toggleToolbarActions(true);
             updateDocumentLinkHighlight(current_document);
             updateDocumentExportButton(project_id, document_id);
+            updateLinksTarget(document_contents);
             
             if (highlight_id) {
                 setTimeout(() => scrollToHighlight(highlight_id, search_text), 200);
