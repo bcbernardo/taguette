@@ -123,8 +123,9 @@ class Index(BaseHandler):
 
     def post(self):
         language = self.get_body_argument('language')
+        url = self.get_body_argument('url')
         self.set_cookie('language', language)
-        return self.redirect(self.reverse_url('index'))
+        return self.redirect(url)
 
     head = get
 
@@ -189,6 +190,8 @@ class Login(BaseHandler):
                     error_msg=error_msg,
                     idps=get_idps(self.db),
                     entity_id=self.get_cookie("entity_id", None),
+                    languages=get_languages(),
+                    current_language=self.language
                 )
 
     @PROM_REQUESTS.async_("login")
