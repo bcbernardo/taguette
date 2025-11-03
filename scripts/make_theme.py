@@ -61,12 +61,18 @@ def copy_default_theme(destination_theme_name):
 def create_directories(theme_name):
     theme_dir = get_theme_dir(theme_name)
     template_dir = get_template_dir(theme_name)
-    os.makedirs(theme_dir, exist_ok=True)
-    os.makedirs(template_dir, exist_ok=True)
-    copy_default_theme(theme_name)
+    if not os.path.exists(theme_dir):
+        os.makedirs(theme_dir, exist_ok=True)
+        copy_default_theme(theme_name)
+        print(f"Theme folder created : {theme_dir}")
+    else:
+        print(f"Theme folder already exists : {theme_dir}")
 
-    print(f"Theme folder created : {theme_dir}")
-    print(f"Templates folder created : {template_dir}")
+    if not os.path.exists(template_dir):
+        os.makedirs(template_dir, exist_ok=True)
+        print(f"Templates folder created : {template_dir}")
+    else:
+        print(f"Templates folder already exists : {template_dir}")
 
 
 def main():
