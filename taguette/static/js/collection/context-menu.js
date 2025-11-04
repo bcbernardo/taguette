@@ -21,7 +21,7 @@ function addCollectionContextMenu() {
 }
 
 function generateCollectionContextMenuItems(collection) {
-    return {
+    const items = {
         "addChildCollection": {
             name: gettext('Add sub-collection'),
             icon: 'fas fa-plus-circle',
@@ -31,14 +31,25 @@ function generateCollectionContextMenuItems(collection) {
             name: gettext('Edit collection'),
             icon: "fas fa-edit",
             callback: (key, options) => collectionContextMenuAction('edit', collection.id)
-        },
-        "separator1": "---------",
-        "delete": {
-            name: gettext('Delete collection'),
-            icon: "fas fa-trash",
-            callback: (key, options) => collectionContextMenuAction('delete', collection.id)
         }
     };
+    
+    if (collection.parent) {
+        items["removeParent"] = {
+            name: gettext('Remove parent'),
+            icon: "fas fa-level-up-alt",
+            callback: (key, options) => collectionContextMenuAction('removeParent', collection.id)
+        };
+    }
+    
+    items["separator1"] = "---------";
+    items["delete"] = {
+        name: gettext('Delete collection'),
+        icon: "fas fa-trash",
+        callback: (key, options) => collectionContextMenuAction('delete', collection.id)
+    };
+    
+    return items;
 }
 
 function collectionContextMenuAction(action, param) {
@@ -54,6 +65,7 @@ function collectionContextMenuAction(action, param) {
 const collectionActions = {
     addChildCollection: collectionId => createChildCollection(collectionId),
     edit: collectionId => editCollection(collectionId),
+    removeParent: collectionId => removeCollectionParent(collectionId),
     delete: collectionId => deleteCollection(collectionId)
 };
 
@@ -119,6 +131,13 @@ function handleCollectionKeyboardShortcuts(e) {
             case 'c':
                 e.preventDefault();
                 createChildCollection(selectedCollectionId);
+                break;
+            case 'u':
+                e.preventDefault();
+                const collection = findCollection(selectedCollectionId);
+                if (collection && collection.parent) {
+                    removeCollectionParent(selectedCollectionId);
+                }
                 break;
         }
     }

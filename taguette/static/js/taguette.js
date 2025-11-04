@@ -1544,7 +1544,44 @@ function deleteCollection(collectionId) {
             .then(function() {
             })
             .catch(function(error) {
+                log('Error deleting collection:', 'error', {error});
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+            });
+    }, true);
+}
+
+function removeCollectionParent(collectionId) {
+    const collection = findCollection(collectionId);
+    if (!collection) {
+        log('Collection not found:', 'error', {collectionId});
+        return;
+    }
+    
+    if (!collection.parent) {
+        log('Collection has no parent to remove:', 'warn', {collectionId});
+        return;
+    }
+    
+    const parentCollection = findCollection(collection.parent);
+    const parentName = parentCollection ? parentCollection.name : '';
+    
+    showConfirm(gettext("Are you sure you want to remove collection '%(name)s' from parent '%(parent)s'?", {name: collection.name, parent: parentName}), function () {
+        const data = {
+            name: collection.name,
+            description: collection.description || '',
+            document_ids: collection.document_ids || [],
+            parent_id: null
+        };
+        
+        const url = `/api/project/${project_id}/collection/${collectionId}`;
+        
+        postJSON(url, data)
+            .then(function(response) {
+                log('Collection parent removed successfully');
+            })
+            .catch(function(error) {
+                log('Error removing collection parent:', 'error', {error});
+                showAlert(gettext('Error removing collection parent: ') + (error.error || error), 'error');
             });
     }, true);
 }
@@ -1604,6 +1641,11 @@ function createCollection() {
         
         if (!name) {
             showAlert(gettext('Collection name is required'), 'error');
+            return;
+        }
+        
+        if (collectionId && parentId && parseInt(collectionId, 10) === parseInt(parentId, 10)) {
+            showAlert(gettext('A collection cannot be its own parent.'), 'error');
             return;
         }
         
