@@ -20,6 +20,7 @@ import taguette
 from . import exact_version
 from . import database
 from .web import make_app
+from scripts.make_theme import compile_scss
 
 
 logger = logging.getLogger(__name__)
@@ -559,6 +560,10 @@ def main():
         loop.run_sync(lambda: _set_password(admin))
         db.commit()
     db.close()
+
+    if config['THEME']:
+        logger.info("Recompiling SCSS!")
+        compile_scss(config['THEME'])
 
     if args.debug:
         logger.warning("Debug mode is ON")
