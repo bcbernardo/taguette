@@ -314,24 +314,19 @@ function buildCollectionPath(collectionId) {
 
 // ADD COLLECTION WITH SELECTED DOCUMENTS
 let selectedDocuments = new Set();
+let originalSelectedDocuments = new Set();
 
 function resetCollectionUI() {
-    // Clear selected documents
     selectedDocuments.clear();
+    originalSelectedDocuments.clear();
     
-    // Clear search input
     const searchInput = document.getElementById('collection-documents-search');
     if (searchInput) {
         searchInput.value = '';
     }
     
-    // Clear selected documents display
-    const selectedContainer = document.getElementById('collection-selected-documents');
-    if (selectedContainer) {
-        selectedContainer.style.display = 'none';
-    }
+    updateSelectedDocumentsDisplay();
     
-    // Reset form
     const form = document.getElementById('collection-add-form');
     if (form) {
         form.reset();
@@ -342,15 +337,18 @@ function populateDocumentsList(collectionId = null) {
     const docListDiv = document.getElementById('collection-add-documents-list');
     docListDiv.innerHTML = '';
     
-    // If editing a collection, pre-select existing documents
     if (collectionId) {
         const collection = findCollection(parseInt(collectionId));
         if (collection && collection.document_ids) {
             selectedDocuments.clear();
+            originalSelectedDocuments.clear();
             collection.document_ids.forEach(docId => {
                 selectedDocuments.add(docId);
+                originalSelectedDocuments.add(docId);
             });
         }
+    } else {
+        originalSelectedDocuments.clear();
     }
     
     // legend
@@ -456,10 +454,7 @@ function populateDocumentsList(collectionId = null) {
     
     setupCollectionSearch();
     
-    // Update selected documents display if we're editing
-    if (collectionId) {
-        updateSelectedDocumentsDisplay();
-    }
+    updateSelectedDocumentsDisplay();
 }
 
 function setupCollectionSearch() {
@@ -494,13 +489,20 @@ function handleCollectionSearch() {
 function updateSelectedDocumentsDisplay() {
     const selectedContainer = document.getElementById('collection-selected-documents');
     const selectedList = document.getElementById('collection-selected-documents-list');
+    const resetButton = document.getElementById('collection-reset-selection');
     
     if (selectedDocuments.size === 0) {
         selectedContainer.style.display = 'none';
+        if (resetButton) {
+            resetButton.style.display = 'none';
+        }
         return;
     }
     
     selectedContainer.style.display = 'block';
+    if (resetButton) {
+        resetButton.style.display = 'inline-block';
+    }
     selectedList.innerHTML = '';
     
     selectedDocuments.forEach(docId => {
@@ -533,6 +535,22 @@ function updateSelectedDocumentsDisplay() {
         
         selectedList.appendChild(badge);
     });
+}
+
+function resetDocumentSelection() {
+    const collectionId = document.getElementById('collection-add-id')?.value;
+    
+    if (collectionId && originalSelectedDocuments.size > 0) {
+        selectedDocuments.clear();
+        originalSelectedDocuments.forEach(docId => {
+            selectedDocuments.add(docId);
+        });
+    } else {
+        selectedDocuments.clear();
+    }
+    
+    updateSelectedDocumentsDisplay();
+    populateDocumentsList(collectionId || null);
 }
 
 // ADD DOCUMENT WITH DISPATCH INTERFACE

@@ -1778,6 +1778,13 @@ function createCollection() {
         }
     });
 
+    $('#collection-reset-selection').on('click', function(e) {
+        e.preventDefault();
+        if (typeof resetDocumentSelection === 'function') {
+            resetDocumentSelection();
+        }
+    });
+
 function handleDocumentSearch(filterText) {
     function searchInChildren(item) {
         const filteredChildren = [];

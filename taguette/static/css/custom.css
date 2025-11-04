@@ -1408,6 +1408,36 @@ body #treeview-documents span.icon {
     color: #dc3545;
 }
 
+#collection-add-modal .modal-body .col-md-4,
+#collection-add-modal .modal-body .col-md-8 {
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    padding-right: 1.5rem;
+}
+
+#collection-add-modal .modal-body .col-md-8:last-child {
+    border-right: none;
+    padding-left: 1.5rem;
+    padding-right: 0;
+}
+
+@media (max-width: 767.98px) {
+    #collection-add-modal .modal-body .col-md-4,
+    #collection-add-modal .modal-body .col-md-8 {
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #collection-add-modal .modal-body .col-md-8:last-child {
+        border-bottom: none;
+        padding-left: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+}
+
 /* Document file item styles */
 .document-file-item {
     background-color: #f8f9fa;
