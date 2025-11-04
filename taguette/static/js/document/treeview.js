@@ -148,49 +148,15 @@ function customDocumentNodeRow() {
 
                 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
                 const cmdKey = isMac ? 'Cmd' : 'Ctrl';
-                const tooltipText = gettext('Click to open • %(key)s+Click to select', {key: cmdKey});
+                const tooltipText = gettext('Click to open • %(key)s+Click to select • Right-click for options', {key: cmdKey});
                 const tooltip = `${node.text}\n\n${tooltipText}`;
                 element.attr('title', tooltip);
                 
                 if (node.document_id === current_document) {
                     element.addClass('document-link-current');
                 }
-            
-                const doc = documents[node.document_id];
-                if (doc) {
-                    const favoriteIconClass = doc.favorite === true ? 'fas fa-star' : 'far fa-star';
-                    const favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
-                    
-                    const editIcon = $(`
-                        <a href="#" class="edit-icon" title="${gettext('Edit')}" style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%);">
-                            <i class="fas fa-edit" aria-hidden="true"></i>
-                        </a>
-                    `);
-                    
-                    const favoriteIcon = $(`
-                        <a href="#" class="favorite-icon" title="${favoriteTitle}" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%);">
-                            <i id="favorite-icon-${node.document_id}" class="${favoriteIconClass}" aria-hidden="true"></i>
-                        </a>
-                    `);
-                    
-                    editIcon.on('click', function(e) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        editDocument(node.document_id);
-                        return false;
-                    });
-                    
-                    favoriteIcon.on('click', function(e) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        toggleFavorite(node.document_id);
-                        return false;
-                    });
-                    
-                    element.append(editIcon);
-                    element.append(favoriteIcon);
-                }
-                
+                element.addClass('document-context-menu');
+
                 linkDocument(element[0], node.document_id);
             }
             
@@ -251,13 +217,6 @@ function initDocumentsTreeview(filteredCollections = null) {
             event.stopImmediatePropagation();
             treeview_documents.treeview('collapseNode', [node.nodeId, {silent: true}]);
             return false;
-        }
-
-        if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
-            const hasDocuments = node.nodes && node.nodes.some(n => n.document_id);
-            if (hasDocuments) {
-                showMultiSelectTip();
-            }
         }
     });
     
@@ -425,28 +384,6 @@ function hideDragHint() {
     $('#drag-hint').fadeOut(200, function() {
         $(this).remove();
     });
-}
-
-function showMultiSelectTip() {
-    $('#multi-select-tip').remove();
-
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-    const cmdKey = isMac ? 'Cmd' : 'Ctrl';
-    const message = gettext('Tip: Hold %s and click to select multiple documents').replace('%s', cmdKey);
-
-    const tip = $('<div id="multi-select-tip" class="alert alert-info alert-dismissible fade show" role="alert">' +
-        '<i class="fas fa-lightbulb me-2"></i>' +
-        '<strong>' + message + '</strong>' +
-        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-        '</div>');
-
-    $('#treeview-documents').before(tip);
-
-    setTimeout(() => {
-        tip.fadeOut(400, function() {
-            $(this).remove();
-        });
-    }, 5000);
 } 
 
 function addDocumentDragDrop() {
@@ -569,4 +506,38 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
         }
     );
 }
+
+$(document).ready(function() {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const cmdKey = isMac ? 'Cmd' : 'Ctrl';
+
+    const helpContent = `
+        <div class="text-start">
+            <p class="mb-2"><strong>${gettext('Right-click on a collection:')}</strong></p>
+            <ul class="mb-2 ps-3">
+                <li>${gettext('Add sub-collection')}</li>
+                <li>${gettext('Edit collection')}</li>
+                <li>${gettext('Remove parent')}</li>
+                <li>${gettext('Delete collection')}</li>
+            </ul>
+            <p class="mb-2"><strong>${gettext('Right-click on a document:')}</strong></p>
+            <ul class="mb-2 ps-3">
+                <li>${gettext('Edit document')}</li>
+                <li>${gettext('Toggle favorite')}</li>
+                <li>${gettext('Delete document')}</li>
+            </ul>
+            <p class="mb-2"><strong>${gettext('Select multiple documents:')}</strong></p>
+            <ul class="mb-0 ps-3">
+                <li>${gettext('Hold %(key)s and click documents', {key: cmdKey})}</li>
+                <li>${gettext('Drag selected documents to a collection')}</li>
+            </ul>
+        </div>
+    `;
+
+    const popover = new bootstrap.Popover('#treeview-help-icon', {
+        content: helpContent,
+        html: true,
+        sanitize: false
+    });
+});
 
