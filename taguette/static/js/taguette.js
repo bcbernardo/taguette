@@ -937,6 +937,8 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
             // Update document export button
             updateDocumentExportButton(project_id, document_id);
 
+            updateLinksTarget(document_contents);
+
             // Scroll up
             scrollToHighlight(highlight_id, search_text);
         })
@@ -972,15 +974,38 @@ function scrollToHighlight(highlight_id, search_text=null) {
         // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
             const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
-            let count_lines = 0;
-            data_highlight_selector.each(function(){
-                const line_id = $(this).data('parent-line-id'),
-                    div_to_highlight = $(`div[data-line--id="${line_id}"]`);
-                div_to_highlight.addClass('flash-once');
-                if(count_lines++ === 0) {
-                    scroll_position = div_to_highlight.offset().top;
-                }
-            });
+            switch (currentHighlightVersion) {
+                case 'v1':
+                    let count_lines = 0;
+                    data_highlight_selector.each(function(){
+                        const line_id = $(this).data('parent-line-id'),
+                            div_to_highlight = $(`div[data-line--id="${line_id}"]`);
+                        div_to_highlight.addClass('flash-once');
+                        if(count_lines++ === 0) {
+                            scroll_position = div_to_highlight.offset().top;
+                        }
+                    });
+                    break;
+                case 'v2':
+                    // Find start and end lines
+                    if(data_highlight_selector.length > 0) {
+                        let start_positon = data_highlight_selector.first().offset().top,
+                            end_positon = data_highlight_selector.last().offset().top,
+                            highlight_next = false;
+                        $('#ntv-document-content p').each(function(){
+                            let start_p = $(this).offset().top,
+                                end_p = start_p + $(this).outerHeight();
+                            if(((start_p <= start_positon) && (end_p >= start_positon)) || highlight_next) {
+                                $(this).addClass('flash-once');
+                                highlight_next = true;
+                            }
+                            if((start_p <= end_positon) && (end_p >= end_positon)) {
+                                highlight_next = false;
+                            }
+                        });
+                        scroll_position = data_highlight_selector.offset().top - 25;
+                    }
+            }
         }
 
         if(search_text !== null) {
@@ -1017,6 +1042,12 @@ function scrollToHighlight(highlight_id, search_text=null) {
             behavior: 'instant'
         });
     }, 0);
+}
+
+function updateLinksTarget(document_contents) {
+    $("A", document_contents).each(function(){
+        $(this).attr('target', '_blank');
+    });
 }
 
 function updateDocumentExportButton(project_id, document_id) {

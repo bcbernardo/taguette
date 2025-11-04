@@ -562,6 +562,24 @@ function isFirefox() {
     return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 }
 
+function hasVerticalScrollbar() {
+    // Get the total height of the document content
+    const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight,
+        document.body.clientHeight,
+        document.documentElement.clientHeight
+    );
+
+    // Get the height of the viewport (visible area)
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    // Compare the document height with the viewport height
+    return documentHeight > viewportHeight;
+}
+
 /*
  * Apply scroll behavior to all pages
  * Previously page-project only (taguette.js)
@@ -573,7 +591,7 @@ window.addEventListener('load', function() {
         let isScrollUp = scrollPos > document.documentElement.scrollTop;
         if(document.documentElement.scrollTop < 50 || isScrollUp) {
             document.body.classList.remove('scrolled');
-        } else if(!document.body.classList.contains('scrolled')) {
+        } else if(hasVerticalScrollbar() && !document.body.classList.contains('scrolled')) {
             document.body.classList.add('scrolled');
         }
         scrollPos = document.documentElement.scrollTop;

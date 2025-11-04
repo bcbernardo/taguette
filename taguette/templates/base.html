@@ -73,6 +73,11 @@
                                 <option value="{{ lang_code }}"{% if lang_code == current_language %} selected{% endif %}>{{ lang_name }}</option>
                             {% endfor %}
                         </select>
+                        {% if active_page %}
+                            <input type="hidden" name="url" value="{{ reverse_url(active_page) }}" />
+                        {% else %}
+                            <input type="hidden" name="url" value="{{ reverse_url("index") }}" />
+                        {% endif %}
                     </form>
                 </li>
                 {% endif %}
