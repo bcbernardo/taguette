@@ -134,7 +134,10 @@ class CookiesPrompt(BaseHandler):
     @PROM_REQUESTS.sync("cookies_prompt")
     def get(self):
         return self.render(
-            "cookies_prompt.html", next=self.get_argument("next", "")
+            "cookies_prompt.html",
+            next=self.get_argument("next", ""),
+            languages=get_languages(),
+            current_language=self.language
         )
 
     @PROM_REQUESTS.sync("cookies_prompt")
