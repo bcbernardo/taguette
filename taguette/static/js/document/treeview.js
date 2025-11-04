@@ -139,13 +139,18 @@ function customDocumentNodeRow() {
         },
         customizeNode: function(element, node, tree) {
             element.attr('id', `treeview-node-${node.id}`);
-            element.attr('title', node.text);
-            
+
             if (node.document_id) {
                 element.attr('data-document-id', node.document_id);
                 element.attr('id', `document-link-${node.document_id}`);
                 element.addClass('document-link');
                 element.css('position', 'relative');
+
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const cmdKey = isMac ? 'Cmd' : 'Ctrl';
+                const tooltipText = gettext('Click to open • %(key)s+Click to select', {key: cmdKey});
+                const tooltip = `${node.text}\n\n${tooltipText}`;
+                element.attr('title', tooltip);
                 
                 if (node.document_id === current_document) {
                     element.addClass('document-link-current');
@@ -230,7 +235,7 @@ function initDocumentsTreeview(filteredCollections = null) {
     };
     
     options.multiSelect = true;
-    
+
     treeview_documents.treeview(options);
     
     // If filtering, expand all nodes to show search results
@@ -240,7 +245,6 @@ function initDocumentsTreeview(filteredCollections = null) {
         treeview_documents.treeview('collapseAll');
     }
     
-    // Prevent expanding empty collections
     treeview_documents.on('nodeExpanded', function(event, node) {
         if (node.nodes && node.nodes.length === 1 && node.nodes[0].isDummy) {
             event.preventDefault();
@@ -248,37 +252,37 @@ function initDocumentsTreeview(filteredCollections = null) {
             treeview_documents.treeview('collapseNode', [node.nodeId, {silent: true}]);
             return false;
         }
+
+        if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
+            const hasDocuments = node.nodes && node.nodes.some(n => n.document_id);
+            if (hasDocuments) {
+                showMultiSelectTip();
+            }
+        }
     });
     
-    // Re-add drag and drop after treeview changes (like tags do)
     treeview_documents.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
-        // Clear selection when collapsing or expanding
         if (event.type === 'nodeCollapsed' || event.type === 'nodeExpanded') {
             deselectAllDocumentNodes();
             hideDragHint();
         }
-        
-        // Show/hide drag hint based on selection count
+
         if (event.type === 'nodeSelected' || event.type === 'nodeUnselected') {
             const selectedNodes = treeview_documents.treeview('getSelected');
-            const selectedDocuments = selectedNodes.filter(node => 
+            const selectedDocuments = selectedNodes.filter(node =>
                 node.id && node.id.startsWith('document_')
             );
-            
+
             if (event.type === 'nodeSelected' && node.id && node.id.startsWith('document_')) {
-                // Show hint next to the last selected document
                 showDragHint(selectedDocuments.length, node.nodeId);
             } else if (selectedDocuments.length <= 1) {
-                // Hide hint if only one or no documents selected
                 hideDragHint();
             }
         }
-        
-        // Add a delay to ensure the treeview recreation is finished
+
         setTimeout(function () {
             addDocumentDragDrop();
-            
-            // Update folder icon based on expanded state - ONLY for collections in documents treeview
+
             if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
                 const nodeElement = $('#treeview-documents').find(`li[data-nodeid="${node.nodeId}"]`);
                 const folderIcon = nodeElement.find('.node-icon');
@@ -290,7 +294,6 @@ function initDocumentsTreeview(filteredCollections = null) {
         }, 10);
     });
     
-    // Add drag and drop functionality
     setTimeout(function() {
         addDocumentDragDrop();
     }, 10);
@@ -422,6 +425,28 @@ function hideDragHint() {
     $('#drag-hint').fadeOut(200, function() {
         $(this).remove();
     });
+}
+
+function showMultiSelectTip() {
+    $('#multi-select-tip').remove();
+
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const cmdKey = isMac ? 'Cmd' : 'Ctrl';
+    const message = gettext('Tip: Hold %s and click to select multiple documents').replace('%s', cmdKey);
+
+    const tip = $('<div id="multi-select-tip" class="alert alert-info alert-dismissible fade show" role="alert">' +
+        '<i class="fas fa-lightbulb me-2"></i>' +
+        '<strong>' + message + '</strong>' +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>');
+
+    $('#treeview-documents').before(tip);
+
+    setTimeout(() => {
+        tip.fadeOut(400, function() {
+            $(this).remove();
+        });
+    }, 5000);
 } 
 
 function addDocumentDragDrop() {
@@ -529,18 +554,19 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
         log('Target collection ID not provided');
         return;
     }
-    
+
     const updatedDocument = {
         id: documentId,
         collections: targetCollectionId !== null ? [targetCollectionId] : []
     };
-    
-    submitDocumentUpdate(updatedDocument, 
+
+    submitDocumentUpdate(updatedDocument,
         (response) => {
             log('Document moved successfully:', 'success', {response});
-        }, 
+        },
         (error) => {
             log('Error moving document:', 'error', {error});
         }
     );
 }
+
