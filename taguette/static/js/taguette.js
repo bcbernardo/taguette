@@ -1539,15 +1539,83 @@ function deleteCollection(collectionId) {
         return;
     }
     
-    showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
-        deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
+    if (collection.children && collection.children.length > 0) {
+        showCollectionDeleteOptions(collection);
+    } else {
+        showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
+            deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
+                .then(function() {
+                })
+                .catch(function(error) {
+                    log('Error deleting collection:', 'error', {error});
+                    showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+                });
+        }, true);
+    }
+}
+
+function showCollectionDeleteOptions(collection, successCallback = null) {
+    const message = gettext("The collection '%(name)s' has subcollections. How do you want to proceed?", {name: collection.name});
+    
+    const legend = `
+        <div class="alert alert-info mt-3 mb-0">
+            <strong>${gettext('Delete all')}:</strong> ${gettext('Deletes this collection and all its subcollections recursively.')}<br>
+            <strong>${gettext('Delete only')}:</strong> ${gettext('Deletes only this collection. Subcollections will become root collections (parent removed).')}
+        </div>
+    `;
+    
+    $('#confirmMessage').html(message + legend);
+    $('#confirmModalLabel').text(gettext('Delete collection'));
+    
+    const originalFooter = $('#confirmModal .modal-footer').html();
+    
+    const customFooter = `
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${gettext('Cancel')}</button>
+        <button type="button" class="btn btn-danger" id="deleteAllButton">${gettext('Delete all')}</button>
+        <button type="button" class="btn btn-warning" id="deleteOnlyButton">${gettext('Delete only')}</button>
+    `;
+    
+    $('#confirmModal .modal-footer').html(customFooter);
+    $('#confirmModal').modal('show');
+    
+    $('#deleteAllButton, #deleteOnlyButton').off('click');
+    
+    $('#deleteAllButton').on('click', function() {
+        $('#confirmModal').modal('hide');
+        deleteURL(`/api/project/${project_id}/collection/${collection.id}`, {delete_mode: 'cascade'})
             .then(function() {
+                log('Collection and children deleted successfully');
+                if (successCallback) {
+                    successCallback();
+                }
             })
             .catch(function(error) {
                 log('Error deleting collection:', 'error', {error});
                 showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
             });
-    }, true);
+        $('#confirmModal .modal-footer').html(originalFooter);
+    });
+    
+    $('#deleteOnlyButton').on('click', function() {
+        $('#confirmModal').modal('hide');
+        deleteURL(`/api/project/${project_id}/collection/${collection.id}`, {delete_mode: 'orphan'})
+            .then(function() {
+                log('Collection deleted, children orphaned successfully');
+                if (successCallback) {
+                    successCallback();
+                }
+            })
+            .catch(function(error) {
+                log('Error deleting collection:', 'error', {error});
+                showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+            });
+        $('#confirmModal .modal-footer').html(originalFooter);
+    });
+    
+    $('#confirmModal').on('hidden.bs.modal', function() {
+        $('#confirmModal .modal-footer').html(originalFooter);
+        $('#confirmModal').off('hidden.bs.modal');
+    });
 }
 
 function removeCollectionParent(collectionId) {
@@ -1689,17 +1757,25 @@ function createCollection() {
         const collection = findCollection(parseInt(collectionId));
         if (!collection) return;
         
-        showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function() {
-            deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
-                .then(function() {
-                    $('#collection-add-modal').modal('hide');
-                    $('#collection-add-form')[0].reset();
-                    showAlert(gettext('Collection deleted!'), 'success');
-                })
-                .catch(function(error) {
-                    showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
-                });
-        });
+        if (collection.children && collection.children.length > 0) {
+            showCollectionDeleteOptions(collection, function() {
+                $('#collection-add-modal').modal('hide');
+                $('#collection-add-form')[0].reset();
+                showAlert(gettext('Collection deleted!'), 'success');
+            });
+        } else {
+            showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function() {
+                deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
+                    .then(function() {
+                        $('#collection-add-modal').modal('hide');
+                        $('#collection-add-form')[0].reset();
+                        showAlert(gettext('Collection deleted!'), 'success');
+                    })
+                    .catch(function(error) {
+                        showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+                    });
+            }, true);
+        }
     });
 
 function handleDocumentSearch(filterText) {
