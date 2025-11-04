@@ -597,3 +597,26 @@ window.addEventListener('load', function() {
         scrollPos = document.documentElement.scrollTop;
     });
 });
+function initHelpPopover(elementId, sections) {
+    const contentParts = sections.map((section, index) => {
+        const itemsList = section.items.map(item => `<li>${gettext(item)}</li>`).join('');
+        const marginClass = index === sections.length - 1 ? 'mb-0' : 'mb-2';
+        return `
+            <p class="mb-2"><strong>${gettext(section.title)}</strong></p>
+            <ul class="${marginClass} ps-3">
+                ${itemsList}
+            </ul>
+        `;
+    }).join('');
+
+    const helpContent = `<div class="text-start">${contentParts}</div>`;
+
+    const popoverElement = document.getElementById(elementId);
+    if (popoverElement) {
+        new bootstrap.Popover(popoverElement, {
+            content: helpContent,
+            html: true,
+            sanitize: false
+        });
+    }
+}

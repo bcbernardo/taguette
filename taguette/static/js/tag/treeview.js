@@ -479,7 +479,9 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
-            element.attr('title', node.text);
+            const tooltipText = gettext('Click to filter • Right-click for options');
+            const tooltip = `${node.text}\n\n${tooltipText}`;
+            element.attr('title', tooltip);
             element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
                 : `tag-node-${node.id}`);
             if (isTagContextMenu) {
@@ -501,5 +503,27 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
                 }
             }).prependTo(element);
         }
-    }
+    };
 }
+
+$(document).ready(function() {
+    const sections = [
+        {
+            title: 'Right-click on a code:',
+            items: [
+                'Add child code',
+                'Edit code',
+                'Merge codes',
+                'Delete code'
+            ]
+        },
+        {
+            title: 'Click on a code:',
+            items: [
+                'Filter highlights by this code'
+            ]
+        }
+    ];
+
+    initHelpPopover('tag-treeview-help-icon', sections);
+});

@@ -511,33 +511,33 @@ $(document).ready(function() {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const cmdKey = isMac ? 'Cmd' : 'Ctrl';
 
-    const helpContent = `
-        <div class="text-start">
-            <p class="mb-2"><strong>${gettext('Right-click on a collection:')}</strong></p>
-            <ul class="mb-2 ps-3">
-                <li>${gettext('Add sub-collection')}</li>
-                <li>${gettext('Edit collection')}</li>
-                <li>${gettext('Remove parent')}</li>
-                <li>${gettext('Delete collection')}</li>
-            </ul>
-            <p class="mb-2"><strong>${gettext('Right-click on a document:')}</strong></p>
-            <ul class="mb-2 ps-3">
-                <li>${gettext('Edit document')}</li>
-                <li>${gettext('Toggle favorite')}</li>
-                <li>${gettext('Delete document')}</li>
-            </ul>
-            <p class="mb-2"><strong>${gettext('Select multiple documents:')}</strong></p>
-            <ul class="mb-0 ps-3">
-                <li>${gettext('Hold %(key)s and click documents', {key: cmdKey})}</li>
-                <li>${gettext('Drag selected documents to a collection')}</li>
-            </ul>
-        </div>
-    `;
+    const sections = [
+        {
+            title: 'Right-click on a collection:',
+            items: [
+                'Add sub-collection',
+                'Edit collection',
+                'Remove parent',
+                'Delete collection'
+            ]
+        },
+        {
+            title: 'Right-click on a document:',
+            items: [
+                'Edit document',
+                'Toggle favorite',
+                'Delete document'
+            ]
+        },
+        {
+            title: 'Select multiple documents:',
+            items: [
+                `Hold ${cmdKey} and click documents`,
+                'Drag selected documents to a collection'
+            ]
+        }
+    ];
 
-    const popover = new bootstrap.Popover('#treeview-help-icon', {
-        content: helpContent,
-        html: true,
-        sanitize: false
-    });
+    initHelpPopover('treeview-help-icon', sections);
 });
 

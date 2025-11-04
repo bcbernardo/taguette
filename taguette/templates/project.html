@@ -73,6 +73,13 @@
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
                 </div>
                 <p id="tag-selection-return"><a href="">{% trans %}Back to highlights{% endtrans %}</a></p>
+                <div class="d-flex align-items-center justify-content-end mb-2 px-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="tag-treeview-help-icon"
+                        data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus"
+                        data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
                 <div id="treeview-tags"></div>
                 <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
                 </div>
