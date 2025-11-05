@@ -21,65 +21,66 @@
 @import 'components/modal';
 @import 'components/project_card';
 @import 'components/tag';
+@import 'components/treeview';
 @import 'components/context_menu';
 
 /* Add Taguette font */
 @font-face {
- font-family: $font-family-brand;
- font-display: swap;
- src: url(../webfonts/BadScript.ttf);
+    font-family: $font-family-brand;
+    font-display: swap;
+    src: url(../webfonts/BadScript.ttf);
 }
 
 /* Add body font */
 @font-face {
-  font-family: $font-family-system;
-  font-display: fallback;
-  src: url(../webfonts/Montserrat-Light.ttf);
+    font-family: $font-family-system;
+    font-display: fallback;
+    src: url(../webfonts/Montserrat-Light.ttf);
 }
 
 /* Change link colors */
 .container-body a:not(.btn) {
-  color: $color-tertiary;
+    color: $color-tertiary;
 }
 
 /* Disabled links */
 #document-contents a:not([href]):not(.highlight) {
-  color: #216490;
+    color: #216490;
 }
 
 /* Change body font */
 body {
-  font-family: $font-family-body !important;
-  font-size: $font-size-body !important;
-  transition: all 0.3s ease-in-out;
-  background-color: $color-bg;
-  color: $color-bg-text;
+    font-family: $font-family-body !important;
+    font-size: $font-size-body !important;
+    transition: all 0.3s ease-in-out;
+    background-color: $color-bg;
+    color: $color-bg-text;
 }
 
 /* Some space before content */
 .container-body {
-  padding-top: 7em;
+    padding-top: 7em;
 }
 
 body.scrolled .container-body {
-  padding-top: 0;
+    padding-top: 0;
 }
 
-    /* Border for the tab container */
+/* Border for the tab container */
 .tab-content {
-  border-style: solid;
-  border-width: 1px;
-  border-color: $color-bg #dee2e6 #dee2e6 #dee2e6;
-  padding: 0.4em;
+    border-style: solid;
+    border-width: 1px;
+    border-color: $color-bg #dee2e6 #dee2e6 #dee2e6;
+    padding: 0.4em;
 }
 
 /* Left pane scrolls on overflow */
 div.sticky-top {
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: calc(100vh - 14em);
-  top: 6.25em;
-  transition: all 0.3s ease-in-out;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: calc(100vh - 14em);
+    top: 6.25em;
+    transition: all 0.3s ease-in-out;
 }
 
 body.scrolled div.sticky-top {
@@ -89,35 +90,38 @@ body.scrolled div.sticky-top {
 }
 
 a.document-link-a {
-  word-break: break-all;
+    word-break: break-all;
 }
 
 /* Work-around to make a whole element clickable while it contains links */
 .overlay-outer {
-  position: relative;
+    position: relative;
 }
 
 .overlay-bottom {
-  position: absolute;
-  left: 0; top: 0; bottom: 0; right: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
 }
 
 .overlay-top {
-  position: relative;
-  pointer-events: none;
-  z-index: 1;
+    position: relative;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .overlay-top a {
-  pointer-events: all;
+    pointer-events: all;
 }
 
 li.document-link-current {
-  background-color: #F8F9FA;
+    background-color: #F8F9FA;
 }
 
 li.document-link-current a.document-link-a {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 #ul-search-results {
@@ -146,18 +150,19 @@ span.pagination {
 }
 
 .document-view {
-  border: 2px solid #dee2e6;
-  padding: 0.5em 0.5em 0.5em 0.5em;
-  position: relative;
-  text-align: initial; /* Reset alignment so RTL works */
+    border: 2px solid #dee2e6;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    position: relative;
+    text-align: initial;
+    /* Reset alignment so RTL works */
 }
 
 li.tag-current {
-  background-color: $color-toolbar;
+    background-color: $color-toolbar;
 }
 
 .backlight {
-  color: #bbb;
+    color: #bbb;
 }
 
 /*#export-button {*/
@@ -172,52 +177,61 @@ li.tag-current {
 }
 
 #document-view .flash-once {
-  animation: flashOnceBackground 2s;
+    animation: flashOnceBackground 2s;
 }
-@keyframes flashOnceBackground{
-  0%		{ background-color: $color-bg;}
-  50%		{ background-color: $color-flash;}
-  100%	        { background-color: $color-bg;}
+
+@keyframes flashOnceBackground {
+    0% {
+        background-color: $color-bg;
+    }
+
+    50% {
+        background-color: $color-flash;
+    }
+
+    100% {
+        background-color: $color-bg;
+    }
 }
 
 #hlinfo {
-  display: none;
-  position: absolute;
-  background-color: white;
-  border: 1px solid grey;
-  padding: 0.2em;
-  z-index: 9999999;
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid grey;
+    padding: 0.2em;
+    z-index: 9999999;
 }
 
 #hlinfo em {
-  text-decoration: underline;
-  font-style: normal;
+    text-decoration: underline;
+    font-style: normal;
 }
 
 .list-group-item-primary a {
-  color: #404041;
+    color: #404041;
 }
 
 .list-group .sublist {
-  padding-left: 0;
+    padding-left: 0;
     margin: 5px -20px -12px 5px;
     border-top: 1px solid #dee2e6;
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .list-group .sublist li {
-  padding: 12px 20px;
+    padding: 12px 20px;
 }
 
 .expand-marker {
-  width: 7px;
+    width: 7px;
 }
 
 .highlight-entry {
-  border: 3px dotted rgba(0,0,0,.125);
-  margin: 1rem 0;
-  padding: 1rem 0.6rem 1rem 0.6rem;
+    border: 3px dotted rgba(0, 0, 0, .125);
+    margin: 1rem 0;
+    padding: 1rem 0.6rem 1rem 0.6rem;
     border-radius: 10px;
 }
 
@@ -247,7 +261,8 @@ li.tag-current {
 
 @media (max-width: 768px) {
 
-    .col-md-2-5, .col-md-7-5 {
+    .col-md-2-5,
+    .col-md-7-5 {
         width: 100% !important;
         margin-bottom: 1rem;
     }
@@ -293,45 +308,48 @@ li.tag-current {
 }
 
 .expand-icon {
-  color: $color-tertiary;
-  min-width: 22px;
-  padding: 2px;
-  border-radius: 5px;
+    color: $color-tertiary;
+    min-width: 22px;
+    padding: 2px;
+    border-radius: 5px;
 }
 
 .expand-icon:hover {
-  border: 0.25px solid $color-tertiary;
+    border: 0.25px solid $color-tertiary;
 }
 
 /* --------------------RESPONSIVE DISPLAY HEADINGS--------------------------*/
 @media (max-width: 575.98px) {
-  .display-1 {
-  font-size: 3rem;
-  font-weight: 300;
-  line-height: 1.0;
-  }
-  .display-2 {
-    font-size: 2.75rem;
-    font-weight: 300;
-    line-height: 1.0;
-  }
-  .display-3 {
-    font-size: 2.25rem;
-    font-weight: 300;
-    line-height: 1.0;
-  }
-  .display-4 {
-    font-size: 1.75rem;
-    font-weight: 300;
-    line-height: 1.0;
-  }
+    .display-1 {
+        font-size: 3rem;
+        font-weight: 300;
+        line-height: 1.0;
+    }
+
+    .display-2 {
+        font-size: 2.75rem;
+        font-weight: 300;
+        line-height: 1.0;
+    }
+
+    .display-3 {
+        font-size: 2.25rem;
+        font-weight: 300;
+        line-height: 1.0;
+    }
+
+    .display-4 {
+        font-size: 1.75rem;
+        font-weight: 300;
+        line-height: 1.0;
+    }
 }
 
 /*========================
 Index project view custom
 =========================*/
 
-.main{
+.main {
     font-family: $font-family-system;
     font-size: 1rem;
     font-weight: 400;
@@ -384,7 +402,7 @@ button#start-tutorial {
 
 .scroll-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .scroll-btn {
@@ -409,13 +427,335 @@ line {
 /* Custom Logo Override */
 
 @if variable-exists(logo-main) {
-  .navbar-brand .logo.not-scrolled {
-    background-image: url($logo-main);
-  }
+    .navbar-brand .logo.not-scrolled {
+        background-image: url($logo-main);
+    }
 }
 
 @if variable-exists(logo-horizontal) {
-  .navbar-brand .logo.scrolled {
-    background-image: url($logo-horizontal);
-  }
+    .navbar-brand .logo.scrolled {
+        background-image: url($logo-horizontal);
+    }
+}
+
+/* ============================================
+   Collection Modal Styles
+   ============================================ */
+
+#collection-add-modal .modal-body .col-md-4,
+#collection-add-modal .modal-body .col-md-8 {
+    border-right: 1px solid $color-border-light;
+    padding-right: 1.5rem;
+}
+
+#collection-add-modal .modal-body .col-md-8:last-child {
+    border-right: none;
+    padding-left: 1.5rem;
+    padding-right: 0;
+}
+
+@media (max-width: 767.98px) {
+
+    #collection-add-modal .modal-body .col-md-4,
+    #collection-add-modal .modal-body .col-md-8 {
+        border-right: none;
+        border-bottom: 1px solid $color-border-light;
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #collection-add-modal .modal-body .col-md-8:last-child {
+        border-bottom: none;
+        padding-left: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+}
+
+/* Hierarchical collection display in document dispatch */
+#document-files-list select option {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+#document-files-list select option[style*="padding-left"] {
+    color: $color-gray-500;
+    font-style: italic;
+}
+
+/* Document selection in collection modal */
+.document-item {
+    border: 1px solid $color-gray-300;
+    background-color: $color-gray-100;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.document-item:hover:not(.selected) {
+    background-color: $color-gray-200;
+}
+
+.document-item.selected {
+    background-color: $color-highlight-bg !important;
+    color: $color-gray-600;
+    border-color: $color-highlight-border;
+}
+
+/* Selected documents display */
+.selected-document-badge {
+    display: inline-block;
+    background-color: $color-highlight-bg;
+    color: $color-gray-600;
+    border: 1px solid $color-highlight-border;
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0.125rem;
+    font-size: 0.875rem;
+}
+
+.selected-document-badge .remove-btn {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    color: $color-gray-500;
+}
+
+.selected-document-badge .remove-btn:hover {
+    color: $color-danger;
+}
+
+/* ============================================
+   Document File Item Styles
+   ============================================ */
+
+.document-file-item {
+    background-color: $color-gray-100;
+    transition: background-color 0.2s ease;
+}
+
+.document-file-item:hover {
+    background-color: $color-gray-200;
+}
+
+.document-file-item .file-name {
+    font-weight: 500;
+    color: $color-gray-600;
+}
+
+.document-file-item .collection-selector select {
+    border: 1px solid $color-gray-400;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.document-file-item .collection-selector select:focus {
+    border-color: $color-blue-focus;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem $color-blue-shadow;
+}
+
+.document-file-item .collection-selector button {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.create-new-for-file {
+    min-width: 38px;
+    height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.create-new-for-file:hover {
+    background-color: $color-blue-primary;
+    border-color: $color-blue-primary;
+    color: white;
+}
+
+.new-collection-indicator {
+    white-space: nowrap;
+    left: 0;
+    top: 100%;
+}
+
+.text-direction-selector {
+    font-size: 0.875rem;
+}
+
+.text-direction-selector option {
+    padding: 0.25rem 0.5rem;
+}
+
+.collection-selector {
+    min-width: 332px;
+}
+
+.document-file-item .collection-selector select {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.document-file-item .collection-selector button {
+    flex-shrink: 0;
+}
+
+/* Mobile responsive styles for document file items */
+@media (max-width: 767.98px) {
+    .document-file-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+
+    .document-file-item>div:first-child {
+        width: 100%;
+    }
+
+    .document-file-item .collection-selector {
+        width: 100%;
+        min-width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem;
+    }
+
+    .document-file-item .collection-selector select {
+        width: 100% !important;
+        max-width: none !important;
+        margin-right: 0 !important;
+        order: 1;
+    }
+
+    .document-file-item .collection-selector button {
+        width: 100% !important;
+        order: 2;
+    }
+
+    #bulk-actions-container .d-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+
+    #bulk-actions-container .d-flex>div,
+    #bulk-actions-container .d-flex>button {
+        width: 100%;
+    }
+
+    #assign-all-collection-select {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
+
+/* 
+   Multi-Select Tip
+ */
+
+#multi-select-tip {
+    margin-bottom: 1rem;
+    background-color: $color-success-bg !important;
+    border-left: 4px solid $color-success-border;
+    border-color: $color-success-border !important;
+    color: $color-success-text;
+    animation: slideInDown 0.4s ease-out;
+}
+
+#multi-select-tip .fa-lightbulb {
+    color: $color-success-border;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 
+   Treeview Help & Popover
+ */
+
+#treeview-help-icon,
+#tag-treeview-help-icon {
+    padding: 0.4rem 0.6rem;
+    font-size: 1rem;
+}
+
+#treeview-help-icon:hover,
+#tag-treeview-help-icon:hover {
+    background-color: $color-gray-100;
+}
+
+.popover {
+    max-width: 350px;
+    background-color: $color-success-bg;
+    border: 1px solid $color-success-border;
+    border-left: 4px solid $color-success-border;
+}
+
+.popover-header {
+    background-color: $color-success-bg !important;
+    color: $color-success-text !important;
+    border-bottom: 1px solid $color-success-border !important;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.popover-body {
+    background-color: $color-success-bg;
+    color: $color-success-text;
+    font-size: 1rem;
+}
+
+.popover-arrow::before,
+.popover-arrow::after {
+    border-right-color: $color-success-border !important;
+}
+
+.bs-popover-start>.popover-arrow::after {
+    border-left-color: $color-success-bg !important;
+}
+
+/* 
+   Drag Hint Popup
+*/
+
+.drag-hint-popup {
+    position: relative;
+    display: block;
+    background-color: $color-success-bg;
+    color: $color-success-text;
+    padding: 1rem 1rem;
+    border-radius: 0.375rem;
+    border-left: 4px solid $color-success-border;
+    border: 1px solid $color-success-border;
+    font-size: 1rem;
+    font-weight: normal;
+    z-index: 1000;
+}
+
+.drag-hint-popup i {
+    margin-right: 0.5rem;
+    color: $color-success-border;
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
