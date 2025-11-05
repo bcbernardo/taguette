@@ -52,18 +52,8 @@ function toggleFavorite(documentId) {
     };
     
     submitDocumentUpdate(updatedDocument, function(response) {
-        // Update documents list and treeview after successful update
         updateDocumentsList();
-        
-        // Find and expand the parent collection after treeview is fully reconstructed
-        if (typeof findDocumentParentCollection === 'function' && typeof expandDocumentNode === 'function') {
-            setTimeout(function() {
-                const parentCollectionNodeId = findDocumentParentCollection(documentId);
-                if (parentCollectionNodeId) {
-                    expandDocumentNode(treeview_documents, parentCollectionNodeId);
-                }
-            }, 100);
-        }
+        initDocumentsTreeview();
     }, function(error) {
         log('Error updating document favorite:', 'error', error);
     });
@@ -222,14 +212,9 @@ function addDocument(document) {
     }
     
     updateDocumentsList();
-    initDocumentsTreeview();
-    
-    // Expand parent collection and highlight new document
-    if (document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandDocumentNodeParent(parentCollectionId);
-    }
-    highlightDocument(document.id);
+    initDocumentsTreeview(null, function() {
+        highlightDocument(document.id);
+    });
 }
 
 function flattenCollections(collectionsTree) {
@@ -266,13 +251,7 @@ function removeDocument(document_id) {
     delete documents['' + document_id];
     updateDocumentsList();
     initDocumentsTreeview();
-    
-    // Expand parent collection to show the change
-    if (document && document.collections && document.collections.length > 0) {
-        const parentCollectionId = document.collections[0];
-        expandDocumentNodeParent(parentCollectionId);
-    }
-    
+
     if (current_document === document_id) {
         window.history.pushState({}, "Project", base_path + '/project/' + project_id);
         loadDocument(null);

@@ -175,7 +175,9 @@ function customDocumentNodeRow() {
     };
 }
 
-function initDocumentsTreeview(filteredCollections = null) {
+function initDocumentsTreeview(filteredCollections = null, callback = null) {
+    const expandedIds = saveExpandedState();
+
     const treeData = convertDocumentsToTreeNode(filteredCollections);
     const customNodeOptions = customDocumentNodeRow();
     
@@ -203,11 +205,22 @@ function initDocumentsTreeview(filteredCollections = null) {
     options.multiSelect = true;
 
     treeview_documents.treeview(options);
-    
-    // If filtering, expand all nodes to show search results
+
+    if (callback) {
+        setTimeout(() => {
+            if (expandedIds.length > 0) {
+                restoreExpandedState(expandedIds, callback);
+            } else {
+                callback();
+            }
+        }, 50);
+    } else if (expandedIds.length > 0) {
+        restoreExpandedState(expandedIds, null);
+    }
+
     if (filteredCollections) {
         treeview_documents.treeview('expandAll');
-    } else {
+    } else if (expandedIds.length === 0) {
         treeview_documents.treeview('collapseAll');
     }
     
@@ -311,7 +324,12 @@ function expandDocumentNode(treeview, nodeId) {
 
 function highlightCollection(collectionId) {
     const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, collectionId);
-    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    const nodeElement = treeview_documents.find(`li[data-nodeid="${nodeId}"]`);
+
+    if (nodeElement.length > 0) {
+        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     nodeElement.addClass('highlight-collection');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
@@ -320,7 +338,12 @@ function highlightCollection(collectionId) {
 
 function highlightDocument(documentId) {
     const nodeId = getNodeIdFromTreeviewByDocumentId(treeview_documents, documentId);
-    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    const nodeElement = treeview_documents.find(`li[data-nodeid="${nodeId}"]`);
+
+    if (nodeElement.length > 0) {
+        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     nodeElement.addClass('highlight-document');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
@@ -540,4 +563,40 @@ $(document).ready(function() {
 
     initHelpPopover('treeview-help-icon', sections);
 });
+
+function saveExpandedState() {
+    if (!treeview_documents.length) return [];
+    if (!treeview_documents.data('treeview')) return [];
+
+    try {
+        const expandedNodes = treeview_documents.treeview('getExpanded');
+        return expandedNodes.map(node => node.id).filter(id => id);
+    } catch (e) {
+        return [];
+    }
+}
+
+function restoreExpandedState(expandedIds, callback) {
+    if (!expandedIds || expandedIds.length === 0) {
+        if (callback) setTimeout(callback, 50);
+        return;
+    }
+
+    setTimeout(() => {
+        const allNodes = treeview_documents.treeview('getEnabled');
+        expandedIds.forEach(id => {
+            const node = allNodes.find(n => n.id === id);
+            if (node && !node.state.expanded) {
+                treeview_documents.treeview('expandNode', [node.nodeId, {silent: true}]);
+            }
+        });
+        addDocumentDragDrop();
+
+        if (callback) {
+            setTimeout(() => {
+                callback();
+            }, 150);
+        }
+    }, 50);
+}
 

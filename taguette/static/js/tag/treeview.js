@@ -214,7 +214,8 @@ function convertToTreeNode(data, includeTags) {
         return node;
     });
 }
-function initTagsTreeview(filterTags = null) {
+function initTagsTreeview(filterTags = null, callback = null) {
+    const expandedIds = saveTagExpandedState();
 
     if (filterTags == null) {
         filterTags = tags
@@ -245,7 +246,7 @@ function initTagsTreeview(filterTags = null) {
             }
         },
         showBorder: true,
-        levels: DEFAULT_LEVEL_OPTION,
+        levels: 1,
         showTags: true
     };
 
@@ -254,8 +255,21 @@ function initTagsTreeview(filterTags = null) {
     }
 
     treeview_tags.treeview(options);
-    treeview_tags.treeview('collapseAll');
-    treeview_tags.data('expanded', false);
+
+    if (callback) {
+        setTimeout(() => {
+            if (expandedIds.length > 0) {
+                restoreTagExpandedState(expandedIds, callback);
+            } else {
+                callback();
+            }
+        }, 50);
+    } else if (expandedIds.length > 0) {
+        restoreTagExpandedState(expandedIds, null);
+    } else {
+        treeview_tags.treeview('collapseAll');
+        treeview_tags.data('expanded', false);
+    }
 
     treeview_tags.on('nodeSelected', function (event, node) {
         if (isExplorationMode && !isProgrammaticSelection){
@@ -527,3 +541,39 @@ $(document).ready(function() {
 
     initHelpPopover('tag-treeview-help-icon', sections);
 });
+
+function saveTagExpandedState() {
+    if (!treeview_tags.length) return [];
+    if (!treeview_tags.data('treeview')) return [];
+
+    try {
+        const expandedNodes = treeview_tags.treeview('getExpanded');
+        return expandedNodes.map(node => node.id).filter(id => id);
+    } catch (e) {
+        return [];
+    }
+}
+
+function restoreTagExpandedState(expandedIds, callback) {
+    if (!expandedIds || expandedIds.length === 0) {
+        if (callback) setTimeout(callback, 50);
+        return;
+    }
+
+    setTimeout(() => {
+        const allNodes = treeview_tags.treeview('getEnabled');
+        expandedIds.forEach(id => {
+            const node = allNodes.find(n => n.id === id);
+            if (node && !node.state.expanded) {
+                treeview_tags.treeview('expandNode', [node.nodeId, {silent: true}]);
+            }
+        });
+        addTagDragDrop();
+
+        if (callback) {
+            setTimeout(() => {
+                callback();
+            }, 150);
+        }
+    }, 50);
+}

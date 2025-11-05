@@ -68,15 +68,7 @@ function toggleDocumentFavorite(documentId) {
 
     submitDocumentUpdate(updatedDocument, function(response) {
         updateDocumentsList();
-
-        if (typeof findDocumentParentCollection === 'function' && typeof expandDocumentNode === 'function') {
-            setTimeout(function() {
-                const parentCollectionNodeId = findDocumentParentCollection(documentId);
-                if (parentCollectionNodeId) {
-                    expandDocumentNode(treeview_documents, parentCollectionNodeId);
-                }
-            }, 100);
-        }
+        initDocumentsTreeview();
     }, function(error) {
         log('Error updating document favorite:', 'error', error);
     });
