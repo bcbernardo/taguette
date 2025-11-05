@@ -73,6 +73,13 @@
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
                 </div>
                 <p id="tag-selection-return"><a href="">{% trans %}Back to highlights{% endtrans %}</a></p>
+                <div class="d-flex align-items-center justify-content-end mb-2 px-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="tag-treeview-help-icon"
+                        data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus"
+                        data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
                 <div id="treeview-tags"></div>
                 <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
                 </div>
@@ -118,6 +125,13 @@
                 </div>
             </div>
             <!-- Documents treeview -->
+            <div class="d-flex align-items-center justify-content-end mb-2 px-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="treeview-help-icon"
+                    data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus"
+                    data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
             <div class="panel-content" id="treeview-documents">
                 <div class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</div>
             </div>
@@ -276,6 +290,7 @@
 <script type="text/javascript" src="{{ static_url('js/document/manager.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/document/custom-select.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/document/treeview.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/document/context-menu.js') }}"></script>
 
 <!-- others -->
 <script type="text/javascript" src="{{ static_url('js/polling-event.js') }}"></script>

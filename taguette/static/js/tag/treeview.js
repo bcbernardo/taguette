@@ -214,7 +214,8 @@ function convertToTreeNode(data, includeTags) {
         return node;
     });
 }
-function initTagsTreeview(filterTags = null) {
+function initTagsTreeview(filterTags = null, callback = null) {
+    const expandedIds = saveTagExpandedState();
 
     if (filterTags == null) {
         filterTags = tags
@@ -245,7 +246,7 @@ function initTagsTreeview(filterTags = null) {
             }
         },
         showBorder: true,
-        levels: DEFAULT_LEVEL_OPTION,
+        levels: 1,
         showTags: true
     };
 
@@ -254,8 +255,21 @@ function initTagsTreeview(filterTags = null) {
     }
 
     treeview_tags.treeview(options);
-    treeview_tags.treeview('collapseAll');
-    treeview_tags.data('expanded', false);
+
+    if (callback) {
+        setTimeout(() => {
+            if (expandedIds.length > 0) {
+                restoreTagExpandedState(expandedIds, callback);
+            } else {
+                callback();
+            }
+        }, 50);
+    } else if (expandedIds.length > 0) {
+        restoreTagExpandedState(expandedIds, null);
+    } else {
+        treeview_tags.treeview('collapseAll');
+        treeview_tags.data('expanded', false);
+    }
 
     treeview_tags.on('nodeSelected', function (event, node) {
         if (isExplorationMode && !isProgrammaticSelection){
@@ -479,7 +493,9 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
-            element.attr('title', node.text);
+            const tooltipText = gettext('Click to filter • Right-click for options');
+            const tooltip = `${node.text}\n\n${tooltipText}`;
+            element.attr('title', tooltip);
             element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
                 : `tag-node-${node.id}`);
             if (isTagContextMenu) {
@@ -501,5 +517,63 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
                 }
             }).prependTo(element);
         }
+    };
+}
+
+$(document).ready(function() {
+    const sections = [
+        {
+            title: 'Right-click on a code:',
+            items: [
+                'Add child code',
+                'Edit code',
+                'Merge codes',
+                'Delete code'
+            ]
+        },
+        {
+            title: 'Click on a code:',
+            items: [
+                'Filter highlights by this code'
+            ]
+        }
+    ];
+
+    initHelpPopover('tag-treeview-help-icon', sections);
+});
+
+function saveTagExpandedState() {
+    if (!treeview_tags.length) return [];
+    if (!treeview_tags.data('treeview')) return [];
+
+    try {
+        const expandedNodes = treeview_tags.treeview('getExpanded');
+        return expandedNodes.map(node => node.id).filter(id => id);
+    } catch (e) {
+        return [];
     }
+}
+
+function restoreTagExpandedState(expandedIds, callback) {
+    if (!expandedIds || expandedIds.length === 0) {
+        if (callback) setTimeout(callback, 50);
+        return;
+    }
+
+    setTimeout(() => {
+        const allNodes = treeview_tags.treeview('getEnabled');
+        expandedIds.forEach(id => {
+            const node = allNodes.find(n => n.id === id);
+            if (node && !node.state.expanded) {
+                treeview_tags.treeview('expandNode', [node.nodeId, {silent: true}]);
+            }
+        });
+        addTagDragDrop();
+
+        if (callback) {
+            setTimeout(() => {
+                callback();
+            }, 150);
+        }
+    }, 50);
 }

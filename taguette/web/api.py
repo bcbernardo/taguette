@@ -1604,23 +1604,83 @@ class CollectionUpdate(BaseHandler):
             return self.send_error_json(404,
                                         self.gettext("No such collection"))
 
-        has_children = (self.db.query(database.Collection)
-                        .filter_by(parent_id=collection.id)
-                        .first() is not None)
-        if has_children:
+        delete_mode = self.get_argument('delete_mode', default=None)
+
+        children = (self.db.query(database.Collection)
+                    .options(joinedload(database.Collection.documents))
+                    .filter_by(parent_id=collection.id)
+                    .all())
+
+        if children and delete_mode is None:
             return self.send_error_json(
                 400, self.gettext("Cannot delete collection with "
-                                  "subcollections"))
+                                  "subcollections. "
+                                  "Please specify delete_mode."))
+
+        commands_to_notify = []
+
+        if delete_mode == 'cascade':
+            commands_to_notify = self._delete_collection_cascade(collection)
+        elif delete_mode == 'orphan':
+            for child in children:
+                child.parent_id = None
+                self.db.add(child)
+
+            self.db.flush()
+
+            for child in children:
+                self.db.refresh(child)
+                update_cmd = database.Command.collection_update(
+                    self.current_user,
+                    child,
+                )
+                self.db.add(update_cmd)
+                commands_to_notify.append(update_cmd)
+
+            cmd = database.Command.collection_delete(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
+            self.db.delete(collection)
+            commands_to_notify.append(cmd)
+        else:
+            cmd = database.Command.collection_delete(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
+            self.db.delete(collection)
+            commands_to_notify = [cmd]
+
+        self.db.commit()
+
+        for cmd in commands_to_notify:
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
+
+        self.set_status(204)
+        return self.finish()
+
+    def _delete_collection_cascade(self, collection):
+
+        commands = []
+
+        children = (self.db.query(database.Collection)
+                    .filter_by(parent_id=collection.id)
+                    .all())
+
+        for child in children:
+            child_commands = self._delete_collection_cascade(child)
+            commands.extend(child_commands)
 
         cmd = database.Command.collection_delete(
             self.current_user,
             collection,
         )
         self.db.add(cmd)
-        self.db.delete(collection)
-        self.db.commit()
-        self.db.refresh(cmd)
-        self.application.notify_project(project.id, cmd)
+        commands.append(cmd)
 
-        self.set_status(204)
-        return self.finish()
+        self.db.delete(collection)
+
+        return commands

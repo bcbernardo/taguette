@@ -45,7 +45,12 @@ function findRootParent(tagId) {
 
 function highlightTag(tagId) {
     const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
-    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    const nodeElement = treeview_tags.find(`li[data-nodeid="${nodeId}"]`);
+
+    if (nodeElement.length > 0) {
+        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     nodeElement.addClass('highlight-tag');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
@@ -80,16 +85,13 @@ function addTag(tag) {
     }
 
     checkColorChangeAndUpdate(existingTagColor, tag.color);
-    updateTagsList();
-    if(!tag.parent) {
-        if(!createTagFromHighlight) {
-            highlightTag(tag.id);
-        }
-        return;
-    }
-    expandNodeParent(tag.parent);
+
     if(!createTagFromHighlight) {
-        highlightTag(tag.id);
+        updateTagsListWithCallback(function() {
+            highlightTag(tag.id);
+        });
+    } else {
+        updateTagsList();
     }
 
 }
@@ -192,35 +194,21 @@ function updateAndLoadDocument() {
 }
 
 function removeTag(id) {
-    // Remove from list of tags
     const tagToDelete = findTag(id);
     findTagAndDelete(id);
-
     updateTagsList();
-    if(!tagToDelete.parent) {
-        return;
-    }
-    expandNodeParent(tagToDelete.parent);
 }
 
 /*
  mergeTags
  */
 function mergeTags(tag_src, tag_dest) {
-
-    // update tag count value
     const tagToRemove = findTag(tag_src);
     const tagToUpdate = findTag(tag_dest);
     tagToUpdate.count = parseInt(tagToUpdate.count) + parseInt(tagToRemove.count);
 
-    // Remove tag_src of list of tags
     findTagAndDelete(tag_src);
-
     updateTagsList();
-    if(!tagToUpdate.parent) {
-        return;
-    }
-    expandNodeParent(tagToUpdate.parent);
 }
 
 function selectAllTag() {
@@ -264,11 +252,7 @@ function updateTagCount(tagsId) {
     }
 }
 
-/*
- updateTagsList
- */
 function updateTagsList() {
-
     const isReverse = sortTags[1] === 'desc';
     sortTagsByKey(tags, sortTags[0], isReverse);
     let selectedHighLightTags = [];
@@ -277,14 +261,12 @@ function updateTagsList() {
         selectedHighLightTags = getAllSelectedNodes(treeview_tags_highlight).map(node => node.id)
     }
 
-    // update all treeview and select tags
     initTagsTreeview();
     initTagsHighlightTreeview();
     initTagHierarchySelect();
     initMergeTagHierarchySelect();
     hideSearchErrorMessage();
 
-    //check if create from highlight modal
     if(createTagFromHighlight) {
         selectedHighLightTags.forEach(id => {
             const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, id)
@@ -293,6 +275,17 @@ function updateTagsList() {
         const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags_highlight, last_added_tag)
         selectNode(treeview_tags_highlight, nodeId);
     }
+}
+
+function updateTagsListWithCallback(callback) {
+    const isReverse = sortTags[1] === 'desc';
+    sortTagsByKey(tags, sortTags[0], isReverse);
+
+    initTagsTreeview(null, callback);
+    initTagsHighlightTreeview();
+    initTagHierarchySelect();
+    initMergeTagHierarchySelect();
+    hideSearchErrorMessage();
 }
 
 function sortTagsByKey(array, key, reverse) {

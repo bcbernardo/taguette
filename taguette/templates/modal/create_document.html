@@ -1,6 +1,6 @@
 <!-- Add document modal -->
 <div class="modal fade" id="document-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 60vw;">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 1100px; width: 95vw;">
         <form id="document-add-form" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{% trans "modal window title" %}Add a document{% endtrans %}</h5>
@@ -50,7 +50,7 @@
                                     id="create-new-collection-for-all">
                                     {% trans %}Create new collection for all{% endtrans %}
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                <button type="button" class="btn btn-outline-danger btn-sm"
                                     id="reset-all-collections"
                                     title="{% trans %}Reset all to no collection{% endtrans %}">
                                     <i class="fas fa-undo me-1"></i>{% trans %}Reset{% endtrans %}
@@ -65,7 +65,7 @@
                             <label class="form-label">{% trans %}Selected documents and collections{% endtrans
                                 %}</label>
                             <div id="document-files-list" class="border rounded p-3"
-                                style="max-height: 300px; overflow-y: auto;">
+                                style="max-height: 45vh; overflow-y: auto;">
                             </div>
                         </div>
                     </div>

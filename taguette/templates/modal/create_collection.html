@@ -1,6 +1,6 @@
 <!-- Add collection modal -->
 <div class="modal fade" id="collection-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 1100px; width: 95vw;">
         <form id="collection-add-form" class="modal-content">
             <div class="modal-header">
                 <h5 id="collection-add-label-new" class="modal-title">{% trans "modal window title" %}Add a collection{%
@@ -12,61 +12,75 @@
             <div class="modal-body">
                 <input type="hidden" id="collection-add-id" />
                 <div class="container">
-                    <div class="row mb-3">
-                        <div class="col form-group">
-                            <input type="text" class="form-control" id="collection-add-name" name="collection-add-name"
-                                required maxlength="200" placeholder="{% trans %}Collection name{% endtrans %}">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col form-group">
-                            <textarea class="form-control" id="collection-add-description"
-                                name="collection-add-description" rows="3" maxlength="1000"
-                                placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col form-group">
-                            <label for="collection-hierarchy-select" class="form-label">{% trans %}Parent collection{%
-                                endtrans %}</label>
-                            <div class='dropdown hierarchy-select' id='collection-hierarchy-select'>
-                                <button class="btn btn-secondary dropdown-toggle" type="button"
-                                    id="dropdownMenuButtonCollection" data-bs-toggle="dropdown"
-                                    aria-expanded="false"></button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonCollection">
-                                    <div class="hs-searchbox">
-                                        <input type="text" class="form-control" autocomplete="off">
-                                    </div>
-                                    <div class='hs-menu-inner'>
-                                    </div>
-                                </ul>
-                                <input class="d-none" id="collection-add-parent-id" name="collection-add-parent-id"
-                                    readonly="readonly" aria-hidden="true" type="text" />
-                            </div>
-                        </div>
-                    </div>
                     <div class="row">
-                        <div class="col form-group">
-                            <label>{% trans %}Add documents to this collection{% endtrans %}</label>
-
-                            <!-- Documents sélectionnés -->
-                            <div id="collection-selected-documents" class="mb-2" style="display: none;">
-                                <small class="text-muted">{% trans %}Selected documents{% endtrans %}:</small>
-                                <div id="collection-selected-documents-list" class="border rounded p-2 mb-2 bg-light"
-                                    style="min-height: 40px;">
+                        <!-- Collection information -->
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label for="collection-add-name" class="form-label">{% trans %}Collection name{%
+                                    endtrans %}</label>
+                                <input type="text" class="form-control" id="collection-add-name"
+                                    name="collection-add-name" required maxlength="200"
+                                    placeholder="{% trans %}Collection name{% endtrans %}">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="collection-add-description" class="form-label">{% trans %}Description{%
+                                    endtrans %}</label>
+                                <textarea class="form-control" id="collection-add-description"
+                                    name="collection-add-description" rows="3" maxlength="1000"
+                                    placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="collection-hierarchy-select" class="form-label">{% trans %}Parent
+                                    collection{%
+                                    endtrans %}</label>
+                                <div class='dropdown hierarchy-select' id='collection-hierarchy-select'>
+                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                        id="dropdownMenuButtonCollection" data-bs-toggle="dropdown"
+                                        aria-expanded="false"></button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonCollection">
+                                        <div class="hs-searchbox">
+                                            <input type="text" class="form-control" autocomplete="off">
+                                        </div>
+                                        <div class='hs-menu-inner'>
+                                        </div>
+                                    </ul>
+                                    <input class="d-none" id="collection-add-parent-id" name="collection-add-parent-id"
+                                        readonly="readonly" aria-hidden="true" type="text" />
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Barre de recherche -->
-                            <input type="text" id="collection-documents-search" class="form-control mb-2"
-                                placeholder="{% trans %}Search documents...{% endtrans %}">
+                        <!--  Document selection -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0">{% trans %}Add documents to this collection{%
+                                        endtrans %}</label>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        id="collection-reset-selection" style="display: none;">
+                                        <i class="fas fa-undo"></i> {% trans %}Reset{% endtrans %}
+                                    </button>
+                                </div>
 
-                            <!-- Liste des documents disponibles -->
-                            <div id="collection-add-documents-list" class="document-selection-list border rounded p-2"
-                                style="max-height: 200px; overflow-y: auto;"></div>
+                                <!-- Selected documents -->
+                                <div id="collection-selected-documents" class="mb-2" style="display: none;">
+                                    <small class="text-muted">{% trans %}Selected documents{% endtrans %}:</small>
+                                    <div id="collection-selected-documents-list"
+                                        class="border rounded p-2 mb-2 bg-light" style="min-height: 40px;">
+                                    </div>
+                                </div>
+
+                                <!-- Search input -->
+                                <input type="text" id="collection-documents-search" class="form-control mb-2"
+                                    placeholder="{% trans %}Search documents...{% endtrans %}">
+
+                                <!-- Available documents list -->
+                                <div id="collection-add-documents-list"
+                                    class="document-selection-list border rounded p-2"
+                                    style="max-height: 50vh; overflow-y: auto;"></div>
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div class="modal-footer">

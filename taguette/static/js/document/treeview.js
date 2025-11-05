@@ -139,53 +139,24 @@ function customDocumentNodeRow() {
         },
         customizeNode: function(element, node, tree) {
             element.attr('id', `treeview-node-${node.id}`);
-            element.attr('title', node.text);
-            
+
             if (node.document_id) {
                 element.attr('data-document-id', node.document_id);
                 element.attr('id', `document-link-${node.document_id}`);
                 element.addClass('document-link');
                 element.css('position', 'relative');
+
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const cmdKey = isMac ? 'Cmd' : 'Ctrl';
+                const tooltipText = gettext('Click to open • %(key)s+Click to select • Right-click for options', {key: cmdKey});
+                const tooltip = `${node.text}\n\n${tooltipText}`;
+                element.attr('title', tooltip);
                 
                 if (node.document_id === current_document) {
                     element.addClass('document-link-current');
                 }
-            
-                const doc = documents[node.document_id];
-                if (doc) {
-                    const favoriteIconClass = doc.favorite === true ? 'fas fa-star' : 'far fa-star';
-                    const favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
-                    
-                    const editIcon = $(`
-                        <a href="#" class="edit-icon" title="${gettext('Edit')}" style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%);">
-                            <i class="fas fa-edit" aria-hidden="true"></i>
-                        </a>
-                    `);
-                    
-                    const favoriteIcon = $(`
-                        <a href="#" class="favorite-icon" title="${favoriteTitle}" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%);">
-                            <i id="favorite-icon-${node.document_id}" class="${favoriteIconClass}" aria-hidden="true"></i>
-                        </a>
-                    `);
-                    
-                    editIcon.on('click', function(e) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        editDocument(node.document_id);
-                        return false;
-                    });
-                    
-                    favoriteIcon.on('click', function(e) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        toggleFavorite(node.document_id);
-                        return false;
-                    });
-                    
-                    element.append(editIcon);
-                    element.append(favoriteIcon);
-                }
-                
+                element.addClass('document-context-menu');
+
                 linkDocument(element[0], node.document_id);
             }
             
@@ -204,7 +175,9 @@ function customDocumentNodeRow() {
     };
 }
 
-function initDocumentsTreeview(filteredCollections = null) {
+function initDocumentsTreeview(filteredCollections = null, callback = null) {
+    const expandedIds = saveExpandedState();
+
     const treeData = convertDocumentsToTreeNode(filteredCollections);
     const customNodeOptions = customDocumentNodeRow();
     
@@ -230,17 +203,27 @@ function initDocumentsTreeview(filteredCollections = null) {
     };
     
     options.multiSelect = true;
-    
+
     treeview_documents.treeview(options);
-    
-    // If filtering, expand all nodes to show search results
+
+    if (callback) {
+        setTimeout(() => {
+            if (expandedIds.length > 0) {
+                restoreExpandedState(expandedIds, callback);
+            } else {
+                callback();
+            }
+        }, 50);
+    } else if (expandedIds.length > 0) {
+        restoreExpandedState(expandedIds, null);
+    }
+
     if (filteredCollections) {
         treeview_documents.treeview('expandAll');
-    } else {
+    } else if (expandedIds.length === 0) {
         treeview_documents.treeview('collapseAll');
     }
     
-    // Prevent expanding empty collections
     treeview_documents.on('nodeExpanded', function(event, node) {
         if (node.nodes && node.nodes.length === 1 && node.nodes[0].isDummy) {
             event.preventDefault();
@@ -250,35 +233,28 @@ function initDocumentsTreeview(filteredCollections = null) {
         }
     });
     
-    // Re-add drag and drop after treeview changes (like tags do)
     treeview_documents.on('nodeSelected nodeUnselected nodeCollapsed nodeExpanded', function (event, node) {
-        // Clear selection when collapsing or expanding
         if (event.type === 'nodeCollapsed' || event.type === 'nodeExpanded') {
             deselectAllDocumentNodes();
             hideDragHint();
         }
-        
-        // Show/hide drag hint based on selection count
+
         if (event.type === 'nodeSelected' || event.type === 'nodeUnselected') {
             const selectedNodes = treeview_documents.treeview('getSelected');
-            const selectedDocuments = selectedNodes.filter(node => 
+            const selectedDocuments = selectedNodes.filter(node =>
                 node.id && node.id.startsWith('document_')
             );
-            
+
             if (event.type === 'nodeSelected' && node.id && node.id.startsWith('document_')) {
-                // Show hint next to the last selected document
                 showDragHint(selectedDocuments.length, node.nodeId);
             } else if (selectedDocuments.length <= 1) {
-                // Hide hint if only one or no documents selected
                 hideDragHint();
             }
         }
-        
-        // Add a delay to ensure the treeview recreation is finished
+
         setTimeout(function () {
             addDocumentDragDrop();
-            
-            // Update folder icon based on expanded state - ONLY for collections in documents treeview
+
             if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
                 const nodeElement = $('#treeview-documents').find(`li[data-nodeid="${node.nodeId}"]`);
                 const folderIcon = nodeElement.find('.node-icon');
@@ -290,7 +266,6 @@ function initDocumentsTreeview(filteredCollections = null) {
         }, 10);
     });
     
-    // Add drag and drop functionality
     setTimeout(function() {
         addDocumentDragDrop();
     }, 10);
@@ -349,7 +324,12 @@ function expandDocumentNode(treeview, nodeId) {
 
 function highlightCollection(collectionId) {
     const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, collectionId);
-    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    const nodeElement = treeview_documents.find(`li[data-nodeid="${nodeId}"]`);
+
+    if (nodeElement.length > 0) {
+        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     nodeElement.addClass('highlight-collection');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
@@ -358,7 +338,12 @@ function highlightCollection(collectionId) {
 
 function highlightDocument(documentId) {
     const nodeId = getNodeIdFromTreeviewByDocumentId(treeview_documents, documentId);
-    const nodeElement = $(`li[data-nodeid="${nodeId}"]`);
+    const nodeElement = treeview_documents.find(`li[data-nodeid="${nodeId}"]`);
+
+    if (nodeElement.length > 0) {
+        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     nodeElement.addClass('highlight-document');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
@@ -529,18 +514,89 @@ function moveDocumentToCollection(documentId, targetCollectionId) {
         log('Target collection ID not provided');
         return;
     }
-    
+
     const updatedDocument = {
         id: documentId,
         collections: targetCollectionId !== null ? [targetCollectionId] : []
     };
-    
-    submitDocumentUpdate(updatedDocument, 
+
+    submitDocumentUpdate(updatedDocument,
         (response) => {
             log('Document moved successfully:', 'success', {response});
-        }, 
+        },
         (error) => {
             log('Error moving document:', 'error', {error});
         }
     );
 }
+
+$(document).ready(function() {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const cmdKey = isMac ? 'Cmd' : 'Ctrl';
+
+    const sections = [
+        {
+            title: 'Right-click on a collection:',
+            items: [
+                'Add sub-collection',
+                'Edit collection',
+                'Remove parent',
+                'Delete collection'
+            ]
+        },
+        {
+            title: 'Right-click on a document:',
+            items: [
+                'Edit document',
+                'Toggle favorite',
+                'Delete document'
+            ]
+        },
+        {
+            title: 'Select multiple documents:',
+            items: [
+                `Hold ${cmdKey} and click documents`,
+                'Drag selected documents to a collection'
+            ]
+        }
+    ];
+
+    initHelpPopover('treeview-help-icon', sections);
+});
+
+function saveExpandedState() {
+    if (!treeview_documents.length) return [];
+    if (!treeview_documents.data('treeview')) return [];
+
+    try {
+        const expandedNodes = treeview_documents.treeview('getExpanded');
+        return expandedNodes.map(node => node.id).filter(id => id);
+    } catch (e) {
+        return [];
+    }
+}
+
+function restoreExpandedState(expandedIds, callback) {
+    if (!expandedIds || expandedIds.length === 0) {
+        if (callback) setTimeout(callback, 50);
+        return;
+    }
+
+    setTimeout(() => {
+        const allNodes = treeview_documents.treeview('getEnabled');
+        expandedIds.forEach(id => {
+            const node = allNodes.find(n => n.id === id);
+            if (node && !node.state.expanded) {
+                treeview_documents.treeview('expandNode', [node.nodeId, {silent: true}]);
+            }
+        });
+        addDocumentDragDrop();
+
+        if (callback) {
+            setTimeout(() => {
+                callback();
+            }, 150);
+        }
+    }, 50);
+}
+

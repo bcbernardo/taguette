@@ -71,16 +71,9 @@ function addCollection(collectionData) {
         }
     }
     
-    initDocumentsTreeview();
-    
-    // Expand parent and highlight new collection
-    if (collectionData.parent_id) {
-        expandDocumentNodeParent(parseInt(collectionData.parent_id));
-    } else if (collectionData.document_ids && collectionData.document_ids.length > 0) {
-        const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, collectionData.id);
-        expandDocumentNode(treeview_documents, nodeId);
-    }
-    highlightCollection(collectionData.id);
+    initDocumentsTreeview(null, function() {
+        highlightCollection(collectionData.id);
+    });
 }
 
 function updateCollection(collectionData) {
@@ -173,20 +166,9 @@ function updateCollection(collectionData) {
         }
     }
     
-    initDocumentsTreeview();
-    
-    // Expand parent and highlight updated collection
-    if (collectionData.parent_id) {
-        expandDocumentNodeParent(parseInt(collectionData.parent_id));
-    } else if (oldParentId) {
-        // If moved to root, expand the old parent to show the change
-        expandDocumentNodeParent(oldParentId);
-    } else if (!collectionData.parent_id && collectionData.document_ids.length > 0) {
-        const nodeId = getNodeIdFromTreeviewByCollectionId(treeview_documents, collectionData.id);
-        expandDocumentNode(treeview_documents, nodeId);
-    }
-        
-    highlightCollection(collectionData.id);
+    initDocumentsTreeview(null, function() {
+        highlightCollection(collectionData.id);
+    });
 }
 
 function removeCollection(collectionId) {
@@ -226,12 +208,10 @@ function removeCollection(collectionId) {
         }
     }
     
-    initDocumentsTreeview();
-    
-    // Expand parent to show the change
-    if (collectionToRemove.parent) {
-        expandDocumentNodeParent(parseInt(collectionToRemove.parent));
-        highlightCollection(parseInt(collectionToRemove.parent));
-    }
+    initDocumentsTreeview(null, function() {
+        if (collectionToRemove.parent) {
+            highlightCollection(parseInt(collectionToRemove.parent));
+        }
+    });
 }
 
