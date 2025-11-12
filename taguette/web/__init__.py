@@ -222,7 +222,6 @@ def make_app(config, debug=False, xsrf_cookies=True):
     return Application(
         routes,
         static_path=pkg_resources.resource_filename('taguette', 'static'),
-        static_url_prefix=base_path + "/static/",
         login_url=base_path + '/login',
         xsrf_cookies=xsrf_cookies,
         debug=debug,
