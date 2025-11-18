@@ -11,6 +11,15 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="collection-add-id" />
+
+                <!-- Reset button centered at top -->
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                        id="collection-reset-selection" style="display: none;">
+                        <i class="fas fa-undo"></i> {% trans %}Reset{% endtrans %}
+                    </button>
+                </div>
+
                 <div class="container">
                     <div class="row">
                         <!-- Collection information -->
@@ -53,22 +62,17 @@
                         <!--  Document selection -->
                         <div class="col-md-8">
                             <div class="form-group">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label mb-0">{% trans %}Add documents to this collection{%
-                                        endtrans %}</label>
-                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                        id="collection-reset-selection" style="display: none;">
-                                        <i class="fas fa-undo"></i> {% trans %}Reset{% endtrans %}
-                                    </button>
-                                </div>
-
                                 <!-- Selected documents -->
-                                <div id="collection-selected-documents" class="mb-2" style="display: none;">
-                                    <small class="text-muted">{% trans %}Selected documents{% endtrans %}:</small>
+                                <div id="collection-selected-documents" class="mb-3" style="display: none;">
+                                    <small class="text-muted">{% trans %}Currently assigned to the collection: {% endtrans %}:</small>
                                     <div id="collection-selected-documents-list"
-                                        class="border rounded p-2 mb-2 bg-light" style="min-height: 40px;">
+                                        class="border rounded p-2 bg-light" style="min-height: 40px;">
                                     </div>
                                 </div>
+
+                                <!-- Label above search -->
+                                <label class="form-label">{% trans %}Add documents to this collection{%
+                                    endtrans %}</label>
 
                                 <!-- Search input -->
                                 <input type="text" id="collection-documents-search" class="form-control mb-2"
