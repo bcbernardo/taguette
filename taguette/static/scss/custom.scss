@@ -442,6 +442,14 @@ line {
    Collection Modal Styles
    ============================================ */
 
+#collection-add-documents-list .document-item .fw-bold {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
 #collection-add-modal .modal-body .col-md-4,
 #collection-add-modal .modal-body .col-md-8 {
     border-right: 1px solid $color-border-light;
@@ -453,6 +461,15 @@ line {
     padding-left: 1.5rem;
     padding-right: 0;
 }
+
+/* Collection editing */
+
+#collection-selected-documents-list {
+    min-height: 40px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
 
 @media (max-width: 767.98px) {
 
@@ -512,12 +529,23 @@ line {
     padding: 0.25rem 0.5rem;
     margin: 0.125rem;
     font-size: 0.875rem;
+    max-width: 100%;
+
+  .d-flex > span:not(.remove-btn) {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
 }
 
 .selected-document-badge .remove-btn {
     margin-left: 0.5rem;
     cursor: pointer;
     color: $color-gray-500;
+    font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
 .selected-document-badge .remove-btn:hover {
@@ -540,6 +568,11 @@ line {
 .document-file-item .file-name {
     font-weight: 500;
     color: $color-gray-600;
+    max-width: 550px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .document-file-item .collection-selector select {
@@ -687,7 +720,7 @@ line {
 #treeview-help-icon,
 #tag-treeview-help-icon {
     padding: 0.4rem 0.6rem;
-    font-size: 1rem;
+    font-size: 1.5rem;
 }
 
 #treeview-help-icon:hover,
