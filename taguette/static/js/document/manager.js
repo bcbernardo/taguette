@@ -337,16 +337,16 @@ function populateDocumentsList(collectionId = null) {
     
     // legend
     const legendDiv = document.createElement('div');
-    legendDiv.className = 'mb-3 p-2 bg-light rounded';
+    legendDiv.className = 'mb-3 p-2 rounded';
     legendDiv.innerHTML = `
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex flex-column lign-items-start gap-2">
             <div class="d-flex align-items-center gap-1">
-                <i class="fas fa-file-alt text-primary"></i>
-                <small>${gettext('Document without collection (will be added)')}</small>
+                <i class="fas fa-file-alt text-primary" style="vertical-align: middle;"></i>
+                <small>${gettext(' = Documents without collection')}</small>
             </div>
             <div class="d-flex align-items-center gap-1">
-                <i class="fas fa-folder text-warning"></i>
-                <small>${gettext('Document with collection (will be moved)')}</small>
+                <i class="fas fa-folder text-warning" style="vertical-align: middle;"></i>
+                <small>${gettext(' = Documents currently assigned to a collection')}</small>
             </div>
         </div>
     `;
@@ -404,8 +404,8 @@ function populateDocumentsList(collectionId = null) {
         // Add document name and collection info
         const textDiv = document.createElement('div');
         textDiv.innerHTML = `
-            <div class="fw-bold">${doc.name}</div>
-            ${currentCollectionName ? `<small class="text-muted">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
+            <div class="fw-bold" title="${doc.name}">${doc.name}</div>
+            ${currentCollectionName ? `<small class="text-muted d-block">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
         `;
         
         contentDiv.appendChild(iconDiv);
@@ -563,7 +563,7 @@ function displaySelectedDocuments(files) {
         fileName.className = 'd-flex align-items-center flex-grow-1';
         fileName.innerHTML = `
             <i class="fas fa-file-alt me-2 text-muted"></i>
-            <span class="file-name">${file.name}</span>
+            <span class="file-name" title="${file.name}">${file.name}</span>
             <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
         `;
         
