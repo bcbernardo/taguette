@@ -504,7 +504,7 @@ function updateSelectedDocumentsDisplay() {
         badge.innerHTML = `
             <div class="d-flex align-items-center gap-1">
                 <i class="fas ${docCollections.length === 0 ? 'fa-file-alt text-primary' : 'fa-folder text-warning'}"></i>
-                <span>${doc.name}</span>
+                <span title="${doc.name}">${doc.name}</span>
                 <span class="remove-btn" data-document-id="${docId}">×</span>
             </div>
             ${currentCollectionName ? `<small class="text-muted d-block">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
