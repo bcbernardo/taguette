@@ -18,7 +18,12 @@
         {% include 'partials/project_sidebar.html' %}
         <div class="bordered-container sticky-top">
             <div class="d-flex justify-content-start justify-content-md-end">
-                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2" title="Toggle Panel">
+                <button type="button" class="btn border-0 btn-sm" id="tag-treeview-help-icon"
+                        data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus"
+                        data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+                        <i class="fas fa-question-circle"></i>
+                </button>
+                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary my-2 ms-2" title="Toggle Panel">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
@@ -73,13 +78,6 @@
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
                 </div>
                 <p id="tag-selection-return"><a href="">{% trans %}Back to highlights{% endtrans %}</a></p>
-                <div class="d-flex align-items-center justify-content-end mb-2 px-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="tag-treeview-help-icon"
-                        data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus"
-                        data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
-                        <i class="fas fa-question-circle"></i>
-                    </button>
-                </div>
                 <div id="treeview-tags"></div>
                 <div class="alert alert-info mt-2 d-none" role="alert" id="alert-tag-treeview">
                 </div>
@@ -109,8 +107,13 @@
     <!-- List of documents -->
     <div class="col-12 col-md-2-5 order-1 order-md-3" id="right-panel">
         <div class="bordered-container sticky-top">
-            <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="Toggle Panel">
+            <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary ms-2" title="Toggle Panel">
                 <i class="fas fa-chevron-right"></i>
+            </button>
+            <button type="button" class="btn border-0 btn-sm" id="treeview-help-icon"
+                    data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus"
+                    data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+                    <i class="fas fa-question-circle"></i>
             </button>
             <div class="row  panel-content">
                 <div class="col-md-12">
@@ -125,13 +128,6 @@
                 </div>
             </div>
             <!-- Documents treeview -->
-            <div class="d-flex align-items-center justify-content-end mb-2 px-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="treeview-help-icon"
-                    data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus"
-                    data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
-                    <i class="fas fa-question-circle"></i>
-                </button>
-            </div>
             <div class="panel-content" id="treeview-documents">
                 <div class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</div>
             </div>
