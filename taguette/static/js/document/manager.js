@@ -84,7 +84,7 @@ function generateDocumentList() {
             elem.classList.add('document-link-current');
         }
         let favoriteIconClass = doc.favorite === true ? 'fas fa-star' : 'far fa-star';
-        let favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
+        let favoriteTitle = doc.favorite === true ? gettext("Remove from Bookmarks") : gettext("Add to Bookmarks");
         elem.innerHTML = `
         <div class="d-flex justify-content-between align-items-center">
             <a class="document-link-a text-truncate" style="flex: 1; margin-right: 10px;" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</a>

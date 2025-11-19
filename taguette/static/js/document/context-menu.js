@@ -22,7 +22,7 @@ function addDocumentContextMenu() {
 
 function generateDocumentContextMenuItems(document) {
     const isFavorite = document.favorite === true;
-    const favoriteLabel = isFavorite ? gettext('Remove from Favorites') : gettext('Add to Favorites');
+    const favoriteLabel = isFavorite ? gettext('Remove from Bookmarks') : gettext('Add to Bookmarks');
     const favoriteIcon = isFavorite ? 'fas fa-star' : 'far fa-star';
 
     const items = {
