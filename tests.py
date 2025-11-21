@@ -564,6 +564,10 @@ class TestMultiuser(MyHTTPTestCase):
         )
         return self.application
 
+    def setUp(self):
+        super(TestMultiuser, self).setUp()
+        self._poll_event_last_id = {}
+
     def tearDown(self):
         super(TestMultiuser, self).tearDown()
         close_all_sessions()
@@ -634,7 +638,9 @@ class TestMultiuser(MyHTTPTestCase):
             data=dict(name='test project', description=''),
         ) as response:
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.headers['Location'], '/project/1')
+            loc = re.match('^/project/([0-9]+)$', response.headers['Location'])
+            self.assertTrue(loc)
+            proj1 = str(loc.group(1))
 
         # Log out
         async with self.aget('/logout') as response:
@@ -642,23 +648,23 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.headers['Location'], '/')
 
         # Hit error page
-        async with self.aget('/api/project/1/highlights/') as response:
+        async with self.aget(f'/api/project/{proj1}/highlights/') as response:
             self.assertEqual(response.status, 403)
             self.assertEqual(await response.json(), {"error": "Not logged in"})
 
         # Fetch login page
         async with self.aget(
-            '/login?' + urlencode(dict(next='/project/1')),
+            '/login?' + urlencode(dict(next=f'/project/{proj1}')),
         ) as response:
             self.assertEqual(response.status, 200)
 
         # Log in
         async with self.apost(
             '/login',
-            data=dict(next='/project/1', login='admin', password='hackme'),
+            data=dict(next=f'/project/{proj1}', login='admin', password='hackme'),
         ) as response:
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.headers['Location'], '/project/1')
+            self.assertEqual(response.headers['Location'], f'/project/{proj1}')
 
         # Check redirect to account
         async with self.aget('/.well-known/change-password') as response:
@@ -688,31 +694,31 @@ class TestMultiuser(MyHTTPTestCase):
     @gen_test(timeout=30)
     async def test_projects(self):
         # project 1               project 2
-        # ---------               ---------
+        # ---------               -------------
         # create
-        # (tag 1 'interesting')
+        # (tag 11 'interesting')
         #                         create
-        #                         (tag 2 'interesting')
-        #                         tag 3 'people'
-        #                         tag 4 'interesting.places'
-        # doc 1
-        #                         doc 2
-        # hl 1 doc=1 tags=[]
-        # hl 1 doc=1 tags=[1]
+        #                         (tag 22 'interesting')
+        #                         tag 23 'people'
+        #                         tag 24 'interesting.places'
+        # doc 11
+        #                         doc 22
+        # hl 11 doc=11 tags=[]
+        # hl 11 doc=11 tags=[11]
         #                         change project metadata
-        #                         doc 3
-        #                         hl 2 doc=2 tags=[4]
-        #                         hl 3 doc=2 tags=[2, 3]
-        #                         hl 4 doc=2 tags=[3]
-        #                         delete hl 4 doc=2
-        #                         hl 5 doc=3 tags=[3]
-        #                         highlights 'people*': [3, 5]
-        #                         highlights 'interesting.places*': [2]
-        #                         highlights 'interesting*': [2, 3]
-        #                         highlights: [2, 3, 5]
-        #                         export doc 2
-        #                         merge tag 3 -> 2
-        #                         highlights: [2, 3, 5]
+        #                         doc23
+        #                         hl 22 doc=22 tags=[24]
+        #                         hl 23 doc=2 tags=[22, 23]
+        #                         hl 24 doc=2 tags=[23]
+        #                         delete hl 24 doc=22
+        #                         hl 25 doc=23 tags=[23]
+        #                         highlights 'people*': [23, 25]
+        #                         highlights 'interesting.places*': [22]
+        #                         highlights 'interesting*': [22, 23]
+        #                         highlights: [22, 23, 25]
+        #                         export doc 22
+        #                         merge tag 23 -> 22
+        #                         highlights: [22, 23, 25]
         # delete project
 
         # Accept cookies
@@ -742,10 +748,21 @@ class TestMultiuser(MyHTTPTestCase):
             ),
         ) as response:
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.headers['Location'], '/project/1')
+            loc = re.match('^/project/([0-9]+)$', response.headers['Location'])
+            self.assertTrue(loc)
+            proj1 = str(loc.group(1))
+
+        # Find default tag
+        db = self.application.DBSession()
+        tag = (
+            db.query(database.Tag)
+            .filter(database.Tag.project_id == int(proj1))
+        ).first()
+        self.assertEqual(tag.path, "interesting")
+        tag11 = tag.id
 
         # Check project page
-        async with self.aget('/project/1') as response:
+        async with self.aget(f'/project/{proj1}') as response:
             self.assertEqual(response.status, 200)
             body = await response.text()
         self.assertIn('<!-- Initial state -->', body)
@@ -755,7 +772,7 @@ class TestMultiuser(MyHTTPTestCase):
             init_js,
             '<script type="text/javascript">\n'
             '  var user_login = "admin";\n'
-            '  var project_id = 1;\n'
+            '  var project_id = %s;\n'
             '  var last_event = -1;\n'
             '  var documents = {};\n'
             '  var highlights = {};\n'
@@ -763,10 +780,11 @@ class TestMultiuser(MyHTTPTestCase):
             '  var members = {"admin": {"privileges": "ADMIN"}};\n'
             '  var version = \'%s\';\n'
             '</script>' % (
+                proj1,
                 json.dumps(
                     {
                         "1": {
-                            "count": 0, "id": 1, "path": "interesting",
+                            "count": 0, "id": tag11, "path": "interesting",
                             "description": "Further review required",
                         },
                     },
@@ -776,7 +794,7 @@ class TestMultiuser(MyHTTPTestCase):
         )
 
         # Start polling
-        poll_proj1 = await self.poll_event(1, -1)
+        poll_proj1 = await self.poll_event(int(proj1))
 
         # Create project 2
         async with self.aget('/project/new') as response:
@@ -786,60 +804,73 @@ class TestMultiuser(MyHTTPTestCase):
             data=dict(name='other project', description=''),
         ) as response:
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.headers['Location'], '/project/2')
+            loc = re.match('^/project/([0-9]+)$', response.headers['Location'])
+            self.assertTrue(loc)
+            proj2 = str(loc.group(1))
+
+        # Find default tag
+        db = self.application.DBSession()
+        tag = (
+            db.query(database.Tag)
+            .filter(database.Tag.project_id == int(proj2))
+        ).first()
+        self.assertEqual(tag.path, "interesting")
+        tag22 = tag.id
 
         # Start polling
-        poll_proj2 = await self.poll_event(2, -1)
+        poll_proj2 = await self.poll_event(int(proj2))
 
         # Create tags in project 2
         async with self.apost(
-            '/api/project/2/tag/new',
+            f'/api/project/{proj2}/tag/new',
             json=dict(path='people', description="People of interest"),
         ) as response:
             self.assertEqual(response.status, 200)
+            tag23 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 1, 'tag_id': 3,
+            {'type': 'tag_add', 'tag_id': tag23,
              'tag_path': 'people', 'description': "People of interest"})
-        poll_proj2 = await self.poll_event(2, 1)
+        poll_proj2 = await self.poll_event(int(proj2))
 
         async with self.apost(
-            '/api/project/2/tag/new',
+            f'/api/project/{proj2}/tag/new',
             json=dict(path='interesting.places', description=''),
         ) as response:
             self.assertEqual(response.status, 200)
+            tag24 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_add', 'id': 2, 'tag_id': 4,
+            {'type': 'tag_add', 'tag_id': tag24,
              'tag_path': 'interesting.places', 'description': ''})
-        poll_proj2 = await self.poll_event(2, 2)
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create document 1 in project 1
+        # Create document 11 in project 1
         name = '\u03A9\u2248\xE7\u221A\u222B\u02DC\xB5\u2264\u2265\xF7'
         async with self.apost(
-            '/api/project/1/document/new',
+            f'/api/project/{proj1}/document/new',
             data=dict(name=name, description=''),
             files=dict(
                 file=('/dir/r\xE9 mi.html', 'text/plain', b'content here'),
             ),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"created": 1})
+            doc11 = (await response.json())['created']
         db = self.application.DBSession()
-        doc = db.query(database.Document).get(1)
+        doc = db.query(database.Document).get(doc11)
         self.assertEqual(doc.name, name)
         self.assertEqual(doc.description, '')
         self.assertEqual(doc.filename, 'ré mi.html')
         self.assertEqual(
             await poll_proj1,
-            {'type': 'document_add', 'id': 3, 'document_id': 1,
+            {'type': 'document_add', 'document_id': doc11,
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': name, 'description': ''})
-        poll_proj1 = await self.poll_event(1, 3)
+        poll_proj1 = await self.poll_event(int(proj1))
 
-        # Create document 2 in project 2
+        # Create document 22 in project 2
         async with self.apost(
-            '/api/project/2/document/new',
+            f'/api/project/{proj2}/document/new',
             data=dict(name='otherdoc', description='Other one',
                       text_direction='LEFT_TO_RIGHT'),
             files=dict(
@@ -847,64 +878,64 @@ class TestMultiuser(MyHTTPTestCase):
             ),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"created": 2})
+            doc22 = (await response.json())['created']
         db = self.application.DBSession()
-        doc = db.query(database.Document).get(2)
+        doc = db.query(database.Document).get(doc22)
         self.assertEqual(doc.name, 'otherdoc')
         self.assertEqual(doc.description, 'Other one')
         self.assertEqual(doc.filename, 'otherdoc.html')
         self.assertEqual(
             await poll_proj2,
-            {'type': 'document_add', 'id': 4, 'document_id': 2,
+            {'type': 'document_add', 'document_id': doc22,
              'text_direction': 'LEFT_TO_RIGHT',
              'document_name': 'otherdoc', 'description': 'Other one'})
-        poll_proj2 = await self.poll_event(2, 4)
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create highlight 1 in document 1
+        # Create highlight 11 in document 11
         async with self.apost(
-            '/api/project/1/document/1/highlight/new',
+            f'/api/project/{proj1}/document/{doc11}/highlight/new',
             json=dict(start_offset=3, end_offset=5, tags=[]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 1})
+            hl11 = (await response.json())['id']
         self.assertEqual(
             await poll_proj1,
-            {'type': 'highlight_add', 'id': 5, 'highlight_id': 1,
-             'document_id': 1, 'start_offset': 3, 'end_offset': 5,
+            {'type': 'highlight_add', 'highlight_id': hl11,
+             'document_id': doc11, 'start_offset': 3, 'end_offset': 5,
              'tags': [], 'tag_count_changes': {}})
-        poll_proj1 = await self.poll_event(1, 5)
+        poll_proj1 = await self.poll_event(int(proj1))
 
-        # Update highlight 1 in document 1: change position
+        # Update highlight 11 in document 11: change position
         async with self.apost(
-            '/api/project/1/document/1/highlight/1',
+            f'/api/project/{proj1}/document/{doc11}/highlight/{hl11}',
             json=dict(start_offset=3, end_offset=7),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 1})
+            self.assertEqual(await response.json(), {"id": hl11})
         self.assertEqual(
             await poll_proj1,
-            {'type': 'highlight_add', 'id': 6, 'highlight_id': 1,
-             'document_id': 1, 'start_offset': 3, 'end_offset': 7,
+            {'type': 'highlight_add', 'highlight_id': hl11,
+             'document_id': doc11, 'start_offset': 3, 'end_offset': 7,
              'tags': [], 'tag_count_changes': {}})
-        poll_proj1 = await self.poll_event(1, 6)
+        poll_proj1 = await self.poll_event(int(proj1))
 
-        # Update highlight 1 in document 1: change tags
+        # Update highlight 11 in document 11: change tags
         async with self.apost(
-            '/api/project/1/document/1/highlight/1',
-            json=dict(tags=[1]),
+            f'/api/project/{proj1}/document/{doc11}/highlight/{hl11}',
+            json=dict(tags=[tag11]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 1})
+            self.assertEqual(await response.json(), {"id": hl11})
         self.assertEqual(
             await poll_proj1,
-            {'type': 'highlight_add', 'id': 7, 'highlight_id': 1,
-             'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [1], 'tag_count_changes': {'1': 1}})
-        poll_proj1 = await self.poll_event(1, 7)
+            {'type': 'highlight_add', 'highlight_id': hl11,
+             'document_id': doc11, 'start_offset': 3, 'end_offset': 7,
+             'tags': [tag11], 'tag_count_changes': {'1': 1}})
+        poll_proj1 = await self.poll_event(int(proj1))
 
         # Change project 2 metadata (invalid)
         async with self.apost(
-            '/api/project/2',
+            f'/api/project/{proj2}',
             json={'name': '', 'description': "Meaningful"},
         ) as response:
             self.assertEqual(response.status, 400)
@@ -915,20 +946,20 @@ class TestMultiuser(MyHTTPTestCase):
 
         # Change project 2 metadata
         async with self.apost(
-            '/api/project/2',
+            f'/api/project/{proj2}',
             json={'name': 'new project', 'description': "Meaningful"},
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {})
         self.assertEqual(
             await poll_proj2,
-            {'type': 'project_meta', 'id': 8,
+            {'type': 'project_meta',
              'project_name': 'new project', 'description': 'Meaningful'})
-        poll_proj2 = await self.poll_event(2, 8)
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create document 3 in project 2
+        # Create document 23 in project 2
         async with self.apost(
-            '/api/project/2/document/new',
+            f'/api/project/{proj2}/document/new',
             data=dict(name='third', description='Last one',
                       text_direction='RIGHT_TO_LEFT'),
             files=dict(file=(
@@ -938,114 +969,114 @@ class TestMultiuser(MyHTTPTestCase):
             )),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"created": 3})
+            doc23 = (await response.json())['created']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'document_add', 'id': 9, 'document_id': 3,
+            {'type': 'document_add', 'document_id': doc23,
              'text_direction': 'RIGHT_TO_LEFT',
              'document_name': 'third', 'description': 'Last one'})
-        poll_proj2 = await self.poll_event(2, 9)
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create highlight in document 2, using wrong project id
+        # Create highlight in document 22, using wrong project id
         async with self.apost(
-            '/api/project/1/document/2/highlight/new',
+            f'/api/project/{proj1}/document/{doc22}/highlight/new',
             json=dict(start_offset=0, end_offset=4, tags=[]),
         ) as response:
             self.assertEqual(response.status, 404)
 
-        # Create highlight in document 2, using tags that don't exist
+        # Create highlight in document 22, using tags that don't exist
         async with self.apost(
-            '/api/project/2/document/2/highlight/new',
-            json=dict(start_offset=0, end_offset=4, tags=[150]),
+            f'/api/project/{proj2}/document/{doc22}/highlight/new',
+            json=dict(start_offset=0, end_offset=4, tags=[294511219]),
         ) as response:
             self.assertEqual(response.status, 400)
             self.assertEqual(await response.json(),
                              {"error": "No such tag"})
 
-        # Create highlight in document 2, using tags from project 1
+        # Create highlight in document 22, using tags from project 1
         async with self.apost(
-            '/api/project/2/document/2/highlight/new',
-            json=dict(start_offset=0, end_offset=4, tags=[1]),
+            f'/api/project/{proj2}/document/{doc22}/highlight/new',
+            json=dict(start_offset=0, end_offset=4, tags=[tag11]),
         ) as response:
             self.assertEqual(response.status, 400)
             self.assertEqual(await response.json(),
                              {"error": "No such tag"})
 
-        # Create highlight 2 in document 2
+        # Create highlight 22 in document 22
         async with self.apost(
-            '/api/project/2/document/2/highlight/new',
-            json=dict(start_offset=0, end_offset=4, tags=[4]),
+            f'/api/project/{proj2}/document/{doc22}/highlight/new',
+            json=dict(start_offset=0, end_offset=4, tags=[tag24]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 2})
+            hl22 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'highlight_add', 'id': 10, 'highlight_id': 2,
-             'document_id': 2, 'start_offset': 0, 'end_offset': 4,
-             'tags': [4], 'tag_count_changes': {'4': 1}})
-        poll_proj2 = await self.poll_event(2, 10)
+            {'type': 'highlight_add', 'highlight_id': hl22,
+             'document_id': doc22, 'start_offset': 0, 'end_offset': 4,
+             'tags': [tag24], 'tag_count_changes': {str(tag24): 1}})
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create highlight 3 in document 2
+        # Create highlight 23 in document 22
         async with self.apost(
-            '/api/project/2/document/2/highlight/new',
-            json=dict(start_offset=13, end_offset=17, tags=[3, 2]),
+            f'/api/project/{proj2}/document/{doc22}/highlight/new',
+            json=dict(start_offset=13, end_offset=17, tags=[tag23, tag22]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 3})
+            hl23 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'highlight_add', 'id': 11, 'highlight_id': 3,
-             'document_id': 2, 'start_offset': 13, 'end_offset': 17,
-             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1}})
-        poll_proj2 = await self.poll_event(2, 11)
+            {'type': 'highlight_add', 'highlight_id': hl23,
+             'document_id': doc22, 'start_offset': 13, 'end_offset': 17,
+             'tags': [tag22, tag23], 'tag_count_changes': {str(tag22): 1, str(tag23): 1}})
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create highlight 4 in document 2
+        # Create highlight 24 in document 22
         async with self.apost(
-            '/api/project/2/document/2/highlight/new',
-            json=dict(start_offset=0, end_offset=7, tags=[3]),
+            f'/api/project/{proj2}/document/{doc22}/highlight/new',
+            json=dict(start_offset=0, end_offset=7, tags=[tag23]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 4})
+            hl24 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'highlight_add', 'id': 12, 'highlight_id': 4,
-             'document_id': 2, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
-        poll_proj2 = await self.poll_event(2, 12)
+            {'type': 'highlight_add', 'highlight_id': hl24,
+             'document_id': doc22, 'start_offset': 0, 'end_offset': 7,
+             'tags': [tag23], 'tag_count_changes': {str(tag23): 1}})
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Delete highlight 4 in document 2
+        # Delete highlight 24 in document 22
         async with self.adelete(
-            '/api/project/2/document/2/highlight/4',
+            f'/api/project/{proj2}/document/{doc22}/highlight/{hl24}',
         ) as response:
             self.assertEqual(response.status, 204)
         self.assertEqual(
             await poll_proj2,
-            {'type': 'highlight_delete', 'id': 13, 'highlight_id': 4,
-             'document_id': 2, 'tag_count_changes': {'3': -1}})
-        poll_proj2 = await self.poll_event(2, 13)
+            {'type': 'highlight_delete', 'highlight_id': hl24,
+             'document_id': doc22, 'tag_count_changes': {str(tag23): -1}})
+        poll_proj2 = await self.poll_event(int(proj2))
 
-        # Create highlight 5 in document 3
+        # Create highlight 25 in document 23
         async with self.apost(
-            '/api/project/2/document/3/highlight/new',
-            json=dict(start_offset=0, end_offset=7, tags=[3]),
+            f'/api/project/{proj2}/document/{doc23}/highlight/new',
+            json=dict(start_offset=0, end_offset=7, tags=[tag23]),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {"id": 5})
+            hl25 = (await response.json())['id']
         self.assertEqual(
             await poll_proj2,
-            {'type': 'highlight_add', 'id': 14, 'highlight_id': 5,
-             'document_id': 3, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
-        poll_proj2 = await self.poll_event(2, 14)
+            {'type': 'highlight_add', 'highlight_id': hl25,
+             'document_id': doc23, 'start_offset': 0, 'end_offset': 7,
+             'tags': [tag23], 'tag_count_changes': {str(tag23): 1}})
+        poll_proj2 = await self.poll_event(int(proj2))
 
         # List highlights in project 2 under 'people'
-        async with self.aget('/api/project/2/highlights/people') as response:
+        async with self.aget(f'/api/project/{proj2}/highlights/people') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
+                    {'id': hl23, 'document_id': doc22, 'tags': [tag22, tag23],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
-                    {'id': 5, 'document_id': 3, 'tags': [3],
+                    {'id': hl25, 'document_id': doc23, 'tags': [tag23],
                      'text_direction': 'RIGHT_TO_LEFT',
                      'content': "<strong>Opinion</strong>"},
                 ],
@@ -1054,12 +1085,12 @@ class TestMultiuser(MyHTTPTestCase):
 
         # List highlights in project 2 under 'interesting.places'
         async with self.aget(
-            '/api/project/2/highlights/interesting.places',
+            f'/api/project/{proj2}/highlights/interesting.places',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'document_id': 2, 'tags': [4],
+                    {'id': hl22, 'document_id': doc22, 'tags': [tag24],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
                 ],
                 'pages': 1,
@@ -1067,61 +1098,61 @@ class TestMultiuser(MyHTTPTestCase):
 
         # List highlights in project 2 under 'interesting'
         async with self.aget(
-            '/api/project/2/highlights/interesting',
+            f'/api/project/{proj2}/highlights/interesting',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'document_id': 2, 'tags': [4],
+                    {'id': hl22, 'document_id': doc22, 'tags': [tag24],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
-                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
+                    {'id': hl23, 'document_id': doc22, 'tags': [tag22, tag23],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
                 ],
                 'pages': 1,
             })
 
         # List all highlights in project 2
-        async with self.aget('/api/project/2/highlights/') as response:
+        async with self.aget(f'/api/project/{proj2}/highlights/') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'document_id': 2, 'tags': [4],
+                    {'id': hl22, 'document_id': doc22, 'tags': [tag24],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
-                    {'id': 3, 'document_id': 2, 'tags': [2, 3],
+                    {'id': hl23, 'document_id': doc22, 'tags': [tag22, tag23],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
-                    {'id': 5, 'document_id': 3, 'tags': [3],
+                    {'id': hl25, 'document_id': doc23, 'tags': [tag23],
                      'text_direction': 'RIGHT_TO_LEFT',
                      'content': "<strong>Opinion</strong>"},
                 ],
                 'pages': 1,
             })
 
-        # Get contents of document 2
-        async with self.aget('/api/project/2/document/2') as response:
+        # Get contents of document 22
+        async with self.aget(f'/api/project/{proj2}/document/{doc22}') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'start_offset': 0, 'end_offset': 4,
-                     'tags': [4]},
-                    {'id': 3, 'start_offset': 13, 'end_offset': 17,
-                     'tags': [2, 3]},
+                    {'id': hl22, 'start_offset': 0, 'end_offset': 4,
+                     'tags': [tag24]},
+                    {'id': hl23, 'start_offset': 13, 'end_offset': 17,
+                     'tags': [tag22, tag23]},
                 ],
                 'text_direction': 'LEFT_TO_RIGHT',
             })
-        async with self.aget('/api/project/2/document/2/contents') as response:
+        async with self.aget(f'/api/project/{proj2}/document/{doc22}/contents') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'contents': [{'contents': 'different content', 'offset': 0}],
             })
-            self.assertEqual(response.headers['Etag'], '"doc-2-1"')
+            self.assertEqual(response.headers['Etag'], f'"doc-{doc22}-1"')
         async with self.aget(
-            '/api/project/2/document/2/contents',
-            headers={'If-None-Match': '"doc-2-1"'},
+            f'/api/project/{proj2}/document/{doc22}/contents',
+            headers={'If-None-Match': f'"doc-{doc22}-1"'},
         ) as response:
             self.assertEqual(response.status, 304)
 
         # Export document 2 to HTML
-        async with self.aget('/project/2/export/document/2.html') as response:
+        async with self.aget(f'/project/{proj2}/export/document/{doc22}.html') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
                 response.headers['Content-Type'],
@@ -1155,8 +1186,8 @@ class TestMultiuser(MyHTTPTestCase):
                 </html>'''),
             )
 
-        # Export document 2 to unknown format
-        async with self.aget('/project/2/export/document/2.dat') as response:
+        # Export document 22 to unknown format
+        async with self.aget(f'/project/{proj2}/export/document/{doc22}.dat') as response:
             self.assertEqual(response.status, 404)
             self.assertEqual(response.headers['Content-Type'], 'text/plain')
             self.assertEqual(
@@ -1166,7 +1197,7 @@ class TestMultiuser(MyHTTPTestCase):
 
         # Export highlights in project 2 under 'interesting' to HTML
         async with self.aget(
-            '/project/2/export/highlights/interesting.html',
+            f'/project/{proj2}/export/highlights/interesting.html',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
@@ -1208,7 +1239,7 @@ class TestMultiuser(MyHTTPTestCase):
 
         # Export all highlights in project 2 to HTML
         async with self.aget(
-            '/project/2/export/highlights/.html',
+            f'/project/{proj2}/export/highlights/.html',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
@@ -1258,21 +1289,21 @@ class TestMultiuser(MyHTTPTestCase):
 
         # Export highlights in project 2 under 'interesting' to CSV
         async with self.aget(
-            '/project/2/export/highlights/interesting.csv',
+            f'/project/{proj2}/export/highlights/interesting.csv',
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
                 await response.text(),
-                textwrap.dedent('''\
+                textwrap.dedent(f'''\
                 id,document,tag,content
-                2,otherdoc,interesting.places,diff
-                3,otherdoc,interesting,tent
-                3,otherdoc,people,tent
+                {hl22},otherdoc,interesting.places,diff
+                {hl23},otherdoc,interesting,tent
+                {hl23},otherdoc,people,tent
                 ''').replace('\n', '\r\n'),
             )
 
         # Export codebook of project 2 to CSV
-        async with self.aget('/project/2/export/codebook.csv') as response:
+        async with self.aget(f'/project/{proj2}/export/codebook.csv') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
                 response.headers['Content-Type'],
@@ -1289,7 +1320,7 @@ class TestMultiuser(MyHTTPTestCase):
             )
 
         # Export codebook of project 2 to HTML
-        async with self.aget('/project/2/export/codebook.html') as response:
+        async with self.aget(f'/project/{proj2}/export/codebook.html') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
                 await response.text(),
@@ -1325,7 +1356,7 @@ class TestMultiuser(MyHTTPTestCase):
             )
 
         # Export codebook of project 2 to REFI-QDA
-        async with self.aget('/project/2/export/codebook.qdc') as response:
+        async with self.aget(f'/project/{proj2}/export/codebook.qdc') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(
                 response.headers['Content-Type'],
@@ -1344,29 +1375,29 @@ class TestMultiuser(MyHTTPTestCase):
                  ).format(ver=exact_version()),
             )
 
-        # Merge tag 3 into 2
+        # Merge tag 23 into 22
         async with self.apost(
-            '/api/project/2/tag/merge',
-            json=dict(src=3, dest=2),
+            f'/api/project/{proj2}/tag/merge',
+            json=dict(src=tag23, dest=tag22),
         ) as response:
             self.assertEqual(response.status, 200)
-            self.assertEqual(await response.json(), {'id': 2})
+            self.assertEqual(await response.json(), {'id': tag22})
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_merge', 'id': 15, 'src_tag_id': 3, 'dest_tag_id': 2},
+            {'type': 'tag_merge', 'src_tag_id': tag23, 'dest_tag_id': tag22},
         )
-        poll_proj2 = await self.poll_event(2, 15)
+        poll_proj2 = await self.poll_event(int(proj2))
 
         # List all highlights in project 2
-        async with self.aget('/api/project/2/highlights/') as response:
+        async with self.aget(f'/api/project/{proj2}/highlights/') as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'document_id': 2, 'tags': [4],
+                    {'id': hl22, 'document_id': doc22, 'tags': [tag24],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
-                    {'id': 3, 'document_id': 2, 'tags': [2],
+                    {'id': hl23, 'document_id': doc22, 'tags': [tag22],
                      'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
-                    {'id': 5, 'document_id': 3, 'tags': [2],
+                    {'id': hl25, 'document_id': doc23, 'tags': [tag22],
                      'text_direction': 'RIGHT_TO_LEFT',
                      'content': "<strong>Opinion</strong>"},
                 ],
@@ -1381,7 +1412,7 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertFalse(poll_proj2.done())
         poll_proj2.cancel()
 
-        async with self.apost('/project/1/delete') as response:
+        async with self.apost(f'/project/{proj1}/delete') as response:
             self.assertEqual(response.status, 303)
             self.assertEqual(response.headers['Location'], '/')
 
@@ -1512,11 +1543,13 @@ class TestMultiuser(MyHTTPTestCase):
         user = database.User(login='db%duser' % db_num)
         await user.set_password('hackme')
         db.add(user)
-        cls.make_basic_project(db, db_num, 1)
-        cls.make_basic_project(db, db_num, 2)
+        mapping = {}
+        cls.make_basic_project(db, db_num, 1, mapping)
+        cls.make_basic_project(db, db_num, 2, mapping)
+        return mapping
 
     @staticmethod
-    def make_basic_project(db, db_num, project_num):
+    def make_basic_project(db, db_num, project_num, mapping):
         # Creates 1 project, 2 (+1 deleted) documents, 2 (+1 deleted) tags,
         # 2 (+1 deleted) highlights, 13 commands total
         def doc(project, number, dir=database.TextDirection.LEFT_TO_RIGHT):
@@ -1531,29 +1564,34 @@ class TestMultiuser(MyHTTPTestCase):
             )
 
         user = 'db%duser' % db_num
-        project1 = database.Project(
+        project = database.Project(
             name='db%dproject%d' % (db_num, project_num),
             description='',
         )
-        db.add(project1)
+        db.add(project)
         db.flush()
-        document1 = doc(project1, 1)
+        mapping[f'proj{project_num}'] = project.id
+        document1 = doc(project, 1)
         db.add(document1)
-        document2 = doc(project1, 2, database.TextDirection.RIGHT_TO_LEFT)
+        document2 = doc(project, 2, database.TextDirection.RIGHT_TO_LEFT)
         db.add(document2)
         tag1 = database.Tag(
-            project=project1,
+            project=project,
             path='db%dtag%d1' % (db_num, project_num),
             description='',
         )
         db.add(tag1)
         tag2 = database.Tag(
-            project=project1,
+            project=project,
             path='db%dtag%d2' % (db_num, project_num),
             description='',
         )
         db.add(tag2)
         db.flush()
+        mapping[f'doc{project_num}1'] = document1.id
+        mapping[f'doc{project_num}2'] = document2.id
+        mapping[f'tag{project_num}1'] = tag1.id
+        mapping[f'tag{project_num}2'] = tag2.id
         hl1 = database.Highlight(
             document_id=document1.id,
             start_offset=3, end_offset=6, snippet='doc',
@@ -1565,29 +1603,33 @@ class TestMultiuser(MyHTTPTestCase):
         db.add(hl1)
         db.add(hl2)
         db.flush()
+        mapping[f'hl{project_num}1'] = hl1.id
+        mapping[f'hl{project_num}2'] = hl2.id
         hl1.tags.append(tag2)
         hl2.tags.append(tag1)
-        db.add(database.ProjectMember(user_login='admin', project=project1,
+        db.add(database.ProjectMember(user_login='admin', project=project,
                                       privileges=database.Privileges.ADMIN))
         db.add(database.ProjectMember(user_login=user,
-                                      project=project1,
+                                      project=project,
                                       privileges=database.Privileges.ADMIN))
         db.add(database.Command.document_add(user, document1))
-        document_fake = doc(project1, 100)
+        document_fake = doc(project, 100)
         db.add(document_fake)
         db.flush()
+        mapping[f'doc{project_num}F'] = document_fake.id
         db.add(database.Command.document_add(user, document_fake))
         db.add(database.Command.document_add(user, document2))
         db.add(database.Command.document_delete(user, document_fake))
         db.delete(document_fake)
-        tag_fake = database.Tag(project=project1, path='db%dtagF' % db_num,
+        tag_fake = database.Tag(project=project, path='db%dtagF' % db_num,
                                 description='')
         db.add(tag_fake)
         db.flush()
+        mapping[f'tag{project_num}F'] = tag_fake.id
         db.add(database.Command.tag_add(user, tag1))
         db.add(database.Command.tag_add(user, tag_fake))
         db.add(database.Command.tag_add(user, tag2))
-        db.add(database.Command.tag_delete(user, project1.id, tag_fake.id))
+        db.add(database.Command.tag_delete(user, project.id, tag_fake.id))
         db.delete(tag_fake)
         hl_fake = database.Highlight(
             document_id=document1.id,
@@ -1595,6 +1637,7 @@ class TestMultiuser(MyHTTPTestCase):
         )
         db.add(hl_fake)
         db.flush()
+        mapping[f'hl{project_num}F'] = hl_fake.id
         db.add(database.Command.highlight_add(user, document1, hl1, []))
         db.add(database.Command.highlight_add(user, document1, hl1, [tag2.id]))
         db.add(database.Command.highlight_add(user, document1, hl_fake,
@@ -1616,7 +1659,7 @@ class TestMultiuser(MyHTTPTestCase):
     async def test_import(self, tmp):
         # Populate database
         db1 = self.application.DBSession()
-        await self.make_basic_db(db1, 1)
+        m1 = await self.make_basic_db(db1, 1)
         db1.commit()
 
         # Log in
@@ -1636,7 +1679,7 @@ class TestMultiuser(MyHTTPTestCase):
         db2_path = os.path.join(tmp, 'db.sqlite3')
         db2 = database.connect('sqlite:///' + db2_path)()
         db2.add(database.User(login='admin'))
-        await self.make_basic_db(db2, 2)
+        m = await self.make_basic_db(db2, 2)
         db2.commit()
 
         # List projects in database
@@ -1649,22 +1692,20 @@ class TestMultiuser(MyHTTPTestCase):
             ) as response:
                 self.assertEqual(response.status, 200)
                 self.assertEqual(await response.json(), {
-                    'projects': [{'id': 1, 'name': 'db2project1'},
-                                 {'id': 2, 'name': 'db2project2'}],
+                    'projects': [{'id': m['proj1'], 'name': 'db2project1'},
+                                 {'id': m['proj2'], 'name': 'db2project2'}],
                 })
 
         # Import project
         with open(db2_path, 'rb') as fp:
             async with self.apost(
                 '/api/import',
-                data={'project_id': '1'},
+                data={'project_id': str(m['proj1'])},
                 files=dict(file=('db2.sqlite3', 'application/octet-stream',
                                  fp.read())),
             ) as response:
                 self.assertEqual(response.status, 200)
-                self.assertEqual(await response.json(), {
-                    'project_id': 3,
-                })
+                proj1i = (await response.json())['project_id']
 
         # Check imported project
         self.assertEqual(
@@ -1679,9 +1720,9 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Project.__table__.c.id)
             ),
             [
-                (1, 'db1project1', '', datetime.utcnow()),
-                (2, 'db1project2', '', datetime.utcnow()),
-                (3, 'db2project1', '', datetime.utcnow()),
+                (m1['proj1'], 'db1project1', '', datetime.utcnow()),
+                (m1['proj2'], 'db1project2', '', datetime.utcnow()),
+                (proj1i, 'db2project1', '', datetime.utcnow()),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1691,13 +1732,20 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.ProjectMember.__table__.c.user_login)
             ),
             [
-                (1, 'admin', database.Privileges.ADMIN),
-                (1, 'db1user', database.Privileges.ADMIN),
-                (2, 'admin', database.Privileges.ADMIN),
-                (2, 'db1user', database.Privileges.ADMIN),
-                (3, 'db1user', database.Privileges.ADMIN),
+                (m1['proj1'], 'admin', database.Privileges.ADMIN),
+                (m1['proj1'], 'db1user', database.Privileges.ADMIN),
+                (m1['proj2'], 'admin', database.Privileges.ADMIN),
+                (m1['proj2'], 'db1user', database.Privileges.ADMIN),
+                (proj1i, 'db1user', database.Privileges.ADMIN),
             ],
         )
+        imported_docs = {}
+        for row in db1.execute(
+            database.Document.__table__.select()
+            .filter(database.Document.__table__.c.project_id == proj1i)
+        ):
+            self.assertNotIn(row['name'], imported_docs)
+            imported_docs[row['name']] = row['id']
         self.assertEqual(
             [
                 (row['id'], row['name'])
@@ -1707,65 +1755,75 @@ class TestMultiuser(MyHTTPTestCase):
                 )
             ],
             [
-                (1, 'db1doc11.txt'),
-                (2, 'db1doc12.txt'),
-                (4, 'db1doc21.txt'),
-                (5, 'db1doc22.txt'),
-                (7, 'db2doc11.txt'),
-                (8, 'db2doc12.txt'),
+                (m1['doc11'], 'db1doc11.txt'),
+                (m1['doc12'], 'db1doc12.txt'),
+                (m1['doc21'], 'db1doc21.txt'),
+                (m1['doc22'], 'db1doc22.txt'),
+                (imported_docs['db2doc11.txt'], 'db2doc11.txt'),
+                (imported_docs['db2doc12.txt'], 'db2doc12.txt'),
             ],
         )
-        self.assertRowsEqualsExceptDates(
-            db1.execute(
-                database.Command.__table__.select()
-                .where(database.Command.__table__.c.project_id == 3)
-                .order_by(database.Command.__table__.c.id)
-            ),
+        imported_tags = {}
+        for row in db1.execute(
+            database.Tag.__table__.select()
+            .filter(database.Tag.__table__.c.project_id == proj1i)
+        ):
+            self.assertNotIn(row['path'], imported_tags)
+            imported_tags[row['path']] = row['id']
+        commands = db1.execute(
+            database.Command.__table__.select()
+            .where(database.Command.__table__.c.project_id == proj1i)
+            .order_by(database.Command.__table__.c.date)
+        )
+        commands = [(row[2],) + row[4:] for row in commands]
+        imported_hls = []
+        for row in commands:
+            if row[2]['type'].startswith('highlight_'):
+                hl_id = row[2]['highlight_id']
+                if hl_id >= 0 and hl_id not in imported_hls:
+                    imported_hls.append(row[2]['highlight_id'])
+        self.assertEqual(
+            commands,
             [
-                # id, user_login, project_id, document_id, {payload}
-                # project 1 imported as 3
-                # documents 1, 2, 3 imported as 7, 8, 9
-                # tags 1, 2, 3 imported as 7, 8, -3
-                # highlights 1, 2, 3 imported as 7, 8, -3
-                # commands 1-13 exported as 27-39
-                (27, 'db1user', 3, 7,
+                # user_login, document_id, {payload}
+                ('db1user', imported_docs['db2doc11.txt'],
                  {'type': 'document_add', 'description': '',
                   'text_direction': 'LEFT_TO_RIGHT',
                   'document_name': 'db2doc11.txt'}),
-                (28, 'db1user', 3, -3,
+                ('db1user', -m['doc1F'],
                  {'type': 'document_add', 'description': '',
                   'text_direction': 'LEFT_TO_RIGHT',
                   'document_name': 'db2doc1100.txt'}),
-                (29, 'db1user', 3, 8,
+                ('db1user', imported_docs['db2doc12.txt'],
                  {'type': 'document_add', 'description': '',
                   'text_direction': 'RIGHT_TO_LEFT',
                   'document_name': 'db2doc12.txt'}),
-                (30, 'db1user', 3, -3, {'type': 'document_delete'}),
-                (31, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 7,
+                ('db1user', -m['doc1F'], {'type': 'document_delete'}),
+                ('db1user', None,
+                 {'type': 'tag_add', 'description': '', 'tag_id': imported_tags['db2tag11'],
                   'tag_path': 'db2tag11'}),
-                (32, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': -3,
+                ('db1user', None,
+                 {'type': 'tag_add', 'description': '', 'tag_id': -m['tag1F'],
                   'tag_path': 'db2tagF'}),
-                (33, 'db1user', 3, None,
-                 {'type': 'tag_add', 'description': '', 'tag_id': 8,
+                ('db1user', None,
+                 {'type': 'tag_add', 'description': '', 'tag_id': imported_tags['db2tag12'],
                   'tag_path': 'db2tag12'}),
-                (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
-                (35, 'db1user', 3, 7,
-                 {'type': 'highlight_add', 'highlight_id': 7,
+                ('db1user', None, {'type': 'tag_delete', 'tag_id': -m['tag1F']}),
+                ('db1user', imported_docs['db2doc11.txt'],
+                 {'type': 'highlight_add', 'highlight_id': imported_tags['db2tag11'],
                   'start_offset': 3, 'end_offset': 6, 'tags': []}),
-                (36, 'db1user', 3, 7,
-                 {'type': 'highlight_add', 'highlight_id': 7,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [8]}),
-                (37, 'db1user', 3, 7,
-                 {'type': 'highlight_add', 'highlight_id': -3,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
-                (38, 'db1user', 3, 7,
-                 {'type': 'highlight_add', 'highlight_id': 8,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
-                (39, 'db1user', 3, 7,
-                 {'type': 'highlight_delete', 'highlight_id': -3}),
-                (40, 'db1user', 3, None, {'type': 'project_import'}),
+                ('db1user', imported_docs['db2doc11.txt'],
+                 {'type': 'highlight_add', 'highlight_id': imported_hls[0],
+                  'start_offset': 3, 'end_offset': 6, 'tags': [imported_tags['db2tag12']]}),
+                ('db1user', imported_docs['db2doc11.txt'],
+                 {'type': 'highlight_add', 'highlight_id': -m['hl1F'],
+                  'start_offset': 3, 'end_offset': 6, 'tags': [imported_tags['db2tag11']]}),
+                ('db1user', imported_docs['db2doc11.txt'],
+                 {'type': 'highlight_add', 'highlight_id': imported_hls[1],
+                  'start_offset': 3, 'end_offset': 6, 'tags': [imported_tags['db2tag11']]}),
+                ('db1user', imported_docs['db2doc11.txt'],
+                 {'type': 'highlight_delete', 'highlight_id': -m['hl1F']}),
+                ('db1user', None, {'type': 'project_import'}),
             ],
         )
         self.assertEqual(
@@ -1776,25 +1834,39 @@ class TestMultiuser(MyHTTPTestCase):
                     .order_by(database.Highlight.__table__.c.id)
                 )
             ],
-            [(1, 1), (2, 2), (4, 4), (5, 5), (7, 7), (8, 8)],
+            [
+                (m1['hl11'], m1['doc11']),
+                (m1['hl12'], m1['doc12']),
+                (m1['hl21'], m1['doc21']),
+                (m1['hl22'], m1['doc22']),
+                (imported_hls[0], imported_docs['db2doc11.txt']),
+                (imported_hls[1], imported_docs['db2doc12.txt']),
+            ],
         )
         self.assertRowsEqualsExceptDates(
-            db1.execute(database.Tag.__table__.select()),
-            [
-                (1, 1, 'db1tag11', ''),
-                (2, 1, 'db1tag12', ''),
-                (4, 2, 'db1tag21', ''),
-                (5, 2, 'db1tag22', ''),
-                (7, 3, 'db2tag11', ''),
-                (8, 3, 'db2tag12', ''),
-            ],
+            sorted([row[1:] for row in db1.execute(database.Tag.__table__.select())]),
+            sorted([
+                (m1['proj1'], 'db1tag11', ''),
+                (m1['proj1'], 'db1tag12', ''),
+                (m1['proj2'], 'db1tag21', ''),
+                (m1['proj2'], 'db1tag22', ''),
+                (proj1i, 'db2tag11', ''),
+                (proj1i, 'db2tag12', ''),
+            ]),
         )
         self.assertRowsEqualsExceptDates(
             db1.execute(
                 database.highlight_tags.select()
                 .order_by(database.highlight_tags.c.highlight_id)
             ),
-            [(1, 2), (2, 1), (4, 5), (5, 4), (7, 8), (8, 7)],
+            [
+                (m1['hl11'], m1['tag12']),
+                (m1['hl12'], m1['tag11']),
+                (m1['hl21'], m1['tag22']),
+                (m1['hl22'], m1['tag21']),
+                (imported_hls[0], imported_tags['db2tag12']),
+                (imported_hls[1], imported_tags['db2tag11']),
+            ],
         )
 
     @with_tempdir
@@ -2259,9 +2331,11 @@ class TestMultiuser(MyHTTPTestCase):
             result = await response.json()
             event = result['events'][0]
             event.pop('user_login')
+            self._poll_event_last_id[proj] = event.pop('id')
             return event
 
-    async def poll_event(self, proj, from_id):
+    async def poll_event(self, proj):
+        from_id = self._poll_event_last_id.get(proj, -1)
         fut = asyncio.ensure_future(self._poll_event(proj, from_id))
         await asyncio.sleep(0.2)  # Give time for the request to be sent
         return fut
