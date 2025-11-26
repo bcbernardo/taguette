@@ -409,7 +409,7 @@ class Cilogon(BaseHandler):
 
     @PROM_REQUESTS.sync("cilogon")
     def get(self):
-        entity_id = self.get_argument("entity_id", None)
+        entity_id = self.get_argument("entity_id", '')
         self.set_cookie("entity_id", entity_id)
         self.flow_cilogon = self.flow_func_cilogon()
         self.login_cilogon(entity_id=entity_id)
