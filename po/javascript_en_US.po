@@ -67,7 +67,6 @@ msgid "Continue"
 msgstr ""
 
 #: taguette/static/js/project/intro.js:71
-#, fuzzy
 msgid "Your documents"
 msgstr "Documents"
 
@@ -104,7 +103,6 @@ msgid "<p>These can be expanded or collapsed.</p>"
 msgstr ""
 
 #: taguette/static/js/project/intro.js:96
-#, fuzzy
 msgid "Consulting documents"
 msgstr "Documents"
 
@@ -178,7 +176,6 @@ msgid ""
 msgstr ""
 
 #: taguette/static/js/project/intro.js:148
-#, fuzzy
 msgid "Navigating to documents"
 msgstr "Documents"
 
@@ -356,7 +353,6 @@ msgid "delete"
 msgstr "Delete"
 
 #: taguette/static/js/tag/treeview.js:235
-#, fuzzy
 msgid "Documents"
 msgstr "Documents"
 
