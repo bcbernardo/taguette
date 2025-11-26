@@ -84,7 +84,7 @@ function generateDocumentList() {
             elem.classList.add('document-link-current');
         }
         let favoriteIconClass = doc.favorite === true ? 'fas fa-star' : 'far fa-star';
-        let favoriteTitle = doc.favorite === true ? gettext("Remove from Favorites") : gettext("Add to Favorites");
+        let favoriteTitle = doc.favorite === true ? gettext("Remove from Bookmarks") : gettext("Add to Bookmarks");
         elem.innerHTML = `
         <div class="d-flex justify-content-between align-items-center">
             <a class="document-link-a text-truncate" style="flex: 1; margin-right: 10px;" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</a>
@@ -339,16 +339,16 @@ function populateDocumentsList(collectionId = null) {
     
     // legend
     const legendDiv = document.createElement('div');
-    legendDiv.className = 'mb-3 p-2 bg-light rounded';
+    legendDiv.className = 'mb-3 p-2 rounded';
     legendDiv.innerHTML = `
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex flex-column lign-items-start gap-2">
             <div class="d-flex align-items-center gap-1">
-                <i class="fas fa-file-alt text-primary"></i>
-                <small>${gettext('Document without collection (will be added)')}</small>
+                <i class="fas fa-file-alt text-primary" style="vertical-align: middle;"></i>
+                <small>${gettext(' = Documents without collection')}</small>
             </div>
             <div class="d-flex align-items-center gap-1">
-                <i class="fas fa-folder text-warning"></i>
-                <small>${gettext('Document with collection (will be moved)')}</small>
+                <i class="fas fa-folder text-warning" style="vertical-align: middle;"></i>
+                <small>${gettext(' = Documents currently assigned to a collection')}</small>
             </div>
         </div>
     `;
@@ -406,8 +406,8 @@ function populateDocumentsList(collectionId = null) {
         // Add document name and collection info
         const textDiv = document.createElement('div');
         textDiv.innerHTML = `
-            <div class="fw-bold">${doc.name}</div>
-            ${currentCollectionName ? `<small class="text-muted">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
+            <div class="fw-bold" title="${doc.name}">${doc.name}</div>
+            ${currentCollectionName ? `<small class="text-muted d-block">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
         `;
         
         contentDiv.appendChild(iconDiv);
@@ -506,7 +506,7 @@ function updateSelectedDocumentsDisplay() {
         badge.innerHTML = `
             <div class="d-flex align-items-center gap-1">
                 <i class="fas ${docCollections.length === 0 ? 'fa-file-alt text-primary' : 'fa-folder text-warning'}"></i>
-                <span>${doc.name}</span>
+                <span title="${doc.name}">${doc.name}</span>
                 <span class="remove-btn" data-document-id="${docId}">×</span>
             </div>
             ${currentCollectionName ? `<small class="text-muted d-block">${gettext('Currently in')}: ${currentCollectionName}</small>` : ''}
@@ -565,7 +565,7 @@ function displaySelectedDocuments(files) {
         fileName.className = 'd-flex align-items-center flex-grow-1';
         fileName.innerHTML = `
             <i class="fas fa-file-alt me-2 text-muted"></i>
-            <span class="file-name">${file.name}</span>
+            <span class="file-name" title="${file.name}">${file.name}</span>
             <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
         `;
         
