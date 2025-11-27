@@ -43,6 +43,19 @@ function closeSideBar() {
 
 document.getElementById('project-sidebar-open').addEventListener('click', openSidebar);
 
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('project-sidebar');
+    const openButton = document.getElementById('project-sidebar-open');
+
+    // Check if sidebar is open (width is not "0" or "0px")
+    if (sidebar && sidebar.style.width && sidebar.style.width !== "0" && sidebar.style.width !== "0px") {
+        // If click is outside sidebar AND not on the button that opens it
+        if (!sidebar.contains(event.target) && !openButton.contains(event.target)) {
+            closeSideBar();
+        }
+    }
+});
+
 function setProjectMetadata(metadata, form = true) {
     if (project_name === metadata.project_name && project_description === metadata.description) {
         return;
@@ -1542,7 +1555,7 @@ function deleteCollection(collectionId) {
     if (collection.children && collection.children.length > 0) {
         showCollectionDeleteOptions(collection);
     } else {
-        showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function () {
+        showConfirm(gettext("Are you sure you want to delete the collection '%(name)s'? Its documents will be moved.", {name: collection.name}), function () {
             deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
                 .then(function() {
                 })
@@ -1764,7 +1777,7 @@ function createCollection() {
                 showAlert(gettext('Collection deleted!'), 'success');
             });
         } else {
-            showConfirm(gettext("Are you sure you want to delete collection '%(name)s'?", {name: collection.name}), function() {
+            showConfirm(gettext("Are you sure you want to delete the collection '%(name)s'? Its documents will be moved.", {name: collection.name}), function() {
                 deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
                     .then(function() {
                         $('#collection-add-modal').modal('hide');

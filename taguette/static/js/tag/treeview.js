@@ -493,7 +493,7 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
         customizeNode: function(element, node, tree) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
-            const tooltipText = gettext('Click to filter • Right-click for options');
+            const tooltipText = gettext('Click to explore • Right-click for options');
             const tooltip = `${node.text}\n\n${tooltipText}`;
             element.attr('title', tooltip);
             element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
