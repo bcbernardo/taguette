@@ -6,6 +6,11 @@ taguette.conf
 
 # alternate template
 /taguette/templates/alt_templates/*
+!/taguette/static/scss/themes/default/*
+/taguette/static/scss/themes/*
+taguette/static/scss/**/*.css
+taguette/static/scss/**/*.css.map
+*.sass-cache
 
 /taguette/static/partners/
 

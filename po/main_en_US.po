@@ -307,7 +307,6 @@ msgid "This page does not exist."
 msgstr "This page does not exist."
 
 #: taguette/web/base.py:473
-#, fuzzy
 msgid ""
 " | Please report issues via <a href=\"https://gitlab.com/bin-"
 "cirst/libreqda/libre-qda/\">GitLab</a> "
@@ -464,7 +463,6 @@ msgid "Back to highlights"
 msgstr "Back to highlights"
 
 #: taguette/templates/project.html:74
-#, fuzzy
 msgid "Load a document from your bookmarks or on the right"
 msgstr "Load a document from you favorites or the side menu"
 
@@ -665,7 +663,6 @@ msgid "..."
 msgstr ""
 
 #: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
 msgid "Export"
 msgstr "Export"
 
@@ -930,7 +927,6 @@ msgstr "Parent code"
 
 #: taguette/templates/modal/create_tag.html:35
 #: taguette/templates/modal/create_tag.html:37
-#, fuzzy
 msgctxt "tag change form placeholder"
 msgid "Name"
 msgstr "Name"
@@ -1103,12 +1099,10 @@ msgid "Welcome!"
 msgstr "Welcome!"
 
 #: taguette/templates/index.html:34
-#, fuzzy
 msgid "Create a new project"
 msgstr "Create a new project"
 
 #: taguette/templates/index.html:40
-#, fuzzy
 msgid "Import a project file"
 msgstr "Import a project file"
 
@@ -1117,12 +1111,10 @@ msgid "Sponsor someone"
 msgstr ""
 
 #: taguette/templates/index.html:49
-#, fuzzy
 msgid "Demo project"
 msgstr "Demo project"
 
 #: taguette/templates/index.html:53
-#, fuzzy
 msgid "Here are your projects"
 msgstr "Here are your projects:"
 
@@ -1327,12 +1319,10 @@ msgid "This link will expire in 1 day."
 msgstr "This link will expire in 1 day."
 
 #: taguette/templates/base.html:36
-#, fuzzy
 msgid "Edit project"
 msgstr "New project"
 
 #: taguette/templates/base.html:43
-#, fuzzy
 msgctxt "search form placeholder"
 msgid "Search in documents"
 msgstr "Edit document"
@@ -1378,7 +1368,7 @@ msgid "Bug report"
 msgstr ""
 
 #: taguette/templates/base.html:93
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
 "/bin-cirst/libreqda/libre-"
@@ -1400,133 +1390,4 @@ msgstr ""
 msgctxt "page title"
 msgid "Maintenance"
 msgstr ""
-
-#~ msgid "Welcome to LibreQDA, an open source qualitative analysis application."
-#~ msgstr "Welcome to LibreQDA, an open source qualitative analysis application."
-
-#~ msgid ""
-#~ "<p>To get the source code: <a "
-#~ "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-#~ " target=\"_blank\">Gitlab</a></p>"
-#~ msgstr ""
-#~ "<p>To get the source code: <a "
-#~ "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-#~ " target=\"_blank\">Gitlab</a></p>"
-
-#~ msgid "<p>To consult documentation</p>"
-#~ msgstr "<p>To consult documentation</p>"
-
-#~ msgid ""
-#~ "<p>A mini project has been added "
-#~ "to your home screen to simulate an"
-#~ " analysis approach.</p>"
-#~ msgstr ""
-#~ "<p>A mini project has been added "
-#~ "to your home screen to simulate an"
-#~ " analysis approach.</p>"
-
-#~ msgid "Next"
-#~ msgstr "Next"
-
-#~ msgid "Back"
-#~ msgstr "Back"
-
-#~ msgid "Continue"
-#~ msgstr "Continue"
-
-#~ msgid "No highlights with this tag yet."
-#~ msgstr "No highlights with this tag yet."
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Documents"
-
-#~ msgctxt "tab"
-#~ msgid "Highlights"
-#~ msgstr "Highlights"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Manage collaborators"
-
-#~ msgid "Backlight"
-#~ msgstr "Backlight"
-
-#~ msgid "Create a tag"
-#~ msgstr "Create a code"
-
-#~ msgid "Filter by"
-#~ msgstr "Sort by"
-
-#~ msgid "Export this view"
-#~ msgstr "Export this view"
-
-#~ msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-#~ msgstr "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Home"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description demo project"
-#~ msgstr "To learn how to use LibreQDA"
-
-#~ msgid "You have no projects yet."
-#~ msgstr "You have no projects yet."
-
-#~ msgctxt "button in project list"
-#~ msgid "Description add new project"
-#~ msgstr "To start a new project from scratch"
-
-#~ msgctxt "button in project list"
-#~ msgid "Description import a project file"
-#~ msgstr "To start from an existing project"
-
-#~ msgid "#000000"
-#~ msgstr "#000000"
-
-#~ msgid "No tag found"
-#~ msgstr "No code found"
-
-#~ msgctxt "exported codebook document title"
-#~ msgid "Taguette Codebook"
-#~ msgstr "LibreQDA Codebook"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights: %(path)s"
-#~ msgstr "LibreQDA highlights: %(path)s"
-
-#~ msgctxt "exported highlights document title"
-#~ msgid "Taguette highlights"
-#~ msgstr "LibreQDA highlights"
-
-#~ msgctxt "exported highlight details"
-#~ msgid "Tags:"
-#~ msgstr "Codes:"
-
-#~ msgid "Authentication process by CILogon"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<a target=\"_blank\" "
-#~ "href=\"https://www.cilogon.org/home\">CILogon</a> facilitates"
-#~ " secure\n"
-#~ "                access to CyberInfrastructures "
-#~ "and supports thousands of identity "
-#~ "providers (IdPs) including University\n"
-#~ "                campuses around the world."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "After you click \"Sign In with "
-#~ "CILogon\", simply SELECT your home "
-#~ "institution and then proceed\n"
-#~ "                with the authentication process at your institution."
-#~ msgstr ""
-
-#~ msgid "Select from list"
-#~ msgstr "Select from list"
-
-#~ msgid "Log in with"
-#~ msgstr "Log in"
 

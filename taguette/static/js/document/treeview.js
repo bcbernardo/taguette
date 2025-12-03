@@ -116,7 +116,7 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
             uncategorizedDocs.sort((a, b) => a.text.localeCompare(b.text));
             treeData.push({
                 id: 'uncategorized',
-                text: gettext('Sans collection'),
+                text: gettext('Without collection'),
                 icon: 'fas fa-folder',
                 selectable: false,
                 nodes: uncategorizedDocs,
@@ -548,7 +548,7 @@ $(document).ready(function() {
             title: 'Right-click on a document:',
             items: [
                 'Edit document',
-                'Toggle favorite',
+                'Toggle bookmark',
                 'Delete document'
             ]
         },
