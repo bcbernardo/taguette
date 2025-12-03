@@ -1104,6 +1104,7 @@ body #treeview-documents span.icon {
   color: #2f2f2f !important;
   max-width: 26em !important;
   min-width: 13em !important;
+  z-index: 20 !important;
 }
 
 .context-menu-item {
@@ -1119,7 +1120,9 @@ body #treeview-documents span.icon {
 .context-menu-item:hover i {
   background-color: #018849 !important;
   color: #ffffff !important;
-} /* Add Taguette font */
+}
+
+/* Add Taguette font */
 @font-face {
   font-family: BadScript;
   font-display: swap;

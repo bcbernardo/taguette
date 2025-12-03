@@ -9,6 +9,7 @@
     color: $color-context-menu-text !important;
     max-width: $context-menu-max-width !important;
     min-width: $context-menu-min-width !important;
+    z-index: 20 !important;
 }
 
 .context-menu-item {
