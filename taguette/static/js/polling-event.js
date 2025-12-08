@@ -70,7 +70,7 @@ function longPollForEvents() {
                         collections: event.collections
                     });
                 } else if (event.type === 'document_delete') {
-                    removeDocument(event.document_id);
+                    deleteDocument(event.document_id);
                 } else if (event.type === 'highlight_add') {
                     const highlightData = {
                         id: event.highlight_id,
