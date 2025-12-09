@@ -294,6 +294,51 @@ function editDocument(doc_id) {
     $(document_change_modal).modal('show').drags({handle: '.modal-header'});
 }
 
+function doDeleteDocument(project_id, doc_id, successCallback=null, errorCallback=null) {
+    deleteURL(`/api/project/${project_id}/document/${doc_id}`)
+        .then(successCallback)
+        .catch(function (error) {
+            if(errorCallback === null) {
+                log("Failed to delete document", 'error', {error});
+                showAlert(`${gettext("Couldn't delete document!!")} \n \n`, 'error', {error})
+            } else {
+                errorCallback(error)
+            }
+        });
+}
+
+function deleteDocument(doc_id) {
+    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}), function () {
+        log(`document ${doc_id} ...`);
+        doDeleteDocument(project_id, doc_id, function () {
+            log("Document deletion posted");
+            $(document_change_modal).modal('hide');
+            document.getElementById('document-change-form').reset();
+
+            if (document && document.collections) {
+                for (let collectionId of document.collections) {
+                    const collection = findCollection(parseInt(collectionId));
+                    if (collection && collection.document_ids) {
+                        const index = collection.document_ids.indexOf(parseInt(doc_id));
+                        if (index !== -1) {
+                            collection.document_ids.splice(index, 1);
+                        }
+                    }
+                }
+            }
+
+            delete documents['' + doc_id];
+            updateDocumentsList();
+            initDocumentsTreeview();
+
+            if (current_document === doc_id) {
+                window.history.pushState({}, "Project", base_path + '/project/' + project_id);
+                loadDocument(null);
+            }
+        });
+    }, true);
+}
+
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
     e.preventDefault();
     log("Changing document...");
@@ -333,22 +378,8 @@ document.getElementById('document-change-form').addEventListener('submit', funct
 
 document.getElementById('document-change-delete').addEventListener('click', function (e) {
     e.preventDefault();
-
-    const doc_id = document.getElementById('document-change-id').value;
-
-    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}), function () {
-        log(`document ${doc_id} ...`);
-        deleteURL(`/api/project/${project_id}/document/${doc_id}`)
-            .then(function () {
-                log("Document deletion posted");
-                $(document_change_modal).modal('hide');
-                document.getElementById('document-change-form').reset();
-            })
-            .catch(function (error) {
-                log("Failed to delete document", 'error', {error});
-                showAlert(`${gettext("Couldn't delete document!!")} \n \n`, 'error', {error})
-            });
-    });
+    const doc_id = parseInt(document.getElementById('document-change-id').value);
+    deleteDocument(doc_id);
 });
 
 

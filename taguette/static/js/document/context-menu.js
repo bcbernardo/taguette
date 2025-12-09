@@ -77,7 +77,7 @@ function toggleDocumentFavorite(documentId) {
 const documentActions = {
     edit: documentId => editDocument(documentId),
     favorite: documentId => toggleDocumentFavorite(documentId),
-    delete: documentId => removeDocument(documentId)
+    delete: documentId => deleteDocument(documentId)
 };
 
 function extractDocumentId(nodeId) {
