@@ -233,33 +233,6 @@ function flattenCollections(collectionsTree) {
     return flat;
 }
 
-function removeDocument(document_id) {
-    // Remove from collections
-    const document = documents['' + document_id];
-    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: document.name}), function () {
-        if (document && document.collections) {
-            for (let collectionId of document.collections) {
-                const collection = findCollection(parseInt(collectionId));
-                if (collection && collection.document_ids) {
-                    const index = collection.document_ids.indexOf(parseInt(document_id));
-                    if (index !== -1) {
-                        collection.document_ids.splice(index, 1);
-                    }
-                }
-            }
-        }
-
-        delete documents['' + document_id];
-        updateDocumentsList();
-        initDocumentsTreeview();
-
-        if (current_document === document_id) {
-            window.history.pushState({}, "Project", base_path + '/project/' + project_id);
-            loadDocument(null);
-        }
-    }, true);
-}
-
 function buildDocumentPath(documentId) {
     const document = documents['' + documentId];
     if (!document) return null;
