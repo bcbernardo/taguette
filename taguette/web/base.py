@@ -24,7 +24,7 @@ import tornado.iostream
 from tornado.web import HTTPError, RequestHandler
 from urllib.parse import urlencode
 
-from .. import __version__, exact_version
+from .. import exact_version
 from .. import database
 from ..utils import background_task
 
