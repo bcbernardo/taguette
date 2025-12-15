@@ -232,7 +232,11 @@ class Application(GracefulExitApplication):
             http_client = AsyncHTTPClient()
             response = await http_client.fetch(
                 self.config['MESSAGES_URL'],
-                headers={'Accept': 'application/json', 'User-Agent': 'Taguette'})
+                headers={
+                    'Accept': 'application/json', 
+                    'User-Agent': 'Taguette'
+                    }
+                )
             obj = json.loads(response.body.decode('utf-8'))
             self.messages = [
                 {
