@@ -1,6 +1,5 @@
 variables:
-  CI_TEST_IMAGE: "moussatoure/libreqda:tests" #Docker Hub use TODO:phun account later
-  #CI_TEST_IMAGE: "${CI_REGISTRY_IMAGE}:tests" #GitLab Registry
+  CI_TEST_IMAGE: "${CI_REGISTRY_IMAGE}:tests" #GitLab Registry
 stages:
   - prepare_image
   - test
@@ -27,7 +26,7 @@ build_image:
       FROM python:3.11
       RUN apt-get update
       ENV DEBIAN_FRONTEND=noninteractive
-      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync curl software-properties-common apt-transport-https ca-certificates
+      RUN apt-get install -yy xvfb firefox-esr chromium-driver rsync curl apt-transport-https ca-certificates
       RUN curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg > /dev/null
       RUN echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main | tee /etc/apt/sources.list.d/google-chrome.list
       RUN apt-get update

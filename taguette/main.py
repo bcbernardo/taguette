@@ -84,6 +84,19 @@ PORT = 7465
 MAINTENANCE_MODE = False
 MAINTENANCE_MESSAGE = ""
 
+# Pull messages to print after login, or hardcode them.
+CHECK_MESSAGES = False
+
+#HARDCODED_MESSAGE = "[...]"
+# Or with HTML formatting:
+#HARDCODED_MESSAGE = {{
+#    "text": "without HTML formatting",
+#    "html": "with <strong>HTML</strong>] formatting"
+#}}
+
+#MESSAGES_URL = "https://yourdomain.com/api/messages"
+
+
 # Base path of the application
 BASE_PATH = "/"
 
