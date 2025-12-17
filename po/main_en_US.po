@@ -1116,7 +1116,7 @@ msgstr "Demo project"
 
 #: taguette/templates/index.html:53
 msgid "Here are your projects"
-msgstr "Here are your projects:"
+msgstr "Here are your projects"
 
 #: taguette/templates/index.html:55
 msgid ""
