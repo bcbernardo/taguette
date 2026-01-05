@@ -314,7 +314,7 @@ function populateDocumentsList(collectionId = null) {
     const legendDiv = document.createElement('div');
     legendDiv.className = 'mb-3 p-2 rounded';
     legendDiv.innerHTML = `
-        <div class="d-flex flex-column lign-items-start gap-2">
+        <div class="d-flex flex-column align-items-start gap-2">
             <div class="d-flex align-items-center gap-1">
                 <i class="fas fa-file-alt text-primary" style="vertical-align: middle;"></i>
                 <small>${gettext(' = Documents without collection')}</small>
