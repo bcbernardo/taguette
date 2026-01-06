@@ -127,6 +127,9 @@ class Index(BaseHandler):
         self.set_cookie('language', language)
         return self.redirect(url)
 
+    def check_xsrf_cookie(self):
+        pass
+
     head = get
 
 
