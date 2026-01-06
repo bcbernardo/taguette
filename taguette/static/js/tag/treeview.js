@@ -523,18 +523,18 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
 $(document).ready(function() {
     const sections = [
         {
-            title: 'Right-click on a code:',
+            title: gettext('Right-click on a code:'),
             items: [
-                'Add child code',
-                'Edit code',
-                'Merge codes',
-                'Delete code'
+                gettext('Add child code'),
+                gettext('Edit code'),
+                gettext('Merge codes'),
+                gettext('Delete code')
             ]
         },
         {
-            title: 'Click on a code:',
+            title: gettext('Click on a code:'),
             items: [
-                'Filter highlights by this code'
+                gettext('Filter highlights by this code')
             ]
         }
     ];

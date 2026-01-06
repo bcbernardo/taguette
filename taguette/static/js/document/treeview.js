@@ -536,33 +536,34 @@ $(document).ready(function() {
 
     const sections = [
         {
-            title: 'Right-click on a collection:',
+            title: gettext('Right-click on a collection:'),
             items: [
-                'Add sub-collection',
-                'Edit collection',
-                'Remove parent',
-                'Delete collection'
+                gettext('Add sub-collection'),
+                gettext('Edit collection'),
+                gettext('Remove parent'),
+                gettext('Delete collection')
             ]
         },
         {
-            title: 'Right-click on a document:',
+            title: gettext('Right-click on a document:'),
             items: [
-                'Edit document',
-                'Toggle bookmark',
-                'Delete document'
+                gettext('Edit document'),
+                gettext('Toggle bookmark'),
+                gettext('Delete document')
             ]
         },
         {
-            title: 'Select multiple documents:',
+            title: gettext('Select multiple documents:'),
             items: [
-                `Hold ${cmdKey} and click documents`,
-                'Drag selected documents to a collection'
+                gettext('Hold %(key)s and click documents', { key: cmdKey }),
+                gettext('Drag selected documents to a collection')
             ]
         }
     ];
 
     initHelpPopover('treeview-help-icon', sections);
 });
+
 
 function saveExpandedState() {
     if (!treeview_documents.length) return [];

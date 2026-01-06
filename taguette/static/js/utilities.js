@@ -2,9 +2,9 @@
  * Utilities
  */
 
-// Get current highlight version (V2 is default)
+// Get current highlight version (V1 is default)
 function getHighlightVersion() {
-    return localStorage.getItem('highlightVersion') || 'v2';
+    return localStorage.getItem('highlightVersion') || 'v1';
 }
 
 // NEW selector
