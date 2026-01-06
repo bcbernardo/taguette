@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-07-29 10:10-0400\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
-"Last-Translator: Elinor Bratt, 2022\n"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca> with LLM assistance\n"
 "Language: sv_SE\n"
 "Language-Team: Swedish (Sweden) "
 "(https://www.transifex.com/remram44/teams/98824/sv_SE/)\n"
@@ -25,302 +25,60 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: taguette/static/js/project/search.js:67
-#, python-format
-msgid "Found in %(nb)s document(s)"
-msgstr "Hittades i %(nb)s dokument"
-
-#: taguette/static/js/project/search.js:115
-msgid "Error searching documents!"
-msgstr "Det gick inte att ladda dokumentet!"
-
-#: taguette/static/js/project/intro.js:14
-msgid ""
-"Welcome to LibreQDA, a qualitative data analysis software (QDA) developed"
-" by the Plateforme en humanités numériques (PHuN) at Université de "
-"Sherbrooke."
-msgstr "Välkommen till LibreQDA, en programvara för kvalitativ dataanalys (QDA) "
-"utvecklad av Plateforme en humanités numériques (PHuN) vid Université de Sherbrooke."
-
-#: taguette/static/js/project/intro.js:15
-msgid ""
-"<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
-"target=\"_blank\">Gitlab repository</a></p>"
-msgstr "<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" target=\"_blank\">Gitlab-förråd</a></p>"
-
-#: taguette/static/js/project/intro.js:19
-msgid "<p>To consult the documentation</p>"
-msgstr "<p>För att konsultera dokumentationen</p>"
-
-#: taguette/static/js/project/intro.js:24
-msgid "<p>A demo project has been added to your home page.</p>"
-msgstr "<p>Ett demo-projekt har lagts till på din hemsida.</p>"
-
-#: taguette/static/js/project/intro.js:31
-#: taguette/static/js/project/intro.js:176
-msgid "Next"
-msgstr "Nästa"
-
-#: taguette/static/js/project/intro.js:32
-#: taguette/static/js/project/intro.js:177
-msgid "Back"
-msgstr "Tillbaka"
-
-#: taguette/static/js/project/intro.js:33
-msgid "Continue"
-msgstr "Fortsätt"
-
-#: taguette/static/js/project/intro.js:71
-msgid "Your documents"
-msgstr "Dina dokument"
-
-#: taguette/static/js/project/intro.js:72
-msgid "<p>Use this tab to load files and go through them.</p>"
-msgstr "<p>Använd den här fliken för att ladda filer och gå igenom dem.</p>"
-
-#: taguette/static/js/project/intro.js:77
-msgid "Codebook"
-msgstr "Kodex"
-
-#: taguette/static/js/project/intro.js:78
-msgid ""
-"<p>This tab lists all the codes that have been defined. Add new codes "
-"with the button dedicated to that purpose.</p><br><p>The total number of "
-"uses is indicated by the number on the right, and the number of documents"
-" on the left.</p>"
-msgstr "<p>Denna flik listar alla definierade koder. Lägg till nya koder "
-"med den avsedda knappen.</p><br><p>Totala antalet användningar anges med "
-"siffran till höger, och antalet dokument till vänster.</p>"
-
-#: taguette/static/js/project/intro.js:83
-msgid "Parent codes"
-msgstr "Överordnade koder"
-
-#: taguette/static/js/project/intro.js:84
-msgid "<p>You can define codes that include child codes under them.</p>"
-msgstr "<p>Du kan definiera koder som inkluderar underordnade koder under "
-"sig.</p>"
-
-#: taguette/static/js/project/intro.js:89
-msgid "Child codes"
-msgstr "Underordnade koder"
-
-#: taguette/static/js/project/intro.js:90
-msgid "<p>These can be expanded or collapsed.</p>"
-msgstr "<p>Dessa kan expanderas eller kollapsas.</p>"
-
-#: taguette/static/js/project/intro.js:96
-msgid "Consulting documents"
-msgstr "Konsultera dokument"
-
-#: taguette/static/js/project/intro.js:97
-msgid ""
-"<p>Click on a document to view its contents. Use the star to save your "
-"bookmarks.</p>"
-msgstr "<p>Klicka på ett dokument för att visa dess innehåll. Använd "
-"stjärnan för att spara dina bokmärken.</p>"
-
-#: taguette/static/js/project/intro.js:102
-msgid "Coding"
-msgstr "Kodning"
-
-#: taguette/static/js/project/intro.js:103
-msgid ""
-"<p>Select a portion of text with your cursor. Two buttons will appear to "
-"assign a code to the selection.</p>"
-msgstr "<p>Välj en del av texten med din markör. Två knappar kommer att "
-"visas för att tilldela en kod till markeringen.</p>"
-
-#: taguette/static/js/project/intro.js:112
-msgid "Selecting a code"
-msgstr "Välja en kod"
-
-#: taguette/static/js/project/intro.js:113
-msgid ""
-"<p>From the menu, select one or more codes that correspond to the content"
-" of the selection and save the changes. In this case, the selection "
-"refers to reinforcing social relationships.</p>"
-msgstr "<p>Från menyn väljer du en eller flera koder som motsvarar "
-"innehållet i markeringen och sparar ändringarna. I detta fall avser markeringen att förstärka sociala relationer.</p>"
-
-#: taguette/static/js/project/intro.js:120
-msgid "Exploring the codes"
-msgstr "Utforska koderna"
-
-#: taguette/static/js/project/intro.js:121
-msgid ""
-"<p>You can explore the text selections tagged with each code at any time "
-"during or after the coding process.</p><br><p> Show all of the selections"
-" tagged with a code from the codebook by clicking on it.</p>"
-msgstr "<p>Du kan utforska textmarkeringarna som är kodade med varje kod "
-"när som helst under eller efter kodningsprocessen.</p><br><p>Visa alla markeringar som är kodade med en kod från kodex genom att klicka på den.</p>"
-
-#: taguette/static/js/project/intro.js:126
-msgid "Narrowing your search"
-msgstr "Begränsa din sökning"
-
-#: taguette/static/js/project/intro.js:127
-msgid ""
-"<p>If there are a large number of selections shown, you can refine the "
-"results with an advanced search.</p>"
-msgstr "<p>Om det finns ett stort antal visade markeringar kan du förfina "
-"resultaten med en avancerad sökning.</p>"
-
-#: taguette/static/js/project/intro.js:133
-msgid "Conditional selections"
-msgstr "Villkorliga markeringar"
-
-#: taguette/static/js/project/intro.js:134
-msgid ""
-"<p>By right-clicking, you can specify conditions to either add or exclude"
-" additional codes.</p>"
-msgstr "<p>Genom att högerklicka kan du ange villkor för att antingen "
-"lägga till eller utesluta ytterligare koder.</p>"
-
-#: taguette/static/js/project/intro.js:141
-msgid "Exploring the list"
-msgstr "Utforska listan"
-
-#: taguette/static/js/project/intro.js:142
-msgid ""
-"<p>The labels shown with this query indicate that the selections must "
-"necessarily include the codes <i>barriers</i> and <i>skills "
-"development</i>.</p>"
-msgstr "<p>Etiketterna som visas med denna fråga indikerar att "
-"markeringarna nödvändigtvis måste inkludera koderna <i>hinder</i> "
-"och <i>kompetensutveckling</i>.</p>"
-
-#: taguette/static/js/project/intro.js:148
-msgid "Navigating to documents"
-msgstr "Navigera till dokument"
-
-#: taguette/static/js/project/intro.js:149
-msgid ""
-"<p>By clicking on the name of the document, you can return to the "
-"context.</p>"
-msgstr "<p>Genom att klicka på dokumentets namn kan du återgå till "
-"kontexten.</p>"
-
-#: taguette/static/js/project/intro.js:155
-msgid "Returning to the selections"
-msgstr "Återgå till markeringarna"
-
-#: taguette/static/js/project/intro.js:156
-msgid ""
-"<p>After consulting the context, you can return to the list of selections"
-" previously identified using the advanced search.</p>"
-msgstr "<p>Efter att ha konsulterat kontexten kan du återgå till listan "
-"över tidigare identifierade markeringar med hjälp av den avancerade "
-"sökningen.</p>"
-
-#: taguette/static/js/project/intro.js:162
-msgid "Exporting"
-msgstr "Exportera"
-
-#: taguette/static/js/project/intro.js:163
-msgid ""
-"<p>You can choose to download these selections to your computer, as "
-"needed.</p>"
-msgstr "<p>Du kan välja att ladda ner dessa markeringar till din dator, "
-"vid behov.</p>"
-
-#: taguette/static/js/project/intro.js:167
-msgid "Time to code!"
-msgstr "Dags att koda!"
-
-#: taguette/static/js/project/intro.js:168
-msgid ""
-"<p>Use LibreQDA however you wish, knowing that your data is always saved "
-"to your personal account. Feel free to further familiarize yourself with "
-"these functions by continuing to code and explore these fictional "
-"interviews about board games.</p>"
-msgstr "<p>Använd LibreQDA hur du vill, med vetskapen om att dina data "
-"alltid sparas på ditt personliga konto. Fortsätt gärna att bekanta "
-"dig med dessa funktioner genom att fortsätta koda och utforska dessa "
-"fiktiva intervjuer om brädspel.</p>"
-
-#: taguette/static/js/project/intro.js:178
-msgid "Done"
-msgstr "Klar"
-
-#: taguette/static/js/polling-event.js:111
+#: taguette/static/js/polling-event.js:141
 msgid "It appears that you have been logged out."
 msgstr "Det verkar som att du har blivit utloggad."
 
-#: taguette/static/js/polling-event.js:114
+#: taguette/static/js/polling-event.js:144
 msgid "You can no longer access this project."
 msgstr "Du har inte längre åtkomst till det här projektet."
 
-#: taguette/static/js/taguette.js:267
-msgid "Document name cannot be empty"
-msgstr "Dokumentets namn får inte vara tomt"
+#: taguette/static/js/tag/treeview.js:236
+msgid "Documents"
+msgstr "Dokument"
 
-#: taguette/static/js/taguette.js:292
-#, python-format
-msgid "Are you sure you want to delete the document '%(doc)s'?"
-msgstr "Är du säker på att du vill ta bort dokumentet '%(doc)s'?"
+#: taguette/static/js/tag/treeview.js:242
+msgid "Highlights"
+msgstr "Markeringar"
 
-#: taguette/static/js/taguette.js:418
-msgid "Invalid tag name"
-msgstr "Ogiltigt kodnamn"
+#: taguette/static/js/tag/treeview.js:496
+msgid "Click to explore • Right-click for options"
+msgstr "Klicka för att utforska • Högerklicka för alternativ"
 
-#: taguette/static/js/taguette.js:423
-msgid "Impossible to define the same tag as parent"
-msgstr "Omöjligt att definiera samma kod som överordnad"
+#: taguette/static/js/tag/treeview.js:526
+msgid "Right-click on a code:"
+msgstr "Högerklicka på en kod:"
 
+#: taguette/static/js/tag/treeview.js:528
+msgid "Add child code"
+msgstr "Lägg till underordnad kod"
+
+#: taguette/static/js/tag/treeview.js:529
+msgid "Edit code"
+msgstr "Redigera kod"
+
+#: taguette/static/js/tag/treeview.js:530
+msgid "Merge codes"
+msgstr "Slå samman koder"
+
+#: taguette/static/js/tag/treeview.js:531
+msgid "Delete code"
+msgstr "Ta bort kod"
+
+#: taguette/static/js/tag/treeview.js:535
+msgid "Click on a code:"
+msgstr "Klicka på en kod:"
+
+#: taguette/static/js/tag/treeview.js:537
+msgid "Filter highlights by this code"
+msgstr "Filtrera markeringar efter denna kod"
+
+#: taguette/static/js/collection/hierarchy-select.js:15
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:464
+#: taguette/static/js/taguette.js:291 taguette/static/js/taguette.js:542
+#: taguette/static/js/taguette.js:1566
 msgid "None"
 msgstr "Ingen"
-
-#: taguette/static/js/taguette.js:486
-#, python-format
-msgid "Are you sure you want to delete the tag '%(tag)s'?"
-msgstr "Är du säker på att du vill ta bort koden '%(tag)s'?"
-
-#: taguette/static/js/taguette.js:539
-msgid "Couldn't merge tags!"
-msgstr "Kunde inte slå samman koder!"
-
-#: taguette/static/js/taguette.js:698
-msgid "Full permissions"
-msgstr "Fullständiga behörigheter"
-
-#: taguette/static/js/taguette.js:699
-msgid "Can't change collaborators / delete project"
-msgstr "Kan inte ändra medarbetare / ta bort projekt"
-
-#: taguette/static/js/taguette.js:700
-msgid "View & make changes"
-msgstr "Visa & gör ändringar"
-
-#: taguette/static/js/taguette.js:701
-msgid "View only"
-msgstr "Visa endast"
-
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:773
-msgid "Already a member!"
-msgstr "Redan medlem!"
-
-#: taguette/static/js/taguette.js:788
-msgid "This user doesn't exist!"
-msgstr "Den här användaren finns inte!"
-
-#: taguette/static/js/taguette.js:856
-msgid "Load a document on the left"
-msgstr "Ladda ett dokument till vänster"
-
-#: taguette/static/js/taguette.js:1073
-msgid "No highlights with this tag yet."
-msgstr "Inga markeringar med denna kod ännu."
-
-#: taguette/static/js/taguette.js:1216
-msgid "No documents found"
-msgstr "Inga dokument hittades"
-
-#: taguette/static/js/taguette.js:1262
-msgid "No tag found"
-msgstr "Inga koder hittades"
 
 #: taguette/static/js/tag/context-menu.js:35
 msgid "selectAll"
@@ -374,29 +132,145 @@ msgstr "ta bort förälder"
 msgid "delete"
 msgstr "ta bort"
 
-#: taguette/static/js/tag/treeview.js:235
-msgid "Documents"
-msgstr "Dokument"
+#: taguette/static/js/highlight/native/loader.js:7
+#: taguette/static/js/taguette.js:937
+msgid "Load a document on the left"
+msgstr "Ladda ett dokument till vänster"
 
-#: taguette/static/js/tag/treeview.js:241
-msgid "Highlights"
-msgstr "Markeringar"
+#: taguette/static/js/collection/context-menu.js:26
+#: taguette/static/js/document/treeview.js:541
+msgid "Add sub-collection"
+msgstr "Lägg till undersamling"
 
-#: taguette/static/js/document/manager.js:72
-msgid "Remove from Favorites"
-msgstr "Ta bort från favoriter"
+#: taguette/static/js/collection/context-menu.js:31
+#: taguette/static/js/document/treeview.js:542
+msgid "Edit collection"
+msgstr "Redigera samling"
 
-#: taguette/static/js/document/manager.js:72
-msgid "Add to Favorites"
-msgstr "Lägg till i favoriter"
+#: taguette/static/js/collection/context-menu.js:39
+#: taguette/static/js/document/treeview.js:543
+msgid "Remove parent"
+msgstr "Ta bort överordnad"
 
-#: taguette/static/js/document/manager.js:92
-msgid "There are no documents in this project yet."
-msgstr "Det finns inga dokument i det här projektet ännu."
+#: taguette/static/js/collection/context-menu.js:47
+#: taguette/static/js/document/treeview.js:544
+#: taguette/static/js/taguette.js:1612
+msgid "Delete collection"
+msgstr "Ta bort samling"
 
-#: taguette/static/js/document/manager.js:112
-msgid "Import new document"
-msgstr "Importera nytt dokument"
+#: taguette/static/js/taguette.js:311
+#, python-format
+msgid "Are you sure you want to delete the document '%(doc)s'?"
+msgstr "Är du säker på att du vill ta bort dokumentet '%(doc)s'?"
+
+#: taguette/static/js/taguette.js:356
+msgid "Document name cannot be empty"
+msgstr "Dokumentets namn får inte vara tomt"
+
+#: taguette/static/js/taguette.js:496
+msgid "Invalid tag name"
+msgstr "Ogiltigt kodnamn"
+
+#: taguette/static/js/taguette.js:501
+msgid "Impossible to define the same tag as parent"
+msgstr "Omöjligt att definiera samma kod som överordnad"
+
+#: taguette/static/js/taguette.js:564
+#, python-format
+msgid "Are you sure you want to delete the tag '%(tag)s'?"
+msgstr "Är du säker på att du vill ta bort koden '%(tag)s'?"
+
+#: taguette/static/js/taguette.js:617
+msgid "Couldn't merge tags!"
+msgstr "Kunde inte slå samman koder!"
+
+#: taguette/static/js/taguette.js:776
+msgid "Full permissions"
+msgstr "Fullständiga behörigheter"
+
+#: taguette/static/js/taguette.js:777
+msgid "Can't change collaborators / delete project"
+msgstr "Kan inte ändra medarbetare / ta bort projekt"
+
+#: taguette/static/js/taguette.js:778
+msgid "View & make changes"
+msgstr "Visa och gör ändringar"
+
+#: taguette/static/js/taguette.js:779
+msgid "View only"
+msgstr "Visa endast"
+
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:851
+msgid "Already a member!"
+msgstr "Redan medlem!"
+
+#: taguette/static/js/taguette.js:866
+msgid "This user doesn't exist!"
+msgstr "Den här användaren finns inte!"
+
+#: taguette/static/js/taguette.js:1192
+msgid "No highlights with this tag yet."
+msgstr "Inga markeringar med denna kod ännu."
+
+#: taguette/static/js/taguette.js:1335
+msgid "No document or collection found"
+msgstr "Inget dokument eller samling hittades"
+
+#: taguette/static/js/taguette.js:1374
+msgid "No tag found"
+msgstr "Ingen kod hittades"
+
+#: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
+#, python-format
+msgid ""
+"Are you sure you want to delete the collection '%(name)s'? Its documents "
+"will be moved."
+msgstr ""
+"Är du säker på att du vill ta bort samlingen '%(name)s'? Dess dokument "
+"kommer att flyttas."
+
+#: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
+#: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
+msgid "Error deleting collection: "
+msgstr "Fel vid borttagning av samling: "
+
+#: taguette/static/js/taguette.js:1602
+#, python-format
+msgid "The collection '%(name)s' has subcollections. How do you want to proceed?"
+msgstr "Samlingen '%(name)s' har undersamlingar. Hur vill du fortsätta?"
+
+#: taguette/static/js/taguette.js:1680
+#, python-format
+msgid ""
+"Are you sure you want to remove collection '%(name)s' from parent "
+"'%(parent)s'?"
+msgstr ""
+"Är du säker på att du vill ta bort samlingen '%(name)s' från överordnad "
+"'%(parent)s'?"
+
+#: taguette/static/js/taguette.js:1696
+msgid "Error removing collection parent: "
+msgstr "Fel vid borttagning av överordnad samling: "
+
+#: taguette/static/js/taguette.js:1755
+msgid "Collection name is required"
+msgstr "Samlingsnamn krävs"
+
+#: taguette/static/js/taguette.js:1760
+msgid "A collection cannot be its own parent."
+msgstr "En samling kan inte vara sin egen överordnade."
+
+#: taguette/static/js/taguette.js:1789
+msgid "Error updating collection: "
+msgstr "Fel vid uppdatering av samling: "
+
+#: taguette/static/js/taguette.js:1790
+msgid "Error creating collection: "
+msgstr "Fel vid skapande av samling: "
+
+#: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
+msgid "Collection deleted!"
+msgstr "Samling borttagen!"
 
 #: taguette/static/js/permissions.js:25
 msgid "Can create projects"
@@ -411,6 +285,326 @@ msgid ""
 "Cannot add this user<br/>Reasons : <ul><li>User cannot be "
 "found</li><li>User is already sponsored</li><li>User role cannot be "
 "changed</li></ul>"
-msgstr "Kan inte lägga till den här användaren<br/>Anledningar : "
-"<ul><li>Användaren kan inte hittas</li><li>Användaren är "
-"redan sponsrad</li><li>Användarrollen kan inte ändras</li></ul>"
+msgstr ""
+"Kan inte lägga till den här användaren<br/>Anledningar: "
+"<ul><li>Användaren kan inte hittas</li><li>Användaren är redan "
+"sponsrad</li><li>Användarrollen kan inte ändras</li></ul>"
+
+#: taguette/static/js/document/treeview.js:119
+msgid "Without collection"
+msgstr "Utan samling"
+
+#: taguette/static/js/document/treeview.js:151
+#, python-format
+msgid "Click to open • %(key)s+Click to select • Right-click for options"
+msgstr ""
+"Klicka för att öppna • %(key)s+Klicka för att välja • Högerklicka för "
+"alternativ"
+
+#: taguette/static/js/document/treeview.js:198
+msgid "Documents count"
+msgstr "Antal dokument"
+
+#: taguette/static/js/document/treeview.js:391
+#, python-format
+msgid "You can drag and drop %s documents to a collection"
+msgstr "Du kan dra och släppa %s dokument till en samling"
+
+#: taguette/static/js/document/treeview.js:539
+msgid "Right-click on a collection:"
+msgstr "Högerklicka på en samling:"
+
+#: taguette/static/js/document/treeview.js:548
+msgid "Right-click on a document:"
+msgstr "Högerklicka på ett dokument:"
+
+#: taguette/static/js/document/context-menu.js:30
+#: taguette/static/js/document/treeview.js:550
+msgid "Edit document"
+msgstr "Redigera dokument"
+
+#: taguette/static/js/document/treeview.js:551
+msgid "Toggle bookmark"
+msgstr "Växla bokmärke"
+
+#: taguette/static/js/document/context-menu.js:41
+#: taguette/static/js/document/treeview.js:552
+msgid "Delete document"
+msgstr "Ta bort dokument"
+
+#: taguette/static/js/document/treeview.js:556
+msgid "Select multiple documents:"
+msgstr "Välj flera dokument:"
+
+#: taguette/static/js/document/treeview.js:558
+#, python-format
+msgid "Hold %(key)s and click documents"
+msgstr "Håll %(key)s och klicka på dokument"
+
+#: taguette/static/js/document/treeview.js:559
+msgid "Drag selected documents to a collection"
+msgstr "Dra valda dokument till en samling"
+
+#: taguette/static/js/document/context-menu.js:25
+#: taguette/static/js/document/manager.js:87
+msgid "Remove from Bookmarks"
+msgstr "Ta bort från bokmärken"
+
+#: taguette/static/js/document/context-menu.js:25
+#: taguette/static/js/document/manager.js:87
+msgid "Add to Bookmarks"
+msgstr "Lägg till i bokmärken"
+
+#: taguette/static/js/document/manager.js:107
+msgid "There are no documents in this project yet."
+msgstr "Det finns inga dokument i det här projektet ännu."
+
+#: taguette/static/js/document/manager.js:127
+msgid "Import new document"
+msgstr "Importera nytt dokument"
+
+#: taguette/static/js/document/manager.js:314
+msgid " = Documents without collection"
+msgstr " = Dokument utan samling"
+
+#: taguette/static/js/document/manager.js:315
+msgid " = Documents currently assigned to a collection"
+msgstr " = Dokument som för närvarande är tilldelade en samling"
+
+#: taguette/static/js/document/manager.js:386
+#: taguette/static/js/document/manager.js:488
+msgid "Currently in"
+msgstr "För närvarande i"
+
+#: taguette/static/js/document/manager.js:413
+msgid "No documents available"
+msgstr "Inga dokument tillgängliga"
+
+#: taguette/static/js/project/search.js:67
+#, python-format
+msgid "Found in %(nb)s document(s)"
+msgstr "Hittades i %(nb)s dokument"
+
+#: taguette/static/js/project/search.js:115
+msgid "Error searching documents!"
+msgstr "Fel vid sökning i dokument!"
+
+#: taguette/static/js/project/intro.js:14
+msgid ""
+"Welcome to LibreQDA, a qualitative data analysis software (QDA) developed"
+" by the Plateforme en humanités numériques (PHuN) at Université de "
+"Sherbrooke."
+msgstr ""
+"Välkommen till LibreQDA, en programvara för kvalitativ dataanalys (QDA) "
+"utvecklad av Plateforme en humanités numériques (PHuN) vid Université de "
+"Sherbrooke."
+
+#: taguette/static/js/project/intro.js:15
+msgid ""
+"<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">Gitlab repository</a></p>"
+msgstr ""
+"<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">Gitlab-arkiv</a></p>"
+
+#: taguette/static/js/project/intro.js:19
+msgid "<p>To consult the documentation</p>"
+msgstr "<p>För att konsultera dokumentationen</p>"
+
+#: taguette/static/js/project/intro.js:24
+msgid "<p>A demo project has been added to your home page.</p>"
+msgstr "<p>Ett demoprojekt har lagts till på din startsida.</p>"
+
+#: taguette/static/js/project/intro.js:31
+#: taguette/static/js/project/intro.js:176
+msgid "Next"
+msgstr "Nästa"
+
+#: taguette/static/js/project/intro.js:32
+#: taguette/static/js/project/intro.js:177
+msgid "Back"
+msgstr "Tillbaka"
+
+#: taguette/static/js/project/intro.js:33
+msgid "Continue"
+msgstr "Fortsätt"
+
+#: taguette/static/js/project/intro.js:71
+msgid "Your documents"
+msgstr "Dina dokument"
+
+#: taguette/static/js/project/intro.js:72
+msgid "<p>Use this tab to load files and go through them.</p>"
+msgstr "<p>Använd den här fliken för att ladda filer och gå igenom dem.</p>"
+
+#: taguette/static/js/project/intro.js:77
+msgid "Codebook"
+msgstr "Kodbok"
+
+#: taguette/static/js/project/intro.js:78
+msgid ""
+"<p>This tab lists all the codes that have been defined. Add new codes "
+"with the button dedicated to that purpose.</p><br><p>The total number of "
+"uses is indicated by the number on the right, and the number of documents"
+" on the left.</p>"
+msgstr ""
+"<p>Denna flik listar alla definierade koder. Lägg till nya koder med den "
+"avsedda knappen.</p><br><p>Det totala antalet användningar visas till "
+"höger och antalet dokument till vänster.</p>"
+
+#: taguette/static/js/project/intro.js:83
+msgid "Parent codes"
+msgstr "Överordnade koder"
+
+#: taguette/static/js/project/intro.js:84
+msgid "<p>You can define codes that include child codes under them.</p>"
+msgstr "<p>Du kan definiera koder som innehåller underordnade koder.</p>"
+
+#: taguette/static/js/project/intro.js:89
+msgid "Child codes"
+msgstr "Underordnade koder"
+
+#: taguette/static/js/project/intro.js:90
+msgid "<p>These can be expanded or collapsed.</p>"
+msgstr "<p>Dessa kan expanderas eller fällas ihop.</p>"
+
+#: taguette/static/js/project/intro.js:96
+msgid "Consulting documents"
+msgstr "Läsa dokument"
+
+#: taguette/static/js/project/intro.js:97
+msgid ""
+"<p>Click on a document to view its contents. Use the star to save your "
+"bookmarks.</p>"
+msgstr ""
+"<p>Klicka på ett dokument för att visa dess innehåll. Använd stjärnan för "
+"att spara bokmärken.</p>"
+
+#: taguette/static/js/project/intro.js:102
+msgid "Coding"
+msgstr "Kodning"
+
+#: taguette/static/js/project/intro.js:103
+msgid ""
+"<p>Select a portion of text with your cursor. Two buttons will appear to "
+"assign a code to the selection.</p>"
+msgstr ""
+"<p>Markera en del av texten med markören. Två knappar visas för att "
+"tilldela en kod.</p>"
+
+#: taguette/static/js/project/intro.js:112
+msgid "Selecting a code"
+msgstr "Välja en kod"
+
+#: taguette/static/js/project/intro.js:113
+msgid ""
+"<p>From the menu, select one or more codes that correspond to the content"
+" of the selection and save the changes. In this case, the selection "
+"refers to reinforcing social relationships.</p>"
+msgstr ""
+"<p>Välj en eller flera koder från menyn som motsvarar innehållet i "
+"markeringen och spara ändringarna. I detta fall avser markeringen att "
+"stärka sociala relationer.</p>"
+
+#: taguette/static/js/project/intro.js:120
+msgid "Exploring the codes"
+msgstr "Utforska koderna"
+
+#: taguette/static/js/project/intro.js:121
+msgid ""
+"<p>You can explore the text selections tagged with each code at any time "
+"during or after the coding process.</p><br><p> Show all of the selections"
+" tagged with a code from the codebook by clicking on it.</p>"
+msgstr ""
+"<p>Du kan när som helst utforska textmarkeringar som är kodade med varje "
+"kod.</p><br><p>Visa alla markeringar som är kodade med en kod genom att "
+"klicka på den i kodboken.</p>"
+
+#: taguette/static/js/project/intro.js:126
+msgid "Narrowing your search"
+msgstr "Begränsa din sökning"
+
+#: taguette/static/js/project/intro.js:127
+msgid ""
+"<p>If there are a large number of selections shown, you can refine the "
+"results with an advanced search.</p>"
+msgstr ""
+"<p>Om många markeringar visas kan du förfina resultaten med avancerad "
+"sökning.</p>"
+
+#: taguette/static/js/project/intro.js:133
+msgid "Conditional selections"
+msgstr "Villkorliga markeringar"
+
+#: taguette/static/js/project/intro.js:134
+msgid ""
+"<p>By right-clicking, you can specify conditions to either add or exclude"
+" additional codes.</p>"
+msgstr ""
+"<p>Genom att högerklicka kan du ange villkor för att lägga till eller "
+"utesluta ytterligare koder.</p>"
+
+#: taguette/static/js/project/intro.js:141
+msgid "Exploring the list"
+msgstr "Utforska listan"
+
+#: taguette/static/js/project/intro.js:142
+msgid ""
+"<p>The labels shown with this query indicate that the selections must "
+"necessarily include the codes <i>barriers</i> and <i>skills "
+"development</i>.</p>"
+msgstr ""
+"<p>Etiketterna i denna fråga visar att markeringarna måste innehålla "
+"koderna <i>hinder</i> och <i>kompetensutveckling</i>.</p>"
+
+#: taguette/static/js/project/intro.js:148
+msgid "Navigating to documents"
+msgstr "Navigera till dokument"
+
+#: taguette/static/js/project/intro.js:149
+msgid ""
+"<p>By clicking on the name of the document, you can return to the "
+"context.</p>"
+msgstr "<p>Genom att klicka på dokumentets namn kan du återgå till kontexten.</p>"
+
+#: taguette/static/js/project/intro.js:155
+msgid "Returning to the selections"
+msgstr "Återgå till markeringarna"
+
+#: taguette/static/js/project/intro.js:156
+msgid ""
+"<p>After consulting the context, you can return to the list of selections"
+" previously identified using the advanced search.</p>"
+msgstr ""
+"<p>Efter att ha granskat kontexten kan du återgå till listan över tidigare "
+"identifierade markeringar via avancerad sökning.</p>"
+
+#: taguette/static/js/project/intro.js:162
+msgid "Exporting"
+msgstr "Exportera"
+
+#: taguette/static/js/project/intro.js:163
+msgid ""
+"<p>You can choose to download these selections to your computer, as "
+"needed.</p>"
+msgstr "<p>Du kan vid behov ladda ner dessa markeringar till din dator.</p>"
+
+#: taguette/static/js/project/intro.js:167
+msgid "Time to code!"
+msgstr "Dags att koda!"
+
+#: taguette/static/js/project/intro.js:168
+msgid ""
+"<p>Use LibreQDA however you wish, knowing that your data is always saved "
+"to your personal account. Feel free to further familiarize yourself with "
+"these functions by continuing to code and explore these fictional "
+"interviews about board games.</p>"
+msgstr ""
+"<p>Använd LibreQDA som du vill, med vetskapen att dina data alltid sparas "
+"på ditt personliga konto. Fortsätt gärna att bekanta dig med funktionerna "
+"genom att fortsätta koda och utforska dessa fiktiva intervjuer om "
+"brädspel.</p>"
+
+#: taguette/static/js/project/intro.js:178
+msgid "Done"
+msgstr "Klar"
