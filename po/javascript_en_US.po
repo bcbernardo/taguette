@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-05 10:42-0500\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -40,6 +40,34 @@ msgstr ""
 
 #: taguette/static/js/tag/treeview.js:496
 msgid "Click to explore • Right-click for options"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:526
+msgid "Right-click on a code:"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:528
+msgid "Add child code"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:529
+msgid "Edit code"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:530
+msgid "Merge codes"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:531
+msgid "Delete code"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:535
+msgid "Click on a code:"
+msgstr ""
+
+#: taguette/static/js/tag/treeview.js:537
+msgid "Filter highlights by this code"
 msgstr ""
 
 #: taguette/static/js/collection/hierarchy-select.js:15
@@ -107,18 +135,22 @@ msgid "Load a document on the left"
 msgstr "Load a document from you bookmarks or on the right"
 
 #: taguette/static/js/collection/context-menu.js:26
+#: taguette/static/js/document/treeview.js:541
 msgid "Add sub-collection"
 msgstr ""
 
 #: taguette/static/js/collection/context-menu.js:31
+#: taguette/static/js/document/treeview.js:542
 msgid "Edit collection"
 msgstr ""
 
 #: taguette/static/js/collection/context-menu.js:39
+#: taguette/static/js/document/treeview.js:543
 msgid "Remove parent"
 msgstr ""
 
 #: taguette/static/js/collection/context-menu.js:47
+#: taguette/static/js/document/treeview.js:544
 #: taguette/static/js/taguette.js:1612
 msgid "Delete collection"
 msgstr ""
@@ -269,6 +301,41 @@ msgstr ""
 msgid "You can drag and drop %s documents to a collection"
 msgstr ""
 
+#: taguette/static/js/document/treeview.js:539
+msgid "Right-click on a collection:"
+msgstr ""
+
+#: taguette/static/js/document/treeview.js:548
+msgid "Right-click on a document:"
+msgstr ""
+
+#: taguette/static/js/document/context-menu.js:30
+#: taguette/static/js/document/treeview.js:550
+msgid "Edit document"
+msgstr ""
+
+#: taguette/static/js/document/treeview.js:551
+msgid "Toggle bookmark"
+msgstr ""
+
+#: taguette/static/js/document/context-menu.js:41
+#: taguette/static/js/document/treeview.js:552
+msgid "Delete document"
+msgstr ""
+
+#: taguette/static/js/document/treeview.js:556
+msgid "Select multiple documents:"
+msgstr ""
+
+#: taguette/static/js/document/treeview.js:558
+#, python-format
+msgid "Hold %(key)s and click documents"
+msgstr ""
+
+#: taguette/static/js/document/treeview.js:559
+msgid "Drag selected documents to a collection"
+msgstr ""
+
 #: taguette/static/js/document/context-menu.js:25
 #: taguette/static/js/document/manager.js:87
 msgid "Remove from Bookmarks"
@@ -287,21 +354,21 @@ msgstr "There are no documents in this project yet."
 msgid "Import new document"
 msgstr "Import new document(s)"
 
-#: taguette/static/js/document/manager.js:383
-#: taguette/static/js/document/manager.js:485
+#: taguette/static/js/document/manager.js:314
+msgid " = Documents without collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:315
+msgid " = Documents currently assigned to a collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:386
+#: taguette/static/js/document/manager.js:488
 msgid "Currently in"
 msgstr ""
 
-#: taguette/static/js/document/manager.js:410
+#: taguette/static/js/document/manager.js:413
 msgid "No documents available"
-msgstr ""
-
-#: taguette/static/js/document/context-menu.js:30
-msgid "Edit document"
-msgstr ""
-
-#: taguette/static/js/document/context-menu.js:41
-msgid "Delete document"
 msgstr ""
 
 #: taguette/static/js/project/search.js:67
@@ -502,13 +569,4 @@ msgstr ""
 #: taguette/static/js/project/intro.js:178
 msgid "Done"
 msgstr ""
-
-#~ msgid "No documents found"
-#~ msgstr ""
-
-#~ msgid "Remove from Favorites"
-#~ msgstr "Remove from bookmarks"
-
-#~ msgid "Add to Favorites"
-#~ msgstr "Add to bookmarks"
 

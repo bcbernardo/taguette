@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2026-01-05 14:46-0500\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
-"Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
+"Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>\n"
 "Language: fr\n"
 "Language-Team: fr <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n==0 || n==1) ? 0 : n != 0 && n % "
@@ -463,7 +463,7 @@ msgstr "Bienvenue"
 
 #: taguette/templates/alt_templates/phun/welcome.html:14
 msgid "Welcome to LibreQDA"
-msgstr "Bienvenue dans LibreQDA"
+msgstr ""
 
 #: taguette/templates/alt_templates/phun/welcome.html:20
 #, python-format

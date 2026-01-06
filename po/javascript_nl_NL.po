@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taguette 1.1\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-07-29 10:10-0400\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
-"Last-Translator: <dion.jeremie.2@courrier.uqam.ca>, with LLM assistance"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca> with LLM assistance\n"
 "Language: nl_NL\n"
 "Language-Team: Dutch (Netherlands) "
 "(https://www.transifex.com/remram44/teams/98824/nl_NL/)\n"
@@ -25,319 +25,60 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: taguette/static/js/project/search.js:67
-#, python-format
-msgid "Found in %(nb)s document(s)"
-msgstr "Gevonden in %(nb)s document(en)"
-
-#: taguette/static/js/project/search.js:115
-msgid "Error searching documents!"
-msgstr "Fout bij het zoeken naar documenten!"
-
-#: taguette/static/js/project/intro.js:14
-msgid ""
-"Welcome to LibreQDA, a qualitative data analysis software (QDA) developed"
-" by the Plateforme en humanités numériques (PHuN) at Université de "
-"Sherbrooke."
-msgstr ""
-"Welkom bij LibreQDA, een software voor kwalitatieve data-analyse (QDA), "
-"ontwikkeld door de Plateforme en humanités numériques (PHuN) van de "
-"Université de Sherbrooke."
-
-#: taguette/static/js/project/intro.js:15
-msgid ""
-"<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
-"target=\"_blank\">Gitlab repository</a></p>"
-msgstr ""
-"<p>Bezoek onze <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
-"target=\"_blank\">Gitlab repository</a></p>"
-
-#: taguette/static/js/project/intro.js:19
-msgid "<p>To consult the documentation</p>"
-msgstr "<p>Om de documentatie te raadplegen</p>"
-
-#: taguette/static/js/project/intro.js:24
-msgid "<p>A demo project has been added to your home page.</p>"
-msgstr "<p>Een demoproject is toegevoegd aan je startpagina.</p>"
-
-#: taguette/static/js/project/intro.js:31
-#: taguette/static/js/project/intro.js:176
-msgid "Next"
-msgstr "Volgende"
-
-#: taguette/static/js/project/intro.js:32
-#: taguette/static/js/project/intro.js:177
-msgid "Back"
-msgstr "Terug"
-
-#: taguette/static/js/project/intro.js:33
-msgid "Continue"
-msgstr "Doorgaan"
-
-#: taguette/static/js/project/intro.js:71
-msgid "Your documents"
-msgstr "Uw documenten"
-
-#: taguette/static/js/project/intro.js:72
-msgid "<p>Use this tab to load files and go through them.</p>"
-msgstr "<p>Gebruik dit tabblad om bestanden te laden en te bekijken.</p>"
-
-#: taguette/static/js/project/intro.js:77
-msgid "Codebook"
-msgstr "Codeboek"
-
-#: taguette/static/js/project/intro.js:78
-msgid ""
-"<p>This tab lists all the codes that have been defined. Add new codes "
-"with the button dedicated to that purpose.</p><br><p>The total number of "
-"uses is indicated by the number on the right, and the number of documents"
-" on the left.</p>"
-msgstr ""
-"<p>Dit tabblad toont alle gedefinieerde codes. Voeg nieuwe codes toe "
-"met de daarvoor bestemde knop.</p><br><p>Het totale aantal keren dat een "
-"code is gebruikt, wordt aangegeven door het getal rechts, en het aantal "
-"documenten links.</p>"
-
-#: taguette/static/js/project/intro.js:83
-msgid "Parent codes"
-msgstr "Bovenliggende codes"
-
-#: taguette/static/js/project/intro.js:84
-msgid "<p>You can define codes that include child codes under them.</p>"
-msgstr "<p>U kunt codes definiëren met onderliggende codes.</p>"
-
-#: taguette/static/js/project/intro.js:89
-msgid "Child codes"
-msgstr "Onderliggende codes"
-
-#: taguette/static/js/project/intro.js:90
-msgid "<p>These can be expanded or collapsed.</p>"
-msgstr "<p>Deze kunnen worden uit- of ingeklapt.</p>"
-
-#: taguette/static/js/project/intro.js:96
-msgid "Consulting documents"
-msgstr "Documenten raadplegen"
-
-#: taguette/static/js/project/intro.js:97
-msgid ""
-"<p>Click on a document to view its contents. Use the star to save your "
-"bookmarks.</p>"
-msgstr ""
-"<p>Klik op een document om de inhoud te bekijken. Gebruik de ster om uw "
-"bladwijzers op te slaan.</p>"
-
-#: taguette/static/js/project/intro.js:102
-msgid "Coding"
-msgstr "Coderen"
-
-#: taguette/static/js/project/intro.js:103
-msgid ""
-"<p>Select a portion of text with your cursor. Two buttons will appear to "
-"assign a code to the selection.</p>"
-msgstr ""
-"<p>Selecteer een stuk tekst met uw cursor. Er verschijnen twee knoppen om "
-"een code aan de selectie toe te wijzen.</p>"
-
-#: taguette/static/js/project/intro.js:112
-msgid "Selecting a code"
-msgstr "Een code selecteren"
-
-#: taguette/static/js/project/intro.js:113
-msgid ""
-"<p>From the menu, select one or more codes that correspond to the content"
-" of the selection and save the changes. In this case, the selection "
-"refers to reinforcing social relationships.</p>"
-msgstr ""
-"<p>Selecteer uit het menu één of meer codes die overeenkomen met de "
-"inhoud van de selectie en sla de wijzigingen op. In dit geval heeft de "
-"selectie betrekking op het versterken van sociale relaties.</p>"
-
-#: taguette/static/js/project/intro.js:120
-msgid "Exploring the codes"
-msgstr "De codes verkennen"
-
-#: taguette/static/js/project/intro.js:121
-msgid ""
-"<p>You can explore the text selections tagged with each code at any time "
-"during or after the coding process.</p><br><p> Show all of the selections"
-" tagged with a code from the codebook by clicking on it.</p>"
-msgstr ""
-"<p>U kunt de tekstselecties die met elke code zijn getagd op elk moment "
-"tijdens of na het codeerproces verkennen.</p><br><p> Toon alle selecties "
-"die met een code uit het codeboek zijn getagd door erop te klikken.</p>"
-
-#: taguette/static/js/project/intro.js:126
-msgid "Narrowing your search"
-msgstr "Uw zoekopdracht verfijnen"
-
-#: taguette/static/js/project/intro.js:127
-msgid ""
-"<p>If there are a large number of selections shown, you can refine the "
-"results with an advanced search.</p>"
-msgstr ""
-"<p>Als er een groot aantal selecties worden weergegeven, kunt u de "
-"resultaten verfijnen met een geavanceerde zoekopdracht.</p>"
-
-#: taguette/static/js/project/intro.js:133
-msgid "Conditional selections"
-msgstr "Voorwaardelijke selecties"
-
-#: taguette/static/js/project/intro.js:134
-msgid ""
-"<p>By right-clicking, you can specify conditions to either add or exclude"
-" additional codes.</p>"
-msgstr ""
-"<p>Door rechts te klikken, kunt u voorwaarden specificeren om extra codes "
-"toe te voegen of uit te sluiten.</p>"
-
-#: taguette/static/js/project/intro.js:141
-msgid "Exploring the list"
-msgstr "De lijst verkennen"
-
-#: taguette/static/js/project/intro.js:142
-msgid ""
-"<p>The labels shown with this query indicate that the selections must "
-"necessarily include the codes <i>barriers</i> and <i>skills "
-"development</i>.</p>"
-msgstr ""
-"<p>De codes die bij deze query worden getoond, geven aan dat de selecties "
-"noodzakelijkerwijs de codes <i>barrières</i> en <i>vaardigheidsontwikkeling"
-"</i> moeten bevatten.</p>"
-
-#: taguette/static/js/project/intro.js:148
-msgid "Navigating to documents"
-msgstr "Navigeren naar documenten"
-
-#: taguette/static/js/project/intro.js:149
-msgid ""
-"<p>By clicking on the name of the document, you can return to the "
-"context.</p>"
-msgstr ""
-"<p>Door op de naam van het document te klikken, kunt u terugkeren naar de "
-"context.</p>"
-
-#: taguette/static/js/project/intro.js:155
-msgid "Returning to the selections"
-msgstr "Terugkeren naar de selecties"
-
-#: taguette/static/js/project/intro.js:156
-msgid ""
-"<p>After consulting the context, you can return to the list of selections"
-" previously identified using the advanced search.</p>"
-msgstr ""
-"<p>Na raadpleging van de context kunt u terugkeren naar de lijst met "
-"selecties die eerder met de geavanceerde zoekopdracht zijn geïdentificeerd.</p>"
-
-#: taguette/static/js/project/intro.js:162
-msgid "Exporting"
-msgstr "Exporteren"
-
-#: taguette/static/js/project/intro.js:163
-msgid ""
-"<p>You can choose to download these selections to your computer, as "
-"needed.</p>"
-msgstr ""
-"<p>U kunt ervoor kiezen om deze selecties naar uw computer te downloaden, "
-"indien nodig.</p>"
-
-#: taguette/static/js/project/intro.js:167
-msgid "Time to code!"
-msgstr "Tijd om te coderen!"
-
-#: taguette/static/js/project/intro.js:168
-msgid ""
-"<p>Use LibreQDA however you wish, knowing that your data is always saved "
-"to your personal account. Feel free to further familiarize yourself with "
-"these functions by continuing to code and explore these fictional "
-"interviews about board games.</p>"
-msgstr ""
-"<p>Gebruik LibreQDA zoals u wilt, wetende dat uw gegevens altijd worden "
-"opgeslagen in uw persoonlijke account. Voel u vrij om uzelf verder "
-"vertrouwd te maken met deze functies door door te gaan met coderen en "
-"deze fictieve interviews over bordspellen te verkennen.</p>"
-
-#: taguette/static/js/project/intro.js:178
-msgid "Done"
-msgstr "Klaar"
-
-#: taguette/static/js/polling-event.js:111
+#: taguette/static/js/polling-event.js:141
 msgid "It appears that you have been logged out."
 msgstr "Het lijkt erop dat u bent uitgelogd."
 
-#: taguette/static/js/polling-event.js:114
+#: taguette/static/js/polling-event.js:144
 msgid "You can no longer access this project."
 msgstr "U heeft geen toegang meer tot dit project."
 
-#: taguette/static/js/taguette.js:267
-msgid "Document name cannot be empty"
-msgstr "Documentnaam mag niet leeg zijn"
+#: taguette/static/js/tag/treeview.js:236
+msgid "Documents"
+msgstr "Documenten"
 
-#: taguette/static/js/taguette.js:292
-#, python-format
-msgid "Are you sure you want to delete the document '%(doc)s'?"
-msgstr "Weet u zeker dat u het document '%(doc)s' wilt verwijderen?"
+#: taguette/static/js/tag/treeview.js:242
+msgid "Highlights"
+msgstr "Markeringen"
 
-#: taguette/static/js/taguette.js:418
-msgid "Invalid tag name"
-msgstr "Ongeldige codenaam"
+#: taguette/static/js/tag/treeview.js:496
+msgid "Click to explore • Right-click for options"
+msgstr "Klik om te verkennen • Rechts klikken voor opties"
 
-#: taguette/static/js/taguette.js:423
-msgid "Impossible to define the same tag as parent"
-msgstr "Onmogelijk om dezelfde code als bovenliggende te definiëren"
+#: taguette/static/js/tag/treeview.js:526
+msgid "Right-click on a code:"
+msgstr "Rechts klikken op een code:"
 
+#: taguette/static/js/tag/treeview.js:528
+msgid "Add child code"
+msgstr "Onderliggende code toevoegen"
+
+#: taguette/static/js/tag/treeview.js:529
+msgid "Edit code"
+msgstr "Code bewerken"
+
+#: taguette/static/js/tag/treeview.js:530
+msgid "Merge codes"
+msgstr "Codes samenvoegen"
+
+#: taguette/static/js/tag/treeview.js:531
+msgid "Delete code"
+msgstr "Code verwijderen"
+
+#: taguette/static/js/tag/treeview.js:535
+msgid "Click on a code:"
+msgstr "Klik op een code:"
+
+#: taguette/static/js/tag/treeview.js:537
+msgid "Filter highlights by this code"
+msgstr "Markeringen filteren op deze code"
+
+#: taguette/static/js/collection/hierarchy-select.js:15
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:464
+#: taguette/static/js/taguette.js:291 taguette/static/js/taguette.js:542
+#: taguette/static/js/taguette.js:1566
 msgid "None"
 msgstr "Geen"
-
-#: taguette/static/js/taguette.js:486
-#, python-format
-msgid "Are you sure you want to delete the tag '%(tag)s'?"
-msgstr "Weet u zeker dat u de code '%(tag)s' wilt verwijderen?"
-
-#: taguette/static/js/taguette.js:539
-msgid "Couldn't merge tags!"
-msgstr "Kon codes niet samenvoegen!"
-
-#: taguette/static/js/taguette.js:698
-msgid "Full permissions"
-msgstr "Volledige rechten"
-
-#: taguette/static/js/taguette.js:699
-msgid "Can't change collaborators / delete project"
-msgstr "Kan medewerkers niet wijzigen / project verwijderen"
-
-#: taguette/static/js/taguette.js:700
-msgid "View & make changes"
-msgstr "Bekijken & wijzigingen aanbrengen"
-
-#: taguette/static/js/taguette.js:701
-msgid "View only"
-msgstr "Alleen bekijken"
-
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:773
-msgid "Already a member!"
-msgstr "Al lid!"
-
-#: taguette/static/js/taguette.js:788
-msgid "This user doesn't exist!"
-msgstr "Deze gebruiker bestaat niet!"
-
-#: taguette/static/js/taguette.js:856
-msgid "Load a document on the left"
-msgstr "Laad een document aan de linkerkant"
-
-#: taguette/static/js/taguette.js:1073
-msgid "No highlights with this tag yet."
-msgstr "Nog geen markeringen met deze code."
-
-#: taguette/static/js/taguette.js:1216
-msgid "No documents found"
-msgstr "Geen documenten gevonden"
-
-#: taguette/static/js/taguette.js:1262
-msgid "No tag found"
-msgstr "Geen code gevonden"
 
 #: taguette/static/js/tag/context-menu.js:35
 msgid "selectAll"
@@ -391,29 +132,145 @@ msgstr "Bovenliggende verwijderen"
 msgid "delete"
 msgstr "Verwijderen"
 
-#: taguette/static/js/tag/treeview.js:235
-msgid "Documents"
-msgstr "Documenten"
+#: taguette/static/js/highlight/native/loader.js:7
+#: taguette/static/js/taguette.js:937
+msgid "Load a document on the left"
+msgstr "Laad een document aan de linkerkant"
 
-#: taguette/static/js/tag/treeview.js:241
-msgid "Highlights"
-msgstr "Markeringen"
+#: taguette/static/js/collection/context-menu.js:26
+#: taguette/static/js/document/treeview.js:541
+msgid "Add sub-collection"
+msgstr "Subcollectie toevoegen"
 
-#: taguette/static/js/document/manager.js:72
-msgid "Remove from Favorites"
-msgstr "Verwijder uit favorieten"
+#: taguette/static/js/collection/context-menu.js:31
+#: taguette/static/js/document/treeview.js:542
+msgid "Edit collection"
+msgstr "Collectie bewerken"
 
-#: taguette/static/js/document/manager.js:72
-msgid "Add to Favorites"
-msgstr "Toevoegen aan favorieten"
+#: taguette/static/js/collection/context-menu.js:39
+#: taguette/static/js/document/treeview.js:543
+msgid "Remove parent"
+msgstr "Bovenliggende verwijderen"
 
-#: taguette/static/js/document/manager.js:92
-msgid "There are no documents in this project yet."
-msgstr "Er zijn nog geen documenten in dit project."
+#: taguette/static/js/collection/context-menu.js:47
+#: taguette/static/js/document/treeview.js:544
+#: taguette/static/js/taguette.js:1612
+msgid "Delete collection"
+msgstr "Collectie verwijderen"
 
-#: taguette/static/js/document/manager.js:112
-msgid "Import new document"
-msgstr "Nieuw document importeren"
+#: taguette/static/js/taguette.js:311
+#, python-format
+msgid "Are you sure you want to delete the document '%(doc)s'?"
+msgstr "Weet u zeker dat u het document '%(doc)s' wilt verwijderen?"
+
+#: taguette/static/js/taguette.js:356
+msgid "Document name cannot be empty"
+msgstr "Documentnaam mag niet leeg zijn"
+
+#: taguette/static/js/taguette.js:496
+msgid "Invalid tag name"
+msgstr "Ongeldige codenaam"
+
+#: taguette/static/js/taguette.js:501
+msgid "Impossible to define the same tag as parent"
+msgstr "Onmogelijk om dezelfde code als bovenliggende te definiëren"
+
+#: taguette/static/js/taguette.js:564
+#, python-format
+msgid "Are you sure you want to delete the tag '%(tag)s'?"
+msgstr "Weet u zeker dat u de code '%(tag)s' wilt verwijderen?"
+
+#: taguette/static/js/taguette.js:617
+msgid "Couldn't merge tags!"
+msgstr "Kon codes niet samenvoegen!"
+
+#: taguette/static/js/taguette.js:776
+msgid "Full permissions"
+msgstr "Volledige rechten"
+
+#: taguette/static/js/taguette.js:777
+msgid "Can't change collaborators / delete project"
+msgstr "Kan medewerkers niet wijzigen / project verwijderen"
+
+#: taguette/static/js/taguette.js:778
+msgid "View & make changes"
+msgstr "Bekijken & wijzigingen aanbrengen"
+
+#: taguette/static/js/taguette.js:779
+msgid "View only"
+msgstr "Alleen bekijken"
+
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:851
+msgid "Already a member!"
+msgstr "Al lid!"
+
+#: taguette/static/js/taguette.js:866
+msgid "This user doesn't exist!"
+msgstr "Deze gebruiker bestaat niet!"
+
+#: taguette/static/js/taguette.js:1192
+msgid "No highlights with this tag yet."
+msgstr "Nog geen markeringen met deze code."
+
+#: taguette/static/js/taguette.js:1335
+msgid "No document or collection found"
+msgstr "Geen document of collectie gevonden"
+
+#: taguette/static/js/taguette.js:1374
+msgid "No tag found"
+msgstr "Geen code gevonden"
+
+#: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
+#, python-format
+msgid ""
+"Are you sure you want to delete the collection '%(name)s'? Its documents "
+"will be moved."
+msgstr ""
+"Weet u zeker dat u de collectie '%(name)s' wilt verwijderen? De "
+"documenten worden verplaatst."
+
+#: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
+#: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
+msgid "Error deleting collection: "
+msgstr ""
+
+#: taguette/static/js/taguette.js:1602
+#, python-format
+msgid "The collection '%(name)s' has subcollections. How do you want to proceed?"
+msgstr "De collectie '%(name)s' heeft subcollecties. Hoe wilt u doorgaan?"
+
+#: taguette/static/js/taguette.js:1680
+#, python-format
+msgid ""
+"Are you sure you want to remove collection '%(name)s' from parent "
+"'%(parent)s'?"
+msgstr ""
+"Weet u zeker dat u collectie '%(name)s' wilt verwijderen van "
+"bovenliggende '%(parent)s'?"
+
+#: taguette/static/js/taguette.js:1696
+msgid "Error removing collection parent: "
+msgstr ""
+
+#: taguette/static/js/taguette.js:1755
+msgid "Collection name is required"
+msgstr "Collectienaam is vereist"
+
+#: taguette/static/js/taguette.js:1760
+msgid "A collection cannot be its own parent."
+msgstr "Een collectie kan niet zijn eigen bovenliggende zijn."
+
+#: taguette/static/js/taguette.js:1789
+msgid "Error updating collection: "
+msgstr ""
+
+#: taguette/static/js/taguette.js:1790
+msgid "Error creating collection: "
+msgstr ""
+
+#: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
+msgid "Collection deleted!"
+msgstr "Collectie verwijderd!"
 
 #: taguette/static/js/permissions.js:25
 msgid "Can create projects"
@@ -429,6 +286,333 @@ msgid ""
 "found</li><li>User is already sponsored</li><li>User role cannot be "
 "changed</li></ul>"
 msgstr ""
-"Kan deze gebruiker niet toevoegen<br/>Redenen: <ul><li>Gebruiker kan niet "
-"gevonden worden</li><li>Gebruiker is al gesponsord</li><li>Gebruikersrol kan "
-"niet worden gewijzigd</li></ul>"
+"Kan deze gebruiker niet toevoegen<br/>Redenen: <ul><li>Gebruiker kan niet"
+" gevonden worden</li><li>Gebruiker is al gesponsord</li><li>Gebruikersrol"
+" kan niet worden gewijzigd</li></ul>"
+
+#: taguette/static/js/document/treeview.js:119
+msgid "Without collection"
+msgstr "Zonder collectie"
+
+#: taguette/static/js/document/treeview.js:151
+#, python-format
+msgid "Click to open • %(key)s+Click to select • Right-click for options"
+msgstr ""
+"Klik om te openen • %(key)s+Klik om te selecteren • Rechts klikken voor "
+"opties"
+
+#: taguette/static/js/document/treeview.js:198
+msgid "Documents count"
+msgstr "Aantal documenten"
+
+#: taguette/static/js/document/treeview.js:391
+#, python-format
+msgid "You can drag and drop %s documents to a collection"
+msgstr "U kunt %s documenten naar een collectie slepen"
+
+#: taguette/static/js/document/treeview.js:539
+msgid "Right-click on a collection:"
+msgstr "Rechts klikken op een collectie:"
+
+#: taguette/static/js/document/treeview.js:548
+msgid "Right-click on a document:"
+msgstr "Rechts klikken op een document:"
+
+#: taguette/static/js/document/context-menu.js:30
+#: taguette/static/js/document/treeview.js:550
+msgid "Edit document"
+msgstr "Document bewerken"
+
+#: taguette/static/js/document/treeview.js:551
+msgid "Toggle bookmark"
+msgstr "Bladwijzer schakelen"
+
+#: taguette/static/js/document/context-menu.js:41
+#: taguette/static/js/document/treeview.js:552
+msgid "Delete document"
+msgstr "Document verwijderen"
+
+#: taguette/static/js/document/treeview.js:556
+msgid "Select multiple documents:"
+msgstr "Meerdere documenten selecteren:"
+
+#: taguette/static/js/document/treeview.js:558
+#, python-format
+msgid "Hold %(key)s and click documents"
+msgstr "Houd %(key)s ingedrukt en klik op documenten"
+
+#: taguette/static/js/document/treeview.js:559
+msgid "Drag selected documents to a collection"
+msgstr "Sleep geselecteerde documenten naar een collectie"
+
+#: taguette/static/js/document/context-menu.js:25
+#: taguette/static/js/document/manager.js:87
+msgid "Remove from Bookmarks"
+msgstr "Verwijderen uit bladwijzers"
+
+#: taguette/static/js/document/context-menu.js:25
+#: taguette/static/js/document/manager.js:87
+msgid "Add to Bookmarks"
+msgstr "Toevoegen aan bladwijzers"
+
+#: taguette/static/js/document/manager.js:107
+msgid "There are no documents in this project yet."
+msgstr "Er zijn nog geen documenten in dit project."
+
+#: taguette/static/js/document/manager.js:127
+msgid "Import new document"
+msgstr "Nieuw document importeren"
+
+#: taguette/static/js/document/manager.js:314
+msgid " = Documents without collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:315
+msgid " = Documents currently assigned to a collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:386
+#: taguette/static/js/document/manager.js:488
+msgid "Currently in"
+msgstr "Momenteel in"
+
+#: taguette/static/js/document/manager.js:413
+msgid "No documents available"
+msgstr "Geen documenten beschikbaar"
+
+#: taguette/static/js/project/search.js:67
+#, python-format
+msgid "Found in %(nb)s document(s)"
+msgstr "Gevonden in %(nb)s document(en)"
+
+#: taguette/static/js/project/search.js:115
+msgid "Error searching documents!"
+msgstr "Fout bij het zoeken naar documenten!"
+
+#: taguette/static/js/project/intro.js:14
+msgid ""
+"Welcome to LibreQDA, a qualitative data analysis software (QDA) developed"
+" by the Plateforme en humanités numériques (PHuN) at Université de "
+"Sherbrooke."
+msgstr ""
+"Welkom bij LibreQDA, een software voor kwalitatieve data-analyse (QDA), "
+"ontwikkeld door de Plateforme en humanités numériques (PHuN) van de "
+"Université de Sherbrooke."
+
+#: taguette/static/js/project/intro.js:15
+msgid ""
+"<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">Gitlab repository</a></p>"
+msgstr ""
+"<p>Bezoek onze <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-"
+"qda\" target=\"_blank\">Gitlab repository</a></p>"
+
+#: taguette/static/js/project/intro.js:19
+msgid "<p>To consult the documentation</p>"
+msgstr "<p>Om de documentatie te raadplegen</p>"
+
+#: taguette/static/js/project/intro.js:24
+msgid "<p>A demo project has been added to your home page.</p>"
+msgstr "<p>Een demoproject is toegevoegd aan je startpagina.</p>"
+
+#: taguette/static/js/project/intro.js:31
+#: taguette/static/js/project/intro.js:176
+msgid "Next"
+msgstr "Volgende"
+
+#: taguette/static/js/project/intro.js:32
+#: taguette/static/js/project/intro.js:177
+msgid "Back"
+msgstr "Terug"
+
+#: taguette/static/js/project/intro.js:33
+msgid "Continue"
+msgstr "Doorgaan"
+
+#: taguette/static/js/project/intro.js:71
+msgid "Your documents"
+msgstr "Uw documenten"
+
+#: taguette/static/js/project/intro.js:72
+msgid "<p>Use this tab to load files and go through them.</p>"
+msgstr "<p>Gebruik dit tabblad om bestanden te laden en te bekijken.</p>"
+
+#: taguette/static/js/project/intro.js:77
+msgid "Codebook"
+msgstr "Codeboek"
+
+#: taguette/static/js/project/intro.js:78
+msgid ""
+"<p>This tab lists all the codes that have been defined. Add new codes "
+"with the button dedicated to that purpose.</p><br><p>The total number of "
+"uses is indicated by the number on the right, and the number of documents"
+" on the left.</p>"
+msgstr ""
+"<p>Dit tabblad toont alle gedefinieerde codes. Voeg nieuwe codes toe met "
+"de daarvoor bestemde knop.</p><br><p>Het totale aantal keren dat een code"
+" is gebruikt, wordt aangegeven door het getal rechts, en het aantal "
+"documenten links.</p>"
+
+#: taguette/static/js/project/intro.js:83
+msgid "Parent codes"
+msgstr "Bovenliggende codes"
+
+#: taguette/static/js/project/intro.js:84
+msgid "<p>You can define codes that include child codes under them.</p>"
+msgstr "<p>U kunt codes definiëren met onderliggende codes.</p>"
+
+#: taguette/static/js/project/intro.js:89
+msgid "Child codes"
+msgstr "Onderliggende codes"
+
+#: taguette/static/js/project/intro.js:90
+msgid "<p>These can be expanded or collapsed.</p>"
+msgstr "<p>Deze kunnen worden uit- of ingeklapt.</p>"
+
+#: taguette/static/js/project/intro.js:96
+msgid "Consulting documents"
+msgstr "Documenten raadplegen"
+
+#: taguette/static/js/project/intro.js:97
+msgid ""
+"<p>Click on a document to view its contents. Use the star to save your "
+"bookmarks.</p>"
+msgstr ""
+"<p>Klik op een document om de inhoud te bekijken. Gebruik de ster om uw "
+"bladwijzers op te slaan.</p>"
+
+#: taguette/static/js/project/intro.js:102
+msgid "Coding"
+msgstr "Coderen"
+
+#: taguette/static/js/project/intro.js:103
+msgid ""
+"<p>Select a portion of text with your cursor. Two buttons will appear to "
+"assign a code to the selection.</p>"
+msgstr ""
+"<p>Selecteer een stuk tekst met uw cursor. Er verschijnen twee knoppen om"
+" een code aan de selectie toe te wijzen.</p>"
+
+#: taguette/static/js/project/intro.js:112
+msgid "Selecting a code"
+msgstr "Een code selecteren"
+
+#: taguette/static/js/project/intro.js:113
+msgid ""
+"<p>From the menu, select one or more codes that correspond to the content"
+" of the selection and save the changes. In this case, the selection "
+"refers to reinforcing social relationships.</p>"
+msgstr ""
+"<p>Selecteer uit het menu één of meer codes die overeenkomen met de "
+"inhoud van de selectie en sla de wijzigingen op. In dit geval heeft de "
+"selectie betrekking op het versterken van sociale relaties.</p>"
+
+#: taguette/static/js/project/intro.js:120
+msgid "Exploring the codes"
+msgstr "De codes verkennen"
+
+#: taguette/static/js/project/intro.js:121
+msgid ""
+"<p>You can explore the text selections tagged with each code at any time "
+"during or after the coding process.</p><br><p> Show all of the selections"
+" tagged with a code from the codebook by clicking on it.</p>"
+msgstr ""
+"<p>U kunt de tekstselecties die met elke code zijn getagd op elk moment "
+"tijdens of na het codeerproces verkennen.</p><br><p> Toon alle selecties "
+"die met een code uit het codeboek zijn getagd door erop te klikken.</p>"
+
+#: taguette/static/js/project/intro.js:126
+msgid "Narrowing your search"
+msgstr "Uw zoekopdracht verfijnen"
+
+#: taguette/static/js/project/intro.js:127
+msgid ""
+"<p>If there are a large number of selections shown, you can refine the "
+"results with an advanced search.</p>"
+msgstr ""
+"<p>Als er een groot aantal selecties worden weergegeven, kunt u de "
+"resultaten verfijnen met een geavanceerde zoekopdracht.</p>"
+
+#: taguette/static/js/project/intro.js:133
+msgid "Conditional selections"
+msgstr "Voorwaardelijke selecties"
+
+#: taguette/static/js/project/intro.js:134
+msgid ""
+"<p>By right-clicking, you can specify conditions to either add or exclude"
+" additional codes.</p>"
+msgstr ""
+"<p>Door rechts te klikken, kunt u voorwaarden specificeren om extra codes"
+" toe te voegen of uit te sluiten.</p>"
+
+#: taguette/static/js/project/intro.js:141
+msgid "Exploring the list"
+msgstr "De lijst verkennen"
+
+#: taguette/static/js/project/intro.js:142
+msgid ""
+"<p>The labels shown with this query indicate that the selections must "
+"necessarily include the codes <i>barriers</i> and <i>skills "
+"development</i>.</p>"
+msgstr ""
+"<p>De codes die bij deze query worden getoond, geven aan dat de selecties"
+" noodzakelijkerwijs de codes <i>barrières</i> en "
+"<i>vaardigheidsontwikkeling</i> moeten bevatten.</p>"
+
+#: taguette/static/js/project/intro.js:148
+msgid "Navigating to documents"
+msgstr "Navigeren naar documenten"
+
+#: taguette/static/js/project/intro.js:149
+msgid ""
+"<p>By clicking on the name of the document, you can return to the "
+"context.</p>"
+msgstr ""
+"<p>Door op de naam van het document te klikken, kunt u terugkeren naar de"
+" context.</p>"
+
+#: taguette/static/js/project/intro.js:155
+msgid "Returning to the selections"
+msgstr "Terugkeren naar de selecties"
+
+#: taguette/static/js/project/intro.js:156
+msgid ""
+"<p>After consulting the context, you can return to the list of selections"
+" previously identified using the advanced search.</p>"
+msgstr ""
+"<p>Na raadpleging van de context kunt u terugkeren naar de lijst met "
+"selecties die eerder met de geavanceerde zoekopdracht zijn "
+"geïdentificeerd.</p>"
+
+#: taguette/static/js/project/intro.js:162
+msgid "Exporting"
+msgstr "Exporteren"
+
+#: taguette/static/js/project/intro.js:163
+msgid ""
+"<p>You can choose to download these selections to your computer, as "
+"needed.</p>"
+msgstr ""
+"<p>U kunt ervoor kiezen om deze selecties naar uw computer te downloaden,"
+" indien nodig.</p>"
+
+#: taguette/static/js/project/intro.js:167
+msgid "Time to code!"
+msgstr "Tijd om te coderen!"
+
+#: taguette/static/js/project/intro.js:168
+msgid ""
+"<p>Use LibreQDA however you wish, knowing that your data is always saved "
+"to your personal account. Feel free to further familiarize yourself with "
+"these functions by continuing to code and explore these fictional "
+"interviews about board games.</p>"
+msgstr ""
+"<p>Gebruik LibreQDA zoals u wilt, wetende dat uw gegevens altijd worden "
+"opgeslagen in uw persoonlijke account. Voel u vrij om uzelf verder "
+"vertrouwd te maken met deze functies door door te gaan met coderen en "
+"deze fictieve interviews over bordspellen te verkennen.</p>"
+
+#: taguette/static/js/project/intro.js:178
+msgid "Done"
+msgstr "Klaar"
+

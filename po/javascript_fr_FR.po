@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taguette 1.1\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2026-01-05 14:41-0500\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
-"Last-Translator: Rémi Rampin <remirampin@gmail.com>, 2021\n"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca>\n"
 "Language: fr\n"
 "Language-Team: French "
 "(https://www.transifex.com/remram44/teams/98824/fr/)\n"
@@ -363,12 +363,20 @@ msgstr "Il n'y a pas encore de documents dans ce projet."
 msgid "Import new document"
 msgstr "Importer des documents"
 
-#: taguette/static/js/document/manager.js:383
-#: taguette/static/js/document/manager.js:485
+#: taguette/static/js/document/manager.js:314
+msgid " = Documents without collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:315
+msgid " = Documents currently assigned to a collection"
+msgstr ""
+
+#: taguette/static/js/document/manager.js:386
+#: taguette/static/js/document/manager.js:488
 msgid "Currently in"
 msgstr "Présentement dans"
 
-#: taguette/static/js/document/manager.js:410
+#: taguette/static/js/document/manager.js:413
 msgid "No documents available"
 msgstr "Aucun document"
 
