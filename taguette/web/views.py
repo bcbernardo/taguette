@@ -108,7 +108,8 @@ class Index(BaseHandler):
             )
         elif not self.application.config["MULTIUSER"]:
             token = self.get_query_argument("token", None)
-            if token and token == self.application.single_user_token:
+            if (self.application.config['UNIX_SOCKET'] or
+                    (token and token == self.application.single_user_token)):
                 self.login("admin")
                 return self.redirect(self.reverse_url("index"))
             elif token:
@@ -575,7 +576,9 @@ class CilogonCallback(BaseHandler):
                     f"user: {user.login} -> {login}."
                 )
                 user.login = login
-                user.displayname = user_info["name"]
+                user.displayname = user_info["name"] if "name" in user_info \
+                    else self.generateUserDisplayNameFromEmail(
+                    user_info["email"])
                 user.external = True
                 self.db.commit()
         if user is None:
@@ -583,7 +586,8 @@ class CilogonCallback(BaseHandler):
                 f"CILogon Login: non-existent user, create user {login}"
             )
             user = database.User(login=login)
-            user.displayname = user_info["name"]
+            user.displayname = user_info["name"] if "name" in user_info \
+                else self.generateUserDisplayNameFromEmail(user_info["email"])
             user.login = login
             user.email = login
             user.external = True
@@ -603,6 +607,10 @@ class CilogonCallback(BaseHandler):
             PROM_USER_CONNECTIONS.inc()
             PROM_ACTIVE_SESSIONS.inc()
             return self._go_to_next()
+
+    def generateUserDisplayNameFromEmail(self, email):
+        displayname = re.sub(r"[._]", " ", email.split('@', 1)[0])
+        return displayname
 
     def _go_to_next(self):
         next_ = self.get_argument("next", "")
