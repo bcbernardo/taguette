@@ -232,7 +232,7 @@ msgstr ""
 #: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
 #: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
 msgid "Error deleting collection: "
-msgstr ""
+msgstr "Fout bij het verwijderen van de collectie: "
 
 #: taguette/static/js/taguette.js:1602
 #, python-format
@@ -250,7 +250,7 @@ msgstr ""
 
 #: taguette/static/js/taguette.js:1696
 msgid "Error removing collection parent: "
-msgstr ""
+msgstr "Fout bij het verwijderen van de bovenliggende collectie: "
 
 #: taguette/static/js/taguette.js:1755
 msgid "Collection name is required"
@@ -262,11 +262,11 @@ msgstr "Een collectie kan niet zijn eigen bovenliggende zijn."
 
 #: taguette/static/js/taguette.js:1789
 msgid "Error updating collection: "
-msgstr ""
+msgstr "Fout bij het bijwerken van de collectie: "
 
 #: taguette/static/js/taguette.js:1790
 msgid "Error creating collection: "
-msgstr ""
+msgstr "Fout bij het aanmaken van de collectie: "
 
 #: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
 msgid "Collection deleted!"
@@ -365,11 +365,11 @@ msgstr "Nieuw document importeren"
 
 #: taguette/static/js/document/manager.js:314
 msgid " = Documents without collection"
-msgstr ""
+msgstr " = Documenten zonder collectie"
 
 #: taguette/static/js/document/manager.js:315
 msgid " = Documents currently assigned to a collection"
-msgstr ""
+msgstr " = Documenten die momenteel aan een collectie zijn toegewezen"
 
 #: taguette/static/js/document/manager.js:386
 #: taguette/static/js/document/manager.js:488
@@ -615,4 +615,3 @@ msgstr ""
 #: taguette/static/js/project/intro.js:178
 msgid "Done"
 msgstr "Klaar"
-

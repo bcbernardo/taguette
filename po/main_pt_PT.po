@@ -113,11 +113,11 @@ msgstr "Este não é um arquivo de projeto Taguette"
 
 #: taguette/web/api.py:1443 taguette/web/api.py:1514
 msgid "Collection name is required"
-msgstr ""
+msgstr "O nome da coleção é obrigatório"
 
 #: taguette/web/api.py:1454 taguette/web/api.py:1530
 msgid "Parent collection not found"
-msgstr ""
+msgstr "Coleção pai não encontrada"
 
 #: taguette/web/api.py:1491 taguette/web/api.py:1577
 msgid "Internal error: "
@@ -125,19 +125,19 @@ msgstr ""
 
 #: taguette/web/api.py:1508 taguette/web/api.py:1605
 msgid "No such collection"
-msgstr ""
+msgstr "Nenhuma coleção encontrada"
 
 #: taguette/web/api.py:1534
 msgid "Collection cannot be its own parent"
-msgstr ""
+msgstr "A coleção não pode ser sua própria coleção pai"
 
 #: taguette/web/api.py:1540
 msgid "Would create circular reference"
-msgstr ""
+msgstr "Isso criaria uma referência circular"
 
 #: taguette/web/api.py:1616
 msgid "Cannot delete collection with subcollections. Please specify delete_mode."
-msgstr ""
+msgstr "Não é possível excluir uma coleção com subcoleções. Especifique delete_mode."
 
 #: taguette/web/views.py:231
 msgid "Invalid login or password"
@@ -261,7 +261,7 @@ msgstr "<strong>Documento:</strong> %(doc)s"
 #: taguette/templates/export_highlights.html:31
 msgctxt "exported highlight details"
 msgid "Collection:"
-msgstr ""
+msgstr "Coleção:"
 
 #: taguette/templates/export_highlights.html:35
 msgctxt "exported highlight details"
@@ -617,7 +617,7 @@ msgstr "Criar"
 
 #: taguette/templates/project.html:24 taguette/templates/project.html:117
 msgid "Tips"
-msgstr ""
+msgstr "Dicas"
 
 #: taguette/templates/modal/create_highlight.html:25
 #: taguette/templates/project.html:37
@@ -653,25 +653,31 @@ msgid ""
 "Text\n"
 "                                    [z&rarr;a]"
 msgstr ""
+"Texto\n"
+"                                    [z&rarr;a]"
 
 #: taguette/templates/project.html:66
 msgid ""
 "Count\n"
 "                                    [0&rarr;9]"
 msgstr ""
+"Contagem\n"
+"                                    [0&rarr;9]"
 
 #: taguette/templates/project.html:68
 msgid ""
 "Count\n"
 "                                    [9&rarr;0]"
 msgstr ""
+"Contagem\n"
+"                                    [9&rarr;0]"
 
 #: taguette/templates/project.html:77
 msgctxt ""
 " tag change\n"
 "                        form placeholder"
 msgid "Search for a code"
-msgstr ""
+msgstr "Pesquisar por um código"
 
 #: taguette/templates/project.html:82
 msgid "Back to highlights"
@@ -682,6 +688,8 @@ msgid ""
 "Load a document from your bookmarks or on\n"
 "                    the right"
 msgstr ""
+"Carregue um documento a partir dos seus favoritos ou\n"
+"                    à direita"
 
 #: taguette/templates/project.html:123
 msgid "Add a document"
@@ -689,11 +697,11 @@ msgstr "Adicionar um documento"
 
 #: taguette/templates/project.html:127
 msgid "Add a collection"
-msgstr ""
+msgstr "Adicionar uma coleção"
 
 #: taguette/templates/project.html:129
 msgid "Search titles and collections name"
-msgstr ""
+msgstr "Pesquisar títulos e nomes de coleções"
 
 #: taguette/templates/project.html:134
 msgid "Loading..."
@@ -763,7 +771,7 @@ msgstr "Cancelar"
 
 #: taguette/templates/index.html:23
 msgid "Maintained by"
-msgstr ""
+msgstr "Mantido por"
 
 #: taguette/templates/index.html:33
 #, python-format
@@ -926,11 +934,11 @@ msgstr "..."
 
 #: taguette/templates/partials/document_toolbar.html:20
 msgid "Switch between highlight display modes"
-msgstr ""
+msgstr "Alternar entre modos de exibição de destaques"
 
 #: taguette/templates/partials/document_toolbar.html:22
 msgid "Rich Display"
-msgstr ""
+msgstr "Exibição rica"
 
 #: taguette/templates/partials/document_toolbar.html:29
 msgid "Export"
@@ -1003,7 +1011,6 @@ msgid "Import a codebook"
 msgstr "Importar um livro de códigos"
 
 #: taguette/templates/project_import_codebook.html:7
-#: taguette/templates/project_import_codebook_confirm.html:7
 msgid ""
 "Use this form to import an existing codebook into your project. Existing "
 "tags will not be deleted, new tags will be added alongside them."
@@ -1245,50 +1252,52 @@ msgstr "Por favor, selecione sua instituição na lista antes de continuar"
 #: taguette/templates/modal/create_collection.html:6
 msgctxt "modal window title"
 msgid "Add a collection"
-msgstr ""
+msgstr "Adicionar uma coleção"
 
 #: taguette/templates/modal/create_collection.html:8
 msgctxt ""
 "modal window\n"
 "                    title"
 msgid "Edit collection"
-msgstr ""
+msgstr "Editar coleção"
 
 #: taguette/templates/modal/create_collection.html:19
 #: taguette/templates/modal/create_document.html:58
 msgid "Reset"
-msgstr ""
+msgstr "Redefinir"
 
 #: taguette/templates/modal/create_collection.html:28
 #: taguette/templates/modal/create_collection.html:32
 msgid "Collection name"
-msgstr ""
+msgstr "Nome da coleção"
 
 #: taguette/templates/modal/create_collection.html:35
 msgid "Description"
-msgstr ""
+msgstr "Descrição"
 
 #: taguette/templates/modal/create_collection.html:39
 msgid "Description (optional)"
-msgstr ""
+msgstr "Descrição (opcional)"
 
 #: taguette/templates/modal/create_collection.html:42
 msgid ""
 "Parent\n"
 "                                    collection"
 msgstr ""
+"Coleção\n"
+"                                    pai"
 
 #: taguette/templates/modal/create_collection.html:67
 msgid "Currently assigned to the collection: "
-msgstr ""
+msgstr "Atualmente atribuídos à coleção: "
 
 #: taguette/templates/modal/create_collection.html:74
 msgid "Add documents to this collection"
-msgstr ""
+msgstr "Adicionar documentos a esta coleção"
 
 #: taguette/templates/modal/create_collection.html:79
 msgid "Search documents..."
-msgstr ""
+msgstr "Pesquisar documentos..."
 
 #: taguette/templates/modal/change_document.html:62
 #: taguette/templates/modal/create_collection.html:91
@@ -1300,7 +1309,7 @@ msgstr "Salvar e Fechar"
 
 #: taguette/templates/modal/create_collection.html:95
 msgid "Delete collection"
-msgstr ""
+msgstr "Excluir coleção"
 
 #: taguette/templates/modal/merge_tag.html:6
 msgctxt "merge modal"
@@ -1325,44 +1334,48 @@ msgid ""
 "Left to\n"
 "                                        right"
 msgstr ""
+"Da esquerda\n"
+"                                        para a direita"
 
 #: taguette/templates/modal/create_document.html:31
 msgid ""
 "Right to\n"
 "                                        left"
 msgstr ""
+"Da direita\n"
+"                                        para a esquerda"
 
 #: taguette/templates/modal/create_document.html:35
 msgctxt " document add form placeholder"
 msgid "Description (will be applied to every documents)"
-msgstr ""
+msgstr "Descrição (será aplicada a todos os documentos)"
 
 #: taguette/templates/modal/create_document.html:45
 msgid "Assign all to:"
-msgstr ""
+msgstr "Atribuir tudo a:"
 
 #: taguette/templates/modal/create_document.html:48
 msgid "No collection (root)"
-msgstr ""
+msgstr "Nenhuma coleção (raiz)"
 
 #: taguette/templates/modal/create_document.html:53
 msgid "Create new collection for all"
-msgstr ""
+msgstr "Criar nova coleção para todos"
 
 #: taguette/templates/modal/create_document.html:57
 msgid "Reset all to no collection"
-msgstr ""
+msgstr "Redefinir tudo para nenhuma coleção"
 
 #: taguette/templates/modal/create_document.html:67
 msgid "Selected documents and collections"
-msgstr ""
+msgstr "Documentos e coleções selecionados"
 
 #: taguette/templates/modal/create_document.html:77
 msgctxt ""
 "submit\n"
 "                    button"
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
 #: taguette/templates/modal/create_highlight.html:5
 msgctxt "modal window title"
@@ -1386,28 +1399,32 @@ msgstr "Editar documento"
 #: taguette/templates/modal/change_document.html:15
 msgctxt " document change form placeholder"
 msgid "Name"
-msgstr ""
+msgstr "Nome"
 
 #: taguette/templates/modal/change_document.html:24
 msgid ""
 "Left to\n"
 "                                    right"
 msgstr ""
+"Da esquerda\n"
+"                                    para a direita"
 
 #: taguette/templates/modal/change_document.html:30
 msgid ""
 "Right to\n"
 "                                    left"
 msgstr ""
+"Da direita\n"
+"                                    para a esquerda"
 
 #: taguette/templates/modal/change_document.html:37
 msgid "Collections"
-msgstr ""
+msgstr "Coleções"
 
 #: taguette/templates/modal/change_document.html:57
 msgctxt " document change form placeholder"
 msgid "Description"
-msgstr ""
+msgstr "Descrição"
 
 #: taguette/templates/modal/change_document.html:64
 msgid "Delete document"
@@ -1436,7 +1453,7 @@ msgstr "Nome"
 #: taguette/templates/modal/create_tag.html:38
 msgctxt " tag change form placeholder"
 msgid "Name"
-msgstr ""
+msgstr "Nome"
 
 #: taguette/templates/modal/create_tag.html:41
 msgctxt "tag change form placeholder"
@@ -1692,4 +1709,3 @@ msgstr "O nome do arquivo é muito longo"
 #: taguette/validate.py:117
 msgid "Invalid file name"
 msgstr "Nome de arquivo inválido"
-

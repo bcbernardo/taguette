@@ -194,7 +194,7 @@ msgstr "Kan inte ändra medarbetare / ta bort projekt"
 
 #: taguette/static/js/taguette.js:778
 msgid "View & make changes"
-msgstr "Visa & gör ändringar"
+msgstr "Visa och gör ändringar"
 
 #: taguette/static/js/taguette.js:779
 msgid "View only"
@@ -218,7 +218,7 @@ msgstr "Inget dokument eller samling hittades"
 
 #: taguette/static/js/taguette.js:1374
 msgid "No tag found"
-msgstr "Inga koder hittades"
+msgstr "Ingen kod hittades"
 
 #: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
 #, python-format
@@ -232,7 +232,7 @@ msgstr ""
 #: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
 #: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
 msgid "Error deleting collection: "
-msgstr ""
+msgstr "Fel vid borttagning av samling: "
 
 #: taguette/static/js/taguette.js:1602
 #, python-format
@@ -250,7 +250,7 @@ msgstr ""
 
 #: taguette/static/js/taguette.js:1696
 msgid "Error removing collection parent: "
-msgstr ""
+msgstr "Fel vid borttagning av överordnad samling: "
 
 #: taguette/static/js/taguette.js:1755
 msgid "Collection name is required"
@@ -262,11 +262,11 @@ msgstr "En samling kan inte vara sin egen överordnade."
 
 #: taguette/static/js/taguette.js:1789
 msgid "Error updating collection: "
-msgstr ""
+msgstr "Fel vid uppdatering av samling: "
 
 #: taguette/static/js/taguette.js:1790
 msgid "Error creating collection: "
-msgstr ""
+msgstr "Fel vid skapande av samling: "
 
 #: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
 msgid "Collection deleted!"
@@ -286,7 +286,7 @@ msgid ""
 "found</li><li>User is already sponsored</li><li>User role cannot be "
 "changed</li></ul>"
 msgstr ""
-"Kan inte lägga till den här användaren<br/>Anledningar : "
+"Kan inte lägga till den här användaren<br/>Anledningar: "
 "<ul><li>Användaren kan inte hittas</li><li>Användaren är redan "
 "sponsrad</li><li>Användarrollen kan inte ändras</li></ul>"
 
@@ -365,11 +365,11 @@ msgstr "Importera nytt dokument"
 
 #: taguette/static/js/document/manager.js:314
 msgid " = Documents without collection"
-msgstr ""
+msgstr " = Dokument utan samling"
 
 #: taguette/static/js/document/manager.js:315
 msgid " = Documents currently assigned to a collection"
-msgstr ""
+msgstr " = Dokument som för närvarande är tilldelade en samling"
 
 #: taguette/static/js/document/manager.js:386
 #: taguette/static/js/document/manager.js:488
@@ -387,7 +387,7 @@ msgstr "Hittades i %(nb)s dokument"
 
 #: taguette/static/js/project/search.js:115
 msgid "Error searching documents!"
-msgstr "Det gick inte att ladda dokumentet!"
+msgstr "Fel vid sökning i dokument!"
 
 #: taguette/static/js/project/intro.js:14
 msgid ""
@@ -404,8 +404,8 @@ msgid ""
 "<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
 "target=\"_blank\">Gitlab repository</a></p>"
 msgstr ""
-"<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
-" target=\"_blank\">Gitlab-förråd</a></p>"
+"<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
+"target=\"_blank\">Gitlab-arkiv</a></p>"
 
 #: taguette/static/js/project/intro.js:19
 msgid "<p>To consult the documentation</p>"
@@ -413,7 +413,7 @@ msgstr "<p>För att konsultera dokumentationen</p>"
 
 #: taguette/static/js/project/intro.js:24
 msgid "<p>A demo project has been added to your home page.</p>"
-msgstr "<p>Ett demo-projekt har lagts till på din hemsida.</p>"
+msgstr "<p>Ett demoprojekt har lagts till på din startsida.</p>"
 
 #: taguette/static/js/project/intro.js:31
 #: taguette/static/js/project/intro.js:176
@@ -439,7 +439,7 @@ msgstr "<p>Använd den här fliken för att ladda filer och gå igenom dem.</p>"
 
 #: taguette/static/js/project/intro.js:77
 msgid "Codebook"
-msgstr "Kodex"
+msgstr "Kodbok"
 
 #: taguette/static/js/project/intro.js:78
 msgid ""
@@ -449,8 +449,8 @@ msgid ""
 " on the left.</p>"
 msgstr ""
 "<p>Denna flik listar alla definierade koder. Lägg till nya koder med den "
-"avsedda knappen.</p><br><p>Totala antalet användningar anges med siffran "
-"till höger, och antalet dokument till vänster.</p>"
+"avsedda knappen.</p><br><p>Det totala antalet användningar visas till "
+"höger och antalet dokument till vänster.</p>"
 
 #: taguette/static/js/project/intro.js:83
 msgid "Parent codes"
@@ -458,7 +458,7 @@ msgstr "Överordnade koder"
 
 #: taguette/static/js/project/intro.js:84
 msgid "<p>You can define codes that include child codes under them.</p>"
-msgstr "<p>Du kan definiera koder som inkluderar underordnade koder under sig.</p>"
+msgstr "<p>Du kan definiera koder som innehåller underordnade koder.</p>"
 
 #: taguette/static/js/project/intro.js:89
 msgid "Child codes"
@@ -466,19 +466,19 @@ msgstr "Underordnade koder"
 
 #: taguette/static/js/project/intro.js:90
 msgid "<p>These can be expanded or collapsed.</p>"
-msgstr "<p>Dessa kan expanderas eller kollapsas.</p>"
+msgstr "<p>Dessa kan expanderas eller fällas ihop.</p>"
 
 #: taguette/static/js/project/intro.js:96
 msgid "Consulting documents"
-msgstr "Konsultera dokument"
+msgstr "Läsa dokument"
 
 #: taguette/static/js/project/intro.js:97
 msgid ""
 "<p>Click on a document to view its contents. Use the star to save your "
 "bookmarks.</p>"
 msgstr ""
-"<p>Klicka på ett dokument för att visa dess innehåll. Använd stjärnan för"
-" att spara dina bokmärken.</p>"
+"<p>Klicka på ett dokument för att visa dess innehåll. Använd stjärnan för "
+"att spara bokmärken.</p>"
 
 #: taguette/static/js/project/intro.js:102
 msgid "Coding"
@@ -489,8 +489,8 @@ msgid ""
 "<p>Select a portion of text with your cursor. Two buttons will appear to "
 "assign a code to the selection.</p>"
 msgstr ""
-"<p>Välj en del av texten med din markör. Två knappar kommer att visas för"
-" att tilldela en kod till markeringen.</p>"
+"<p>Markera en del av texten med markören. Två knappar visas för att "
+"tilldela en kod.</p>"
 
 #: taguette/static/js/project/intro.js:112
 msgid "Selecting a code"
@@ -502,9 +502,9 @@ msgid ""
 " of the selection and save the changes. In this case, the selection "
 "refers to reinforcing social relationships.</p>"
 msgstr ""
-"<p>Från menyn väljer du en eller flera koder som motsvarar innehållet i "
-"markeringen och sparar ändringarna. I detta fall avser markeringen att "
-"förstärka sociala relationer.</p>"
+"<p>Välj en eller flera koder från menyn som motsvarar innehållet i "
+"markeringen och spara ändringarna. I detta fall avser markeringen att "
+"stärka sociala relationer.</p>"
 
 #: taguette/static/js/project/intro.js:120
 msgid "Exploring the codes"
@@ -516,10 +516,9 @@ msgid ""
 "during or after the coding process.</p><br><p> Show all of the selections"
 " tagged with a code from the codebook by clicking on it.</p>"
 msgstr ""
-"<p>Du kan utforska textmarkeringarna som är kodade med varje kod när som "
-"helst under eller efter kodningsprocessen.</p><br><p>Visa alla "
-"markeringar som är kodade med en kod från kodex genom att klicka på "
-"den.</p>"
+"<p>Du kan när som helst utforska textmarkeringar som är kodade med varje "
+"kod.</p><br><p>Visa alla markeringar som är kodade med en kod genom att "
+"klicka på den i kodboken.</p>"
 
 #: taguette/static/js/project/intro.js:126
 msgid "Narrowing your search"
@@ -530,8 +529,8 @@ msgid ""
 "<p>If there are a large number of selections shown, you can refine the "
 "results with an advanced search.</p>"
 msgstr ""
-"<p>Om det finns ett stort antal visade markeringar kan du förfina "
-"resultaten med en avancerad sökning.</p>"
+"<p>Om många markeringar visas kan du förfina resultaten med avancerad "
+"sökning.</p>"
 
 #: taguette/static/js/project/intro.js:133
 msgid "Conditional selections"
@@ -542,8 +541,8 @@ msgid ""
 "<p>By right-clicking, you can specify conditions to either add or exclude"
 " additional codes.</p>"
 msgstr ""
-"<p>Genom att högerklicka kan du ange villkor för att antingen lägga till "
-"eller utesluta ytterligare koder.</p>"
+"<p>Genom att högerklicka kan du ange villkor för att lägga till eller "
+"utesluta ytterligare koder.</p>"
 
 #: taguette/static/js/project/intro.js:141
 msgid "Exploring the list"
@@ -555,9 +554,8 @@ msgid ""
 "necessarily include the codes <i>barriers</i> and <i>skills "
 "development</i>.</p>"
 msgstr ""
-"<p>Etiketterna som visas med denna fråga indikerar att markeringarna "
-"nödvändigtvis måste inkludera koderna <i>hinder</i> och "
-"<i>kompetensutveckling</i>.</p>"
+"<p>Etiketterna i denna fråga visar att markeringarna måste innehålla "
+"koderna <i>hinder</i> och <i>kompetensutveckling</i>.</p>"
 
 #: taguette/static/js/project/intro.js:148
 msgid "Navigating to documents"
@@ -578,9 +576,8 @@ msgid ""
 "<p>After consulting the context, you can return to the list of selections"
 " previously identified using the advanced search.</p>"
 msgstr ""
-"<p>Efter att ha konsulterat kontexten kan du återgå till listan över "
-"tidigare identifierade markeringar med hjälp av den avancerade "
-"sökningen.</p>"
+"<p>Efter att ha granskat kontexten kan du återgå till listan över tidigare "
+"identifierade markeringar via avancerad sökning.</p>"
 
 #: taguette/static/js/project/intro.js:162
 msgid "Exporting"
@@ -590,9 +587,7 @@ msgstr "Exportera"
 msgid ""
 "<p>You can choose to download these selections to your computer, as "
 "needed.</p>"
-msgstr ""
-"<p>Du kan välja att ladda ner dessa markeringar till din dator, vid "
-"behov.</p>"
+msgstr "<p>Du kan vid behov ladda ner dessa markeringar till din dator.</p>"
 
 #: taguette/static/js/project/intro.js:167
 msgid "Time to code!"
@@ -605,12 +600,11 @@ msgid ""
 "these functions by continuing to code and explore these fictional "
 "interviews about board games.</p>"
 msgstr ""
-"<p>Använd LibreQDA hur du vill, med vetskapen om att dina data alltid "
-"sparas på ditt personliga konto. Fortsätt gärna att bekanta dig med dessa"
-" funktioner genom att fortsätta koda och utforska dessa fiktiva "
-"intervjuer om brädspel.</p>"
+"<p>Använd LibreQDA som du vill, med vetskapen att dina data alltid sparas "
+"på ditt personliga konto. Fortsätt gärna att bekanta dig med funktionerna "
+"genom att fortsätta koda och utforska dessa fiktiva intervjuer om "
+"brädspel.</p>"
 
 #: taguette/static/js/project/intro.js:178
 msgid "Done"
 msgstr "Klar"
-

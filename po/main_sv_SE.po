@@ -99,12 +99,10 @@ msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
 msgstr ""
-"Denna databas är en okänd version. Den kan ha skapats av en nyare version"
-" av LibreQDA, vänligen sök efter uppdateringar"
 
 #: taguette/web/api.py:1239
 msgid "This database could not be updated to the current version"
-msgstr "Denna databas kunde inte uppdateras till den aktuella versionen"
+msgstr ""
 
 #: taguette/web/api.py:1243 taguette/web/api.py:1277
 msgid "This is not a Taguette project file"
@@ -112,11 +110,11 @@ msgstr "Detta är inte en LibreQDA-projektfil"
 
 #: taguette/web/api.py:1443 taguette/web/api.py:1514
 msgid "Collection name is required"
-msgstr ""
+msgstr "Samlingens namn krävs"
 
 #: taguette/web/api.py:1454 taguette/web/api.py:1530
 msgid "Parent collection not found"
-msgstr ""
+msgstr "Överordnad samling hittades inte"
 
 #: taguette/web/api.py:1491 taguette/web/api.py:1577
 msgid "Internal error: "
@@ -124,19 +122,19 @@ msgstr ""
 
 #: taguette/web/api.py:1508 taguette/web/api.py:1605
 msgid "No such collection"
-msgstr ""
+msgstr "Ingen sådan samling"
 
 #: taguette/web/api.py:1534
 msgid "Collection cannot be its own parent"
-msgstr ""
+msgstr "En samling kan inte vara sin egen överordnade"
 
 #: taguette/web/api.py:1540
 msgid "Would create circular reference"
-msgstr ""
+msgstr "Skulle skapa en cirkulär referens"
 
 #: taguette/web/api.py:1616
 msgid "Cannot delete collection with subcollections. Please specify delete_mode."
-msgstr ""
+msgstr "Kan inte ta bort en samling med undersamlingar. Ange delete_mode."
 
 #: taguette/web/views.py:231
 msgid "Invalid login or password"
@@ -201,7 +199,7 @@ msgstr "Du har inte behörighet att importera en kodbok"
 #: taguette/web/views.py:1058
 #, python-format
 msgid "Row %d: %s"
-msgstr "Rad %d: %s"
+msgstr ""
 
 #: taguette/web/views.py:1209
 msgid "Error importing tags, concurrent changes caused a conflict"
@@ -260,7 +258,7 @@ msgstr "<strong>Dokument:</strong> %(doc)s"
 #: taguette/templates/export_highlights.html:31
 msgctxt "exported highlight details"
 msgid "Collection:"
-msgstr ""
+msgstr "Samling:"
 
 #: taguette/templates/export_highlights.html:35
 msgctxt "exported highlight details"
@@ -455,7 +453,7 @@ msgstr "Gå tillbaka"
 #: taguette/templates/welcome.html:4
 msgctxt "page title"
 msgid "Welcome"
-msgstr "Välkommen"
+msgstr ""
 
 #: taguette/templates/alt_templates/phun/welcome.html:14
 msgid "Welcome to LibreQDA"
@@ -615,7 +613,7 @@ msgstr "Skapa"
 
 #: taguette/templates/project.html:24 taguette/templates/project.html:117
 msgid "Tips"
-msgstr ""
+msgstr "Tips"
 
 #: taguette/templates/modal/create_highlight.html:25
 #: taguette/templates/project.html:37
@@ -651,25 +649,31 @@ msgid ""
 "Text\n"
 "                                    [z&rarr;a]"
 msgstr ""
+"Text\n"
+"                                    [ö&rarr;a]"
 
 #: taguette/templates/project.html:66
 msgid ""
 "Count\n"
 "                                    [0&rarr;9]"
 msgstr ""
+"Antal\n"
+"                                    [0&rarr;9]"
 
 #: taguette/templates/project.html:68
 msgid ""
 "Count\n"
 "                                    [9&rarr;0]"
 msgstr ""
+"Antal\n"
+"                                    [9&rarr;0]"
 
 #: taguette/templates/project.html:77
 msgctxt ""
 " tag change\n"
 "                        form placeholder"
 msgid "Search for a code"
-msgstr ""
+msgstr "Sök efter en kod"
 
 #: taguette/templates/project.html:82
 msgid "Back to highlights"
@@ -680,6 +684,8 @@ msgid ""
 "Load a document from your bookmarks or on\n"
 "                    the right"
 msgstr ""
+"Ladda ett dokument från dina bokmärken eller till\n"
+"                    höger"
 
 #: taguette/templates/project.html:123
 msgid "Add a document"
@@ -687,11 +693,11 @@ msgstr "Lägg till ett dokument"
 
 #: taguette/templates/project.html:127
 msgid "Add a collection"
-msgstr ""
+msgstr "Lägg till en samling"
 
 #: taguette/templates/project.html:129
 msgid "Search titles and collections name"
-msgstr ""
+msgstr "Sök i titlar och samlingsnamn"
 
 #: taguette/templates/project.html:134
 msgid "Loading..."
@@ -761,7 +767,7 @@ msgstr "Avbryt"
 
 #: taguette/templates/index.html:23
 msgid "Maintained by"
-msgstr ""
+msgstr "Underhålls av"
 
 #: taguette/templates/index.html:33
 #, python-format
@@ -926,11 +932,11 @@ msgstr "..."
 
 #: taguette/templates/partials/document_toolbar.html:20
 msgid "Switch between highlight display modes"
-msgstr ""
+msgstr "Växla mellan visningslägen för markeringar"
 
 #: taguette/templates/partials/document_toolbar.html:22
 msgid "Rich Display"
-msgstr ""
+msgstr "Rik visning"
 
 #: taguette/templates/partials/document_toolbar.html:29
 msgid "Export"
@@ -1244,50 +1250,52 @@ msgstr "Vänligen välj din institution från listan innan du fortsätter"
 #: taguette/templates/modal/create_collection.html:6
 msgctxt "modal window title"
 msgid "Add a collection"
-msgstr ""
+msgstr "Lägg till en samling"
 
 #: taguette/templates/modal/create_collection.html:8
 msgctxt ""
 "modal window\n"
 "                    title"
 msgid "Edit collection"
-msgstr ""
+msgstr "Redigera samling"
 
 #: taguette/templates/modal/create_collection.html:19
 #: taguette/templates/modal/create_document.html:58
 msgid "Reset"
-msgstr ""
+msgstr "Återställ"
 
 #: taguette/templates/modal/create_collection.html:28
 #: taguette/templates/modal/create_collection.html:32
 msgid "Collection name"
-msgstr ""
+msgstr "Samlingsnamn"
 
 #: taguette/templates/modal/create_collection.html:35
 msgid "Description"
-msgstr ""
+msgstr "Beskrivning"
 
 #: taguette/templates/modal/create_collection.html:39
 msgid "Description (optional)"
-msgstr ""
+msgstr "Beskrivning (valfritt)"
 
 #: taguette/templates/modal/create_collection.html:42
 msgid ""
 "Parent\n"
 "                                    collection"
 msgstr ""
+"Överordnad\n"
+"                                    samling"
 
 #: taguette/templates/modal/create_collection.html:67
 msgid "Currently assigned to the collection: "
-msgstr ""
+msgstr "För närvarande tilldelade till samlingen: "
 
 #: taguette/templates/modal/create_collection.html:74
 msgid "Add documents to this collection"
-msgstr ""
+msgstr "Lägg till dokument i denna samling"
 
 #: taguette/templates/modal/create_collection.html:79
 msgid "Search documents..."
-msgstr ""
+msgstr "Sök dokument..."
 
 #: taguette/templates/modal/change_document.html:62
 #: taguette/templates/modal/create_collection.html:91
@@ -1299,7 +1307,7 @@ msgstr "Spara & Stäng"
 
 #: taguette/templates/modal/create_collection.html:95
 msgid "Delete collection"
-msgstr ""
+msgstr "Ta bort samling"
 
 #: taguette/templates/modal/merge_tag.html:6
 msgctxt "merge modal"
@@ -1324,44 +1332,48 @@ msgid ""
 "Left to\n"
 "                                        right"
 msgstr ""
+"Vänster till\n"
+"                                        höger"
 
 #: taguette/templates/modal/create_document.html:31
 msgid ""
 "Right to\n"
 "                                        left"
 msgstr ""
+"Höger till\n"
+"                                        vänster"
 
 #: taguette/templates/modal/create_document.html:35
 msgctxt " document add form placeholder"
 msgid "Description (will be applied to every documents)"
-msgstr ""
+msgstr "Beskrivning (tillämpas på alla dokument)"
 
 #: taguette/templates/modal/create_document.html:45
 msgid "Assign all to:"
-msgstr ""
+msgstr "Tilldela alla till:"
 
 #: taguette/templates/modal/create_document.html:48
 msgid "No collection (root)"
-msgstr ""
+msgstr "Ingen samling (rot)"
 
 #: taguette/templates/modal/create_document.html:53
 msgid "Create new collection for all"
-msgstr ""
+msgstr "Skapa ny samling för alla"
 
 #: taguette/templates/modal/create_document.html:57
 msgid "Reset all to no collection"
-msgstr ""
+msgstr "Återställ alla till ingen samling"
 
 #: taguette/templates/modal/create_document.html:67
 msgid "Selected documents and collections"
-msgstr ""
+msgstr "Valda dokument och samlingar"
 
 #: taguette/templates/modal/create_document.html:77
 msgctxt ""
 "submit\n"
 "                    button"
 msgid "Import"
-msgstr ""
+msgstr "Importera"
 
 #: taguette/templates/modal/create_highlight.html:5
 msgctxt "modal window title"
@@ -1385,28 +1397,32 @@ msgstr "Redigera dokument"
 #: taguette/templates/modal/change_document.html:15
 msgctxt " document change form placeholder"
 msgid "Name"
-msgstr ""
+msgstr "Namn"
 
 #: taguette/templates/modal/change_document.html:24
 msgid ""
 "Left to\n"
 "                                    right"
 msgstr ""
+"Vänster till\n"
+"                                    höger"
 
 #: taguette/templates/modal/change_document.html:30
 msgid ""
 "Right to\n"
 "                                    left"
 msgstr ""
+"Höger till\n"
+"                                    vänster"
 
 #: taguette/templates/modal/change_document.html:37
 msgid "Collections"
-msgstr ""
+msgstr "Samlingar"
 
 #: taguette/templates/modal/change_document.html:57
 msgctxt " document change form placeholder"
 msgid "Description"
-msgstr ""
+msgstr "Beskrivning"
 
 #: taguette/templates/modal/change_document.html:64
 msgid "Delete document"
@@ -1435,7 +1451,7 @@ msgstr "Namn"
 #: taguette/templates/modal/create_tag.html:38
 msgctxt " tag change form placeholder"
 msgid "Name"
-msgstr ""
+msgstr "Namn"
 
 #: taguette/templates/modal/create_tag.html:41
 msgctxt "tag change form placeholder"
@@ -1691,4 +1707,3 @@ msgstr "Filnamnet är för långt"
 #: taguette/validate.py:117
 msgid "Invalid file name"
 msgstr "Ogiltigt filnamn"
-

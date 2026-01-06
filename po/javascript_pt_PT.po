@@ -90,7 +90,7 @@ msgstr "Desmarcar tudo"
 
 #: taguette/static/js/tag/context-menu.js:47
 msgid "Select With Condition"
-msgstr "Selecionar com Condição"
+msgstr "Selecionar com condição"
 
 #: taguette/static/js/tag/context-menu.js:52
 msgid "AND"
@@ -232,7 +232,7 @@ msgstr ""
 #: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
 #: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
 msgid "Error deleting collection: "
-msgstr ""
+msgstr "Erro ao excluir a coleção: "
 
 #: taguette/static/js/taguette.js:1602
 #, python-format
@@ -250,7 +250,7 @@ msgstr ""
 
 #: taguette/static/js/taguette.js:1696
 msgid "Error removing collection parent: "
-msgstr ""
+msgstr "Erro ao remover a coleção pai: "
 
 #: taguette/static/js/taguette.js:1755
 msgid "Collection name is required"
@@ -262,11 +262,11 @@ msgstr "Uma coleção não pode ser seu próprio pai."
 
 #: taguette/static/js/taguette.js:1789
 msgid "Error updating collection: "
-msgstr ""
+msgstr "Erro ao atualizar a coleção: "
 
 #: taguette/static/js/taguette.js:1790
 msgid "Error creating collection: "
-msgstr ""
+msgstr "Erro ao criar a coleção: "
 
 #: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
 msgid "Collection deleted!"
@@ -287,8 +287,8 @@ msgid ""
 "changed</li></ul>"
 msgstr ""
 "Não é possível adicionar este usuário<br/>Motivos: <ul><li>Usuário não "
-"encontrado</li><li>Usuário já é patrocinado</li><li>Função do usuário não"
-" pode ser alterada</li></ul>"
+"encontrado</li><li>Usuário já é patrocinado</li><li>Função do usuário não "
+"pode ser alterada</li></ul>"
 
 #: taguette/static/js/document/treeview.js:119
 msgid "Without collection"
@@ -365,11 +365,11 @@ msgstr "Importar novo documento"
 
 #: taguette/static/js/document/manager.js:314
 msgid " = Documents without collection"
-msgstr ""
+msgstr " = Documentos sem coleção"
 
 #: taguette/static/js/document/manager.js:315
 msgid " = Documents currently assigned to a collection"
-msgstr ""
+msgstr " = Documentos atualmente atribuídos a uma coleção"
 
 #: taguette/static/js/document/manager.js:386
 #: taguette/static/js/document/manager.js:488
@@ -613,4 +613,3 @@ msgstr ""
 #: taguette/static/js/project/intro.js:178
 msgid "Done"
 msgstr "Concluído"
-
