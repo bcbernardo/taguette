@@ -1,0 +1,54 @@
+/* Form Components */
+
+/* Search in document form */
+form.search {
+    width: 40%;
+    position: relative;
+}
+
+form.search button i.searching {
+    display: none;
+}
+
+form.search button i.search-icon {
+    display: inline-block;
+}
+
+form.search.searching button i.searching {
+    display: inline-block;
+    animation: spin 2s linear infinite;
+}
+
+form.search.searching button i.search-icon {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Form Controls */
+/* Don't show the resize control on textareas */
+textarea.form-control {
+  resize: none;
+  height: 150px;
+  padding: 10px;
+  line-height: 1.5;
+}
+
+select.form-control {
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  appearance: auto;
+}
+
+/* To match bs4 css, may be removed in a future release */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* Content editable styles */
+[contenteditable] {
+    outline: 0 solid transparent;
+}

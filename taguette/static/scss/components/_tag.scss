@@ -1,0 +1,77 @@
+/* Tag Styles */
+.tag-badges {
+    /*position: absolute;*/
+    right: 2px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+}
+
+@media (max-width: 1430px) {
+    .tag-badges {
+        flex-direction: column;
+    }
+}
+
+.tag-text {
+    font-size: 1rem !important;
+    letter-spacing: -0.5px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    /*text-overflow: ellipsis !important;*/
+    max-width: 200px !important;
+    max-height: 25px !important;
+    display: inline-block;
+    padding-right: 5px;
+}
+
+.tag-selection-box {
+    display: none;
+    border: 1px solid #cccccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+    background-color: $color-bg;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.tag-badge {
+    color: white;
+    padding: 3px 8px;
+    border-radius: 15px;
+    margin-top: 15px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.tag-badge-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+/* Wrap long tag names and long doc names */
+.tag-name {
+  word-break: break-all;
+}
+
+#tag-selection-return a {
+  display: none;
+}
+
+/* Tag highlight */
+.highlight-tag {
+    background-color: $color-highlight-bg !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-tag.fade-out {
+    background-color: transparent !important;
+}

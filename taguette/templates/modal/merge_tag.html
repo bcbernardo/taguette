@@ -10,8 +10,8 @@
                 <div class="container mt-3">
                     <div class="row">
                         <div class="col-md-5 form-group">
-                            <input type="hidden" id="tag-merge-src-id"/>
-                            <input type="text" class="form-control" id="tag-merge-src-name" disabled/>
+                            <input type="hidden" id="tag-merge-src-id" />
+                            <input type="text" class="form-control" id="tag-merge-src-name" disabled />
                         </div>
                         <div class="col-md-2 form-group">
                             <label for="tag-hierarchy-merge-select">{% trans %}into{% endtrans %}</label>
@@ -19,8 +19,8 @@
                         <div class="col-md-5 form-group">
                             <div class='dropdown hierarchy-select' id='tag-hierarchy-merge-select'>
                                 <button class="btn btn-secondary dropdown-toggle" type="button"
-                                        id="dropdownMenuButtonTagMerge" data-bs-toggle="dropdown"
-                                        aria-expanded="false"></button>
+                                    id="dropdownMenuButtonTagMerge" data-bs-toggle="dropdown"
+                                    aria-expanded="false"></button>
                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonTagMerge">
                                     <div class="hs-searchbox">
                                         <input type="text" class="form-control" autocomplete="off">
@@ -29,8 +29,7 @@
                                     </div>
                                 </ul>
                                 <input class="d-none" id="tag-merge-dest" name="tag-merge-dest" readonly="readonly"
-                                       aria-hidden="true"
-                                       type="text"/>
+                                    aria-hidden="true" type="text" />
                             </div>
                         </div>
                     </div>
@@ -38,7 +37,8 @@
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-danger" data-test-id="merge-tag-button">Merge codes</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-test-id="cancel-merge-tag-button">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    data-test-id="cancel-merge-tag-button">Cancel</button>
             </div>
         </form>
     </div>

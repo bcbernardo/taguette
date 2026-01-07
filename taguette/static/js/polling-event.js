@@ -66,19 +66,31 @@ function longPollForEvents() {
                         name: event.document_name,
                         description: event.description,
                         favorite: event.favorite,
-                        text_direction: event.text_direction
+                        text_direction: event.text_direction,
+                        collections: event.collections
                     });
                 } else if (event.type === 'document_delete') {
-                    removeDocument(event.document_id);
+                    deleteDocument(event.document_id);
                 } else if (event.type === 'highlight_add') {
-                    addHighlight({
+                    const highlightData = {
                         id: event.highlight_id,
                         start_offset: event.start_offset,
                         end_offset: event.end_offset,
+                        snippet: event.snippet,
                         tags: event.tags
-                    });
+                    };
+                    
+                    if (getHighlightVersion() === 'v2' && typeof ntv_addHighlight === 'function') {
+                        ntv_addHighlight(highlightData);
+                    } else if (typeof addHighlight === 'function') {
+                        addHighlight(highlightData);
+                    }
                 } else if (event.type === 'highlight_delete') {
-                    removeHighlight(event.highlight_id);
+                    if (getHighlightVersion() === 'v2' && typeof ntv_removeHighlight === 'function') {
+                        ntv_removeHighlight(event.highlight_id);
+                    } else if (typeof removeHighlight === 'function') {
+                        removeHighlight(event.highlight_id);
+                    }
                 } else if (event.type === 'tag_add') {
                     addTag({
                         id: event.tag_id,
@@ -95,6 +107,24 @@ function longPollForEvents() {
                     addMember(event.member, event.privileges);
                 } else if (event.type === 'member_remove') {
                     removeMember(event.member);
+                } else if (event.type === 'collection_add') {
+                    addCollection({
+                        id: event.collection_id,
+                        name: event.collection_name,
+                        description: event.description,
+                        parent_id: event.parent_id,
+                        document_ids: event.document_ids
+                    });
+                } else if (event.type === 'collection_delete') {
+                    removeCollection(event.collection_id);
+                } else if (event.type === 'collection_update') {
+                    updateCollection({
+                        id: event.collection_id,
+                        name: event.collection_name,
+                        description: event.description,
+                        parent_id: event.parent_id,
+                        document_ids: event.document_ids
+                    });
                 }
 
                 if ('tag_count_changes' in event) {

@@ -1,0 +1,100 @@
+<!-- Add collection modal -->
+<div class="modal fade" id="collection-add-modal" tabindex="-1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 1100px; width: 95vw;">
+        <form id="collection-add-form" class="modal-content">
+            <div class="modal-header">
+                <h5 id="collection-add-label-new" class="modal-title">{% trans "modal window title" %}Add a collection{%
+                    endtrans %}</h5>
+                <h5 id="collection-add-label-change" class="modal-title" style="display: none;">{% trans "modal window
+                    title" %}Edit collection{% endtrans %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="collection-add-id" />
+
+                <!-- Reset button centered at top -->
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                        id="collection-reset-selection" style="display: none;">
+                        <i class="fas fa-undo"></i> {% trans %}Reset{% endtrans %}
+                    </button>
+                </div>
+
+                <div class="container">
+                    <div class="row">
+                        <!-- Collection information -->
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label for="collection-add-name" class="form-label">{% trans %}Collection name{%
+                                    endtrans %}</label>
+                                <input type="text" class="form-control" id="collection-add-name"
+                                    name="collection-add-name" required maxlength="200"
+                                    placeholder="{% trans %}Collection name{% endtrans %}">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="collection-add-description" class="form-label">{% trans %}Description{%
+                                    endtrans %}</label>
+                                <textarea class="form-control" id="collection-add-description"
+                                    name="collection-add-description" rows="3" maxlength="1000"
+                                    placeholder="{% trans %}Description (optional){% endtrans %}"></textarea>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="collection-hierarchy-select" class="form-label">{% trans %}Parent
+                                    collection{%
+                                    endtrans %}</label>
+                                <div class='dropdown hierarchy-select' id='collection-hierarchy-select'>
+                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                        id="dropdownMenuButtonCollection" data-bs-toggle="dropdown"
+                                        aria-expanded="false"></button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonCollection">
+                                        <div class="hs-searchbox">
+                                            <input type="text" class="form-control" autocomplete="off">
+                                        </div>
+                                        <div class='hs-menu-inner'>
+                                        </div>
+                                    </ul>
+                                    <input class="d-none" id="collection-add-parent-id" name="collection-add-parent-id"
+                                        readonly="readonly" aria-hidden="true" type="text" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--  Document selection -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <!-- Selected documents -->
+                                <div id="collection-selected-documents" class="mb-3" style="display: none;">
+                                    <small class="text-muted">{% trans %}Currently assigned to the collection: {% endtrans %}:</small>
+                                    <div id="collection-selected-documents-list"
+                                        class="border rounded p-2 bg-light" style="min-height: 40px;">
+                                    </div>
+                                </div>
+
+                                <!-- Label above search -->
+                                <label class="form-label">{% trans %}Add documents to this collection{%
+                                    endtrans %}</label>
+
+                                <!-- Search input -->
+                                <input type="text" id="collection-documents-search" class="form-control mb-2"
+                                    placeholder="{% trans %}Search documents...{% endtrans %}">
+
+                                <!-- Available documents list -->
+                                <div id="collection-add-documents-list"
+                                    class="document-selection-list border rounded p-2"
+                                    style="max-height: 50vh; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary" data-test-id="collection-add-submit-button">{% trans
+                    %}Save & Close{% endtrans %}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="collection-add-cancel">{%
+                    trans %}Cancel{% endtrans %}</button>
+                <button type="button" class="btn btn-danger" id="collection-add-delete" style="display: none;">{% trans
+                    %}Delete collection{% endtrans %}</button>
+            </div>
+        </form>
+    </div>
+</div>

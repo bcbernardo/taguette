@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2025-07-21 16:12-0400\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2019-05-08 16:49+0000\n"
-"Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>, 2024\n"
+"Last-Translator: Équipe de la PHuN <phun@usherbrooke.ca>\n"
 "Language: fr\n"
 "Language-Team: fr <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n==0 || n==1) ? 0 : n != 0 && n % "
@@ -23,304 +23,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: taguette/main.py:305
-msgid "Port number on which to listen"
-msgstr "Numéro de port sur lequel écouter"
-
-#: taguette/main.py:307
-msgid "Address to bind on"
-msgstr "Adresse sur laquelle écouter"
-
-#: taguette/main.py:309
-msgid "Open web browser to the application"
-msgstr "Ouvrir le navigateur automatiquement"
-
-#: taguette/main.py:311
-msgid "Don't open the web browser"
-msgstr "Ne pas ouvrir le navigateur automatiquement"
-
-#: taguette/main.py:316
-#, python-format
-msgid ""
-"Database location or connection string, for example 'project.db' or "
-"'postgresql://me:pw@localhost/mydb' (default: %(default)r)"
-msgstr ""
-"Emplacement de la base de données ou identifiant de connexion, par "
-"exemple 'projet.db' ou 'postgresql://moi:mdp@localhost/mabdd' (par défaut"
-" : %(default)r)"
-
-#: taguette/main.py:323
-msgid "Set the file creation mask (umask) on systems that support it."
-msgstr ""
-"Définit le masque de création de fichers (umask) pour les systèmes qui le"
-" supportent."
-
-#: taguette/main.py:327
-msgid "Don't change umask on startup"
-msgstr "Ne pas définir l'umask au démarrage"
-
-#: taguette/main.py:333
-msgid "additional commands"
-msgstr "autres commandes"
-
-#: taguette/main.py:337
-msgid "Manually trigger a database migration"
-msgstr "Déclencher manuellement une migration de la base de données"
-
-#: taguette/main.py:348
-msgid "Print the default server configuration"
-msgstr "Afficher la configuration serveur par défaut"
-
-#: taguette/main.py:350
-msgid "Output to this file rather than stdout"
-msgstr "Écrire dans ce fichier plutôt que la sortie standard"
-
-#: taguette/main.py:356
-msgid "Run in server mode, suitable for a multi-user deployment"
-msgstr "Démarrer en mode serveur, adapté à un environnement multi-utilisateur"
-
-#: taguette/main.py:358
-msgid ""
-"Configuration file for the server. The default configuration can be "
-"generated using the `default-config` command"
-msgstr ""
-"Fichier de configuration pour le serveur. La configuration par défaut "
-"peut être générée en utilisant la commande `default-config`"
-
-#: taguette/main.py:370
-#, python-format
-msgid "Invalid umask: %(arg)s"
-msgstr "Umask invalide : %(arg)s"
-
-#: taguette/main.py:394
-#, python-format
-msgid "Missing required configuration variable %(var)s"
-msgstr "Variable de configuration requise %(var)s est manquante"
-
-#: taguette/main.py:401
-msgid "Invalid BASE_PATH"
-msgstr "BASE_PATH invalide"
-
-#: taguette/main.py:478
-#, python-format
-msgid ""
-"\n"
-"    Taguette %(version)s is now running. You can connect to it using this"
-" link:\n"
-"\n"
-"    %(url)s\n"
-msgstr ""
-"\n"
-"    LibreQDA %(version)s est maintenant lancée. Vous pouvez vous y "
-"connecter en utilisant ce lien :\n"
-"\n"
-"    %(url)s\n"
-
-#: taguette/database/__init__.py:136
-msgid ""
-"\n"
-"    The database schema used by Taguette has changed! We will try to\n"
-"    update your workspace automatically.\n"
-msgstr ""
-"\n"
-"    Le schéma de la base de données utilisée par LibreQDA a changé ! Je "
-"vais\n"
-"    tenter de mettre à jour votre espace de travail automatiquement.\n"
-
-#: taguette/database/__init__.py:148
-#, python-format
-msgid ""
-"\n"
-"    A backup copy of your database file has been created. If the update\n"
-"    goes horribly wrong, make sure to keep that file, and let us know:\n"
-"    %(backup)s\n"
-msgstr ""
-"\n"
-"    Une copie de sauvegarde du ficher de la base de données a été créée. "
-"Si la\n"
-"    mise à hour échoue, conservez précieusement ce fichier et contactez "
-"nous:\n"
-"    %(backup)s\n"
-
-#: taguette/database/__init__.py:160
-#, python-format
-msgid ""
-"\n"
-"    The database schema used by Taguette has changed! Because you are not"
-" using\n"
-"    SQLite, we will not attempt a migration automatically; back up your "
-"data and\n"
-"    use `taguette --database=%(url)s migrate` if you want to proceed."
-msgstr ""
-"\n"
-"    Le schéma de la base de données utilisée par LibreQDA a changé ! "
-"Parce que\n"
-"    vous n'utilisez pas SQLite, je ne vais pas tenter de migration "
-"automatique.\n"
-"    Sauvegardez vos données et utilisez `taguette --database=%(url)s "
-"migrate`\n"
-"    quand vous êtes prêt(e)."
-
-#: taguette/validate.py:19
-msgid "Description is too long"
-msgstr "La description est trop longue"
-
-#: taguette/validate.py:31
-msgid "Project name cannot be empty"
-msgstr "Le nom du projet ne peut pas être vide"
-
-#: taguette/validate.py:33
-msgid "Project name is too long"
-msgstr "Le nom du projet est trop long"
-
-#: taguette/validate.py:56
-msgid "User login cannot be empty"
-msgstr "Le nom d'utilisateur ne peut pas être vide"
-
-#: taguette/validate.py:58
-msgid "User login is too long"
-msgstr "Le nom d'utilisateur est trop long"
-
-#: taguette/validate.py:60
-#, fuzzy
-msgid "User login is not lowercase"
-msgstr "Le nom d'utilisateur est trop long"
-
-#: taguette/validate.py:63
-msgid "User login contains forbidden characters"
-msgstr "Ce nom d'utilisateur contient des caractères non autorisés"
-
-#: taguette/validate.py:71
-msgid "Email cannot be empty"
-msgstr "L'adresse email ne peut pas être vide"
-
-#: taguette/validate.py:73
-msgid "Invalid email address"
-msgstr "L'adresse email est invalide"
-
-#: taguette/validate.py:75
-msgid "Email address is too long"
-msgstr "L'adresse e-mail est trop longue"
-
-#: taguette/validate.py:83
-msgid "Please use a longer password"
-msgstr "Merci d'utiliser un mot de passe plus long"
-
-#: taguette/validate.py:85
-msgid "Please use a shorter password"
-msgstr "Merci d'utiliser un mot de passe plus court"
-
-#: taguette/validate.py:93
-msgid "Document name cannot be empty"
-msgstr "Le nom du document ne peut pas être vide"
-
-#: taguette/validate.py:95
-msgid "Document name is too long"
-msgstr "Le nom du document est trop long"
-
-#: taguette/validate.py:103
-msgid "Tag path cannot be empty"
-msgstr "Le chemin du code ne peut pas être vide"
-
-#: taguette/validate.py:105
-msgid "Tag path is too long"
-msgstr "Le chemin du code est trop long"
-
-#: taguette/validate.py:115
-#, fuzzy
-msgid "File name is too long"
-msgstr "Le nom du projet est trop long"
-
-#: taguette/validate.py:117
-#, fuzzy
-msgid "Invalid file name"
-msgstr "Fichier CSV invalide"
-
-#: taguette/web/views.py:209
-msgid "Invalid login or password"
-msgstr "Nom d'utilisateur ou mot de passe invalide"
-
-#: taguette/web/views.py:271 taguette/web/views.py:627
-#: taguette/web/views.py:793
-msgid "Passwords do not match"
-msgstr "Les mots de passe ne correspondent pas"
-
-#: taguette/web/views.py:273
-msgid "User name is taken"
-msgstr "Le nom d'utilisateur est déja utilisé"
-
-#: taguette/web/views.py:280
-msgid "Email address is already used"
-msgstr "L'adresse email est déja utilisée"
-
-#: taguette/web/views.py:291
-msgid "Terms of Service must be accepted"
-msgstr "Vous devez accepter les conditions d'utilisation"
-
-#: taguette/web/views.py:674
-msgid "This email address is not associated with any user"
-msgstr "Cette adresse email n'est associée à aucun utilisateur"
-
-#: taguette/web/views.py:703
-msgid "Password reset for Taguette"
-msgstr "Réinitialisation de mot de passe pour LibreQDA"
-
-#: taguette/web/views.py:746
-msgid "Invalid token"
-msgstr "Jeton invalide"
-
-#: taguette/web/views.py:750
-msgid "No user associated with that token"
-msgstr "Aucun utilisateur n'est associé avec ce jeton"
-
-#: taguette/web/views.py:753
-msgid "Password has already been changed"
-msgstr "Le mot de passe a déjà été changé"
-
-#. Default tag name
-#: taguette/web/views.py:842
-msgid "interesting"
-msgstr "intéressant"
-
-#. Default tag color
-#. Default tag description
-#: taguette/web/views.py:846
-msgid "Further review required"
-msgstr "Plus d'analyse requise"
-
-#: taguette/web/views.py:885
-msgid "You don't have permission to delete this project"
-msgstr "Vous n'êtes pas autorisé à supprimer ce project"
-
-#: taguette/web/views.py:919 taguette/web/views.py:946
-msgid "You don't have permission to import a codebook"
-msgstr "Vous n'avez pas la permission d'importer des codes"
-
-#: taguette/web/views.py:965
-#, python-format
-msgid "Row %d: %s"
-msgstr "Ligne %d : %s"
-
-#: taguette/web/views.py:1103
-msgid "Error importing tags, concurrent changes caused a conflict"
-msgstr ""
-"Erreur à l'importation des codes, des changements simultanés ont causé un"
-" conflit"
-
-#: taguette/web/views.py:1118
-msgid "No file provided"
-msgstr "Aucun fichier sélectionné"
-
-#: taguette/web/__init__.py:60 taguette/web/base.py:591
-msgctxt "page title"
-msgid "Error 404"
-msgstr "Erreur 404"
-
-#: taguette/web/__init__.py:61 taguette/web/base.py:592
-msgid "This page does not exist."
-msgstr "Cette page n'existe pas."
-
-#: taguette/web/base.py:473
+#: taguette/web/base.py:490
 msgid ""
 " | Please report issues via <a href=\"https://gitlab.com/bin-"
 "cirst/libreqda/libre-qda/\">GitLab</a> "
@@ -328,7 +31,16 @@ msgstr ""
 " | Consultez le code source et signalez des enjeux via <a "
 "href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda/\">GitLab</a> "
 
-#: taguette/web/base.py:598
+#: taguette/web/__init__.py:60 taguette/web/base.py:609
+msgctxt "page title"
+msgid "Error 404"
+msgstr "Erreur 404"
+
+#: taguette/web/__init__.py:61 taguette/web/base.py:610
+msgid "This page does not exist."
+msgstr "Cette page n'existe pas."
+
+#: taguette/web/base.py:616
 #, python-format
 msgctxt "page title"
 msgid "Error %d"
@@ -346,41 +58,41 @@ msgstr "Tutoriel - jeux de société"
 msgid "A demo project to showcase LibreQDA"
 msgstr "Un projet servant à démontrer les fonctionnalités"
 
-#: taguette/web/api.py:176 taguette/web/api.py:207 taguette/web/api.py:300
-#: taguette/web/api.py:340 taguette/web/api.py:405 taguette/web/api.py:445
-#: taguette/web/api.py:486 taguette/web/api.py:511 taguette/web/api.py:602
-#: taguette/web/api.py:669 taguette/web/api.py:763 taguette/web/api.py:982
-#: taguette/web/api.py:1033
+#: taguette/web/api.py:176 taguette/web/api.py:207 taguette/web/api.py:370
+#: taguette/web/api.py:420 taguette/web/api.py:485 taguette/web/api.py:525
+#: taguette/web/api.py:566 taguette/web/api.py:591 taguette/web/api.py:682
+#: taguette/web/api.py:749 taguette/web/api.py:843 taguette/web/api.py:1062
+#: taguette/web/api.py:1113 taguette/web/api.py:1432 taguette/web/api.py:1500
+#: taguette/web/api.py:1600
 msgid "Unauthorized"
 msgstr "Pas autorisé"
 
-#: taguette/web/api.py:450 taguette/web/api.py:489 taguette/web/api.py:521
-#: taguette/web/api.py:616 taguette/web/api.py:699
+#: taguette/web/api.py:530 taguette/web/api.py:569 taguette/web/api.py:601
+#: taguette/web/api.py:696 taguette/web/api.py:779
 msgid "No such tag"
 msgstr "Code inconnu"
 
-#: taguette/web/api.py:619
-#, fuzzy
+#: taguette/web/api.py:699
 msgid "Empty highlight"
 msgstr "Créer un code"
 
-#: taguette/web/api.py:673 taguette/web/api.py:766
+#: taguette/web/api.py:753 taguette/web/api.py:846
 msgid "No such highlight"
 msgstr "Sélection inconnue"
 
-#: taguette/web/api.py:927
+#: taguette/web/api.py:1007
 msgid "Bad page number"
 msgstr ""
 
-#: taguette/web/api.py:999
+#: taguette/web/api.py:1079
 msgid "Bad request"
 msgstr ""
 
-#: taguette/web/api.py:1096
+#: taguette/web/api.py:1176
 msgid "There must be one admin"
 msgstr "Il doit y avoir un admin"
 
-#: taguette/web/api.py:1153
+#: taguette/web/api.py:1233
 msgid ""
 "This database is an unknown version. It might have been written by a more"
 " recent version of Taguette, please check for updates"
@@ -388,354 +100,210 @@ msgstr ""
 "Cette base de données est une version inconnue. Elle a pu être créée par "
 "une version de LibreQDA plus récente, merci de chercher une mise à jour."
 
-#: taguette/web/api.py:1159
+#: taguette/web/api.py:1239
 msgid "This database could not be updated to the current version"
 msgstr "Cette base de données n'a pas pu être convertie à la version actuelle"
 
-#: taguette/web/api.py:1163 taguette/web/api.py:1197
+#: taguette/web/api.py:1243 taguette/web/api.py:1277
 msgid "This is not a Taguette project file"
 msgstr "Ce fichier n'est pas un projet LibreQDA ou Taguette"
 
-#: taguette/import_codebook.py:35
-msgid "Invalid file: CSV expected"
-msgstr "Fichier invalide : un CSV est attendu"
+#: taguette/web/api.py:1443 taguette/web/api.py:1514
+msgid "Collection name is required"
+msgstr ""
 
-#: taguette/import_codebook.py:42
-msgid "Not sure which column to use for tag name"
-msgstr "Pas sûr de la colonne à utiliser pour le nom du tag"
+#: taguette/web/api.py:1454 taguette/web/api.py:1530
+msgid "Parent collection not found"
+msgstr ""
 
-#: taguette/import_codebook.py:45
-msgid "No 'tag', 'name', or 'path' column"
-msgstr "Pas de colonne 'tag', 'name' ou 'path'"
+#: taguette/web/api.py:1491 taguette/web/api.py:1577
+msgid "Internal error: "
+msgstr ""
 
-#: taguette/import_codebook.py:83
-msgid "Not enough columns"
-msgstr "Pas assez de colonnes"
+#: taguette/web/api.py:1508 taguette/web/api.py:1605
+msgid "No such collection"
+msgstr ""
 
-#: taguette/import_codebook.py:88
-msgid "Empty tag name"
-msgstr "Nom de tag vide"
+#: taguette/web/api.py:1534
+msgid "Collection cannot be its own parent"
+msgstr ""
 
-#: taguette/import_codebook.py:104
-msgid "Invalid CSV file"
-msgstr "Fichier CSV invalide"
+#: taguette/web/api.py:1540
+msgid "Would create circular reference"
+msgstr ""
+
+#: taguette/web/api.py:1616
+msgid "Cannot delete collection with subcollections. Please specify delete_mode."
+msgstr ""
+
+#: taguette/web/views.py:231
+msgid "Invalid login or password"
+msgstr "Nom d'utilisateur ou mot de passe invalide"
+
+#: taguette/web/views.py:296 taguette/web/views.py:692
+#: taguette/web/views.py:870
+msgid "Passwords do not match"
+msgstr "Les mots de passe ne correspondent pas"
+
+#: taguette/web/views.py:298
+msgid "User name is taken"
+msgstr "Le nom d'utilisateur est déja utilisé"
+
+#: taguette/web/views.py:307
+msgid "Email address is already used"
+msgstr "L'adresse email est déja utilisée"
+
+#: taguette/web/views.py:319
+msgid "Terms of Service must be accepted"
+msgstr "Vous devez accepter les conditions d'utilisation"
+
+#: taguette/web/views.py:739
+msgid "This email address is not associated with any user"
+msgstr "Cette adresse email n'est associée à aucun utilisateur"
+
+#: taguette/web/views.py:773
+msgid "Password reset for Taguette"
+msgstr "Réinitialisation de mot de passe pour LibreQDA"
+
+#: taguette/web/views.py:821
+msgid "Invalid token"
+msgstr "Jeton invalide"
+
+#: taguette/web/views.py:825
+msgid "No user associated with that token"
+msgstr "Aucun utilisateur n'est associé avec ce jeton"
+
+#: taguette/web/views.py:828
+msgid "Password has already been changed"
+msgstr "Le mot de passe a déjà été changé"
+
+#. Default tag name
+#: taguette/web/views.py:919
+msgid "interesting"
+msgstr "intéressant"
+
+#. Default tag color
+#. Default tag description
+#: taguette/web/views.py:923
+msgid "Further review required"
+msgstr "Plus d'analyse requise"
+
+#: taguette/web/views.py:968
+msgid "You don't have permission to delete this project"
+msgstr "Vous n'êtes pas autorisé à supprimer ce project"
+
+#: taguette/web/views.py:1011 taguette/web/views.py:1039
+msgid "You don't have permission to import a codebook"
+msgstr "Vous n'avez pas la permission d'importer des codes"
+
+#: taguette/web/views.py:1058
+#, python-format
+msgid "Row %d: %s"
+msgstr "Ligne %d : %s"
+
+#: taguette/web/views.py:1209
+msgid "Error importing tags, concurrent changes caused a conflict"
+msgstr ""
+"Erreur à l'importation des codes, des changements simultanés ont causé un"
+" conflit"
+
+#: taguette/web/views.py:1224
+msgid "No file provided"
+msgstr "Aucun fichier sélectionné"
+
+#: taguette/templates/auth/reset_password.html:3
+#: taguette/templates/new_password.html:3
+msgctxt "page title"
+msgid "Reset password"
+msgstr "Réinitialisation de mot de passe"
+
+#: taguette/templates/new_password.html:10
+msgid "Please enter a new password below:"
+msgstr "Merci d'entrer un nouveau mot de passe ci-dessous :"
+
+#: taguette/templates/auth/login.html:35 taguette/templates/auth/login.html:67
+#: taguette/templates/new_password.html:15
+msgctxt "form label"
+msgid "Password"
+msgstr "Mot de passe"
+
+#: taguette/templates/auth/login.html:73
+#: taguette/templates/new_password.html:21
+msgctxt "form label"
+msgid "Confirm password"
+msgstr "Confirmation du mot de passe"
+
+#: taguette/templates/new_password.html:28
+msgctxt "form submit button"
+msgid "Set new password"
+msgstr "Changer le mot de passe"
+
+#: taguette/templates/export_highlights.html:7
+#: taguette/templates/export_highlights.html:20
+#, python-format
+msgctxt "exported highlights document title"
+msgid "LibreQDA highlights: %(path)s"
+msgstr "LibreQDA : sélections : %(path)s"
+
+#: taguette/templates/export_highlights.html:9
+#: taguette/templates/export_highlights.html:22
+msgctxt "exported highlights document title"
+msgid "LibreQDA highlights"
+msgstr "LibreQDA : sélections"
+
+#: taguette/templates/export_highlights.html:27
+#, python-format
+msgctxt "exported highlight details"
+msgid "<strong>Document:</strong> %(doc)s"
+msgstr "<strong>Document :</strong> %(doc)s"
+
+#: taguette/templates/export_highlights.html:31
+msgctxt "exported highlight details"
+msgid "Collection:"
+msgstr ""
+
+#: taguette/templates/export_highlights.html:35
+msgctxt "exported highlight details"
+msgid "Codes:"
+msgstr "Codes:"
+
+#: taguette/templates/cookies_prompt.html:4
+msgctxt "page title"
+msgid "Cookie warning"
+msgstr "Avertissement aux cookies"
+
+#: taguette/templates/cookies_prompt.html:7
+msgctxt "title"
+msgid "Cookie warning"
+msgstr "Avertissement aux cookies"
+
+#: taguette/templates/cookies_prompt.html:8
+msgid ""
+"This website uses cookies to store your identity (if you choose to log "
+"in) and as a protection against <a href=\"https://en.wikipedia.org/wiki"
+"/Cross-site_request_forgery\">cross-site request forgery (CSRF)</a>. "
+"Before continuing, you must accept their use by clicking the button "
+"below. Those <strong>are not</strong> \"third-party\" or \"tracking\" "
+"cookies."
+msgstr ""
+"Ce site web utilise des cookies pour enregistrer votre identité (si vous "
+"choisissez de vous connecter à votre compte) et comme protection contre "
+"le <a href=\"https://fr.wikipedia.org/wiki/Cross-"
+"site_request_forgery\"><em>cross-site request forgery (CSRF)</em></a>. "
+"Avant de continuer, vous devez accepter leur utilisation en cliquant sur "
+"le bouton ci-dessous. Ceux <strong>ne sont pas</strong> des cookies "
+"\"tiers\" (<em>third-party</em>) ou \"traceurs\" (<em>tracking "
+"cookies</em>)."
+
+#: taguette/templates/cookies_prompt.html:13
+msgctxt "button on cookie warning page"
+msgid "Accept cookies"
+msgstr "Accepter les cookies"
 
 #: taguette/templates/tos.html:4
 msgctxt "page title"
 msgid "Terms of Service"
-msgstr "Conditions d'Utilisation"
-
-#: taguette/templates/modal/create_highlight.html:25
-#: taguette/templates/project.html:28
-msgid "Create a code"
-msgstr "Créer un code"
-
-#: taguette/templates/project.html:31
-msgid "More actions"
-msgstr "Plus d'action"
-
-#: taguette/templates/project.html:34
-msgid "See all highlights"
-msgstr "Voir toutes les sélections"
-
-#: taguette/templates/project.html:35
-msgid "Expand all"
-msgstr "Développer Tout"
-
-#: taguette/templates/project.html:36
-msgid "Collapse all"
-msgstr "Réduire Tout"
-
-#: taguette/templates/project.html:41
-msgid "Sort by"
-msgstr "Trier par"
-
-#: taguette/templates/project.html:44
-msgid "Text [a&rarr;z]"
-msgstr "Texte [a&rarr;z]"
-
-#: taguette/templates/project.html:45
-msgid "Text [z&rarr;a]"
-msgstr "Texte [z&rarr;a]"
-
-#: taguette/templates/project.html:46
-msgid "Count [0&rarr;9]"
-msgstr "Compte [0&rarr;9]"
-
-#: taguette/templates/project.html:47
-msgid "Count [9&rarr;0]"
-msgstr "Compte [9&rarr;0]"
-
-#: taguette/templates/modal/create_highlight.html:14
-#: taguette/templates/project.html:55
-msgctxt "tag change form placeholder"
-msgid "Search for a code"
-msgstr "Rechercher un code"
-
-#: taguette/templates/project.html:59
-msgid "Back to highlights"
-msgstr "Retour aux sélections"
-
-#: taguette/templates/project.html:74
-msgid "Load a document from your bookmarks or on the right"
-msgstr "Chargez un document sur la droite ou depuis vos favoris"
-
-#: taguette/templates/project.html:92
-msgid "Add a document"
-msgstr "Ajout de documents"
-
-#: taguette/templates/project.html:93
-msgid "Search titles"
-msgstr "Rechercher dans les titres"
-
-#: taguette/templates/project.html:97
-msgid "Loading..."
-msgstr "Chargement..."
-
-#: taguette/templates/project.html:105
-msgid "Resume tutorial"
-msgstr "Reprendre le tutoriel"
-
-#: taguette/templates/project_import_codebook.html:3
-#: taguette/templates/project_import_codebook_confirm.html:3
-msgctxt "page title"
-msgid "Import codebook"
-msgstr "Importer un arbre de codes"
-
-#: taguette/templates/project_import_codebook.html:6
-#: taguette/templates/project_import_codebook_confirm.html:6
-msgctxt "title"
-msgid "Import a codebook"
-msgstr "Importer un arbre de codes"
-
-#: taguette/templates/project_import_codebook.html:7
-#: taguette/templates/project_import_codebook_confirm.html:7
-msgid ""
-"Use this form to import an existing codebook into your project. Existing "
-"tags will not be deleted, new tags will be added alongside them."
-msgstr ""
-"Utilisez ce formulaire pour importer un arbre de codes existant dans "
-"votre projet. Les codes actuels ne seront pas supprimés, les nouveaux "
-"codes seront simplement rajoutés."
-
-#: taguette/templates/project_import_codebook_confirm.html:11
-msgid "You are about to create the following tags:"
-msgstr "Vous êtes sur le point de créer les codes suivants :"
-
-#: taguette/templates/project_import_codebook_confirm.html:19
-msgctxt "codebook import tag option"
-msgid "Replace"
-msgstr "Remplacer"
-
-#: taguette/templates/project_import_codebook_confirm.html:22
-msgctxt "codebook import tag option"
-msgid "Import"
-msgstr "Importer"
-
-#: taguette/templates/project_import_codebook_confirm.html:44
-msgctxt "form submit button"
-msgid "Create tags"
-msgstr "Créer les codes"
-
-#: taguette/templates/project_delete.html:14
-#: taguette/templates/project_import_codebook.html:30
-#: taguette/templates/project_import_codebook_confirm.html:45
-msgctxt "cancel button"
-msgid "Go back"
-msgstr "Revenir en arrière"
-
-#: taguette/templates/partials/hlinfo.html:5
-msgid "New code"
-msgstr "Nouveau code"
-
-#: taguette/templates/partials/hlinfo.html:10
-msgid "Existing code"
-msgstr "Code existant"
-
-#: taguette/templates/partials/project_sidebar.html:3
-#, fuzzy
-msgid "Close"
-msgstr "Couleur"
-
-#. Left pane tab, keep short
-#: taguette/templates/partials/project_sidebar.html:10
-msgctxt "tab"
-msgid "Project info"
-msgstr "Projet"
-
-#: taguette/templates/partials/project_sidebar.html:19
-msgctxt "project metadata form label"
-msgid "Name"
-msgstr "Nom"
-
-#: taguette/templates/partials/project_sidebar.html:23
-msgctxt "project metadata form label"
-msgid "Description"
-msgstr "Description"
-
-#: taguette/templates/modal/manage_collaborators.html:11
-#: taguette/templates/partials/project_sidebar.html:33
-msgctxt "modal window title"
-msgid "Add Collaborators"
-msgstr "Ajouter des Collaborateurs"
-
-#: taguette/templates/modal/manage_collaborators.html:19
-#: taguette/templates/partials/project_sidebar.html:42
-#: taguette/templates/permissions.html:16
-msgctxt "project members form placeholder"
-msgid "Username"
-msgstr "Nom d'utilisateur"
-
-#: taguette/templates/modal/manage_collaborators.html:24
-#: taguette/templates/partials/project_sidebar.html:46
-msgctxt "permission level"
-msgid "Full permissions"
-msgstr "Toutes les permissions"
-
-#: taguette/templates/modal/manage_collaborators.html:25
-#: taguette/templates/partials/project_sidebar.html:47
-msgctxt "permission level"
-msgid "Can't change collaborators / delete project"
-msgstr "Ne peut pas changer les collaborateurs / supprimer le projet"
-
-#: taguette/templates/modal/manage_collaborators.html:26
-#: taguette/templates/partials/project_sidebar.html:48
-msgctxt "permission level"
-msgid "View & make changes"
-msgstr "Voir & faire des changements"
-
-#: taguette/templates/modal/manage_collaborators.html:27
-#: taguette/templates/partials/project_sidebar.html:49
-msgctxt "permission level"
-msgid "View only"
-msgstr "Voir seulement"
-
-#: taguette/templates/modal/manage_collaborators.html:30
-#: taguette/templates/partials/project_sidebar.html:52
-msgctxt "form submit button"
-msgid "Add to project"
-msgstr "Ajouter au projet"
-
-#: taguette/templates/modal/manage_collaborators.html:34
-#: taguette/templates/partials/project_sidebar.html:56
-msgid "Current Collaborators"
-msgstr "Collaborateurs Actuels"
-
-#: taguette/templates/partials/project_sidebar.html:60
-msgid "Save members"
-msgstr ""
-
-#: taguette/templates/partials/project_sidebar.html:67
-msgid "Export project"
-msgstr "Exporter le projet"
-
-#: taguette/templates/partials/project_sidebar.html:70
-msgid "Export codebook"
-msgstr "Exporter un arbre de codes"
-
-#: taguette/templates/partials/project_sidebar.html:74
-msgid "QDC (XML)"
-msgstr "QDC (XML)"
-
-#: taguette/templates/partials/document_toolbar.html:24
-#: taguette/templates/partials/project_sidebar.html:76
-msgid "Excel"
-msgstr "Excel"
-
-#: taguette/templates/partials/document_toolbar.html:25
-#: taguette/templates/partials/project_sidebar.html:77
-msgid "CSV"
-msgstr "CSV"
-
-#: taguette/templates/partials/document_toolbar.html:21
-#: taguette/templates/partials/project_sidebar.html:78
-msgid "HTML"
-msgstr "HTML"
-
-#: taguette/templates/partials/document_toolbar.html:22
-#: taguette/templates/partials/project_sidebar.html:79
-msgid "DOCX"
-msgstr "DOCX"
-
-#: taguette/templates/partials/document_toolbar.html:23
-#: taguette/templates/partials/project_sidebar.html:80
-msgid "PDF"
-msgstr "PDF"
-
-#: taguette/templates/partials/project_sidebar.html:85
-msgid "Import codebook"
-msgstr "Importer un arbre de codes"
-
-#: taguette/templates/partials/project_sidebar.html:89
-msgid "Delete project"
-msgstr "Supprimer projet"
-
-#: taguette/templates/partials/document_toolbar.html:4
-msgid "Bookmarks"
-msgstr "Favoris"
-
-#: taguette/templates/partials/document_toolbar.html:7
-msgid "..."
-msgstr ""
-
-#: taguette/templates/partials/document_toolbar.html:17
-msgid "Export"
-msgstr "Exporter"
-
-#: taguette/templates/modal/create_document.html:33
-#: taguette/templates/modal/create_tag.html:57
-#: taguette/templates/modal/manage_collaborators.html:41
-#: taguette/templates/partials/spinner.html:8
-#: taguette/templates/permissions.html:33
-msgid "Cancel"
-msgstr "Annuler"
-
-#: taguette/templates/partials/confirm.html:6
-msgctxt "confirm modal"
-msgid "Confirm"
-msgstr "Confirmation"
-
-#: taguette/templates/partials/confirm.html:12
-msgctxt "confirm modal"
-msgid "Cancel"
-msgstr "Annuler"
-
-#: taguette/templates/partials/confirm.html:13
-msgctxt "confirm modal confirm"
-msgid "Confirm"
-msgstr "Confirmer"
-
-#: taguette/templates/project_delete.html:3
-msgctxt "page title"
-msgid "Delete project"
-msgstr "Supprimer projet"
-
-#: taguette/templates/project_delete.html:6
-msgctxt "title"
-msgid "Delete project: confirm?"
-msgstr "Suppression du projet : confirmation ?"
-
-#: taguette/templates/project_delete.html:8
-#, python-format
-msgctxt "project delete page"
-msgid "Name: %(project_name)s"
-msgstr "Nom : %(project_name)s"
-
-#: taguette/templates/project_delete.html:9
-#, python-format
-msgid ""
-"Are you sure you want to delete this project? It currently has "
-"<strong>%(documents)s documents and %(highlights)s highlights in %(tags)s"
-" tags</strong>. There is no way to undo."
-msgstr ""
-"Êtes-vous sûr de vouloir supprimer ce projet ? Il contient "
-"<strong>%(documents)s documents et %(highlights)s sélections dans "
-"%(tags)s codes</strong>. Cette opération ne peut pas être annulée."
-
-#: taguette/templates/project_delete.html:13
-msgctxt "submit button"
-msgid "Delete forever"
-msgstr "Supprimer définitivement"
+msgstr "Conditions d'utilisation"
 
 #: taguette/templates/export_codebook.html:10
 #: taguette/templates/export_codebook.html:13
@@ -780,36 +348,627 @@ msgctxt "form submit button"
 msgid "Import project"
 msgstr "Importer le projet"
 
-#: taguette/templates/project_import_codebook.html:8
+#: taguette/templates/base.html:51
+msgid "Edit project"
+msgstr "Éditer le projet"
+
+#: taguette/templates/base.html:58
+msgctxt "search form placeholder"
+msgid "Search in documents"
+msgstr "Rechercher dans les documents"
+
+#: taguette/templates/base.html:86
+#, python-format
+msgctxt "navigation item"
+msgid "LibreQDA Guide %(external_icon)s"
+msgstr "Guide de LibreQDA %(external_icon)s"
+
+#: taguette/templates/base.html:91
+msgid "Single-user mode"
+msgstr "Mode un seul utilisateur"
+
+#: taguette/templates/base.html:95
+msgctxt "navigation dropdown menu"
+msgid "Account"
+msgstr "Profil"
+
+#: taguette/templates/base.html:97
+msgctxt "navigation item"
+msgid "Settings"
+msgstr "Préférences"
+
+#: taguette/templates/base.html:99
+msgctxt "navigation item"
+msgid "Terms of Service"
+msgstr "Conditions d'Utilisation"
+
+#: taguette/templates/base.html:101
+msgctxt "navigation item"
+msgid "Log out"
+msgstr "Déconnexion"
+
+#: taguette/templates/base.html:107
+msgctxt "navigation item"
+msgid "Log in"
+msgstr "Connexion"
+
+#: taguette/templates/base.html:113
+msgctxt "navigation item"
+msgid "Bug report"
+msgstr "Signaler un bogue"
+
+#: taguette/templates/base.html:128
+#, python-format
 msgid ""
-"The file should have a column for the tag names, called 'name' or 'tag' "
-"or 'path'. It can also optionally have a column called 'description'. "
-"Other columns are ignored."
+"LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
+"/bin-cirst/libreqda/libre-"
+"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause license</a>, "
+"&#169; Plateforme en humanités numériques (Université de Sherbrooke) and "
+"contributors\n"
+"            | &#169; Remi Rampin and Taguette contributors | <a "
+"href=\"https://help.libreqda.org/\">User Documentation</a>"
 msgstr ""
+"LibreQDA %(version)s est publié sous une <a href=\"https://gitlab.com"
+"/bin-cirst/libreqda/libre-"
+"qda/-/blob/main/LICENSE.txt?ref_type=heads\">license BSD-3-Clause</a>, "
+"&#169; Plateforme en humanités numériques (Université de Sherbrooke) et "
+"autres contributeur-trices\n"
+"            | &#169; Rémi Rampin et contributeurs à Taguette | <a "
+"href=\"https://aide.libreqda.org/\">Guide d'utilisation</a>"
 
-#: taguette/templates/project_import_codebook.html:15
-msgctxt "form label for project name (readonly)"
-msgid "Project:"
-msgstr "Projet :"
+#: taguette/templates/project_delete.html:3
+msgctxt "page title"
+msgid "Delete project"
+msgstr "Supprimer le projet"
 
-#: taguette/templates/project_import_codebook.html:21
-msgctxt "form label for codebook file"
-msgid "File:"
-msgstr "Fichier :"
+#: taguette/templates/project_delete.html:6
+msgctxt "title"
+msgid "Delete project: confirm?"
+msgstr "Suppression du projet : confirmation ?"
 
-#: taguette/templates/project_import_codebook.html:24
-msgid "Accepted format: CSV"
-msgstr "Format accepté : CSV"
+#: taguette/templates/project_delete.html:8
+#, python-format
+msgctxt "project delete page"
+msgid "Name: %(project_name)s"
+msgstr "Nom : %(project_name)s"
 
-#: taguette/templates/project_import_codebook.html:29
-msgctxt "form submit button"
-msgid "Review"
-msgstr "Examiner"
+#: taguette/templates/project_delete.html:9
+#, python-format
+msgid ""
+"Are you sure you want to delete this project? It currently has "
+"<strong>%(documents)s documents and %(highlights)s highlights in %(tags)s"
+" tags</strong>. There is no way to undo."
+msgstr ""
+"Êtes-vous sûr de vouloir supprimer ce projet ? Il contient "
+"<strong>%(documents)s documents et %(highlights)s sélections dans "
+"%(tags)s codes</strong>. Cette opération ne peut pas être annulée."
 
+#: taguette/templates/project_delete.html:13
+msgctxt "submit button"
+msgid "Delete forever"
+msgstr "Supprimer définitivement"
+
+#: taguette/templates/project_delete.html:14
+#: taguette/templates/project_import_codebook.html:30
+#: taguette/templates/project_import_codebook_confirm.html:45
+msgctxt "cancel button"
+msgid "Go back"
+msgstr "Revenir en arrière"
+
+#: taguette/templates/alt_templates/phun/welcome.html:10
 #: taguette/templates/welcome.html:4
 msgctxt "page title"
 msgid "Welcome"
 msgstr "Bienvenue"
+
+#: taguette/templates/alt_templates/phun/welcome.html:14
+msgid "Welcome to LibreQDA"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:20
+#, python-format
+msgid ""
+"\n"
+"      An <span class=\"underline-green\">%(os)s</span> web-based tool for"
+" <span class=\"underline-brown\">%(qda)s</span>.\n"
+"      "
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:28
+msgid "Upload Documents"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:29
+msgid "Import text files (plain, DOCX, PDFs and other formats)."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:33
+msgid "Read & Explore"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:34
+msgid "Apply codes to your material and retrieve key excerpts."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:38
+msgid "Collaborate"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:39
+msgid "Invite others on your projects to share your work or enrich it."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:43
+msgid "Export Your Data"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:44
+msgid "Download your coded data to reuse it elsewhere."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:50
+msgid "Log in"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:53
+msgid "Visit the help website"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:62
+msgid "This instance of LibreQDA is maintained by the"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:72
+msgid "Frequently Asked Questions"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:78
+msgid "Is LibreQDA completely free to use?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:83
+msgid ""
+"Yes, LibreQDA is completely free and open-source. You can use it for "
+"academic research, personal projects, or commercial purposes without any "
+"licensing fees."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:91
+msgid "Do I need to install any software?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:96
+msgid ""
+"This instance of LibreQDA maintained by the <a "
+"href=\"https://www.usherbrooke.ca/phun\" target=\"_blank\" "
+"rel=\"noopener\">Plateforme en humanités numériques</a> (Université de "
+"Sherbrooke) does not require any installation and runs entirely in your "
+"browser. However, advanced users with specific needs can install LibreQDA"
+" on their machine or deploy a server."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:104
+msgid "Where is my data stored?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:109
+msgid ""
+"When using this instance of LibreQDA (libreqda.org), your data is stored "
+"on a Canadian university server — specifically, a Calcul Québec "
+"supercomputer housed at École de technologie supérieure (Montréal). Keep "
+"in mind that this may differ if you use a version of LibreQDA hosted by "
+"someone else."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:117
+msgid "Can I use any browser?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:122
+msgid ""
+"Chromium-based browsers are better supported at the time (e.g. Chromium, "
+"Brave). Firefox is not fully supported."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:130
+msgid "Why is LibreQDA designed to be so minimalistic?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:135
+msgid ""
+"If you find that some of your complex use cases aren’t covered, remember "
+"that one shoe never fits everyone. You might turn to other tools that fit"
+" your methods, or you can get in touch with us at <a "
+"href=\"mailto:phun@usherbrooke.ca\" target=\"_blank\" "
+"rel=\"noopener\">phun@usherbrooke.ca</a> to discuss personalised "
+"solutions for data collection, analysis or visualisation."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:148
+msgid "Partners"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:149
+msgid "This instance of LibreQDA is supported by the following partners:"
+msgstr ""
+
+#: taguette/templates/project_new.html:3
+msgctxt "page title"
+msgid "New project"
+msgstr "Nouveau projet"
+
+#: taguette/templates/project_new.html:6
+msgctxt "title"
+msgid "New project"
+msgstr "Nouveau projet"
+
+#: taguette/templates/project_new.html:13
+msgctxt "form label for new project name"
+msgid "Name"
+msgstr "Nom"
+
+#: taguette/templates/project_new.html:19
+msgctxt "form label for new project description"
+msgid "Description"
+msgstr "Description"
+
+#: taguette/templates/project_new.html:26
+msgctxt "form submit button"
+msgid "Create"
+msgstr "Créer"
+
+#: taguette/templates/project.html:24 taguette/templates/project.html:117
+msgid "Tips"
+msgstr "Aide"
+
+#: taguette/templates/modal/create_highlight.html:25
+#: taguette/templates/project.html:37
+msgid "Create a code"
+msgstr "Créer un code"
+
+#: taguette/templates/project.html:42
+msgid "More actions"
+msgstr "Plus d'action"
+
+#: taguette/templates/project.html:47
+msgid "See all highlights"
+msgstr "Voir toutes les sélections"
+
+#: taguette/templates/project.html:49
+msgid "Expand all"
+msgstr "Développer Tout"
+
+#: taguette/templates/project.html:51
+msgid "Collapse all"
+msgstr "Réduire Tout"
+
+#: taguette/templates/project.html:59
+msgid "Sort by"
+msgstr "Trier par"
+
+#: taguette/templates/project.html:62
+msgid "Text [a&rarr;z]"
+msgstr "Texte [a&rarr;z]"
+
+#: taguette/templates/project.html:64
+msgid ""
+"Text\n"
+"                                    [z&rarr;a]"
+msgstr ""
+"Texte\n"
+"                                    [z&rarr;a]"
+
+#: taguette/templates/project.html:66
+msgid ""
+"Count\n"
+"                                    [0&rarr;9]"
+msgstr ""
+"Fréquence\n"
+"                                    [0&rarr;9]"
+
+#: taguette/templates/project.html:68
+msgid ""
+"Count\n"
+"                                    [9&rarr;0]"
+msgstr ""
+"Fréquence\n"
+"                                    [9&rarr;0]"
+
+#: taguette/templates/project.html:77
+msgctxt ""
+" tag change\n"
+"                        form placeholder"
+msgid "Search for a code"
+msgstr "Rechercher un code"
+
+#: taguette/templates/project.html:82
+msgid "Back to highlights"
+msgstr "Retour aux sélections"
+
+#: taguette/templates/project.html:97
+msgid ""
+"Load a document from your bookmarks or on\n"
+"                    the right"
+msgstr ""
+"Charger un document parmi ceux à droite ou\n"
+"                    depuis vos favoris"
+
+#: taguette/templates/project.html:123
+msgid "Add a document"
+msgstr "Ajout de documents"
+
+#: taguette/templates/project.html:127
+msgid "Add a collection"
+msgstr "Ajout de collection"
+
+#: taguette/templates/project.html:129
+msgid "Search titles and collections name"
+msgstr "Rechercher dans les titres"
+
+#: taguette/templates/project.html:134
+msgid "Loading..."
+msgstr "Chargement..."
+
+#: taguette/templates/project.html:142
+msgid "Resume tutorial"
+msgstr "Reprendre le tutoriel"
+
+#: taguette/templates/permissions.html:3 taguette/templates/permissions.html:8
+msgid "Grant permissions"
+msgstr "Configurer les permissions"
+
+#: taguette/templates/permissions.html:6
+msgid ""
+"To use this instance of LibreQDA, users outside the <a "
+"href=\"https://www.canarie.ca/identity/caf/\">Canadian Access Federation "
+"(CAF)</a> must be sponsored"
+msgstr ""
+"Pour utiliser cette instance de LibreQDA, les personnes connectée via un "
+"fournisseur d'identité non-membre de la <a "
+"href=\"https://www.canarie.ca/fr/identite/fca/\">Fédération canadienne "
+"d'accès (FCA)</a> doivent être parrainées"
+
+#: taguette/templates/auth/account.html:26
+#: taguette/templates/auth/external_account.html:26
+#: taguette/templates/auth/login.html:79
+#: taguette/templates/auth/reset_password.html:17
+#: taguette/templates/modal/manage_collaborators.html:17
+#: taguette/templates/permissions.html:14
+msgctxt "form label for email address"
+msgid "Email"
+msgstr "E-mail"
+
+#: taguette/templates/modal/manage_collaborators.html:19
+#: taguette/templates/partials/project_sidebar.html:42
+#: taguette/templates/permissions.html:16
+msgctxt "project members form placeholder"
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+#: taguette/templates/permissions.html:21
+msgctxt "permission level"
+msgid "Can create projects"
+msgstr "Peut créer des projets"
+
+#: taguette/templates/permissions.html:24
+msgctxt "form submit button"
+msgid "Update role"
+msgstr "Changer le rôle"
+
+#: taguette/templates/permissions.html:28
+msgid "Users that you approved"
+msgstr "Personnes parainées"
+
+#: taguette/templates/permissions.html:32
+msgid "Save"
+msgstr "Sauvegarder"
+
+#: taguette/templates/modal/create_collection.html:94
+#: taguette/templates/modal/create_document.html:79
+#: taguette/templates/modal/create_tag.html:63
+#: taguette/templates/modal/manage_collaborators.html:41
+#: taguette/templates/partials/spinner.html:8
+#: taguette/templates/permissions.html:33
+msgid "Cancel"
+msgstr "Annuler"
+
+#: taguette/templates/index.html:23
+msgid "Maintained by"
+msgstr "Maintenu par"
+
+#: taguette/templates/index.html:33
+#, python-format
+msgid "Welcome %(user_display_name)s"
+msgstr "Bienvenue %(user_display_name)s"
+
+#: taguette/templates/index.html:35
+msgid "Welcome!"
+msgstr "Bienvenue !"
+
+#: taguette/templates/index.html:42
+msgid "Create a new project"
+msgstr "Créer un nouveau projet"
+
+#: taguette/templates/index.html:48
+msgid "Import a project file"
+msgstr "Importer un projet"
+
+#: taguette/templates/index.html:53
+msgid "Sponsor someone"
+msgstr "Parrainer"
+
+#: taguette/templates/index.html:57
+msgid "Demo project"
+msgstr "Démo"
+
+#: taguette/templates/index.html:61
+msgid "Here are your projects"
+msgstr "Vos projets"
+
+#: taguette/templates/index.html:63
+msgid ""
+"Please note that you cannot create a project at this time. You must be "
+"sponsored by a Canadian Access Federation (CAF) user."
+msgstr ""
+"Vous ne pouvez pas créer de projets pour l'instant parce que vous devez "
+"être parrainé par utilisateur membre de la Fédération canadienne d'accès."
+
+#: taguette/templates/index.html:87
+msgid "No projects available at the moment. Create or import one to get started."
+msgstr "Aucun projet pour le moment. Créez ou importez-en un pour démarrer."
+
+#: taguette/templates/partials/project_sidebar.html:3
+msgid "Close"
+msgstr "Couleur"
+
+#. Left pane tab, keep short
+#: taguette/templates/partials/project_sidebar.html:10
+msgctxt "tab"
+msgid "Project info"
+msgstr "Projet"
+
+#: taguette/templates/partials/project_sidebar.html:19
+msgctxt "project metadata form label"
+msgid "Name"
+msgstr "Nom"
+
+#: taguette/templates/partials/project_sidebar.html:23
+msgctxt "project metadata form label"
+msgid "Description"
+msgstr "Description"
+
+#: taguette/templates/modal/manage_collaborators.html:11
+#: taguette/templates/partials/project_sidebar.html:33
+msgctxt "modal window title"
+msgid "Add Collaborators"
+msgstr "Ajouter des Collaborateurs"
+
+#: taguette/templates/modal/manage_collaborators.html:24
+#: taguette/templates/partials/project_sidebar.html:46
+msgctxt "permission level"
+msgid "Full permissions"
+msgstr "Toutes les permissions"
+
+#: taguette/templates/modal/manage_collaborators.html:25
+#: taguette/templates/partials/project_sidebar.html:47
+msgctxt "permission level"
+msgid "Can't change collaborators / delete project"
+msgstr "Ne peut pas changer les collaborateurs / supprimer le projet"
+
+#: taguette/templates/modal/manage_collaborators.html:26
+#: taguette/templates/partials/project_sidebar.html:48
+msgctxt "permission level"
+msgid "View & make changes"
+msgstr "Voir & faire des changements"
+
+#: taguette/templates/modal/manage_collaborators.html:27
+#: taguette/templates/partials/project_sidebar.html:49
+msgctxt "permission level"
+msgid "View only"
+msgstr "Voir seulement"
+
+#: taguette/templates/modal/manage_collaborators.html:30
+#: taguette/templates/partials/project_sidebar.html:52
+msgctxt "form submit button"
+msgid "Add to project"
+msgstr "Ajouter au projet"
+
+#: taguette/templates/modal/manage_collaborators.html:34
+#: taguette/templates/partials/project_sidebar.html:56
+msgid "Current Collaborators"
+msgstr "Collaborateurs Actuels"
+
+#: taguette/templates/partials/project_sidebar.html:60
+msgid "Save members"
+msgstr "Sauvegarder les membres"
+
+#: taguette/templates/partials/project_sidebar.html:67
+msgid "Export project"
+msgstr "Exporter le projet"
+
+#: taguette/templates/partials/project_sidebar.html:70
+msgid "Export codebook"
+msgstr "Exporter un arbre de codes"
+
+#: taguette/templates/partials/project_sidebar.html:74
+msgid "QDC (XML)"
+msgstr "QDC (XML)"
+
+#: taguette/templates/partials/document_toolbar.html:38
+#: taguette/templates/partials/project_sidebar.html:76
+msgid "Excel"
+msgstr "Excel"
+
+#: taguette/templates/partials/document_toolbar.html:40
+#: taguette/templates/partials/project_sidebar.html:77
+msgid "CSV"
+msgstr "CSV"
+
+#: taguette/templates/partials/document_toolbar.html:35
+#: taguette/templates/partials/project_sidebar.html:78
+msgid "HTML"
+msgstr "HTML"
+
+#: taguette/templates/partials/document_toolbar.html:36
+#: taguette/templates/partials/project_sidebar.html:79
+msgid "DOCX"
+msgstr "DOCX"
+
+#: taguette/templates/partials/document_toolbar.html:37
+#: taguette/templates/partials/project_sidebar.html:80
+msgid "PDF"
+msgstr "PDF"
+
+#: taguette/templates/partials/project_sidebar.html:85
+msgid "Import codebook"
+msgstr "Importer un arbre de codes"
+
+#: taguette/templates/partials/project_sidebar.html:89
+msgid "Delete project"
+msgstr "Supprimer projet"
+
+#: taguette/templates/partials/document_toolbar.html:4
+msgid "Bookmarks"
+msgstr "Favoris"
+
+#: taguette/templates/partials/document_toolbar.html:9
+msgid "..."
+msgstr ""
+
+#: taguette/templates/partials/document_toolbar.html:20
+msgid "Switch between highlight display modes"
+msgstr "Changer le mode d'affichage du texte"
+
+#: taguette/templates/partials/document_toolbar.html:22
+msgid "Rich Display"
+msgstr "Affichage riche"
+
+#: taguette/templates/partials/document_toolbar.html:29
+msgid "Export"
+msgstr "Exporter"
+
+#: taguette/templates/partials/confirm.html:6
+msgctxt "confirm modal"
+msgid "Confirm"
+msgstr "Confirmation"
+
+#: taguette/templates/partials/confirm.html:12
+msgctxt "confirm modal"
+msgid "Cancel"
+msgstr "Annuler"
+
+#: taguette/templates/partials/confirm.html:13
+msgctxt "confirm modal confirm"
+msgid "Confirm"
+msgstr "Confirmer"
+
+#: taguette/templates/partials/hlinfo.html:5
+msgid "New code"
+msgstr "Nouveau code"
+
+#: taguette/templates/partials/hlinfo.html:10
+msgid "Existing code"
+msgstr "Code existant"
 
 #: taguette/templates/welcome.html:8
 msgctxt "title"
@@ -841,315 +1000,51 @@ msgstr ""
 msgid "<a href=\"%(url)s\">Register now</a> for free and get started!"
 msgstr "<a href=\"%(url)s\">Inscrivez-vous</a> gratuitement et lancez-vous !"
 
-#: taguette/templates/modal/manage_collaborators.html:6
-msgid "Manage Collaborators"
-msgstr "Gérer les Collaborateurs"
+#: taguette/templates/project_import_codebook.html:3
+#: taguette/templates/project_import_codebook_confirm.html:3
+msgctxt "page title"
+msgid "Import codebook"
+msgstr "Importer un arbre de codes"
 
-#: taguette/templates/auth/account.html:26
-#: taguette/templates/auth/external_account.html:26
-#: taguette/templates/auth/login.html:78
-#: taguette/templates/auth/reset_password.html:17
-#: taguette/templates/modal/manage_collaborators.html:17
-#: taguette/templates/permissions.html:14
-msgctxt "form label for email address"
-msgid "Email"
-msgstr "E-mail"
+#: taguette/templates/project_import_codebook.html:6
+#: taguette/templates/project_import_codebook_confirm.html:6
+msgctxt "title"
+msgid "Import a codebook"
+msgstr "Importer un arbre de codes"
 
-#: taguette/templates/modal/change_document.html:33
-#: taguette/templates/modal/create_highlight.html:30
-#: taguette/templates/modal/create_tag.html:56
-#: taguette/templates/modal/manage_collaborators.html:40
-msgid "Save & Close"
-msgstr "Enregistrer & Fermer"
+#: taguette/templates/project_import_codebook.html:7
+#: taguette/templates/project_import_codebook_confirm.html:7
+msgid ""
+"Use this form to import an existing codebook into your project. Existing "
+"tags will not be deleted, new tags will be added alongside them."
+msgstr ""
+"Utilisez ce formulaire pour importer un arbre de codes existant dans "
+"votre projet. Les codes actuels ne seront pas supprimés, les nouveaux "
+"codes seront simplement rajoutés."
 
-#: taguette/templates/modal/create_highlight.html:5
-msgctxt "modal window title"
-msgid "Highlight"
-msgstr "Sélection"
+#: taguette/templates/project_import_codebook_confirm.html:11
+msgid "You are about to create the following tags:"
+msgstr "Vous êtes sur le point de créer les codes suivants :"
 
-#: taguette/templates/modal/create_highlight.html:31
-msgid "Delete highlight"
-msgstr "Supprimer la sélection"
+#: taguette/templates/project_import_codebook_confirm.html:19
+msgctxt "codebook import tag option"
+msgid "Replace"
+msgstr "Remplacer"
 
-#: taguette/templates/modal/create_document.html:6
-msgctxt "modal window title"
-msgid "Add a document"
-msgstr "Ajout de documents"
-
-#: taguette/templates/modal/change_document.html:21
-#: taguette/templates/modal/create_document.html:20
-msgid "Left to right"
-msgstr "De gauche à droite"
-
-#: taguette/templates/modal/change_document.html:25
-#: taguette/templates/modal/create_document.html:24
-msgid "Right to left"
-msgstr "De droite à gauche"
-
-#: taguette/templates/modal/create_document.html:28
-msgctxt "document add form placeholder"
-msgid "Description"
-msgstr "Description"
-
-#: taguette/templates/modal/create_document.html:32
-msgctxt "submit button"
+#: taguette/templates/project_import_codebook_confirm.html:22
+msgctxt "codebook import tag option"
 msgid "Import"
 msgstr "Importer"
 
-#: taguette/templates/modal/change_document.html:6
-msgctxt "modal window title"
-msgid "Edit document"
-msgstr "Modifier le document"
-
-#: taguette/templates/modal/change_document.html:14
-msgctxt "document change form placeholder"
-msgid "Name"
-msgstr "Nom"
-
-#: taguette/templates/modal/change_document.html:29
-msgctxt "document change form placeholder"
-msgid "Description"
-msgstr "Description"
-
-#: taguette/templates/modal/change_document.html:34
-msgid "Delete document"
-msgstr "Supprimer le document"
-
-#: taguette/templates/modal/merge_tag.html:6
-msgctxt "merge modal"
-msgid "Merge codes"
-msgstr "Fusionner (irrévocable)"
-
-#: taguette/templates/modal/merge_tag.html:17
-msgid "into"
-msgstr "Avec"
-
-#: taguette/templates/modal/create_tag.html:6
-msgctxt "modal window title"
-msgid "New tag"
-msgstr "Nouveau code"
-
-#: taguette/templates/modal/create_tag.html:8
-msgctxt "modal window title"
-msgid "Change code"
-msgstr "Modifier le code"
-
-#: taguette/templates/modal/create_tag.html:18
-msgctxt "tag change form placeholder"
-msgid "Parent code"
-msgstr "Code parent"
-
-#: taguette/templates/modal/create_tag.html:35
-#: taguette/templates/modal/create_tag.html:37
-msgctxt "tag change form placeholder"
-msgid "Name"
-msgstr "Nom"
-
-#: taguette/templates/modal/create_tag.html:40
-msgctxt "tag change form placeholder"
-msgid "Color"
-msgstr "Couleur"
-
-#: taguette/templates/modal/create_tag.html:44
-#: taguette/templates/modal/create_tag.html:47
-#, fuzzy
-msgctxt " tag change form placeholder"
-msgid "Description"
-msgstr "Description"
-
-#: taguette/templates/modal/create_tag.html:53
-msgctxt ""
-"button\n"
-"                    in tag change modal window"
-msgid "Merge..."
-msgstr "Fusionner..."
-
-#: taguette/templates/modal/create_tag.html:60
-msgid "Delete tag"
-msgstr "Supprimer le code"
-
-#: taguette/templates/cookies_prompt.html:3
-msgctxt "page title"
-msgid "Cookie warning"
-msgstr "Avertissement aux cookies"
-
-#: taguette/templates/cookies_prompt.html:6
-msgctxt "title"
-msgid "Cookie warning"
-msgstr "Avertissement aux cookies"
-
-#: taguette/templates/cookies_prompt.html:7
-msgid ""
-"This website uses cookies to store your identity (if you choose to log "
-"in) and as a protection against <a href=\"https://en.wikipedia.org/wiki"
-"/Cross-site_request_forgery\">cross-site request forgery (CSRF)</a>. "
-"Before continuing, you must accept their use by clicking the button "
-"below. Those <strong>are not</strong> \"third-party\" or \"tracking\" "
-"cookies."
-msgstr ""
-"Ce site web utilise des cookies pour enregistrer votre identité (si vous "
-"choisissez de vous connecter à votre compte) et comme protection contre "
-"le <a href=\"https://fr.wikipedia.org/wiki/Cross-"
-"site_request_forgery\"><em>cross-site request forgery (CSRF)</em></a>. "
-"Avant de continuer, vous devez accepter leur utilisation en cliquant sur "
-"le bouton ci-dessous. Ceux <strong>ne sont pas</strong> des cookies "
-"\"tiers\" (<em>third-party</em>) ou \"traceurs\" (<em>tracking "
-"cookies</em>)."
-
-#: taguette/templates/cookies_prompt.html:12
-msgctxt "button on cookie warning page"
-msgid "Accept cookies"
-msgstr "Accepter les cookies"
-
-#: taguette/templates/permissions.html:3 taguette/templates/permissions.html:8
-msgid "Grant permissions"
-msgstr "Configurer les permissions"
-
-#: taguette/templates/permissions.html:6
-msgid ""
-"To use this instance of LibreQDA, users outside the <a "
-"href=\"https://www.canarie.ca/identity/caf/\">Canadian Access Federation "
-"(CAF)</a> must be sponsored"
-msgstr ""
-"Pour utiliser cette instance de LibreQDA, les personnes connectée via un "
-"fournisseur d'identité non-membre de la <a "
-"href=\"https://www.canarie.ca/fr/identite/fca/\">Fédération canadienne "
-"d'accès (FCA)</a> doivent être parrainées"
-
-#: taguette/templates/permissions.html:21
-msgctxt "permission level"
-msgid "Can create projects"
-msgstr "Peut créer des projets"
-
-#: taguette/templates/permissions.html:24
+#: taguette/templates/project_import_codebook_confirm.html:44
 msgctxt "form submit button"
-msgid "Update role"
-msgstr "Changer le rôle"
+msgid "Create tags"
+msgstr "Créer les codes"
 
-#: taguette/templates/permissions.html:28
-msgid "Users that you approved"
-msgstr "Personnes parainées"
-
-#: taguette/templates/permissions.html:32
-msgid "Save"
-msgstr "Sauvegarder"
-
-#: taguette/templates/project_new.html:3
+#: taguette/templates/maintenance.html:4
 msgctxt "page title"
-msgid "New project"
-msgstr "Nouveau projet"
-
-#: taguette/templates/project_new.html:6
-msgctxt "title"
-msgid "New project"
-msgstr "Nouveau projet"
-
-#: taguette/templates/project_new.html:13
-msgctxt "form label for new project name"
-msgid "Name"
-msgstr "Nom"
-
-#: taguette/templates/project_new.html:19
-msgctxt "form label for new project description"
-msgid "Description"
-msgstr "Description"
-
-#: taguette/templates/project_new.html:26
-msgctxt "form submit button"
-msgid "Create"
-msgstr "Créer"
-
-#: taguette/templates/export_highlights.html:6
-#: taguette/templates/export_highlights.html:18
-#, python-format
-msgctxt "exported highlights document title"
-msgid "LibreQDA highlights: %(path)s"
-msgstr "LibreQDA : sélections : %(path)s"
-
-#: taguette/templates/export_highlights.html:8
-#: taguette/templates/export_highlights.html:20
-msgctxt "exported highlights document title"
-msgid "LibreQDA highlights"
-msgstr "LibreQDA : sélections"
-
-#: taguette/templates/export_highlights.html:25
-#, python-format
-msgctxt "exported highlight details"
-msgid "<strong>Document:</strong> %(doc)s"
-msgstr "<strong>Document :</strong> %(doc)s"
-
-#: taguette/templates/export_highlights.html:26
-msgctxt "exported highlight details"
-msgid "Codes:"
-msgstr ""
-
-#: taguette/templates/auth/reset_password.html:3
-#: taguette/templates/new_password.html:3
-msgctxt "page title"
-msgid "Reset password"
-msgstr "Réinitialisation de mot de passe"
-
-#: taguette/templates/new_password.html:10
-msgid "Please enter a new password below:"
-msgstr "Merci d'entrer un nouveau mot de passe ci-dessous :"
-
-#: taguette/templates/auth/login.html:34 taguette/templates/auth/login.html:66
-#: taguette/templates/new_password.html:15
-msgctxt "form label"
-msgid "Password"
-msgstr "Mot de passe"
-
-#: taguette/templates/auth/login.html:72
-#: taguette/templates/new_password.html:21
-msgctxt "form label"
-msgid "Confirm password"
-msgstr "Confirmation du mot de passe"
-
-#: taguette/templates/new_password.html:28
-msgctxt "form submit button"
-msgid "Set new password"
-msgstr "Changer le mot de passe"
-
-#: taguette/templates/index.html:25
-#, python-format
-msgid "Welcome %(user_display_name)s"
-msgstr "Bienvenue %(user_display_name)s"
-
-#: taguette/templates/index.html:27
-msgid "Welcome!"
-msgstr "Bienvenue !"
-
-#: taguette/templates/index.html:34
-msgid "Create a new project"
-msgstr "Créer un nouveau projet"
-
-#: taguette/templates/index.html:40
-msgid "Import a project file"
-msgstr "Importer un projet"
-
-#: taguette/templates/index.html:45
-msgid "Sponsor someone"
-msgstr "Parrainer"
-
-#: taguette/templates/index.html:49
-msgid "Demo project"
-msgstr "Démo"
-
-#: taguette/templates/index.html:53
-msgid "Here are your projects"
-msgstr "Vos projets"
-
-#: taguette/templates/index.html:55
-msgid ""
-"Please note that you cannot create a project at this time. You must be "
-"sponsored by a Canadian Access Federation (CAF) user."
-msgstr ""
-"Vous ne pouvez pas créer de projets pour l'instant parce que vous devez "
-"être parrainé par utilisateur membre de la Fédération canadienne d'accès."
-
-#: taguette/templates/index.html:79
-msgid "No projects available at the moment. Create or import one to get started."
-msgstr "Aucun projet pour le moment. Créez ou importez-en un pour démarrer."
+msgid "Maintenance"
+msgstr "En maintenance"
 
 #: taguette/templates/auth/token_needed.html:3
 msgctxt "page title"
@@ -1166,49 +1061,89 @@ msgstr ""
 "l'application. Merci de consulter la console et d'utiliser le bon URL "
 "pour vous identifier, ou re-lancez simplement LibreQDA."
 
-#: taguette/templates/auth/cilogon.login.html:3
-#: taguette/templates/auth/login.html:3
+#: taguette/templates/auth/cilogon.login.html:4
+#: taguette/templates/auth/login.html:4
 msgctxt "page title"
 msgid "Log in"
 msgstr "Connexion"
 
-#: taguette/templates/auth/cilogon.login.html:8
-#: taguette/templates/auth/login.html:9
+#: taguette/templates/auth/cilogon.login.html:9
+#: taguette/templates/auth/login.html:10
 msgctxt "tab"
 msgid "Log in"
 msgstr "Connexion"
 
-#: taguette/templates/auth/cilogon.login.html:9
-msgid ""
-"LibreQDA uses <a target=\"_blank\" "
-"href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
-"by redirecting them to their chosen identity provider."
+#: taguette/templates/auth/login.html:13
+msgctxt "tab"
+msgid "Register"
+msgstr "Créer un compte"
+
+#: taguette/templates/auth/account.html:14
+#: taguette/templates/auth/external_account.html:14
+#: taguette/templates/auth/login.html:29 taguette/templates/auth/login.html:60
+msgctxt "form label for user name"
+msgid "Login"
+msgstr "Identifiant"
+
+#: taguette/templates/auth/login.html:42
+msgctxt "form submit button"
+msgid "Log in"
+msgstr "Connexion"
+
+#: taguette/templates/auth/login.html:43
+msgctxt "form link"
+msgid "Forgot password"
+msgstr "Mot de passe oublié"
+
+#: taguette/templates/auth/login.html:63
+msgid "Please use only letters, numbers, dot, underscore, and dashes (._-)"
 msgstr ""
+"Veuillez n'utiliser que des lettres, chiffres, points, tirets bas et "
+"tirets (._-)"
 
-#: taguette/templates/auth/cilogon.login.html:11
+#: taguette/templates/auth/account.html:29
+#: taguette/templates/auth/login.html:82
 msgid ""
-"\n"
-"            If your institution is not listed or authentication fails, "
-"please contact your institution's IT department.\n"
-"            You can refer them to <a "
-"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">this "
-"page</a>.\n"
-"            <br>\n"
-"            Do not contact CILogon directly.\n"
-"            "
+"Optional. <em>We will not share your email with anyone. This is only used"
+" in case you forget your password.</em>"
 msgstr ""
+"Facultatif. <em>Nous ne partagerons votre adresse e-mail avec personne. "
+"Elle n'est utilisée que si vous oubliez votre mot de passe.</em>"
 
-#: taguette/templates/auth/cilogon.login.html:30
-msgid "Select your institution"
-msgstr "Sélectionnez votre institution"
+#: taguette/templates/auth/login.html:87
+msgctxt "link from registration form"
+msgid "Terms of service"
+msgstr "Conditions d'utilisation"
 
-#: taguette/templates/auth/cilogon.login.html:45
-msgid "Continue to authentication with"
-msgstr "Continuez vers"
+#: taguette/templates/auth/login.html:91
+#, python-format
+msgid "I accept the <a href=\"%(url)s\">terms of service</a>"
+msgstr "J'accepte les <a href=\"%(url)s\">conditions d'utilisation</a>"
 
-#: taguette/templates/auth/cilogon.login.html:73
-msgid "Please select your institution from the list before continuing"
-msgstr "Veuillez sélectionner votre institution avant de continuer"
+#: taguette/templates/auth/login.html:98
+msgctxt "form submit button"
+msgid "Register"
+msgstr "Créer un compte"
+
+#: taguette/templates/auth/email_reset_password.html:1
+#, python-format
+msgid ""
+"Someone has requested to reset the password on the Taguette account "
+"associated with this email. If this was you, please follow this link: <a "
+"href=\"%(link)s\">%(link)s</a>"
+msgstr ""
+"Quelqu'un a demandé la réinitialisation du mot de passe du compte "
+"LibreQDA associé à cette adresse e-mail. Si c'était vous, merci de suivre"
+" ce lien : <a href=\"%(link)s\">%(link)s</a>"
+
+#: taguette/templates/auth/email_reset_password.html:3
+#, python-format
+msgid "Your user name is: <strong>%(login)s</strong>"
+msgstr "Votre nom d'utilisateur est : <strong>%(login)s</strong>"
+
+#: taguette/templates/auth/email_reset_password.html:5
+msgid "This link will expire in 1 day."
+msgstr "Ce lien expirera dans 1 jour."
 
 #: taguette/templates/auth/account.html:4
 #: taguette/templates/auth/external_account.html:4
@@ -1222,27 +1157,11 @@ msgctxt "title"
 msgid "Account settings"
 msgstr "Préférences"
 
-#: taguette/templates/auth/account.html:14
-#: taguette/templates/auth/external_account.html:14
-#: taguette/templates/auth/login.html:28 taguette/templates/auth/login.html:59
-msgctxt "form label for user name"
-msgid "Login"
-msgstr "Identifiant"
-
 #: taguette/templates/auth/account.html:20
 #: taguette/templates/auth/external_account.html:20
 msgctxt "form label for displayname"
 msgid "Display name"
 msgstr "Nom"
-
-#: taguette/templates/auth/account.html:29
-#: taguette/templates/auth/login.html:81
-msgid ""
-"Optional. <em>We will not share your email with anyone. This is only used"
-" in case you forget your password.</em>"
-msgstr ""
-"Facultatif. <em>Nous ne partagerons votre adresse e-mail avec personne. "
-"Elle n'est utilisée que si vous oubliez votre mot de passe.</em>"
 
 #: taguette/templates/auth/account.html:33
 #: taguette/templates/auth/external_account.html:32
@@ -1255,14 +1174,6 @@ msgstr "Langue"
 msgctxt "language selection option"
 msgid "Auto-detect"
 msgstr "Détection automatique"
-
-#: taguette/templates/auth/account.html:44
-msgid "New password"
-msgstr "Nouveau mot de passe"
-
-#: taguette/templates/auth/account.html:50
-msgid "Repeat new password"
-msgstr "Répétez le mot de passe"
 
 #: taguette/templates/auth/account.html:57
 #: taguette/templates/auth/external_account.html:44
@@ -1291,130 +1202,517 @@ msgstr ""
 "Si vous n'avez pas entré d'adresse e-mail, vous pouvez essayer de "
 "contacter l'administrateur de votre serveur."
 
-#: taguette/templates/auth/login.html:12
-msgctxt "tab"
-msgid "Register"
-msgstr "Créer un compte"
+#: taguette/templates/auth/account.html:44
+msgid "New password"
+msgstr "Nouveau mot de passe"
 
-#: taguette/templates/auth/login.html:41
+#: taguette/templates/auth/account.html:50
+msgid "Repeat new password"
+msgstr "Répétez le mot de passe"
+
+#: taguette/templates/auth/cilogon.login.html:10
+msgid ""
+"LibreQDA uses <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
+"by redirecting them to their chosen identity provider."
+msgstr ""
+"LibreQDA utilise <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> pour authentifier les "
+"utilisateurs en les redirigeant vers leur fournisseur d'identité choisi."
+
+#: taguette/templates/auth/cilogon.login.html:12
+msgid ""
+"\n"
+"            If your institution is not listed or authentication fails, "
+"please contact your institution's IT department.\n"
+"            You can refer them to <a "
+"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">this "
+"page</a>.\n"
+"            <br>\n"
+"            Do not contact CILogon directly.\n"
+"            "
+msgstr ""
+"            Si votre institution n'est pas listée ou si "
+"l'authentification échoue,\n"
+"            veuillez contacter le service informatique de votre "
+"institution.\n"
+"            Vous pouvez les orienter vers <a "
+"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">cette "
+"page</a>.\n"
+"            <br>\n"
+"            Ne contactez pas CILogon directement.\n"
+"            "
+
+#: taguette/templates/auth/cilogon.login.html:32
+msgid "Select your institution"
+msgstr "Sélectionnez votre institution"
+
+#: taguette/templates/auth/cilogon.login.html:49
+msgid "Continue to authentication with"
+msgstr "Continuez vers"
+
+#: taguette/templates/auth/cilogon.login.html:79
+msgid "Please select your institution from the list before continuing"
+msgstr "Veuillez sélectionner votre institution avant de continuer"
+
+#: taguette/templates/modal/create_collection.html:6
+msgctxt "modal window title"
+msgid "Add a collection"
+msgstr "Ajouter une collection"
+
+#: taguette/templates/modal/create_collection.html:8
+msgctxt ""
+"modal window\n"
+"                    title"
+msgid "Edit collection"
+msgstr "Éditer la collection"
+
+#: taguette/templates/modal/create_collection.html:19
+#: taguette/templates/modal/create_document.html:58
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: taguette/templates/modal/create_collection.html:28
+#: taguette/templates/modal/create_collection.html:32
+msgid "Collection name"
+msgstr "Nom de la collection"
+
+#: taguette/templates/modal/create_collection.html:35
+msgid "Description"
+msgstr "Description"
+
+#: taguette/templates/modal/create_collection.html:39
+msgid "Description (optional)"
+msgstr "Description (optionnel)"
+
+#: taguette/templates/modal/create_collection.html:42
+msgid ""
+"Parent\n"
+"                                    collection"
+msgstr ""
+"Collection\n"
+"                                    parent"
+
+#: taguette/templates/modal/create_collection.html:67
+msgid "Currently assigned to the collection: "
+msgstr "Se trouve actuellement dans: "
+
+#: taguette/templates/modal/create_collection.html:74
+msgid "Add documents to this collection"
+msgstr "Ajouter des documents à cette collection"
+
+#: taguette/templates/modal/create_collection.html:79
+msgid "Search documents..."
+msgstr "Rechercher des documents..."
+
+#: taguette/templates/modal/change_document.html:62
+#: taguette/templates/modal/create_collection.html:91
+#: taguette/templates/modal/create_highlight.html:30
+#: taguette/templates/modal/create_tag.html:60
+#: taguette/templates/modal/manage_collaborators.html:40
+msgid "Save & Close"
+msgstr "Enregistrer & Fermer"
+
+#: taguette/templates/modal/create_collection.html:95
+msgid "Delete collection"
+msgstr "Supprimer la collection"
+
+#: taguette/templates/modal/merge_tag.html:6
+msgctxt "merge modal"
+msgid "Merge codes"
+msgstr "Fusionner (irrévocable)"
+
+#: taguette/templates/modal/merge_tag.html:17
+msgid "into"
+msgstr "Avec"
+
+#: taguette/templates/modal/manage_collaborators.html:6
+msgid "Manage Collaborators"
+msgstr "Gérer les Collaborateurs"
+
+#: taguette/templates/modal/create_document.html:6
+msgctxt "modal window title"
+msgid "Add a document"
+msgstr "Ajout de documents"
+
+#: taguette/templates/modal/create_document.html:24
+msgid ""
+"Left to\n"
+"                                        right"
+msgstr ""
+"De gauche à\n"
+"                                        droite"
+
+#: taguette/templates/modal/create_document.html:31
+msgid ""
+"Right to\n"
+"                                        left"
+msgstr ""
+"De droite à\n"
+"                                        gauche"
+
+#: taguette/templates/modal/create_document.html:35
+msgctxt " document add form placeholder"
+msgid "Description (will be applied to every documents)"
+msgstr "Description (sera appliquée à tous les documents)"
+
+#: taguette/templates/modal/create_document.html:45
+msgid "Assign all to:"
+msgstr "Assigner les documents à: "
+
+#: taguette/templates/modal/create_document.html:48
+msgid "No collection (root)"
+msgstr "Sans collection"
+
+#: taguette/templates/modal/create_document.html:53
+msgid "Create new collection for all"
+msgstr "Tout déplacer vers une nouvelle collection "
+
+#: taguette/templates/modal/create_document.html:57
+msgid "Reset all to no collection"
+msgstr "Réinitialiser l'affection de collection"
+
+#: taguette/templates/modal/create_document.html:67
+msgid "Selected documents and collections"
+msgstr "Sélection de documents et de collections"
+
+#: taguette/templates/modal/create_document.html:77
+msgctxt ""
+"submit\n"
+"                    button"
+msgid "Import"
+msgstr "Importer"
+
+#: taguette/templates/modal/create_highlight.html:5
+msgctxt "modal window title"
+msgid "Highlight"
+msgstr "Sélection"
+
+#: taguette/templates/modal/create_highlight.html:14
+msgctxt "tag change form placeholder"
+msgid "Search for a code"
+msgstr "Rechercher un code"
+
+#: taguette/templates/modal/create_highlight.html:31
+msgid "Delete highlight"
+msgstr "Supprimer la sélection"
+
+#: taguette/templates/modal/change_document.html:6
+msgctxt "modal window title"
+msgid "Edit document"
+msgstr "Modifier le document"
+
+#: taguette/templates/modal/change_document.html:15
+msgctxt " document change form placeholder"
+msgid "Name"
+msgstr "Nom"
+
+#: taguette/templates/modal/change_document.html:24
+msgid ""
+"Left to\n"
+"                                    right"
+msgstr ""
+"De gauche à\n"
+"                                    droite"
+
+#: taguette/templates/modal/change_document.html:30
+msgid ""
+"Right to\n"
+"                                    left"
+msgstr ""
+"De droite à\n"
+"                                    gauche"
+
+#: taguette/templates/modal/change_document.html:37
+msgid "Collections"
+msgstr "Collections"
+
+#: taguette/templates/modal/change_document.html:57
+msgctxt " document change form placeholder"
+msgid "Description"
+msgstr "Description"
+
+#: taguette/templates/modal/change_document.html:64
+msgid "Delete document"
+msgstr "Supprimer le document"
+
+#: taguette/templates/modal/create_tag.html:6
+msgctxt "modal window title"
+msgid "New tag"
+msgstr "Nouveau code"
+
+#: taguette/templates/modal/create_tag.html:8
+msgctxt "modal window title"
+msgid "Change code"
+msgstr "Modifier le code"
+
+#: taguette/templates/modal/create_tag.html:18
+msgctxt "tag change form placeholder"
+msgid "Parent code"
+msgstr "Code parent"
+
+#: taguette/templates/modal/create_tag.html:35
+msgctxt "tag change form placeholder"
+msgid "Name"
+msgstr "Nom"
+
+#: taguette/templates/modal/create_tag.html:38
+msgctxt " tag change form placeholder"
+msgid "Name"
+msgstr "Nom"
+
+#: taguette/templates/modal/create_tag.html:41
+msgctxt "tag change form placeholder"
+msgid "Color"
+msgstr "Couleur"
+
+#: taguette/templates/modal/create_tag.html:46
+#: taguette/templates/modal/create_tag.html:50
+msgctxt " tag change form placeholder"
+msgid "Description"
+msgstr "Description"
+
+#: taguette/templates/modal/create_tag.html:57
+msgctxt ""
+"button\n"
+"                    in tag change modal window"
+msgid "Merge..."
+msgstr "Fusionner..."
+
+#: taguette/templates/modal/create_tag.html:66
+msgid "Delete tag"
+msgstr "Supprimer le code"
+
+#: taguette/templates/project_import_codebook.html:8
+msgid ""
+"The file should have a column for the tag names, called 'name' or 'tag' "
+"or 'path'. It can also optionally have a column called 'description'. "
+"Other columns are ignored."
+msgstr ""
+"Le fichier doit avoir une colonne pour les noms de codes appelée 'name', "
+"'tag' ou 'path'. Il peut aussi avoir une colonne 'description' "
+"(optionnel). Les autres colonnes sont ignorées."
+
+#: taguette/templates/project_import_codebook.html:15
+msgctxt "form label for project name (readonly)"
+msgid "Project:"
+msgstr "Projet :"
+
+#: taguette/templates/project_import_codebook.html:21
+msgctxt "form label for codebook file"
+msgid "File:"
+msgstr "Fichier :"
+
+#: taguette/templates/project_import_codebook.html:24
+msgid "Accepted format: CSV"
+msgstr "Format accepté : CSV"
+
+#: taguette/templates/project_import_codebook.html:29
 msgctxt "form submit button"
-msgid "Log in"
-msgstr "Connexion"
+msgid "Review"
+msgstr "Examiner"
 
-#: taguette/templates/auth/login.html:42
-msgctxt "form link"
-msgid "Forgot password"
-msgstr "Mot de passe oublié"
-
-#: taguette/templates/auth/login.html:62
-msgid "Please use only letters, numbers, dot, underscore, and dashes (._-)"
+#: taguette/main.py:341
+msgid "Port number on which to listen"
 msgstr ""
 
-#: taguette/templates/auth/login.html:86
-msgctxt "link from registration form"
-msgid "Terms of service"
-msgstr "Conditions d'utilisation"
+#: taguette/main.py:344
+msgid "Address to bind on"
+msgstr ""
 
-#: taguette/templates/auth/login.html:90
-#, python-format
-msgid "I accept the <a href=\"%(url)s\">terms of service</a>"
-msgstr "J'accepte les <a href=\"%(url)s\">conditions d'utilisation</a>"
+#: taguette/main.py:350
+msgid "Open web browser to the application"
+msgstr ""
 
-#: taguette/templates/auth/login.html:97
-msgctxt "form submit button"
-msgid "Register"
-msgstr "Créer un compte"
+#: taguette/main.py:356
+msgid "Don't open the web browser"
+msgstr ""
 
-#: taguette/templates/auth/email_reset_password.html:1
+#: taguette/main.py:365
 #, python-format
 msgid ""
-"Someone has requested to reset the password on the Taguette account "
-"associated with this email. If this was you, please follow this link: <a "
-"href=\"%(link)s\">%(link)s</a>"
+"Database location or connection string, for example 'project.db' or "
+"'postgresql://me:pw@localhost/mydb' (default: %(default)r)"
 msgstr ""
-"Quelqu'un a demandé la réinitialisation du mot de passe du compte "
-"LibreQDA associé à cette adresse e-mail. Si c'était vous, merci de suivre"
-" ce lien : <a href=\"%(link)s\">%(link)s</a>"
 
-#: taguette/templates/auth/email_reset_password.html:3
+#: taguette/main.py:378
+msgid "Set the file creation mask (umask)on systems that support it."
+msgstr ""
+
+#: taguette/main.py:387
+msgid "Don't change umask on startup"
+msgstr ""
+
+#: taguette/main.py:395
+msgid "additional commands"
+msgstr ""
+
+#: taguette/main.py:399
+msgid "Manually trigger a database migration"
+msgstr ""
+
+#: taguette/main.py:412
+msgid "Print the default server configuration"
+msgstr ""
+
+#: taguette/main.py:419
+msgid "Output to this file rather than stdout"
+msgstr ""
+
+#: taguette/main.py:425
+msgid "Run in server mode, suitable for a multi-user deployment"
+msgstr "Démarrer en mode serveur, adapté à un environnement multi-utilisateur"
+
+#: taguette/main.py:429
+msgid ""
+"Configuration file for the server. The default configuration can be "
+"generated using the `default-config` command"
+msgstr ""
+
+#: taguette/main.py:445
 #, python-format
-msgid "Your user name is: <strong>%(login)s</strong>"
-msgstr "Votre nom d'utilisateur est : <strong>%(login)s</strong>"
+msgid "Invalid umask: %(arg)s"
+msgstr ""
 
-#: taguette/templates/auth/email_reset_password.html:5
-msgid "This link will expire in 1 day."
-msgstr "Ce lien expirera dans 1 jour."
-
-#: taguette/templates/base.html:36
-msgid "Edit project"
-msgstr "Éditer le projet"
-
-#: taguette/templates/base.html:43
-msgctxt "search form placeholder"
-msgid "Search in documents"
-msgstr "Rechercher dans les documents"
-
-#: taguette/templates/base.html:54
+#: taguette/main.py:469
 #, python-format
-msgctxt "navigation item"
-msgid "LibreQDA Guide %(external_icon)s"
-msgstr "Guide de LibreQDA %(external_icon)s"
+msgid "Missing required configuration variable %(var)s"
+msgstr ""
 
-#: taguette/templates/base.html:58
-msgid "Single-user mode"
-msgstr "Mode un seul utilisateur"
+#: taguette/main.py:478
+msgid "Invalid BASE_PATH"
+msgstr ""
 
-#: taguette/templates/base.html:62
-msgctxt "navigation dropdown menu"
-msgid "Account"
-msgstr "Profil"
-
-#: taguette/templates/base.html:64
-msgctxt "navigation item"
-msgid "Settings"
-msgstr "Préférences"
-
-#: taguette/templates/base.html:66
-msgctxt "navigation item"
-msgid "Terms of Service"
-msgstr "Conditions d'Utilisation"
-
-#: taguette/templates/base.html:68
-msgctxt "navigation item"
-msgid "Log out"
-msgstr "Déconnexion"
-
-#: taguette/templates/base.html:73
-msgctxt "navigation item"
-msgid "Log in"
-msgstr "Connexion"
-
-#: taguette/templates/base.html:78
-msgctxt "navigation item"
-msgid "Bug report"
-msgstr "Signaler un bogue"
-
-#: taguette/templates/base.html:93
+#: taguette/main.py:574
 #, python-format
 msgid ""
-"LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
-"/bin-cirst/libreqda/libre-"
-"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause license</a>, "
-"&#169; Plateforme en humanités numériques (Université de Sherbrooke) and "
-"contributors\n"
-"            | &#169; Remi Rampin and Taguette contributors | <a "
-"href=\"https://help.libreqda.org/\">User Documentation</a>"
+"\n"
+"    Taguette %(version)s is now running. You can connect to it using this"
+" link:\n"
+"\n"
+"    %(url)s\n"
 msgstr ""
-"LibreQDA %(version)s est publié sous une <a href=\"https://gitlab.com"
-"/bin-cirst/libreqda/libre-"
-"qda/-/blob/main/LICENSE.txt?ref_type=heads\">license BSD-3-Clause</a>, "
-"&#169; Plateforme en humanités numériques (Université de Sherbrooke) et "
-"autres contributeur-trices\n"
-"            | &#169; Rémi Rampin et contributeurs à Taguette | <a "
-"href=\"https://aide.libreqda.org/\">Guide d'utilisation</a>"
 
-#: taguette/templates/maintenance.html:4
-msgctxt "page title"
-msgid "Maintenance"
-msgstr "En maintenance"
+#: taguette/import_codebook.py:35
+msgid "Invalid file: CSV expected"
+msgstr "Fichier invalide : un CSV est attendu"
+
+#: taguette/import_codebook.py:42
+msgid "Not sure which column to use for tag name"
+msgstr "Pas sûr de la colonne à utiliser pour le nom du tag"
+
+#: taguette/import_codebook.py:45
+msgid "No 'tag', 'name', or 'path' column"
+msgstr "Pas de colonne 'tag', 'name' ou 'path'"
+
+#: taguette/import_codebook.py:83
+msgid "Not enough columns"
+msgstr "Pas assez de colonnes"
+
+#: taguette/import_codebook.py:88
+msgid "Empty tag name"
+msgstr "Nom de tag vide"
+
+#: taguette/import_codebook.py:104
+msgid "Invalid CSV file"
+msgstr "Fichier CSV invalide"
+
+#: taguette/database/__init__.py:136
+msgid ""
+"\n"
+"    The database schema used by Taguette has changed! We will try to\n"
+"    update your workspace automatically.\n"
+msgstr ""
+
+#: taguette/database/__init__.py:148
+#, python-format
+msgid ""
+"\n"
+"    A backup copy of your database file has been created. If the update\n"
+"    goes horribly wrong, make sure to keep that file, and let us know:\n"
+"    %(backup)s\n"
+msgstr ""
+
+#: taguette/database/__init__.py:160
+#, python-format
+msgid ""
+"\n"
+"    The database schema used by Taguette has changed! Because you are not"
+" using\n"
+"    SQLite, we will not attempt a migration automatically; back up your "
+"data and\n"
+"    use `taguette --database=%(url)s migrate` if you want to proceed."
+msgstr ""
+
+#: taguette/validate.py:19
+msgid "Description is too long"
+msgstr "La description est trop longue"
+
+#: taguette/validate.py:31
+msgid "Project name cannot be empty"
+msgstr "Le nom du projet ne peut pas être vide"
+
+#: taguette/validate.py:33
+msgid "Project name is too long"
+msgstr "Le nom du projet est trop long"
+
+#: taguette/validate.py:56
+msgid "User login cannot be empty"
+msgstr "Le nom d'utilisateur ne peut pas être vide"
+
+#: taguette/validate.py:58
+msgid "User login is too long"
+msgstr "Le nom d'utilisateur est trop long"
+
+#: taguette/validate.py:60
+msgid "User login is not lowercase"
+msgstr "Le nom d'utilisateur est trop long"
+
+#: taguette/validate.py:63
+msgid "User login contains forbidden characters"
+msgstr "Ce nom d'utilisateur contient des caractères non autorisés"
+
+#: taguette/validate.py:71
+msgid "Email cannot be empty"
+msgstr "L'adresse email ne peut pas être vide"
+
+#: taguette/validate.py:73
+msgid "Invalid email address"
+msgstr "L'adresse email est invalide"
+
+#: taguette/validate.py:75
+msgid "Email address is too long"
+msgstr "L'adresse e-mail est trop longue"
+
+#: taguette/validate.py:83
+msgid "Please use a longer password"
+msgstr "Merci d'utiliser un mot de passe plus long"
+
+#: taguette/validate.py:85
+msgid "Please use a shorter password"
+msgstr "Merci d'utiliser un mot de passe plus court"
+
+#: taguette/validate.py:93
+msgid "Document name cannot be empty"
+msgstr "Le nom du document ne peut pas être vide"
+
+#: taguette/validate.py:95
+msgid "Document name is too long"
+msgstr "Le nom du document est trop long"
+
+#: taguette/validate.py:103
+msgid "Tag path cannot be empty"
+msgstr "Le chemin du code ne peut pas être vide"
+
+#: taguette/validate.py:105
+msgid "Tag path is too long"
+msgstr "Le chemin du code est trop long"
+
+#: taguette/validate.py:115
+msgid "File name is too long"
+msgstr "Le nom du projet est trop long"
+
+#: taguette/validate.py:117
+msgid "Invalid file name"
+msgstr "Fichier CSV invalide"
 

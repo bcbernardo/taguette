@@ -13,6 +13,8 @@ import string
 import subprocess
 import sys
 import tornado.ioloop
+from tornado.httpserver import HTTPServer
+from tornado.netutil import bind_unix_socket
 from urllib.parse import urlparse
 import webbrowser
 
@@ -20,18 +22,19 @@ import taguette
 from . import exact_version
 from . import database
 from .web import make_app
+from scripts.make_theme import compile_scss
 
 
 logger = logging.getLogger(__name__)
 
-
-PROM_VERSION = prometheus_client.Gauge('version', "Application version",
-                                       ['version'])
+PROM_VERSION = prometheus_client.Gauge(
+    "version", "Application version", ["version"]
+)
 
 
 def prepare_db(database):
     # Windows paths kinda look like URLs, but aren't
-    if sys.platform == 'win32' and re.match(r'^[a-zA-Z]:\\', database):
+    if sys.platform == "win32" and re.match(r"^[a-zA-Z]:\\", database):
         logger.info("Database URL recognized as Windows path")
         url = None
     else:
@@ -39,28 +42,28 @@ def prepare_db(database):
     if url is not None and url.scheme:
         # Full URL: use it, create path if sqlite
         db_url = database
-        if url.scheme == 'sqlite' and url.path.startswith('/'):
+        if url.scheme == "sqlite" and url.path.startswith("/"):
             os.makedirs(os.path.dirname(url.path[1:]), exist_ok=True)
     else:
         # Path: create it, turn into URL
         database = os.path.expanduser(database)
         if os.path.dirname(database):
             os.makedirs(os.path.dirname(database), exist_ok=True)
-        db_url = 'sqlite:///' + database
+        db_url = "sqlite:///" + database
         logger.info("Turning database path into URL: %s", db_url)
     return db_url
 
 
 def get_join_url(app):
-    url = 'http://localhost'
-    if app.config['PORT'] != 80:
-        url += ':%d' % app.config['PORT']
-    if app.config['BASE_PATH'] not in ('', '/'):
-        url += '/' + app.config['BASE_PATH'].strip('/')
-    url += '/'
+    url = "http://localhost"
+    if app.config["PORT"] != 80:
+        url += ":%d" % app.config["PORT"]
+    if app.config["BASE_PATH"] not in ("", "/"):
+        url += "/" + app.config["BASE_PATH"].strip("/")
+    url += "/"
     token = app.single_user_token
     if token:
-        url += '?token=%s' % token
+        url += "?token=%s" % token
     return url
 
 
@@ -68,13 +71,18 @@ def default_config(output):
     if output is None:
         out = sys.stdout
     else:
-        out = open(output, 'w')
-    out.write('''\
+        out = open(output, "w")
+    out.write(
+        '''\
 # This is the configuration file for LibreQDA
 # It is a Python file, so you can use the full Python syntax
 
 # Name of this server
 NAME = "Misconfigured LibreQDA Server"
+# THEME = "default"
+
+# Alternate templates
+USE_ALTERNATE_WELCOME = False
 
 # Address and port to listen on
 BIND_ADDRESS = "0.0.0.0"
@@ -151,6 +159,9 @@ COOKIES_PROMPT = False
 # Whether new users can create an account
 REGISTRATION_ENABLED = True
 
+# Whether to show credits container on index page
+SHOW_CREDITS = False
+
 # Whether users can import projects from SQLite3 files
 SQLITE3_IMPORT_ENABLED = True
 
@@ -195,46 +206,58 @@ ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
 # Max size of output file
 # HTML_OUT_SIZE_LIMIT = 5000000
-'''.format(secret=base64.b64encode(os.urandom(30)).decode('ascii')))
+'''.format(secret=base64.b64encode(os.urandom(30)).decode("ascii"))
+    )
     if output is not None:
         out.close()
 
 
 DEFAULT_CONFIG = {
-    'MULTIUSER': True,
-    'ALLOW_EXTERNAL_LOGIN': False,
-    'ALLOW_EXTERNAL_LOGIN_BYPASS': False,
-    'BIND_ADDRESS': '0.0.0.0',
-    'BASE_PATH': '',
-    'MAINTENANCE_MODE': False,
-    'MAINTENANCE_MESSAGE': "",
-    'BUG_REPORT_URL': None,
-    'EXTRA_FOOTER': None,
-    'REGISTRATION_ENABLED': True,
-    'REDIS_SERVER': None,
-    'SQLITE3_IMPORT_ENABLED': True,
-    'DEFAULT_LANGUAGE': 'en_US',
-    'CONVERT_FROM_HTML_TIMEOUT': 3 * 60,
-    'CONVERT_TO_HTML_TIMEOUT': 3 * 60,
-    'OPF_OUT_SIZE_LIMIT': 5000000,  # 5 MB
-    'HTML_OUT_SIZE_LIMIT': 2000000,  # 2 MB
+    "MULTIUSER": True,
+    "ALLOW_EXTERNAL_LOGIN": False,
+    "ALLOW_EXTERNAL_LOGIN_BYPASS": False,
+    "BIND_ADDRESS": "0.0.0.0",
+    "BASE_PATH": "",
+    "SHOW_CREDITS": True,
+    "THEME": "default",
+    "MAINTENANCE_MODE": False,
+    "MAINTENANCE_MESSAGE": "",
+    "BUG_REPORT_URL": None,
+    "EXTRA_FOOTER": None,
+    "REGISTRATION_ENABLED": True,
+    "REDIS_SERVER": None,
+    "SQLITE3_IMPORT_ENABLED": True,
+    "DEFAULT_LANGUAGE": "en_US",
+    "CONVERT_FROM_HTML_TIMEOUT": 3 * 60,
+    "CONVERT_TO_HTML_TIMEOUT": 3 * 60,
+    "OPF_OUT_SIZE_LIMIT": 5000000,  # 5 MB
+    "HTML_OUT_SIZE_LIMIT": 2000000,  # 2 MB
+    'LOKI_URL': 'http://localhost:3100',
 }
 
-REQUIRED_CONFIG = ['NAME', 'PORT', 'SECRET_KEY', 'DATABASE', 'TOS_FILE',
-                   'X_HEADERS', 'EMAIL', 'MAIL_SERVER', 'COOKIES_PROMPT']
+REQUIRED_CONFIG = [
+    "NAME",
+    "PORT",
+    "SECRET_KEY",
+    "DATABASE",
+    "TOS_FILE",
+    "X_HEADERS",
+    "EMAIL",
+    "MAIL_SERVER",
+    "COOKIES_PROMPT",
+]
 
 
 async def _set_password(user):
     import getpass
+
     try:
         passwd = getpass.getpass("Enter password for user %r: " % user.login)
     except (OSError, EOFError):
         character_set = (
-            string.ascii_lowercase
-            + string.ascii_uppercase
-            + string.digits
+            string.ascii_lowercase + string.ascii_uppercase + string.digits
         )
-        passwd = ''.join(secrets.choice(character_set) for _ in range(16))
+        passwd = "".join(secrets.choice(character_set) for _ in range(16))
         logger.warning(
             "Can't prompt for a password, setting admin password to: %s",
             passwd,
@@ -246,15 +269,16 @@ def main():
     logging.root.handlers.clear()
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s: %(message)s")
+
     locale.setlocale(locale.LC_ALL, '')
     lang = locale.getlocale()[0]
     lang = [lang] if lang else []
-    d = pkg_resources.resource_filename('taguette', 'l10n')
-    trans = gettext.translation('taguette_main', d, lang, fallback=True)
+    d = pkg_resources.resource_filename("taguette", "l10n")
+    trans = gettext.translation("taguette_main", d, lang, fallback=True)
     taguette._trans = trans
     _ = trans.gettext
 
-    if sys.platform == 'win32' and sys.version_info >= (3, 8):
+    if sys.platform == "win32" and sys.version_info >= (3, 8):
         # https://github.com/tornadoweb/tornado/issues/2608
         try:
             from asyncio import WindowsSelectorEventLoopPolicy
@@ -266,111 +290,167 @@ def main():
                 asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 
     toplevel = os.path.dirname(os.path.dirname(__file__))
-    if os.path.exists(os.path.join(toplevel, '.git')):
+    if os.path.exists(os.path.join(toplevel, ".git")):
         try:
-            version = subprocess.check_output(
-                ['git', '--git-dir=.git', 'describe', '--tags'],
-                cwd=toplevel,
-                stderr=subprocess.PIPE,
-            ).decode('utf-8').strip()
+            version = (
+                subprocess.check_output(
+                    ["git", "--git-dir=.git", "describe", "--tags"],
+                    cwd=toplevel,
+                    stderr=subprocess.PIPE,
+                )
+                .decode("utf-8")
+                .strip()
+            )
         except (OSError, subprocess.CalledProcessError):
-            logger.info("Can't get version from Git, using version=%s",
-                        exact_version())
+            logger.info(
+                "Can't get version from Git, using version=%s", exact_version()
+            )
         else:
-            logger.info("Running from Git repository, using version=%s",
-                        version)
-            if version.startswith('v'):
+            logger.info(
+                "Running from Git repository, using version=%s", version
+            )
+            if version.startswith("v"):
                 taguette._exact_version = version[1:]
-            if version.startswith('libreqda-v'):
+            if version.startswith("libreqda-v"):
                 taguette._exact_version = version[10:]
     else:
         logger.info("Not a Git repository, using version=%s", exact_version())
     PROM_VERSION.labels(exact_version()).set(1)
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         import ctypes.wintypes
 
         CSIDL_PERSONAL = 5  # My Documents
         SHGFP_TYPE_CURRENT = 0  # Get current, not default value
 
         buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-        ctypes.windll.shell32.SHGetFolderPathW(None, CSIDL_PERSONAL, None,
-                                               SHGFP_TYPE_CURRENT, buf)
+        ctypes.windll.shell32.SHGetFolderPathW(
+            None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf
+        )
 
-        default_db = os.path.join(buf.value, 'Taguette', 'taguette.sqlite3')
-        default_db_show = os.path.join(os.path.basename(buf.value),
-                                       'Taguette', 'taguette.sqlite3')
+        default_db = os.path.join(buf.value, "Taguette", "taguette.sqlite3")
+        default_db_show = os.path.join(
+            os.path.basename(buf.value), "Taguette", "taguette.sqlite3"
+        )
     else:
-        data = os.environ.get('XDG_DATA_HOME')
+        data = os.environ.get("XDG_DATA_HOME")
         if not data:
-            data = os.path.join(os.environ['HOME'], '.local', 'share')
-            default_db_show = '$HOME/.local/share/taguette/taguette.sqlite3'
+            data = os.path.join(os.environ["HOME"], ".local", "share")
+            default_db_show = "$HOME/.local/share/taguette/taguette.sqlite3"
         else:
-            default_db_show = '$XDG_DATA_HOME/taguette/taguette.sqlite3'
-        default_db = os.path.join(data, 'taguette', 'taguette.sqlite3')
+            default_db_show = "$XDG_DATA_HOME/taguette/taguette.sqlite3"
+        default_db = os.path.join(data, "taguette", "taguette.sqlite3")
 
     parser = argparse.ArgumentParser(
         description="Document tagger for qualitative analysis",
     )
-    parser.add_argument('--version', action='version',
-                        version='LibreQDA version %s' % exact_version())
-    parser.add_argument('-p', '--port', default='7465',
-                        help=_("Port number on which to listen"))
-    parser.add_argument('-b', '--bind', default='127.0.0.1',
-                        help=_("Address to bind on"))
-    parser.add_argument('--browser', action='store_true', default=True,
-                        help=_("Open web browser to the application"))
-    parser.add_argument('--no-browser', action='store_false', dest='browser',
-                        help=_("Don't open the web browser"))
-    parser.add_argument('--debug', action='store_true', default=False,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--database', action='store',
-                        default=default_db,
-                        help=_("Database location or connection string, for "
-                               "example 'project.db' or "
-                               "'postgresql://me:pw@localhost/mydb' "
-                               "(default: %(default)r)") %
-                        dict(default=default_db_show))
-    parser.add_argument('--set-umask', action='store', dest='umask',
-                        default="077",
-                        help=_("Set the file creation mask (umask) on systems "
-                               "that support it."))
-    parser.add_argument('--dont-set-umask', action='store_const', dest='umask',
-                        const=None,
-                        help=_("Don't change umask on startup"))
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="LibreQDA version %s" % exact_version(),
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        default="7465",
+        help=_("Port number on which to listen"),
+    )
+    parser.add_argument(
+        "-b", "--bind", default="127.0.0.1", help=_("Address to bind on")
+    )
+    parser.add_argument(
+        "--browser",
+        action="store_true",
+        default=True,
+        help=_("Open web browser to the application"),
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_false",
+        dest="browser",
+        help=_("Don't open the web browser"),
+    )
+    parser.add_argument(
+        "--debug", action="store_true", default=False, help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--database",
+        action="store",
+        default=default_db,
+        help=_(
+            "Database location or connection string, for "
+            "example 'project.db' or "
+            "'postgresql://me:pw@localhost/mydb' "
+            "(default: %(default)r)"
+        )
+        % dict(default=default_db_show),
+    )
+    parser.add_argument(
+        "--set-umask",
+        action="store",
+        dest="umask",
+        default="077",
+        help=_(
+            "Set the file creation mask (umask)on systems that support it."
+        ),
+    )
+    parser.add_argument(
+        "--dont-set-umask",
+        action="store_const",
+        dest="umask",
+        const=None,
+        help=_("Don't change umask on startup"),
+    )
+    parser.add_argument('--base_path', default='/',
+                        help=_("Base path for the URL"))
+    parser.add_argument('--unix_socket', default=None,
+                        help=_("Unix socket to bind to instead of port"))
     parser.set_defaults(
         func=None,  # Function to run instead of default, e.g. migrate, server
         func1=None,  # Run immediately, e.g. before anything is logged
     )
 
-    subparsers = parser.add_subparsers(title=_("additional commands"),
-                                       metavar='', dest='cmd')
+    subparsers = parser.add_subparsers(
+        title=_("additional commands"), metavar="", dest="cmd"
+    )
 
-    parser_migrate = subparsers.add_parser('migrate',
-                                           help=_("Manually trigger a "
-                                                  "database migration"))
-    parser_migrate.add_argument('revision', action='store', default='head',
-                                nargs=argparse.OPTIONAL)
-    parser_migrate.set_defaults(func=lambda args: database.migrate(
-        prepare_db(args.database),
-        args.revision,
-    ))
+    parser_migrate = subparsers.add_parser(
+        "migrate", help=_("Manually trigger a database migration")
+    )
+    parser_migrate.add_argument(
+        "revision", action="store", default="head", nargs=argparse.OPTIONAL
+    )
+    parser_migrate.set_defaults(
+        func=lambda args: database.migrate(
+            prepare_db(args.database),
+            args.revision,
+        )
+    )
 
     parser_config = subparsers.add_parser(
-        'default-config',
-        help=_("Print the default server configuration"))
-    parser_config.add_argument('--output', '-o', action='store', nargs=1,
-                               help=_("Output to this file rather than "
-                                      "stdout"))
+        "default-config", help=_("Print the default server configuration")
+    )
+    parser_config.add_argument(
+        "--output",
+        "-o",
+        action="store",
+        nargs=1,
+        help=_("Output to this file rather than stdout"),
+    )
     parser_config.set_defaults(func1=lambda args: default_config(args.output))
 
     parser_server = subparsers.add_parser(
-        'server',
-        help=_("Run in server mode, suitable for a multi-user deployment"))
-    parser_server.add_argument('config_file',
-                               help=_("Configuration file for the server. The "
-                                      "default configuration can be generated "
-                                      "using the `default-config` command"))
+        "server",
+        help=_("Run in server mode, suitable for a multi-user deployment"),
+    )
+    parser_server.add_argument(
+        "config_file",
+        help=_(
+            "Configuration file for the server. The "
+            "default configuration can be generated "
+            "using the `default-config` command"
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -379,9 +459,12 @@ def main():
         sys.exit(0)
 
     if args.umask is not None:
-        if not re.match(r'^[0-7][0-7][0-7]$', args.umask):
-            print(_("Invalid umask: %(arg)s") % dict(arg=args.umask),
-                  file=sys.stderr, flush=True)
+        if not re.match(r"^[0-7][0-7][0-7]$", args.umask):
+            print(
+                _("Invalid umask: %(arg)s") % dict(arg=args.umask),
+                file=sys.stderr,
+                flush=True,
+            )
             sys.exit(2)
         logger.info("Setting umask to %s", args.umask)
         os.umask(int(args.umask, 8))
@@ -390,38 +473,38 @@ def main():
         args.func(args)
         sys.exit(0)
 
-    if args.cmd == 'server':
+    if args.cmd == "server":
         # Set configuration from config file
         config = {}
         config_file = os.path.abspath(args.config_file)
         with open(config_file) as fp:
-            code = compile(fp.read(), config_file, 'exec')
+            code = compile(fp.read(), config_file, "exec")
         exec(code, config)
-        config = dict(
-            DEFAULT_CONFIG,
-            **config
-        )
+        config = dict(DEFAULT_CONFIG, **config)
         missing = False
         for key in REQUIRED_CONFIG:
             if key not in config:
-                print(_("Missing required configuration variable %(var)s") %
-                      dict(var=key),
-                      file=sys.stderr, flush=True)
+                print(
+                    _("Missing required configuration variable %(var)s")
+                    % dict(var=key),
+                    file=sys.stderr,
+                    flush=True,
+                )
                 missing = True
         if missing:
             sys.exit(2)
-        if config['BASE_PATH'] and config['BASE_PATH'][0] != '/':
+        if config["BASE_PATH"] and config["BASE_PATH"][0] != "/":
             print(_("Invalid BASE_PATH"))
-        config['BASE_PATH'] = config['BASE_PATH'].strip('/')
-        if config['BASE_PATH']:
-            config['BASE_PATH'] = '/' + config['BASE_PATH']
+        config["BASE_PATH"] = config["BASE_PATH"].strip("/")
+        if config["BASE_PATH"]:
+            config["BASE_PATH"] = "/" + config["BASE_PATH"]
     else:
         if args.debug:
             # Use a deterministic secret key, to avoid it changing during
             # auto-reload and such
-            secret = 'debug'
+            secret = "debug"
         else:
-            secret = os.urandom(30).decode('iso-8859-15')
+            secret = os.urandom(30).decode("iso-8859-15")
 
         # Set configuration from command-line
         config = dict(
@@ -436,61 +519,99 @@ def main():
             SECRET_KEY=secret,
             COOKIES_PROMPT=False,
             HTML_OUT_SIZE_LIMIT=5000000,  # 5 MB
+            BASE_PATH=args.base_path,
+            UNIX_SOCKET=args.unix_socket,
         )
+
+    # Loki integration
+    try:
+        from taguette.loki_handler import setup_loki_logging
+        loki_url = config.get('LOKI_URL', DEFAULT_CONFIG['LOKI_URL'])
+        logger.info("Loki URL: %s", loki_url)
+        setup_loki_logging(loki_url)
+        logger.info("Loki handler configured")
+    except ImportError:
+        logger.warning("loki_handler module not available")
 
     if 'PROMETHEUS_LISTEN' in config:
         p_addr = None
-        p_port = config['PROMETHEUS_LISTEN']
+        p_port = config["PROMETHEUS_LISTEN"]
         if isinstance(p_port, str):
-            if ':' in p_port:
-                p_addr, p_port = p_port.split(':')
+            if ":" in p_port:
+                p_addr, p_port = p_port.split(":")
                 p_addr = p_addr or None
             p_port = int(p_port)
         logger.info("Starting Prometheus exporter on port %d", p_port)
         prometheus_client.start_http_server(p_port, p_addr)
 
-    if 'SENTRY_DSN' in config:
+    if "SENTRY_DSN" in config:
         import sentry_sdk
         from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
         from sentry_sdk.integrations.tornado import TornadoIntegration
+
         logger.info("Initializing Sentry")
         sentry_sdk.init(
-            dsn=config['SENTRY_DSN'],
+            dsn=config["SENTRY_DSN"],
             integrations=[TornadoIntegration(), SqlalchemyIntegration()],
             ignore_errors=[KeyboardInterrupt],
-            release='taguette@%s' % exact_version(),
+            release="taguette@%s" % exact_version(),
         )
 
     xsrf_cookies = True
-    if config['ALLOW_EXTERNAL_LOGIN_BYPASS']:
+    if config["ALLOW_EXTERNAL_LOGIN_BYPASS"]:
         xsrf_cookies = False
     app = make_app(config, debug=args.debug, xsrf_cookies=xsrf_cookies)
-    app.listen(config['PORT'], address=config['BIND_ADDRESS'],
-               xheaders=config.get('X_HEADERS', False))
+    if args.unix_socket:
+        server = HTTPServer(app)
+        socket = bind_unix_socket(args.unix_socket)
+        server.add_socket(socket)
+    else:
+        app.listen(
+            config["PORT"],
+            address=config["BIND_ADDRESS"],
+            xheaders=config.get("X_HEADERS", False),
+        )
     loop = tornado.ioloop.IOLoop.current()
 
     db = app.DBSession()
-    admin = db.query(database.User).get('admin')
+    admin = db.query(database.User).get("admin")
     if admin is None:
         logger.warning("Creating user 'admin'")
-        admin = database.User(login='admin')
-        if config['MULTIUSER']:
+        admin = database.User(login="admin")
+        if config["MULTIUSER"]:
             loop.run_sync(lambda: _set_password(admin))
         db.add(admin)
         db.commit()
-    elif config['MULTIUSER'] and not admin.hashed_password:
+    elif config["MULTIUSER"] and not admin.hashed_password:
         loop.run_sync(lambda: _set_password(admin))
         db.commit()
     db.close()
+
+    if config['THEME']:
+        logger.info("Recompiling SCSS!")
+        compile_scss(config['THEME'])
 
     if args.debug:
         logger.warning("Debug mode is ON")
         asyncio.get_event_loop().set_debug(True)
 
-    url = get_join_url(app)
-    print(_("\n    Taguette %(version)s is now running. You can connect to it "
-            "using this link:\n\n    %(url)s\n") %
-          dict(url=url, version=exact_version()), flush=True)
+    if args.unix_socket:
+        print(
+            _(
+                "\n    Taguette %(version)s is now running using "
+                "UNIX socket %(socket)s") %
+            dict(socket=args.unix_socket, version=exact_version()),
+            flush=True
+        )
+    else:
+        url = get_join_url(app)
+        print(
+            _(
+                "\n    Taguette %(version)s is now running. You can "
+                "connect to it using this link:\n\n    %(url)s\n") %
+            dict(url=url, version=exact_version()),
+            flush=True
+        )
 
     if args.browser and not args.debug:
         loop.call_later(0.01, webbrowser.open, url)
@@ -498,5 +619,5 @@ def main():
     loop.start()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

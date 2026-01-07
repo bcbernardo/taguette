@@ -92,10 +92,11 @@ $(document).ready(function() {
                     doAction: 'expand-tag-childrens'
                 },
                 { // #4
-                    element: $("#documents-list > li:first-child")[0],
+                    element: $(".document-link:first")[0],
                     title: gettext('Consulting documents'),
                     intro: gettext('<p>Click on a document to view its contents. Use the star to save your bookmarks.</p>'),
                     position: 'left',
+                    doAction: 'expand-first-collection'
                 },
                 { // #5
                     element: document.querySelector("#document-highlight"), // This element doesn't exist
@@ -213,6 +214,26 @@ $(document).ready(function() {
                             $("#intro-js-wrapped > li:eq(3)").remove();
                             // Force refresh dynamic element
                             this._introItems[this._currentStep].element = $("#intro-js-wrapped")[0];
+                            break;
+                        case 'expand-first-collection':
+                            // Expand the first collection node to reveal documents
+                            if(typeof treeview_documents !== 'undefined' && treeview_documents.length) {
+                                try {
+                                    // Get the first node (should be a collection) and expand it
+                                    const allNodes = treeview_documents.treeview('getEnabled');
+                                    if(allNodes && allNodes.length > 0) {
+                                        const firstNode = allNodes[0];
+                                        if(firstNode && !firstNode.state.expanded) {
+                                            treeview_documents.treeview('expandNode', [firstNode.nodeId, {silent: false}]);
+                                        }
+                                    }
+                                } catch(e) {
+                                    // Fallback to clicking expand icon
+                                    $("#treeview-documents .expand-icon:first").trigger('click');
+                                }
+                            }
+                            // Force refresh dynamic element after expansion
+                            this._introItems[this._currentStep].element = $(".document-link:first")[0];
                             break;
                         case 'document-highlight':
                             //Find where is the text to do the highlight
@@ -373,6 +394,11 @@ $(document).ready(function() {
             }
             if(this._introItems[this._currentStep].doAction) {
                 switch(this._introItems[this._currentStep].doAction) {
+                    case 'expand-first-collection':
+                        setTimeout(function(){
+                            repositionIntroJS('left');
+                        }, 300);
+                        break;
                     case 'select-condition':
                         setTimeout(function(){
                             repositionIntroJS('right', 275);

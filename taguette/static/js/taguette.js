@@ -43,6 +43,19 @@ function closeSideBar() {
 
 document.getElementById('project-sidebar-open').addEventListener('click', openSidebar);
 
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('project-sidebar');
+    const openButton = document.getElementById('project-sidebar-open');
+
+    // Check if sidebar is open (width is not "0" or "0px")
+    if (sidebar && sidebar.style.width && sidebar.style.width !== "0" && sidebar.style.width !== "0px") {
+        // If click is outside sidebar AND not on the button that opens it
+        if (!sidebar.contains(event.target) && !openButton.contains(event.target)) {
+            closeSideBar();
+        }
+    }
+});
+
 function setProjectMetadata(metadata, form = true) {
     if (project_name === metadata.project_name && project_description === metadata.description) {
         return;
@@ -89,33 +102,21 @@ function projectMetadataChanged() {
  project_name_input.addEventListener('blur', projectMetadataChanged);
  project_description_input.addEventListener('blur', projectMetadataChanged);
 
-/*
- * Documents list
- */
-
-function addDocument(document) {
-    documents['' + document.id] = document;
-    updateDocumentsList();
-}
-
-function removeDocument(document_id) {
-    delete documents['' + document_id];
-    updateDocumentsList();
-    if (current_document === document_id) {
-        window.history.pushState({}, "Project", base_path + '/project/' + project_id);
-        loadDocument(null);
-    }
-}
-
 
 /*
  * Add document
  */
 
+
 const document_add_modal = document.getElementById('document-add-modal');
 
 function createDocument() {
     document.getElementById('document-add-form').reset();
+    
+    cleanupDocumentDispatchInterface();
+    
+    initDocumentCollectionHierarchySelect();
+    
     $(document_add_modal).modal('show').drags({handle: '.modal-header'});
     customSelect.classList.remove("active");
 }
@@ -136,6 +137,8 @@ function doUpload(form_data, percent=0) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest(),
             name = form_data.get('name');
+        
+        
         xhr.responseType = 'json';
         xhr.open('POST', base_path + '/api/project/' + project_id + '/document/new');
         xhr.onload = function () {
@@ -169,11 +172,13 @@ function doUpload(form_data, percent=0) {
                 'percent': percent
             });
         }
+        
         xhr.send(form_data);
     });
 }
 
 async function uploadFiles(files) {
+    
     showSpinner(function(){ upload_canceled = true; }, true);
     await delay(100); // Trick to refresh dom
     let error_msg = '',
@@ -185,7 +190,7 @@ async function uploadFiles(files) {
         if(isNaN(f) || upload_canceled) {
             continue;
         }
-        console.log(files[f]);
+        log(files[f]);
         let form_data = new FormData(),
             name = files[f].name,
             percent = Math.ceil(100*file_number/num_files);
@@ -194,8 +199,28 @@ async function uploadFiles(files) {
         form_data.append('name', name);
         form_data.append('description', document.getElementById('document-add-description').value);
         form_data.append('file', files[f]);
-        form_data.append('text_direction', document.getElementById('document-add-form').elements['document-add-direction'].value);
         form_data.append('_xsrf', getCookie('_xsrf'));
+
+        const fileIndex = parseInt(f);
+        const fileSelector = document.querySelector(`#document-files-list select[data-file-index="${fileIndex}"]:not(.text-direction-selector)`);
+        const textDirectionSelector = document.querySelector(`#document-files-list .text-direction-selector[data-file-index="${fileIndex}"]`);
+        
+        // Use individual text direction if available, otherwise fall back to global
+        const textDirection = textDirectionSelector?.value || document.getElementById('document-add-form').elements['document-add-direction'].value;
+        form_data.append('text_direction', textDirection);
+        
+        if (fileSelector) {
+            if (fileSelector.dataset.createNew === 'true') {
+                const newCollectionName = fileSelector.dataset.newCollectionName || `Collection for ${name}`;
+                form_data.append('create_collection_name', newCollectionName);
+            } else {
+                const selectedCollectionId = fileSelector.value;
+                if (selectedCollectionId) {
+                    form_data.append('collection_ids', selectedCollectionId);
+                }
+            }
+        }
+
         file_number++;
 
         await doUpload(form_data, percent).then(
@@ -220,6 +245,9 @@ async function uploadFiles(files) {
     if(doc_to_load !== null) {
         $(document_add_modal).modal('hide');
         document.getElementById('document-add-form').reset();
+        
+        cleanupDocumentDispatchInterface();
+        
         const url = `${base_path}/project/${project_id}/document/${doc_to_load}`;
         window.history.pushState({document_id: doc_to_load}, "Document " + doc_to_load, url);
         updateDocumentsList();
@@ -247,7 +275,68 @@ function editDocument(doc_id) {
     document.getElementById('document-change-name').value = '' + documents['' + doc_id].name;
     document.getElementById('document-change-description').value = '' + documents['' + doc_id].description;
     document.getElementById('document-change-form').elements['document-change-direction'].value = documents['' + doc_id].text_direction;
+
+    initDocumentChangeCollectionHierarchySelect(true);
+
+    const docCollections = documents['' + doc_id].collections || [];
+    if (docCollections.length > 0) {
+        const firstCollectionId = docCollections[0];
+        document.getElementById('document-change-collection-id').value = firstCollectionId;
+        const collection = findCollection(firstCollectionId);
+        if (collection) {
+            document.getElementById('dropdownMenuButtonDocumentChangeCollection').innerText = collection.name;
+        }
+    } else {
+        document.getElementById('document-change-collection-id').value = '';
+        document.getElementById('dropdownMenuButtonDocumentChangeCollection').innerText = gettext('None');
+    }
+
     $(document_change_modal).modal('show').drags({handle: '.modal-header'});
+}
+
+function doDeleteDocument(project_id, doc_id, successCallback=null, errorCallback=null) {
+    deleteURL(`/api/project/${project_id}/document/${doc_id}`)
+        .then(successCallback)
+        .catch(function (error) {
+            if(errorCallback === null) {
+                log("Failed to delete document", 'error', {error});
+                showAlert(`${gettext("Couldn't delete document!!")} \n \n`, 'error', {error})
+            } else {
+                errorCallback(error)
+            }
+        });
+}
+
+function deleteDocument(doc_id) {
+    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}), function () {
+        log(`document ${doc_id} ...`);
+        doDeleteDocument(project_id, doc_id, function () {
+            log("Document deletion posted");
+            $(document_change_modal).modal('hide');
+            document.getElementById('document-change-form').reset();
+
+            if (document && document.collections) {
+                for (let collectionId of document.collections) {
+                    const collection = findCollection(parseInt(collectionId));
+                    if (collection && collection.document_ids) {
+                        const index = collection.document_ids.indexOf(parseInt(doc_id));
+                        if (index !== -1) {
+                            collection.document_ids.splice(index, 1);
+                        }
+                    }
+                }
+            }
+
+            delete documents['' + doc_id];
+            updateDocumentsList();
+            initDocumentsTreeview();
+
+            if (current_document === doc_id) {
+                window.history.pushState({}, "Project", base_path + '/project/' + project_id);
+                loadDocument(null);
+            }
+        });
+    }, true);
 }
 
 document.getElementById('document-change-form').addEventListener('submit', function (e) {
@@ -268,6 +357,9 @@ document.getElementById('document-change-form').addEventListener('submit', funct
         return;
     }
 
+    const selectedCollectionId = document.getElementById('document-change-collection-id').value;
+    updatedDocument.collections = selectedCollectionId ? [selectedCollectionId] : [];
+
     const callbackSuccess = (response) => {
         log("Document update posted");
         $(document_change_modal).modal('hide');
@@ -286,22 +378,8 @@ document.getElementById('document-change-form').addEventListener('submit', funct
 
 document.getElementById('document-change-delete').addEventListener('click', function (e) {
     e.preventDefault();
-
-    const doc_id = document.getElementById('document-change-id').value;
-
-    showConfirm(gettext("Are you sure you want to delete the document '%(doc)s'?", {doc: documents[doc_id].name}), function () {
-        log(`document ${doc_id} ...`);
-        deleteURL(`/api/project/${project_id}/document/${doc_id}`)
-            .then(function () {
-                log("Document deletion posted");
-                $(document_change_modal).modal('hide');
-                document.getElementById('document-change-form').reset();
-            })
-            .catch(function (error) {
-                log("Failed to delete document", 'error', {error});
-                showAlert(`${gettext("Couldn't delete document!!")} \n \n`, 'error', {error})
-            });
-    });
+    const doc_id = parseInt(document.getElementById('document-change-id').value);
+    deleteDocument(doc_id);
 });
 
 
@@ -627,9 +705,9 @@ $('#highlight-add-form').off().on('submit', (e) => {
     const highlight_id = document.getElementById('highlight-add-id').value;
     const selection = [parseInt(document.getElementById('highlight-add-start').value), parseInt(document.getElementById('highlight-add-end').value)];
 
-    const selectedTags = treeview_tags_highlight.treeview('getSelected');
+    const selectedTags = highlightSelectedTags;
 
-    const hl_tags = selectedTags.map((tag) => tag.id);
+    const hl_tags = selectedTags;
 
     if (hl_tags.length === 0) return;
 
@@ -851,6 +929,9 @@ const document_contents = document.getElementById('document-contents');
 
 let globalDefs = null;
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
+    if (getHighlightVersion() === 'v2' && typeof ntv_loadDocument === 'function') {
+        return ntv_loadDocument(document_id, highlight_id, splitParagraphs, search_text);
+    }
     if (document_id === null) {
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -878,7 +959,7 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
                 const textStructure = extractFormattedContent(chunk.contents);
                 setHighlights(textStructure, elem, info.highlights, info.text_direction);
                 globalDefs = null;
-                wordTracker = [];
+                wordTracker = {};
                 chunk_offsets.push(chunk.offset);
             }
 
@@ -897,8 +978,10 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
 
             log(`Loaded ${info.highlights.length} highlight`);
 
-            // Mettre à jour le bouton d'exportation du document
+            // Update document export button
             updateDocumentExportButton(project_id, document_id);
+
+            updateLinksTarget(document_contents);
 
             // Scroll up
             scrollToHighlight(highlight_id, search_text);
@@ -935,15 +1018,38 @@ function scrollToHighlight(highlight_id, search_text=null) {
         // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
             const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
-            let count_lines = 0;
-            data_highlight_selector.each(function(){
-                const line_id = $(this).data('parent-line-id'),
-                    div_to_highlight = $(`div[data-line--id="${line_id}"]`);
-                div_to_highlight.addClass('flash-once');
-                if(count_lines++ === 0) {
-                    scroll_position = div_to_highlight.offset().top;
-                }
-            });
+            switch (currentHighlightVersion) {
+                case 'v1':
+                    let count_lines = 0;
+                    data_highlight_selector.each(function(){
+                        const line_id = $(this).data('parent-line-id'),
+                            div_to_highlight = $(`div[data-line--id="${line_id}"]`);
+                        div_to_highlight.addClass('flash-once');
+                        if(count_lines++ === 0) {
+                            scroll_position = div_to_highlight.offset().top;
+                        }
+                    });
+                    break;
+                case 'v2':
+                    // Find start and end lines
+                    if(data_highlight_selector.length > 0) {
+                        let start_positon = data_highlight_selector.first().offset().top,
+                            end_positon = data_highlight_selector.last().offset().top,
+                            highlight_next = false;
+                        $('#ntv-document-content p').each(function(){
+                            let start_p = $(this).offset().top,
+                                end_p = start_p + $(this).outerHeight();
+                            if(((start_p <= start_positon) && (end_p >= start_positon)) || highlight_next) {
+                                $(this).addClass('flash-once');
+                                highlight_next = true;
+                            }
+                            if((start_p <= end_positon) && (end_p >= end_positon)) {
+                                highlight_next = false;
+                            }
+                        });
+                        scroll_position = data_highlight_selector.offset().top - 25;
+                    }
+            }
         }
 
         if(search_text !== null) {
@@ -982,6 +1088,12 @@ function scrollToHighlight(highlight_id, search_text=null) {
     }, 0);
 }
 
+function updateLinksTarget(document_contents) {
+    $("A", document_contents).each(function(){
+        $(this).attr('target', '_blank');
+    });
+}
+
 function updateDocumentExportButton(project_id, document_id) {
     const items = document.querySelectorAll('#document-export-dropdown-menu a');
     for (let i = 0; i < items.length; ++i) {
@@ -1003,6 +1115,11 @@ function updateDocumentLinkHighlight(current_document) {
     let document_link = document.getElementById('document-link-' + current_document);
     if (document_link) {
         document_link.classList.add('document-link-current');
+    }
+    
+    // Also update treeview highlighting if the function exists
+    if (typeof updateDocumentTreeviewHighlight === 'function') {
+        updateDocumentTreeviewHighlight(current_document);
     }
 }
 
@@ -1045,7 +1162,9 @@ function loadTag(tag_path, page) {
 
                 let doclink = document.createElement('a');
                 doclink.className = 'badge badge-primary';
-                doclink.textContent = documents['' + hl.document_id].name;
+                
+                const documentPath = buildDocumentPath(hl.document_id);
+                doclink.textContent = documentPath;
                 linkDocument(doclink, hl.document_id, hl.id);
                 elem.appendChild(doclink);
                 elem.appendChild(document.createTextNode(' '));
@@ -1213,43 +1332,36 @@ window.onpopstate = function (e) {
 };
 
 // documents tab filter
-const DOC_NOT_FOUND_MESSAGE = gettext("No documents found");
-const alert_docs_list = document.getElementById('alert-title-search');
+const DOCUMENT_NOT_FOUND_MESSAGE = gettext("No document or collection found");
+const alert_document_treeview = $('#alert-title-search');
 
-// Function to show no-results message
-function showNoResultsMessage() {
-    alert_docs_list.classList.remove('d-none');
-    alert_docs_list.innerHTML = `<strong>${DOC_NOT_FOUND_MESSAGE}</strong>`;
-}
-
-// Function to hide no-results message
-function hideNoResultsMessage() {
-    alert_docs_list.classList.add('d-none');
-}
-
-// documents tab filter
 function filterTitles() {
-    var input, filter, ul, li, txtValue;
-    var noResults = true;
-    input = document.getElementById("input-search-titles");
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("documents-list");
-    li = ul.getElementsByTagName("li");
-
-    for (var i = 0; i < li.length; i++) {
-        txtValue = li[i].textContent || li[i].innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-            noResults = false;
-        } else {
-            li[i].style.display = "none";
+    const filterText = document.getElementById("input-search-titles").value.toLowerCase();
+    alert_document_treeview.addClass('d-none');
+    
+    if(filterText === '') {
+        initDocumentsTreeview();
+        return;
+    }
+    
+    const filteredCollections = handleDocumentSearch(filterText);
+    
+    // Check if there are uncategorized documents that match the search
+    let hasUncategorizedMatches = false;
+    for (let [docId, document] of Object.entries(documents)) {
+        const docCollections = document.collections || [];
+        if (docCollections.length === 0 && document.name.toLowerCase().includes(filterText)) {
+            hasUncategorizedMatches = true;
+            break;
         }
     }
-
-    if (noResults) {
-        showNoResultsMessage();
-    } else {
-        hideNoResultsMessage();
+    
+    initDocumentsTreeview(filteredCollections);
+    
+    // Only show "no results" message if there are no filtered collections AND no uncategorized matches
+    if (filteredCollections.length === 0 && !hasUncategorizedMatches) {
+        alert_document_treeview.removeClass('d-none');
+        alert_document_treeview.html(`<strong>${DOCUMENT_NOT_FOUND_MESSAGE}</strong>`);
     }
 }
 
@@ -1426,3 +1538,355 @@ window.addEventListener('scroll', function() {
     }
     scrollPos = document.documentElement.scrollTop;
 });
+
+
+
+function editCollection(collectionId) {
+    const collection = findCollection(collectionId);
+    if (!collection) {
+        log('Collection not found:', 'error', {collectionId});
+        return;
+    }
+    
+    document.getElementById('collection-add-form').reset();
+    document.getElementById('collection-add-id').value = '' + collectionId;
+    document.getElementById('collection-add-name').value = collection.name;
+    document.getElementById('collection-add-description').value = collection.description || '';
+
+    initCollectionHierarchySelect();
+    
+    if (collection.parent) {
+        document.getElementById('collection-add-parent-id').value = collection.parent;
+        const parentCollection = findCollection(collection.parent);
+        if (parentCollection) {
+            document.getElementById('dropdownMenuButtonCollection').innerText = parentCollection.name;
+        }
+    } else {
+        document.getElementById('collection-add-parent-id').value = '';
+        document.getElementById('dropdownMenuButtonCollection').innerText = gettext('None');
+    }
+
+    populateDocumentsList(collectionId);
+    
+    document.getElementById('collection-add-label-new').style.display = 'none';
+    document.getElementById('collection-add-label-change').style.display = '';
+    document.getElementById('collection-add-cancel').style.display = 'none';
+    document.getElementById('collection-add-delete').style.display = '';
+    
+    $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
+}
+
+function deleteCollection(collectionId) {
+    const collection = findCollection(collectionId);
+    if (!collection) {
+        log('Collection not found:', 'error', {collectionId});
+        return;
+    }
+    
+    if (collection.children && collection.children.length > 0) {
+        showCollectionDeleteOptions(collection);
+    } else {
+        showConfirm(gettext("Are you sure you want to delete the collection '%(name)s'? Its documents will be moved.", {name: collection.name}), function () {
+            deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
+                .then(function() {
+                })
+                .catch(function(error) {
+                    log('Error deleting collection:', 'error', {error});
+                    showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+                });
+        }, true);
+    }
+}
+
+function showCollectionDeleteOptions(collection, successCallback = null) {
+    const message = gettext("The collection '%(name)s' has subcollections. How do you want to proceed?", {name: collection.name});
+    
+    const legend = `
+        <div class="alert alert-info mt-3 mb-0">
+            <strong>${gettext('Delete all')}:</strong> ${gettext('Deletes this collection and all its subcollections recursively.')}<br>
+            <strong>${gettext('Delete only')}:</strong> ${gettext('Deletes only this collection. Subcollections will become root collections (parent removed).')}
+        </div>
+    `;
+    
+    $('#confirmMessage').html(message + legend);
+    $('#confirmModalLabel').text(gettext('Delete collection'));
+    
+    const originalFooter = $('#confirmModal .modal-footer').html();
+    
+    const customFooter = `
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${gettext('Cancel')}</button>
+        <button type="button" class="btn btn-danger" id="deleteAllButton">${gettext('Delete all')}</button>
+        <button type="button" class="btn btn-warning" id="deleteOnlyButton">${gettext('Delete only')}</button>
+    `;
+    
+    $('#confirmModal .modal-footer').html(customFooter);
+    $('#confirmModal').modal('show');
+    
+    $('#deleteAllButton, #deleteOnlyButton').off('click');
+    
+    $('#deleteAllButton').on('click', function() {
+        $('#confirmModal').modal('hide');
+        deleteURL(`/api/project/${project_id}/collection/${collection.id}`, {delete_mode: 'cascade'})
+            .then(function() {
+                log('Collection and children deleted successfully');
+                if (successCallback) {
+                    successCallback();
+                }
+            })
+            .catch(function(error) {
+                log('Error deleting collection:', 'error', {error});
+                showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+            });
+        $('#confirmModal .modal-footer').html(originalFooter);
+    });
+    
+    $('#deleteOnlyButton').on('click', function() {
+        $('#confirmModal').modal('hide');
+        deleteURL(`/api/project/${project_id}/collection/${collection.id}`, {delete_mode: 'orphan'})
+            .then(function() {
+                log('Collection deleted, children orphaned successfully');
+                if (successCallback) {
+                    successCallback();
+                }
+            })
+            .catch(function(error) {
+                log('Error deleting collection:', 'error', {error});
+                showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+            });
+        $('#confirmModal .modal-footer').html(originalFooter);
+    });
+    
+    $('#confirmModal').on('hidden.bs.modal', function() {
+        $('#confirmModal .modal-footer').html(originalFooter);
+        $('#confirmModal').off('hidden.bs.modal');
+    });
+}
+
+function removeCollectionParent(collectionId) {
+    const collection = findCollection(collectionId);
+    if (!collection) {
+        log('Collection not found:', 'error', {collectionId});
+        return;
+    }
+    
+    if (!collection.parent) {
+        log('Collection has no parent to remove:', 'warn', {collectionId});
+        return;
+    }
+    
+    const parentCollection = findCollection(collection.parent);
+    const parentName = parentCollection ? parentCollection.name : '';
+    
+    showConfirm(gettext("Are you sure you want to remove collection '%(name)s' from parent '%(parent)s'?", {name: collection.name, parent: parentName}), function () {
+        const data = {
+            name: collection.name,
+            description: collection.description || '',
+            document_ids: collection.document_ids || [],
+            parent_id: null
+        };
+        
+        const url = `/api/project/${project_id}/collection/${collectionId}`;
+        
+        postJSON(url, data)
+            .then(function(response) {
+                log('Collection parent removed successfully');
+            })
+            .catch(function(error) {
+                log('Error removing collection parent:', 'error', {error});
+                showAlert(gettext('Error removing collection parent: ') + (error.error || error), 'error');
+            });
+    }, true);
+}
+
+function createChildCollection(parentId) {
+    const parentCollection = findCollection(parentId);
+    if (!parentCollection) {
+        log('Parent collection not found:', 'error', {parentId});
+        return;
+    }
+
+    initCollectionHierarchySelect();
+    resetCollectionUI();
+    
+    document.getElementById('collection-add-form').reset();
+    document.getElementById('collection-add-id').value = '';
+    
+    document.getElementById('collection-add-parent-id').value = parentId;
+    document.getElementById('dropdownMenuButtonCollection').innerText = parentCollection.name;
+
+    populateDocumentsList();
+    
+    document.getElementById('collection-add-label-new').style.display = '';
+    document.getElementById('collection-add-label-change').style.display = 'none';
+    document.getElementById('collection-add-cancel').style.display = '';
+    document.getElementById('collection-add-delete').style.display = 'none';
+    
+    $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
+}
+
+const collection_add_modal = document.getElementById('collection-add-modal');
+
+function createCollection() {
+    document.getElementById('collection-add-form').reset();
+    document.getElementById('collection-add-id').value = '';
+    
+    initCollectionHierarchySelect();
+    
+    populateDocumentsList();
+
+    document.getElementById('collection-add-label-new').style.display = '';
+    document.getElementById('collection-add-label-change').style.display = 'none';
+    document.getElementById('collection-add-cancel').style.display = '';
+    document.getElementById('collection-add-delete').style.display = 'none';
+
+    resetCollectionUI();
+    
+    $('#collection-add-modal').modal('show').drags({handle: '.modal-header'});
+}
+
+    $('#collection-add-form').on('submit', function(e) {
+        e.preventDefault();
+        const collectionId = $('#collection-add-id').val();
+        const name = $('#collection-add-name').val().trim();
+        const description = $('#collection-add-description').val().trim();
+        const parentId = $('#collection-add-parent-id').val();
+        
+        if (!name) {
+            showAlert(gettext('Collection name is required'), 'error');
+            return;
+        }
+        
+        if (collectionId && parentId && parseInt(collectionId, 10) === parseInt(parentId, 10)) {
+            showAlert(gettext('A collection cannot be its own parent.'), 'error');
+            return;
+        }
+        
+        const selectedDocs = Array.from(selectedDocuments);
+        
+        const data = {
+            name: name,
+            description: description,
+            document_ids: selectedDocs,
+            parent_id: parentId || null
+        };
+        
+        let url;
+        if (collectionId) {
+            url = `/api/project/${project_id}/collection/${collectionId}`;
+            method = 'POST';
+        } else {
+            url = `/api/project/${project_id}/collection/new`;
+            method = 'POST';
+        }
+        
+        postJSON(url, data)
+            .then(function(response) {
+                $('#collection-add-modal').modal('hide');
+                $('#collection-add-form')[0].reset();
+            })
+            .catch(function(error) {
+                const errorMsg = collectionId ? 
+                    gettext('Error updating collection: ') : 
+                    gettext('Error creating collection: ');
+                showAlert(errorMsg + (error.error || error), 'error');
+            });
+    });
+    
+
+    $('#collection-add-delete').on('click', function(e) {
+        e.preventDefault();
+        const collectionId = $('#collection-add-id').val();
+        if (!collectionId) return;
+        
+        const collection = findCollection(parseInt(collectionId));
+        if (!collection) return;
+        
+        if (collection.children && collection.children.length > 0) {
+            showCollectionDeleteOptions(collection, function() {
+                $('#collection-add-modal').modal('hide');
+                $('#collection-add-form')[0].reset();
+                showAlert(gettext('Collection deleted!'), 'success');
+            });
+        } else {
+            showConfirm(gettext("Are you sure you want to delete the collection '%(name)s'? Its documents will be moved.", {name: collection.name}), function() {
+                deleteURL(`/api/project/${project_id}/collection/${collectionId}`)
+                    .then(function() {
+                        $('#collection-add-modal').modal('hide');
+                        $('#collection-add-form')[0].reset();
+                        showAlert(gettext('Collection deleted!'), 'success');
+                    })
+                    .catch(function(error) {
+                        showAlert(gettext('Error deleting collection: ') + (error.error || error), 'error');
+                    });
+            }, true);
+        }
+    });
+
+    $('#collection-reset-selection').on('click', function(e) {
+        e.preventDefault();
+        if (typeof resetDocumentSelection === 'function') {
+            resetDocumentSelection();
+        }
+    });
+
+function handleDocumentSearch(filterText) {
+    function searchInChildren(item) {
+        const filteredChildren = [];
+
+        item.children.forEach(child => {
+            const childMatches = child.name.toLowerCase().includes(filterText);
+            const childDocumentMatches = searchInDocuments(child);
+            const matchingChildren = searchInChildren(child);
+
+            if (childMatches || childDocumentMatches.length > 0 || matchingChildren.length > 0) {
+                filteredChildren.push({
+                    ...child,
+                    document_ids: childMatches ? child.document_ids : childDocumentMatches.map(doc => doc.document_id),
+                    children: matchingChildren
+                });
+            }
+        });
+
+        return filteredChildren;
+    }
+
+    function searchInDocuments(item) {
+        const matchingDocuments = [];
+        
+        if (item.document_ids && item.document_ids.length > 0) {
+            for (let docId of item.document_ids) {
+                const document = documents[docId.toString()];
+                if (document && document.name.toLowerCase().includes(filterText)) {
+                    matchingDocuments.push({
+                        id: 'document_' + docId,
+                        text: document.name,
+                        icon: 'fas fa-file-alt',
+                        selectable: false,
+                        document_id: parseInt(docId)
+                    });
+                }
+            }
+        }
+        
+        return matchingDocuments;
+    }
+
+    return collections
+        .map(item => {
+            const collectionMatches = item.name.toLowerCase().includes(filterText);
+            const documentMatches = searchInDocuments(item);
+            const filteredChildren = searchInChildren(item);
+
+            // Keep the collection if it matches OR if it has matching children OR if it has matching documents
+            if (collectionMatches || documentMatches.length > 0 || filteredChildren.length > 0) {
+                return {
+                    ...item,
+                    document_ids: collectionMatches ? item.document_ids : documentMatches.map(doc => doc.document_id),
+                    children: filteredChildren
+                };
+            }
+
+            return null;
+        })
+        .filter(item => item !== null);
+}

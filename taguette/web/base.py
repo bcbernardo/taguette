@@ -23,6 +23,7 @@ import tornado.locale
 import tornado.iostream
 from tornado.web import HTTPError, RequestHandler
 from urllib.parse import urlencode
+from pathlib import Path
 
 from .. import exact_version
 from .. import database
@@ -184,6 +185,9 @@ class Application(GracefulExitApplication):
             logger.info("Starting in multi-user mode")
             if not self.terms_of_service:
                 logger.warning("No terms of service set")
+        elif config['UNIX_SOCKET']:
+            self.single_user_token = None
+            logger.info("Starting with unix socket")
         else:
             self.single_user_token = hmac.new(
                 cookie_secret.encode('utf-8'),
@@ -417,6 +421,11 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         super(BaseHandler, self).__init__(application, request, **kwargs)
         self._db = None
         self._gettext = None
+        self.language = self.get_cookie('language',
+                                        self.get_browser_locale().code)
+        if not self.language:
+            self.language = self.application.config['DEFAULT_LANGUAGE']
+            self.set_cookie('language', self.language)
 
     def set_default_headers(self):
         self.set_header('Server', 'LibreQDA/%s' % exact_version())
@@ -460,6 +469,9 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             if user is None or user.disabled:
                 return None
             self.language = user.language
+            if not self.language:
+                self.language = self.application.config['DEFAULT_LANGUAGE']
+            self.set_cookie('language', self.language)
             return user.login
         else:
             return None
@@ -492,9 +504,8 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         def get_user_locale(self):
             # Note that reading current_user first is important, it will
             # call get_current_user() which sets self.language
-            if self.current_user is not None:
-                if self.language is not None:
-                    return tornado.locale.get(self.language)
+            if self.language is not None:
+                return tornado.locale.get(self.language)
 
     def login(self, username):
         logger.info("Logged in as %r", username)
@@ -503,6 +514,15 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
     def logout(self):
         logger.info("Logged out")
         self.clear_cookie('user')
+
+    def render(self, template_name, **kwargs):
+        script_dir = Path(__file__).parent
+        templates_dir = script_dir.parent / "templates"
+        theme = self.application.config['THEME']
+        theme_template_name = f"alt_templates/{theme}/{template_name}"
+        if os.path.isfile(templates_dir / theme_template_name):
+            template_name = theme_template_name
+        return super(BaseHandler, self).render(template_name, **kwargs)
 
     def render_string(self, template_name, **kwargs):
         extra_footer = self.application.config['EXTRA_FOOTER']
@@ -543,6 +563,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 ngettext=self.ngettext,
                 pgettext=self.pgettext,
                 base_path=self.application.config['BASE_PATH'],
+                theme=self.application.config['THEME'],
                 **kwargs)
 
     def get_project(self, project_id):

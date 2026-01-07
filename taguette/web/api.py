@@ -159,12 +159,12 @@ class CreateDemoProject(BaseHandler):
             logger.info(h)
         self.db.commit()
 
-        return self.send_json(
-            {
-                'html': self.render_string('partials/project_card.html',
-                                           project=project,
-                                           demo=True)
-            })
+        return self.send_json({
+            'html': self.render_string(
+                'partials/project_card.html',
+                project=project,
+                demo=True)
+        })
 
 
 class ProjectMeta(BaseHandler):
@@ -255,15 +255,81 @@ class DocumentAdd(BaseHandler):
                 )
                 self.db.add(doc)
                 self.db.flush()  # Need to flush to get doc.id
+
+                # Handle existing collections
+                collection_ids = self.get_arguments('collection_ids')
+                for col_id in collection_ids:
+                    collection = self.db.query(database.Collection).filter_by(
+                        id=col_id, project_id=project.id).first()
+                    if collection:
+                        doc.collections.append(collection)
+
+                # Handle new collection creation
+                create_collection_name = self.get_body_argument(
+                    'create_collection_name', None)
+                if create_collection_name:
+                    create_collection_name = create_collection_name.strip()
+                    if create_collection_name:
+                        # Check if collection with this name already exists
+                        existing_collection = self.db.query(
+                            database.Collection
+                        ).filter_by(
+                            name=create_collection_name,
+                            project_id=project.id,
+                            owner_login=self.current_user
+                        ).first()
+
+                        if existing_collection:
+                            # Use existing collection
+                            doc.collections.append(existing_collection)
+                            logger.info(
+                                "Added document %r to existing collection %r",
+                                doc.name, create_collection_name
+                            )
+                        else:
+                            # Create new collection
+                            new_collection = database.Collection(
+                                name=create_collection_name,
+                                description="",
+                                project_id=project.id,
+                                owner_login=self.current_user,
+                                parent_id=None
+                            )
+                            self.db.add(new_collection)
+                            self.db.flush()  # Get collection.id
+                            doc.collections.append(new_collection)
+                            logger.info(
+                                "Created new collection %r for document %r",
+                                create_collection_name, doc.name
+                            )
+
+                            # Add command for collection creation
+                            collection_cmd = database.Command.collection_add(
+                                self.current_user,
+                                new_collection,
+                            )
+                            self.db.add(collection_cmd)
+
                 cmd = database.Command.document_add(
                     self.current_user,
                     doc,
                 )
                 self.db.add(cmd)
-                logger.info("Document added to project %r: %r %r (%d bytes)",
-                            project.id, doc.id, doc.name, len(doc.contents))
+                logger.info(
+                    "Document added to project %r: %r %r (%d bytes)",
+                    project.id, doc.id, doc.name, len(doc.contents)
+                )
                 self.db.commit()
                 self.db.refresh(cmd)
+
+                if (create_collection_name and
+                        create_collection_name.strip() and
+                        'collection_cmd' in locals()):
+                    self.db.refresh(collection_cmd)
+                    self.application.notify_project(
+                        project.id, collection_cmd
+                    )
+
                 self.application.notify_project(project.id, cmd)
                 return await self.send_json({'created': doc.id})
         except validate.InvalidFormat as e:
@@ -279,7 +345,6 @@ class Document(BaseHandler):
 
         highlights = (
             self.db.query(database.Highlight)
-            .options(defer('snippet'))
             .filter(database.Highlight.document_id == document.id)
             .order_by(database.Highlight.start_offset)
             .options(joinedload(database.Highlight.tags))
@@ -291,6 +356,7 @@ class Document(BaseHandler):
                 {'id': hl.id,
                  'start_offset': hl.start_offset,
                  'end_offset': hl.end_offset,
+                 'snippet': hl.snippet,
                  'tags': [t.id for t in hl.tags]}
                 for hl in highlights
             ],
@@ -323,6 +389,16 @@ class Document(BaseHandler):
                             "Invalid text direction",
                         )
                     document.text_direction = direction
+                if 'collections' in obj:
+                    document.collections = []
+                    for col_id in obj['collections']:
+                        collection = (self.db.query(database.Collection)
+                                      .filter_by(
+                                          id=col_id,
+                                          project_id=document.project_id)
+                                      .first())
+                        if collection:
+                            document.collections.append(collection)
                 cmd = database.Command.document_add(
                     self.current_user,
                     document,
@@ -1345,3 +1421,266 @@ class ProjectEvents(BaseHandler):
                 self.request.remote_ip,
                 1000.0 * self.request.request_time(),
             )
+
+
+class CreateCollection(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('create_collection')
+    def post(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_add_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        try:
+            obj = self.get_json()
+            name = obj.get('name', '').strip()
+            description = obj.get('description', '').strip(
+            ) if 'description' in obj else ''
+            parent_id = obj.get('parent_id', None)
+
+            if not name:
+                return self.send_error_json(
+                    400,
+                    self.gettext("Collection name is required"))
+
+            if parent_id is not None:
+                parent_collection = (self.db.query(database.Collection)
+                                     .filter_by(
+                                         id=parent_id,
+                                         project_id=project.id)
+                                     .first())
+                if not parent_collection:
+                    return self.send_error_json(
+                        400,
+                        self.gettext("Parent collection not found"))
+
+            collection = database.Collection(
+                name=name,
+                description=description,
+                project_id=project.id,
+                owner_login=self.current_user,
+                parent_id=parent_id
+            )
+            self.db.add(collection)
+            self.db.flush()
+            document_ids = obj.get('document_ids', [])
+            for doc_id in document_ids:
+                document = self.db.query(database.Document).filter_by(
+                    id=doc_id, project_id=project.id).first()
+                if document:
+                    document.collections.clear()
+                    collection.documents.append(document)
+
+            cmd = database.Command.collection_add(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
+            self.db.commit()
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
+            self.db.refresh(collection)
+            return self.send_json({
+                'id': collection.id,
+                'name': collection.name,
+                'description': collection.description,
+                'created': collection.created.isoformat(),
+            })
+        except Exception as e:
+            logger.exception("Error creating collection")
+            return self.send_error_json(
+                500, self.gettext("Internal error: ") + str(e))
+
+
+class CollectionUpdate(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('collection_update')
+    def post(self, project_id, collection_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        try:
+            obj = self.get_json()
+            collection = (self.db.query(database.Collection)
+                          .get(int(collection_id)))
+            if collection is None or collection.project_id != project.id:
+                return self.send_error_json(
+                    404,
+                    self.gettext("No such collection"))
+            if obj:
+                if 'name' in obj:
+                    if not obj['name'].strip():
+                        return self.send_error_json(
+                            400,
+                            self.gettext("Collection name is required"))
+                    collection.name = obj['name'].strip()
+                if 'description' in obj:
+                    validate.description(obj['description'])
+                    collection.description = obj['description']
+                if 'parent_id' in obj:
+                    parent_id = obj['parent_id']
+                    if parent_id is not None:
+                        parent_collection = (self.db.query(database.Collection)
+                                             .filter_by(
+                                                 id=parent_id,
+                                                 project_id=project.id)
+                                             .first())
+                        if not parent_collection:
+                            return self.send_error_json(
+                                400,
+                                self.gettext("Parent collection not found"))
+                        if parent_id == collection.id:
+                            return self.send_error_json(
+                                400,
+                                self.gettext("Collection cannot be its own "
+                                             "parent"))
+                        if self._would_create_circular_reference(
+                                collection, parent_id):
+                            return self.send_error_json(
+                                400,
+                                self.gettext("Would create circular "
+                                             "reference"))
+                    collection.parent_id = parent_id
+                if 'document_ids' in obj:
+                    collection.documents = []
+                    for doc_id in obj['document_ids']:
+                        document = (self.db.query(database.Document)
+                                    .filter_by(
+                            id=doc_id,
+                            project_id=project.id)
+                            .first())
+                        if document:
+                            collection.documents.append(document)
+
+                cmd = database.Command.collection_update(
+                    self.current_user,
+                    collection,
+                )
+                self.db.add(cmd)
+                self.db.commit()
+                self.db.refresh(cmd)
+                self.application.notify_project(project.id, cmd)
+                self.db.refresh(collection)
+
+                return self.send_json({
+                    'id': collection.id,
+                    'name': collection.name,
+                    'description': collection.description,
+                    'parent_id': collection.parent_id,
+                    'document_ids': [d.id for d in collection.documents]
+                })
+        except validate.InvalidFormat as e:
+            logger.info("Error validating CollectionUpdate: %r", e)
+            return self.send_error_json(400, self.gettext(e.message))
+        except Exception as e:
+            logger.exception("Error updating collection")
+            return self.send_error_json(
+                500, self.gettext("Internal error: ") + str(e))
+
+    def _would_create_circular_reference(self, collection, new_parent_id):
+        # Prevent loops: A → B → C → A
+        current_id = new_parent_id
+        while current_id is not None:
+            if current_id == collection.id:  # Loop detected!
+                return True
+            parent_collection = (self.db.query(database.Collection)
+                                 .filter_by(
+                                     id=current_id,
+                                     project_id=collection.project_id)
+                                 .first())
+            if not parent_collection:
+                break
+            current_id = parent_collection.parent_id  # Go up hierarchy
+        return False
+
+    @api_auth
+    @PROM_REQUESTS.sync('collection_delete')
+    def delete(self, project_id, collection_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_document():
+            return self.send_error_json(403, self.gettext("Unauthorized"))
+        collection = (self.db.query(database.Collection)
+                      .get(int(collection_id)))
+        if collection is None or collection.project_id != project.id:
+            return self.send_error_json(404,
+                                        self.gettext("No such collection"))
+
+        delete_mode = self.get_argument('delete_mode', default=None)
+
+        children = (self.db.query(database.Collection)
+                    .options(joinedload(database.Collection.documents))
+                    .filter_by(parent_id=collection.id)
+                    .all())
+
+        if children and delete_mode is None:
+            return self.send_error_json(
+                400, self.gettext("Cannot delete collection with "
+                                  "subcollections. "
+                                  "Please specify delete_mode."))
+
+        commands_to_notify = []
+
+        if delete_mode == 'cascade':
+            commands_to_notify = self._delete_collection_cascade(collection)
+        elif delete_mode == 'orphan':
+            for child in children:
+                child.parent_id = None
+                self.db.add(child)
+
+            self.db.flush()
+
+            for child in children:
+                self.db.refresh(child)
+                update_cmd = database.Command.collection_update(
+                    self.current_user,
+                    child,
+                )
+                self.db.add(update_cmd)
+                commands_to_notify.append(update_cmd)
+
+            cmd = database.Command.collection_delete(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
+            self.db.delete(collection)
+            commands_to_notify.append(cmd)
+        else:
+            cmd = database.Command.collection_delete(
+                self.current_user,
+                collection,
+            )
+            self.db.add(cmd)
+            self.db.delete(collection)
+            commands_to_notify = [cmd]
+
+        self.db.commit()
+
+        for cmd in commands_to_notify:
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
+
+        self.set_status(204)
+        return self.finish()
+
+    def _delete_collection_cascade(self, collection):
+
+        commands = []
+
+        children = (self.db.query(database.Collection)
+                    .filter_by(parent_id=collection.id)
+                    .all())
+
+        for child in children:
+            child_commands = self._delete_collection_cascade(child)
+            commands.extend(child_commands)
+
+        cmd = database.Command.collection_delete(
+            self.current_user,
+            collection,
+        )
+        self.db.add(cmd)
+        commands.append(cmd)
+
+        self.db.delete(collection)
+
+        return commands

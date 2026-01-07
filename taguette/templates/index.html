@@ -17,6 +17,14 @@
 
 {% block contents %}
 <div class="container py-4">
+    {% if show_credits %}
+    <div class="credits-container">
+        <div class="credits-info-box">
+            <p>{% trans %}Maintained by{% endtrans %}</p>
+            <div class="credits-logo"></div>
+        </div>
+    </div>
+    {% endif %}
     <div id="messages-div"></div>
     {% if show_messages %}
     <script src="{{ reverse_url('messages.js') }}" async></script>
@@ -28,24 +36,24 @@
     {% endif %}
 
     <!-- Actions list -->
-    <div class="d-flex justify-content-start mb-4 mt-4">
+    <div class="d-flex flex-column flex-sm-row justify-content-start mb-4 mt-4">
         {% if can_create_project %}
-        <a href="{{ reverse_url('new_project') }}" class="btn btn-primary me-3"> <!-- Using `me-3` to add a right margin -->
+        <a href="{{ reverse_url('new_project') }}" class="btn btn-primary me-sm-3 mb-2">
             <i class="fas fa-plus"></i> {% trans %}Create a new project{% endtrans %}
         </a>
         {% endif %}
 
         {% if can_import_project %}
-        <a href="{{ reverse_url('import_project') }}" class="btn btn-secondary me-3">
+        <a href="{{ reverse_url('import_project') }}" class="btn btn-primary me-sm-3 mb-2">
             <i class="fas fa-file-download"></i> {% trans %}Import a project file{% endtrans %}
         </a>
         {% endif %}
         {% if can_change_role and is_multiuser %}
-            <a href="{{ reverse_url('permissions') }}" class="btn btn-secondary me-3">
+            <a href="{{ reverse_url('permissions') }}" class="btn btn-primary me-sm-3 mb-2">
                 <i class="fas fa-user-lock"></i> {% trans %}Sponsor someone{% endtrans %}
             </a>
         {% endif %}
-        <a href="#" class="btn btn-secondary" id="a-start-demo">
+        <a href="#" class="btn btn-secondary me-sm-3 mb-2" id="a-start-demo">
             <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
         </a>
     </div>

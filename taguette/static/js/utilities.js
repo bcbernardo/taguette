@@ -2,6 +2,11 @@
  * Utilities
  */
 
+// Get current highlight version (V1 is default)
+function getHighlightVersion() {
+    return localStorage.getItem('highlightVersion') || 'v1';
+}
+
 // NEW selector
 jQuery.expr[':'].contains_insensitive = function(a, i, m) {
     return jQuery(a).text().toUpperCase()
@@ -493,6 +498,10 @@ let current_selection = null;
 
 // Describe the selection e.g. [14, 56]
 function describeSelection() {
+    if (getHighlightVersion() === 'v2' && typeof ntv_describeSelection === 'function') {
+        return ntv_describeSelection();
+    }
+    
     const sel = window.getSelection();
     if (sel.rangeCount !== 0) {
         const range = sel.getRangeAt(0);
@@ -551,4 +560,63 @@ function restoreSelection(saved) {
 
 function isFirefox() {
     return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+}
+
+function hasVerticalScrollbar() {
+    // Get the total height of the document content
+    const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight,
+        document.body.clientHeight,
+        document.documentElement.clientHeight
+    );
+
+    // Get the height of the viewport (visible area)
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    // Compare the document height with the viewport height
+    return documentHeight > viewportHeight;
+}
+
+/*
+ * Apply scroll behavior to all pages
+ * Previously page-project only (taguette.js)
+ */
+
+window.addEventListener('load', function() {
+    let scrollPos = 0;
+    window.addEventListener('scroll', function() {
+        let isScrollUp = scrollPos > document.documentElement.scrollTop;
+        if(document.documentElement.scrollTop < 50 || isScrollUp) {
+            document.body.classList.remove('scrolled');
+        } else if(hasVerticalScrollbar() && !document.body.classList.contains('scrolled')) {
+            document.body.classList.add('scrolled');
+        }
+        scrollPos = document.documentElement.scrollTop;
+    });
+});
+function initHelpPopover(elementId, sections) {
+    const contentParts = sections.map((section, index) => {
+        const itemsList = section.items.map(item => `<li>${gettext(item)}</li>`).join('');
+        const marginClass = index === sections.length - 1 ? 'mb-0' : 'mb-2';
+        return `
+            <p class="mb-2"><strong>${gettext(section.title)}</strong></p>
+            <ul class="${marginClass} ps-3">
+                ${itemsList}
+            </ul>
+        `;
+    }).join('');
+
+    const helpContent = `<div class="text-start">${contentParts}</div>`;
+
+    const popoverElement = document.getElementById(elementId);
+    if (popoverElement) {
+        new bootstrap.Popover(popoverElement, {
+            content: helpContent,
+            html: true,
+            sanitize: false
+        });
+    }
 }

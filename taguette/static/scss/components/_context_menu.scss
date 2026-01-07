@@ -1,0 +1,28 @@
+/* 
+    Context Menu Styling Override 
+    note: mark as important 
+*/
+
+
+.context-menu-list {
+    background-color: $color-context-menu !important;
+    color: $color-context-menu-text !important;
+    max-width: $context-menu-max-width !important;
+    min-width: $context-menu-min-width !important;
+    z-index: 20 !important;
+}
+
+.context-menu-item {
+    background-color: $color-context-menu !important;
+    color: $color-context-menu-text !important; 
+}
+
+.context-menu-icon i {
+    color: $context-menu-icon !important;
+}
+
+.context-menu-item:hover,
+.context-menu-item:hover i {
+    background-color: $color-context-menu-hover !important;
+    color: $color-context-menu !important;
+}

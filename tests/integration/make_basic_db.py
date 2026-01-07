@@ -109,3 +109,22 @@ class TestBasicDatabase(TestMultiUser):
         db.add(database.Command.highlight_add(user, document1, hl2, [tag1.id]))
         db.add(database.Command.highlight_delete(user, document1, hl_fake.id))
         db.delete(hl_fake)
+
+        # Add collections
+        collection1 = database.Collection(
+            name='db%dcollection%d1' % (db_num, project_num),
+            description='Test collection 1',
+            project=project1,
+            parent_id=None,
+        )
+        collection2 = database.Collection(
+            name='db%dcollection%d2' % (db_num, project_num),
+            description='Test collection 2',
+            project=project1,
+            parent_id=collection1.id,
+        )
+        db.add(collection1)
+        db.add(collection2)
+        db.flush()
+        db.add(database.Command.collection_add(user, collection1))
+        db.add(database.Command.collection_add(user, collection2))

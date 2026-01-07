@@ -1,7 +1,7 @@
 const tag_hierarchy_select = $('#tag-hierarchy-select');
 const tag_hierarchy_merge_select = $('#tag-hierarchy-merge-select');
 const hs_menu_inner = $('.hs-menu-inner');
-const hs_menu_inner_merge = $('.hs-menu-inner-merge');
+const hs_menu_inner_merge = $('.hs-menu-inner');
 
 const DEFAULT_LEVEL = 1;
 

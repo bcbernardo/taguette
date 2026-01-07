@@ -1,7 +1,9 @@
 # Greek (Greece) translations for LibreQDA and Taguette.
-# Copyright (C) 2023 Plateforme en humanités numériques (Université de Sherbrooke) and contributors
+# Copyright (C) 2023 Plateforme en humanités numériques (Université de
+# Sherbrooke) and contributors
 # Copyright (C) 2018 Remi Rampin and Taguette contributors
-# This file is distributed under the same license as the LibreQDA and Taguette projects.
+# This file is distributed under the same license as the LibreQDA and
+# Taguette projects.
 # PHuN <phun@usherbrooke.ca>, 2023.
 # Remi Rampin <remi@rampin.org>, 2018.
 #
@@ -11,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2024-12-02 10:14-0500\n"
+"POT-Creation-Date: 2026-01-06 11:06-0500\n"
 "PO-Revision-Date: 2023-06-05 11:59+0000\n"
-"Last-Translator: \n"
+"Last-Translator: <dion.jeremie.2@courrier.uqam.ca> with LLM assistance\n"
 "Language: el_GR\n"
 "Language-Team: Greek (Greece) "
 "(https://app.transifex.com/remram44/teams/98824/el_GR/)\n"
@@ -23,87 +25,1548 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
-#: taguette/main.py:284
+#: taguette/web/base.py:490
+msgid ""
+" | Please report issues via <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda/\">GitLab</a> "
+msgstr ""
+" | Παρακαλώ αναφέρετε προβλήματα μέσω <a href=\"https://gitlab.com/bin-"
+"cirst/libreqda/libre-qda/\">GitLab</a>"
+
+#: taguette/web/__init__.py:60 taguette/web/base.py:609
+msgctxt "page title"
+msgid "Error 404"
+msgstr "Σφάλμα 404"
+
+#: taguette/web/__init__.py:61 taguette/web/base.py:610
+msgid "This page does not exist."
+msgstr "Αυτή η σελίδα δεν υπάρχει."
+
+#: taguette/web/base.py:616
+#, python-format
+msgctxt "page title"
+msgid "Error %d"
+msgstr "Σφάλμα %d"
+
+#: taguette/web/api.py:53
+msgid "Not logged in"
+msgstr "Δεν έχετε συνδεθεί"
+
+#: taguette/web/api.py:92
+msgid "Tutorial - board games"
+msgstr "Εκμάθηση - επιτραπέζια παιχνίδια"
+
+#: taguette/web/api.py:93
+msgid "A demo project to showcase LibreQDA"
+msgstr "Ένα έργο επίδειξης για την παρουσίαση του LibreQDA"
+
+#: taguette/web/api.py:176 taguette/web/api.py:207 taguette/web/api.py:370
+#: taguette/web/api.py:420 taguette/web/api.py:485 taguette/web/api.py:525
+#: taguette/web/api.py:566 taguette/web/api.py:591 taguette/web/api.py:682
+#: taguette/web/api.py:749 taguette/web/api.py:843 taguette/web/api.py:1062
+#: taguette/web/api.py:1113 taguette/web/api.py:1432 taguette/web/api.py:1500
+#: taguette/web/api.py:1600
+msgid "Unauthorized"
+msgstr "Μη εξουσιοδοτημένος"
+
+#: taguette/web/api.py:530 taguette/web/api.py:569 taguette/web/api.py:601
+#: taguette/web/api.py:696 taguette/web/api.py:779
+msgid "No such tag"
+msgstr "Δεν υπάρχει τέτοια ετικέτα"
+
+#: taguette/web/api.py:699
+msgid "Empty highlight"
+msgstr "Κενή επισήμανση"
+
+#: taguette/web/api.py:753 taguette/web/api.py:846
+msgid "No such highlight"
+msgstr "Δεν υπάρχει τέτοια επισήμανση"
+
+#: taguette/web/api.py:1007
+msgid "Bad page number"
+msgstr "Λανθασμένος αριθμός σελίδας"
+
+#: taguette/web/api.py:1079
+msgid "Bad request"
+msgstr "Λανθασμένο αίτημα"
+
+#: taguette/web/api.py:1176
+msgid "There must be one admin"
+msgstr "Πρέπει να υπάρχει ένας διαχειριστής"
+
+#: taguette/web/api.py:1233
+msgid ""
+"This database is an unknown version. It might have been written by a more"
+" recent version of Taguette, please check for updates"
+msgstr ""
+"Αυτή η βάση δεδομένων είναι άγνωστης έκδοσης. Πιθανόν να έχει γραφτεί από"
+" μια νεότερη έκδοση του LibreQDA. Ελέγξτε για ενημερώσεις."
+
+#: taguette/web/api.py:1239
+msgid "This database could not be updated to the current version"
+msgstr "Αυτή η βάση δεδομένων δεν μπορούσε να ενημερωθεί στην τρέχουσα έκδοση"
+
+#: taguette/web/api.py:1243 taguette/web/api.py:1277
+msgid "This is not a Taguette project file"
+msgstr "Αυτό δεν είναι ένα αρχείο έργου της LibreQDA"
+
+#: taguette/web/api.py:1443 taguette/web/api.py:1514
+msgid "Collection name is required"
+msgstr ""
+
+#: taguette/web/api.py:1454 taguette/web/api.py:1530
+msgid "Parent collection not found"
+msgstr ""
+
+#: taguette/web/api.py:1491 taguette/web/api.py:1577
+msgid "Internal error: "
+msgstr ""
+
+#: taguette/web/api.py:1508 taguette/web/api.py:1605
+msgid "No such collection"
+msgstr ""
+
+#: taguette/web/api.py:1534
+msgid "Collection cannot be its own parent"
+msgstr ""
+
+#: taguette/web/api.py:1540
+msgid "Would create circular reference"
+msgstr ""
+
+#: taguette/web/api.py:1616
+msgid "Cannot delete collection with subcollections. Please specify delete_mode."
+msgstr ""
+
+#: taguette/web/views.py:231
+msgid "Invalid login or password"
+msgstr "Μη έγκυρη σύνδεση ή κωδικός πρόσβασης"
+
+#: taguette/web/views.py:296 taguette/web/views.py:692
+#: taguette/web/views.py:870
+msgid "Passwords do not match"
+msgstr "Οι κωδικοί πρόσβασης δεν ταιριάζουν"
+
+#: taguette/web/views.py:298
+msgid "User name is taken"
+msgstr "Το όνομα χρήστη χρησιμοποιείται ήδη"
+
+#: taguette/web/views.py:307
+msgid "Email address is already used"
+msgstr "Η διεύθυνση email χρησιμοποιείται ήδη"
+
+#: taguette/web/views.py:319
+msgid "Terms of Service must be accepted"
+msgstr "Οι Όροι Παροχής Υπηρεσιών πρέπει να γίνουν αποδεκτοί"
+
+#: taguette/web/views.py:739
+msgid "This email address is not associated with any user"
+msgstr ""
+"Αυτή η διεύθυνση ηλεκτρονικού ταχυδρομείου δεν σχετίζεται με κανέναν "
+"χρήστη"
+
+#: taguette/web/views.py:773
+msgid "Password reset for Taguette"
+msgstr "Επαναφορά κωδικού πρόσβασης για την LibreQDA"
+
+#: taguette/web/views.py:821
+msgid "Invalid token"
+msgstr "Μη έγκυρος κλειδάριθμος"
+
+#: taguette/web/views.py:825
+msgid "No user associated with that token"
+msgstr "Κανένας χρήστης δεν σχετίζεται με αυτόν τον κλειδάριθμο"
+
+#: taguette/web/views.py:828
+msgid "Password has already been changed"
+msgstr "Ο κωδικός πρόσβασης έχει ήδη αλλάξει"
+
+#. Default tag name
+#: taguette/web/views.py:919
+msgid "interesting"
+msgstr "ενδιαφέρον"
+
+#. Default tag color
+#. Default tag description
+#: taguette/web/views.py:923
+msgid "Further review required"
+msgstr "Απαιτείται περαιτέρω ανασκόπηση"
+
+#: taguette/web/views.py:968
+msgid "You don't have permission to delete this project"
+msgstr "Δεν έχετε άδεια να διαγράψετε αυτό το έργο"
+
+#: taguette/web/views.py:1011 taguette/web/views.py:1039
+msgid "You don't have permission to import a codebook"
+msgstr "Δεν έχετε άδεια εισαγωγής βιβλίου ετικετών"
+
+#: taguette/web/views.py:1058
+#, python-format
+msgid "Row %d: %s"
+msgstr "Γραμμή %d: %s"
+
+#: taguette/web/views.py:1209
+msgid "Error importing tags, concurrent changes caused a conflict"
+msgstr ""
+"Σφάλμα κατά την εισαγωγή ετικετών, οι ταυτόχρονες αλλαγές προκάλεσαν "
+"διένεξη"
+
+#: taguette/web/views.py:1224
+msgid "No file provided"
+msgstr "Δεν παρέχεται αρχείο"
+
+#: taguette/templates/auth/reset_password.html:3
+#: taguette/templates/new_password.html:3
+msgctxt "page title"
+msgid "Reset password"
+msgstr "Επαναφορά κωδικού πρόσβασης"
+
+#: taguette/templates/new_password.html:10
+msgid "Please enter a new password below:"
+msgstr "Παρακαλώ εισάγετε έναν νέο κωδικό πρόσβασης παρακάτω:"
+
+#: taguette/templates/auth/login.html:35 taguette/templates/auth/login.html:67
+#: taguette/templates/new_password.html:15
+msgctxt "form label"
+msgid "Password"
+msgstr "Κωδικός πρόσβασης"
+
+#: taguette/templates/auth/login.html:73
+#: taguette/templates/new_password.html:21
+msgctxt "form label"
+msgid "Confirm password"
+msgstr "Επιβεβαίωση κωδικού πρόσβασης"
+
+#: taguette/templates/new_password.html:28
+msgctxt "form submit button"
+msgid "Set new password"
+msgstr "Ορισμός νέου κωδικού πρόσβασης"
+
+#: taguette/templates/export_highlights.html:7
+#: taguette/templates/export_highlights.html:20
+#, python-format
+msgctxt "exported highlights document title"
+msgid "LibreQDA highlights: %(path)s"
+msgstr "Επισημάνσεις LibreQDA: %(path)s"
+
+#: taguette/templates/export_highlights.html:9
+#: taguette/templates/export_highlights.html:22
+msgctxt "exported highlights document title"
+msgid "LibreQDA highlights"
+msgstr "Επισημάνσεις LibreQDA"
+
+#: taguette/templates/export_highlights.html:27
+#, python-format
+msgctxt "exported highlight details"
+msgid "<strong>Document:</strong> %(doc)s"
+msgstr "<strong>Έγγραφο:</strong> %(doc)s"
+
+#: taguette/templates/export_highlights.html:31
+msgctxt "exported highlight details"
+msgid "Collection:"
+msgstr "Συλλογή:"
+
+#: taguette/templates/export_highlights.html:35
+msgctxt "exported highlight details"
+msgid "Codes:"
+msgstr "Κωδικοί:"
+
+#: taguette/templates/cookies_prompt.html:4
+msgctxt "page title"
+msgid "Cookie warning"
+msgstr "Προειδοποίηση Cookies"
+
+#: taguette/templates/cookies_prompt.html:7
+msgctxt "title"
+msgid "Cookie warning"
+msgstr "Προειδοποίηση Cookies"
+
+#: taguette/templates/cookies_prompt.html:8
+msgid ""
+"This website uses cookies to store your identity (if you choose to log "
+"in) and as a protection against <a href=\"https://en.wikipedia.org/wiki"
+"/Cross-site_request_forgery\">cross-site request forgery (CSRF)</a>. "
+"Before continuing, you must accept their use by clicking the button "
+"below. Those <strong>are not</strong> \"third-party\" or \"tracking\" "
+"cookies."
+msgstr ""
+"Αυτός ο ιστότοπος χρησιμοποιεί cookies για την αποθήκευση της ταυτότητάς "
+"σας (εάν επιλέξετε να συνδεθείτε) και ως προστασία έναντι της <a "
+"href=\"https://en.wikipedia.org/wiki/Cross-"
+"site_request_forgery\">πλαστογράφησης αιτημάτων μεταξύ ιστότοπων "
+"(CSRF)</a>. Πριν συνεχίσετε, πρέπει να αποδεχτείτε τη χρήση τους κάνοντας"
+" κλικ στο παρακάτω κουμπί. Αυτά <strong>δεν</strong> είναι \"τρίτου "
+"μέρους\" ή \"παρακολούθησης\" cookies."
+
+#: taguette/templates/cookies_prompt.html:13
+msgctxt "button on cookie warning page"
+msgid "Accept cookies"
+msgstr "Αποδοχή cookies"
+
+#: taguette/templates/tos.html:4
+msgctxt "page title"
+msgid "Terms of Service"
+msgstr "Όροι Παροχής Υπηρεσιών"
+
+#: taguette/templates/export_codebook.html:10
+#: taguette/templates/export_codebook.html:13
+msgctxt "exported codebook document title"
+msgid "LibreQDA Codebook"
+msgstr "Κωδικοβιβλίο LibreQDA"
+
+#: taguette/templates/export_codebook.html:16
+#, python-format
+msgid "%(number)d highlight"
+msgid_plural "%(number)d highlights"
+msgstr[0] "%(number)d επισήμανση"
+msgstr[1] "%(number)d επισημάνσεις"
+
+#: taguette/templates/project_import.html:3
+msgctxt "page title"
+msgid "Import project"
+msgstr "Εισαγωγή έργου"
+
+#: taguette/templates/project_import.html:6
+msgctxt "title"
+msgid "Import a project"
+msgstr "Εισαγωγή έργου"
+
+#: taguette/templates/project_import.html:11
+msgctxt "form label for project file"
+msgid "File:"
+msgstr "Αρχείο:"
+
+#: taguette/templates/project_import.html:17
+msgctxt "form label for project dropdown"
+msgid "Project:"
+msgstr "Έργο:"
+
+#: taguette/templates/project_import.html:20
+msgid "No file selected..."
+msgstr "Δεν επιλέχθηκε αρχείο..."
+
+#: taguette/templates/project_import.html:25
+msgctxt "form submit button"
+msgid "Import project"
+msgstr "Εισαγωγή έργου"
+
+#: taguette/templates/base.html:51
+msgid "Edit project"
+msgstr "Επεξεργασία έργου"
+
+#: taguette/templates/base.html:58
+msgctxt "search form placeholder"
+msgid "Search in documents"
+msgstr "Αναζήτηση σε έγγραφα"
+
+#: taguette/templates/base.html:86
+#, python-format
+msgctxt "navigation item"
+msgid "LibreQDA Guide %(external_icon)s"
+msgstr "Οδηγός LibreQDA %(external_icon)s"
+
+#: taguette/templates/base.html:91
+msgid "Single-user mode"
+msgstr "Λειτουργία ενός χρήστη"
+
+#: taguette/templates/base.html:95
+msgctxt "navigation dropdown menu"
+msgid "Account"
+msgstr "Λογαριασμός"
+
+#: taguette/templates/base.html:97
+msgctxt "navigation item"
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+#: taguette/templates/base.html:99
+msgctxt "navigation item"
+msgid "Terms of Service"
+msgstr "Όροι Παροχής Υπηρεσιών"
+
+#: taguette/templates/base.html:101
+msgctxt "navigation item"
+msgid "Log out"
+msgstr "Αποσύνδεση"
+
+#: taguette/templates/base.html:107
+msgctxt "navigation item"
+msgid "Log in"
+msgstr "Σύνδεση"
+
+#: taguette/templates/base.html:113
+msgctxt "navigation item"
+msgid "Bug report"
+msgstr "Αναφορά σφάλματος"
+
+#: taguette/templates/base.html:128
+#, python-format
+msgid ""
+"LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
+"/bin-cirst/libreqda/libre-"
+"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause license</a>, "
+"&#169; Plateforme en humanités numériques (Université de Sherbrooke) and "
+"contributors\n"
+"            | &#169; Remi Rampin and Taguette contributors | <a "
+"href=\"https://help.libreqda.org/\">User Documentation</a>"
+msgstr ""
+"Η έκδοση LibreQDA %(version)s κυκλοφορεί υπό την άδεια <a "
+"href=\"https://gitlab.com/bin-cirst/libreqda/libre-"
+"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause</a>, &#169; "
+"Plateforme en humanités numériques (Université de Sherbrooke) και "
+"συνεισφέροντες | &#169; Remi Rampin και συνεισφέροντες του Taguette | <a "
+"href=\"https://help.libreqda.org/\">Τεκμηρίωση Χρήστη</a>"
+
+#: taguette/templates/project_delete.html:3
+msgctxt "page title"
+msgid "Delete project"
+msgstr "Διαγραφή έργου"
+
+#: taguette/templates/project_delete.html:6
+msgctxt "title"
+msgid "Delete project: confirm?"
+msgstr "Διαγραφή έργου: επιβεβαίωση;"
+
+#: taguette/templates/project_delete.html:8
+#, python-format
+msgctxt "project delete page"
+msgid "Name: %(project_name)s"
+msgstr "Όνομα: %(project_name)s"
+
+#: taguette/templates/project_delete.html:9
+#, python-format
+msgid ""
+"Are you sure you want to delete this project? It currently has "
+"<strong>%(documents)s documents and %(highlights)s highlights in %(tags)s"
+" tags</strong>. There is no way to undo."
+msgstr ""
+"Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το έργο; Αυτή τη στιγμή έχει"
+" <strong>%(documents)s έγγραφα και %(highlights)s επισημάνσεις σε "
+"%(tags)s ετικέτες</strong>. Δεν υπάρχει τρόπος αναίρεσης."
+
+#: taguette/templates/project_delete.html:13
+msgctxt "submit button"
+msgid "Delete forever"
+msgstr "Οριστική διαγραφή"
+
+#: taguette/templates/project_delete.html:14
+#: taguette/templates/project_import_codebook.html:30
+#: taguette/templates/project_import_codebook_confirm.html:45
+msgctxt "cancel button"
+msgid "Go back"
+msgstr "Πίσω"
+
+#: taguette/templates/alt_templates/phun/welcome.html:10
+#: taguette/templates/welcome.html:4
+msgctxt "page title"
+msgid "Welcome"
+msgstr "Καλωσορίσατε"
+
+#: taguette/templates/alt_templates/phun/welcome.html:14
+msgid "Welcome to LibreQDA"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:20
+#, python-format
+msgid ""
+"\n"
+"      An <span class=\"underline-green\">%(os)s</span> web-based tool for"
+" <span class=\"underline-brown\">%(qda)s</span>.\n"
+"      "
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:28
+msgid "Upload Documents"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:29
+msgid "Import text files (plain, DOCX, PDFs and other formats)."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:33
+msgid "Read & Explore"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:34
+msgid "Apply codes to your material and retrieve key excerpts."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:38
+msgid "Collaborate"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:39
+msgid "Invite others on your projects to share your work or enrich it."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:43
+msgid "Export Your Data"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:44
+msgid "Download your coded data to reuse it elsewhere."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:50
+msgid "Log in"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:53
+msgid "Visit the help website"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:62
+msgid "This instance of LibreQDA is maintained by the"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:72
+msgid "Frequently Asked Questions"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:78
+msgid "Is LibreQDA completely free to use?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:83
+msgid ""
+"Yes, LibreQDA is completely free and open-source. You can use it for "
+"academic research, personal projects, or commercial purposes without any "
+"licensing fees."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:91
+msgid "Do I need to install any software?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:96
+msgid ""
+"This instance of LibreQDA maintained by the <a "
+"href=\"https://www.usherbrooke.ca/phun\" target=\"_blank\" "
+"rel=\"noopener\">Plateforme en humanités numériques</a> (Université de "
+"Sherbrooke) does not require any installation and runs entirely in your "
+"browser. However, advanced users with specific needs can install LibreQDA"
+" on their machine or deploy a server."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:104
+msgid "Where is my data stored?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:109
+msgid ""
+"When using this instance of LibreQDA (libreqda.org), your data is stored "
+"on a Canadian university server — specifically, a Calcul Québec "
+"supercomputer housed at École de technologie supérieure (Montréal). Keep "
+"in mind that this may differ if you use a version of LibreQDA hosted by "
+"someone else."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:117
+msgid "Can I use any browser?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:122
+msgid ""
+"Chromium-based browsers are better supported at the time (e.g. Chromium, "
+"Brave). Firefox is not fully supported."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:130
+msgid "Why is LibreQDA designed to be so minimalistic?"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:135
+msgid ""
+"If you find that some of your complex use cases aren’t covered, remember "
+"that one shoe never fits everyone. You might turn to other tools that fit"
+" your methods, or you can get in touch with us at <a "
+"href=\"mailto:phun@usherbrooke.ca\" target=\"_blank\" "
+"rel=\"noopener\">phun@usherbrooke.ca</a> to discuss personalised "
+"solutions for data collection, analysis or visualisation."
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:148
+msgid "Partners"
+msgstr ""
+
+#: taguette/templates/alt_templates/phun/welcome.html:149
+msgid "This instance of LibreQDA is supported by the following partners:"
+msgstr ""
+
+#: taguette/templates/project_new.html:3
+msgctxt "page title"
+msgid "New project"
+msgstr "Νέο έργο"
+
+#: taguette/templates/project_new.html:6
+msgctxt "title"
+msgid "New project"
+msgstr "Νέο έργο"
+
+#: taguette/templates/project_new.html:13
+msgctxt "form label for new project name"
+msgid "Name"
+msgstr "Όνομα"
+
+#: taguette/templates/project_new.html:19
+msgctxt "form label for new project description"
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: taguette/templates/project_new.html:26
+msgctxt "form submit button"
+msgid "Create"
+msgstr "Δημιουργία"
+
+#: taguette/templates/project.html:24 taguette/templates/project.html:117
+msgid "Tips"
+msgstr "Συμβουλές"
+
+#: taguette/templates/modal/create_highlight.html:25
+#: taguette/templates/project.html:37
+msgid "Create a code"
+msgstr "Δημιουργία κωδικού"
+
+#: taguette/templates/project.html:42
+msgid "More actions"
+msgstr "Περισσότερες ενέργειες"
+
+#: taguette/templates/project.html:47
+msgid "See all highlights"
+msgstr "Δείτε όλες τις επισημάνσεις"
+
+#: taguette/templates/project.html:49
+msgid "Expand all"
+msgstr "Ανάπτυξη όλων"
+
+#: taguette/templates/project.html:51
+msgid "Collapse all"
+msgstr "Σύμπτυξη όλων"
+
+#: taguette/templates/project.html:59
+msgid "Sort by"
+msgstr "Ταξινόμηση κατά"
+
+#: taguette/templates/project.html:62
+msgid "Text [a&rarr;z]"
+msgstr "Κείμενο [α&rarr;ζ]"
+
+#: taguette/templates/project.html:64
+msgid ""
+"Text\n"
+"                                    [z&rarr;a]"
+msgstr "Κείμενο [ζ&rarr;α]"
+
+#: taguette/templates/project.html:66
+msgid ""
+"Count\n"
+"                                    [0&rarr;9]"
+msgstr "Αριθμός [0&rarr;9]"
+
+#: taguette/templates/project.html:68
+msgid ""
+"Count\n"
+"                                    [9&rarr;0]"
+msgstr "Αριθμός [9&rarr;0]"
+
+#: taguette/templates/project.html:77
+msgctxt ""
+" tag change\n"
+"                        form placeholder"
+msgid "Search for a code"
+msgstr "Αναζήτηση κωδικού"
+
+#: taguette/templates/project.html:82
+msgid "Back to highlights"
+msgstr "Επιστροφή στις επισημάνσεις"
+
+#: taguette/templates/project.html:97
+msgid ""
+"Load a document from your bookmarks or on\n"
+"                    the right"
+msgstr "Φορτώστε ένα έγγραφο από τους σελιδοδείκτες σας ή από τα δεξιά"
+
+#: taguette/templates/project.html:123
+msgid "Add a document"
+msgstr "Προσθήκη εγγράφου"
+
+#: taguette/templates/project.html:127
+msgid "Add a collection"
+msgstr "Προσθήκη συλλογής"
+
+#: taguette/templates/project.html:129
+msgid "Search titles and collections name"
+msgstr "Αναζήτηση τίτλων και ονομάτων συλλογών"
+
+#: taguette/templates/project.html:134
+msgid "Loading..."
+msgstr "Φόρτωση..."
+
+#: taguette/templates/project.html:142
+msgid "Resume tutorial"
+msgstr "Συνέχιση εκμάθησης"
+
+#: taguette/templates/permissions.html:3 taguette/templates/permissions.html:8
+msgid "Grant permissions"
+msgstr "Παραχώρηση δικαιωμάτων"
+
+#: taguette/templates/permissions.html:6
+msgid ""
+"To use this instance of LibreQDA, users outside the <a "
+"href=\"https://www.canarie.ca/identity/caf/\">Canadian Access Federation "
+"(CAF)</a> must be sponsored"
+msgstr ""
+"Για να χρησιμοποιήσετε αυτήν την έκδοση του LibreQDA, οι χρήστες εκτός "
+"της <a href=\"https://www.canarie.ca/identity/caf/\">Καναδικής "
+"Ομοσπονδίας Πρόσβασης (CAF)</a> πρέπει να έχουν χορηγία."
+
+#: taguette/templates/auth/account.html:26
+#: taguette/templates/auth/external_account.html:26
+#: taguette/templates/auth/login.html:79
+#: taguette/templates/auth/reset_password.html:17
+#: taguette/templates/modal/manage_collaborators.html:17
+#: taguette/templates/permissions.html:14
+msgctxt "form label for email address"
+msgid "Email"
+msgstr "Email"
+
+#: taguette/templates/modal/manage_collaborators.html:19
+#: taguette/templates/partials/project_sidebar.html:42
+#: taguette/templates/permissions.html:16
+msgctxt "project members form placeholder"
+msgid "Username"
+msgstr "Όνομα χρήστη"
+
+#: taguette/templates/permissions.html:21
+msgctxt "permission level"
+msgid "Can create projects"
+msgstr "Μπορεί να δημιουργήσει έργα"
+
+#: taguette/templates/permissions.html:24
+msgctxt "form submit button"
+msgid "Update role"
+msgstr "Ενημέρωση ρόλου"
+
+#: taguette/templates/permissions.html:28
+msgid "Users that you approved"
+msgstr "Χρήστες που εγκρίνατε"
+
+#: taguette/templates/permissions.html:32
+msgid "Save"
+msgstr "Αποθήκευση"
+
+#: taguette/templates/modal/create_collection.html:94
+#: taguette/templates/modal/create_document.html:79
+#: taguette/templates/modal/create_tag.html:63
+#: taguette/templates/modal/manage_collaborators.html:41
+#: taguette/templates/partials/spinner.html:8
+#: taguette/templates/permissions.html:33
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: taguette/templates/index.html:23
+msgid "Maintained by"
+msgstr "Διαχειρίζεται από"
+
+#: taguette/templates/index.html:33
+#, python-format
+msgid "Welcome %(user_display_name)s"
+msgstr "Καλώς ήρθατε %(user_display_name)s"
+
+#: taguette/templates/index.html:35
+msgid "Welcome!"
+msgstr "Καλώς ήρθατε!"
+
+#: taguette/templates/index.html:42
+msgid "Create a new project"
+msgstr "Δημιουργία νέου έργου"
+
+#: taguette/templates/index.html:48
+msgid "Import a project file"
+msgstr "Εισαγωγή αρχείου έργου"
+
+#: taguette/templates/index.html:53
+msgid "Sponsor someone"
+msgstr "Χορηγία σε κάποιον"
+
+#: taguette/templates/index.html:57
+msgid "Demo project"
+msgstr "Έργο επίδειξης"
+
+#: taguette/templates/index.html:61
+msgid "Here are your projects"
+msgstr "Εδώ είναι τα έργα σας"
+
+#: taguette/templates/index.html:63
+msgid ""
+"Please note that you cannot create a project at this time. You must be "
+"sponsored by a Canadian Access Federation (CAF) user."
+msgstr ""
+"Παρακαλώ σημειώστε ότι δεν μπορείτε να δημιουργήσετε ένα έργο αυτή τη "
+"στιγμή. Πρέπει να έχετε χορηγία από έναν χρήστη της Καναδικής Ομοσπονδίας"
+" Πρόσβασης (CAF)."
+
+#: taguette/templates/index.html:87
+msgid "No projects available at the moment. Create or import one to get started."
+msgstr ""
+"Δεν υπάρχουν διαθέσιμα έργα αυτή τη στιγμή. Δημιουργήστε ή εισάγετε ένα "
+"για να ξεκινήσετε."
+
+#: taguette/templates/partials/project_sidebar.html:3
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#. Left pane tab, keep short
+#: taguette/templates/partials/project_sidebar.html:10
+msgctxt "tab"
+msgid "Project info"
+msgstr "Πληροφορίες έργου"
+
+#: taguette/templates/partials/project_sidebar.html:19
+msgctxt "project metadata form label"
+msgid "Name"
+msgstr "Όνομα"
+
+#: taguette/templates/partials/project_sidebar.html:23
+msgctxt "project metadata form label"
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: taguette/templates/modal/manage_collaborators.html:11
+#: taguette/templates/partials/project_sidebar.html:33
+msgctxt "modal window title"
+msgid "Add Collaborators"
+msgstr "Προσθήκη συνεργατών"
+
+#: taguette/templates/modal/manage_collaborators.html:24
+#: taguette/templates/partials/project_sidebar.html:46
+msgctxt "permission level"
+msgid "Full permissions"
+msgstr "Πλήρη δικαιώματα"
+
+#: taguette/templates/modal/manage_collaborators.html:25
+#: taguette/templates/partials/project_sidebar.html:47
+msgctxt "permission level"
+msgid "Can't change collaborators / delete project"
+msgstr "Δεν είναι δυνατή η αλλαγή συνεργατών / διαγραφή έργου"
+
+#: taguette/templates/modal/manage_collaborators.html:26
+#: taguette/templates/partials/project_sidebar.html:48
+msgctxt "permission level"
+msgid "View & make changes"
+msgstr "Προβολή & αλλαγές"
+
+#: taguette/templates/modal/manage_collaborators.html:27
+#: taguette/templates/partials/project_sidebar.html:49
+msgctxt "permission level"
+msgid "View only"
+msgstr "Μόνο προβολή"
+
+#: taguette/templates/modal/manage_collaborators.html:30
+#: taguette/templates/partials/project_sidebar.html:52
+msgctxt "form submit button"
+msgid "Add to project"
+msgstr "Προσθήκη στο έργο"
+
+#: taguette/templates/modal/manage_collaborators.html:34
+#: taguette/templates/partials/project_sidebar.html:56
+msgid "Current Collaborators"
+msgstr "Τρέχοντες συνεργάτες"
+
+#: taguette/templates/partials/project_sidebar.html:60
+msgid "Save members"
+msgstr "Αποθήκευση μελών"
+
+#: taguette/templates/partials/project_sidebar.html:67
+msgid "Export project"
+msgstr "Εξαγωγή έργου"
+
+#: taguette/templates/partials/project_sidebar.html:70
+msgid "Export codebook"
+msgstr "Εξαγωγή κωδικοβιβλίου"
+
+#: taguette/templates/partials/project_sidebar.html:74
+msgid "QDC (XML)"
+msgstr "QDC (XML)"
+
+#: taguette/templates/partials/document_toolbar.html:38
+#: taguette/templates/partials/project_sidebar.html:76
+msgid "Excel"
+msgstr "Excel"
+
+#: taguette/templates/partials/document_toolbar.html:40
+#: taguette/templates/partials/project_sidebar.html:77
+msgid "CSV"
+msgstr "CSV"
+
+#: taguette/templates/partials/document_toolbar.html:35
+#: taguette/templates/partials/project_sidebar.html:78
+msgid "HTML"
+msgstr "HTML"
+
+#: taguette/templates/partials/document_toolbar.html:36
+#: taguette/templates/partials/project_sidebar.html:79
+msgid "DOCX"
+msgstr "DOCX"
+
+#: taguette/templates/partials/document_toolbar.html:37
+#: taguette/templates/partials/project_sidebar.html:80
+msgid "PDF"
+msgstr "PDF"
+
+#: taguette/templates/partials/project_sidebar.html:85
+msgid "Import codebook"
+msgstr "Εισαγωγή κωδικοβιβλίου"
+
+#: taguette/templates/partials/project_sidebar.html:89
+msgid "Delete project"
+msgstr "Διαγραφή έργου"
+
+#: taguette/templates/partials/document_toolbar.html:4
+msgid "Bookmarks"
+msgstr "Σελιδοδείκτες"
+
+#: taguette/templates/partials/document_toolbar.html:9
+msgid "..."
+msgstr "..."
+
+#: taguette/templates/partials/document_toolbar.html:20
+msgid "Switch between highlight display modes"
+msgstr "Εναλλαγή μεταξύ λειτουργιών προβολής επισημάνσεων"
+
+#: taguette/templates/partials/document_toolbar.html:22
+msgid "Rich Display"
+msgstr "Εμπλουτισμένη Προβολή"
+
+#: taguette/templates/partials/document_toolbar.html:29
+msgid "Export"
+msgstr "Εξαγωγή"
+
+#: taguette/templates/partials/confirm.html:6
+msgctxt "confirm modal"
+msgid "Confirm"
+msgstr "Επιβεβαίωση"
+
+#: taguette/templates/partials/confirm.html:12
+msgctxt "confirm modal"
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: taguette/templates/partials/confirm.html:13
+msgctxt "confirm modal confirm"
+msgid "Confirm"
+msgstr "Επιβεβαίωση"
+
+#: taguette/templates/partials/hlinfo.html:5
+msgid "New code"
+msgstr "Νέος κωδικός"
+
+#: taguette/templates/partials/hlinfo.html:10
+msgid "Existing code"
+msgstr "Υπάρχων κωδικός"
+
+#: taguette/templates/welcome.html:8
+msgctxt "title"
+msgid "Welcome"
+msgstr "Καλωσορίσατε"
+
+#: taguette/templates/welcome.html:9
+msgid ""
+"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
+"open-source web-based document tagging tool for qualitative data "
+"analysis."
+msgstr ""
+"<span><a href=\"https://help.libreqda.org/\">Η LibreQDA</a></span> είναι "
+"ένα ανοιχτού κώδικα web-based εργαλείο προσθήκης ετικετών εγγράφων για "
+"ποιοτική ανάλυση δεδομένων."
+
+#: taguette/templates/welcome.html:10
+msgid ""
+"Using this tool, you can upload a collection of documents, create a "
+"hierarchy of codes, and annotate portions of documents with codes and "
+"notes that you can recall and organize later."
+msgstr ""
+"Χρησιμοποιώντας αυτό το εργαλείο, μπορείτε να ανεβάσετε μια συλλογή "
+"εγγράφων, να δημιουργήσετε μια ιεραρχία κωδικών και να σχολιάσετε τμήματα"
+" εγγράφων με κωδικούς και σημειώσεις που μπορείτε να ανακαλέσετε και να "
+"οργανώσετε αργότερα."
+
+#: taguette/templates/welcome.html:12
+#, python-format
+msgid "<a href=\"%(url)s\">Register now</a> for free and get started!"
+msgstr "<a href=\"%(url)s\">Εγγραφείτε τώρα</a> δωρεάν και ξεκινήστε!"
+
+#: taguette/templates/project_import_codebook.html:3
+#: taguette/templates/project_import_codebook_confirm.html:3
+msgctxt "page title"
+msgid "Import codebook"
+msgstr "Εισαγωγή κωδικοβιβλίου"
+
+#: taguette/templates/project_import_codebook.html:6
+#: taguette/templates/project_import_codebook_confirm.html:6
+msgctxt "title"
+msgid "Import a codebook"
+msgstr "Εισαγωγή κωδικοβιβλίου"
+
+#: taguette/templates/project_import_codebook.html:7
+#: taguette/templates/project_import_codebook_confirm.html:7
+msgid ""
+"Use this form to import an existing codebook into your project. Existing "
+"tags will not be deleted, new tags will be added alongside them."
+msgstr ""
+"Χρησιμοποιήστε αυτή τη φόρμα για να εισαγάγετε ένα υπάρχον κωδικοβιβλίο "
+"στο έργο σας. Οι υπάρχουσες ετικέτες δεν θα διαγραφούν, οι νέες ετικέτες "
+"θα προστεθούν δίπλα τους."
+
+#: taguette/templates/project_import_codebook_confirm.html:11
+msgid "You are about to create the following tags:"
+msgstr "Πρόκειται να δημιουργήσετε τις ακόλουθες ετικέτες:"
+
+#: taguette/templates/project_import_codebook_confirm.html:19
+msgctxt "codebook import tag option"
+msgid "Replace"
+msgstr "Αντικατάσταση"
+
+#: taguette/templates/project_import_codebook_confirm.html:22
+msgctxt "codebook import tag option"
+msgid "Import"
+msgstr "Εισαγωγή"
+
+#: taguette/templates/project_import_codebook_confirm.html:44
+msgctxt "form submit button"
+msgid "Create tags"
+msgstr "Δημιουργία ετικετών"
+
+#: taguette/templates/maintenance.html:4
+msgctxt "page title"
+msgid "Maintenance"
+msgstr "Συντήρηση"
+
+#: taguette/templates/auth/token_needed.html:3
+msgctxt "page title"
+msgid "Error"
+msgstr "Σφάλμα"
+
+#: taguette/templates/auth/token_needed.html:6
+msgid ""
+"Your browser did not supply a secret token to authenticate with the "
+"application. Please check the console for the correct URL to log in, or "
+"simply restart Taguette."
+msgstr ""
+"Το πρόγραμμα περιήγησής σας δεν παρείχε μυστικό κλειδάριθμο για "
+"εξουσιοδότηση με την εφαρμογή. Ελέγξτε την κονσόλα για τη σωστή διεύθυνση"
+" URL σύνδεσης, ή απλά επανεκκινήστε το LibreQDA."
+
+#: taguette/templates/auth/cilogon.login.html:4
+#: taguette/templates/auth/login.html:4
+msgctxt "page title"
+msgid "Log in"
+msgstr "Σύνδεση"
+
+#: taguette/templates/auth/cilogon.login.html:9
+#: taguette/templates/auth/login.html:10
+msgctxt "tab"
+msgid "Log in"
+msgstr "Σύνδεση"
+
+#: taguette/templates/auth/login.html:13
+msgctxt "tab"
+msgid "Register"
+msgstr "Εγγραφή"
+
+#: taguette/templates/auth/account.html:14
+#: taguette/templates/auth/external_account.html:14
+#: taguette/templates/auth/login.html:29 taguette/templates/auth/login.html:60
+msgctxt "form label for user name"
+msgid "Login"
+msgstr "Σύνδεση"
+
+#: taguette/templates/auth/login.html:42
+msgctxt "form submit button"
+msgid "Log in"
+msgstr "Σύνδεση"
+
+#: taguette/templates/auth/login.html:43
+msgctxt "form link"
+msgid "Forgot password"
+msgstr "Ξεχάσατε τον κωδικό πρόσβασης;"
+
+#: taguette/templates/auth/login.html:63
+msgid "Please use only letters, numbers, dot, underscore, and dashes (._-)"
+msgstr ""
+"Παρακαλώ χρησιμοποιήστε μόνο γράμματα, αριθμούς, τελείες, κάτω παύλες και"
+" παύλες (._-)"
+
+#: taguette/templates/auth/account.html:29
+#: taguette/templates/auth/login.html:82
+msgid ""
+"Optional. <em>We will not share your email with anyone. This is only used"
+" in case you forget your password.</em>"
+msgstr ""
+"Προαιρετικό. <em>Δεν θα μοιραστούμε το email σας με κανέναν. Αυτό "
+"χρησιμοποιείται μόνο σε περίπτωση που ξεχάσετε τον κωδικό πρόσβασής "
+"σας.</em>"
+
+#: taguette/templates/auth/login.html:87
+msgctxt "link from registration form"
+msgid "Terms of service"
+msgstr "Όροι Παροχής Υπηρεσιών"
+
+#: taguette/templates/auth/login.html:91
+#, python-format
+msgid "I accept the <a href=\"%(url)s\">terms of service</a>"
+msgstr "Αποδέχομαι τους <a href=\"%(url)s\">όρους παροχής υπηρεσιών</a>"
+
+#: taguette/templates/auth/login.html:98
+msgctxt "form submit button"
+msgid "Register"
+msgstr "Εγγραφή"
+
+#: taguette/templates/auth/email_reset_password.html:1
+#, python-format
+msgid ""
+"Someone has requested to reset the password on the Taguette account "
+"associated with this email. If this was you, please follow this link: <a "
+"href=\"%(link)s\">%(link)s</a>"
+msgstr ""
+"Κάποιος ζήτησε επαναφορά του κωδικού πρόσβασης για τον λογαριασμό "
+"LibreQDA που σχετίζεται με αυτό το email. Εάν ήσασταν εσείς, παρακαλώ "
+"ακολουθήστε αυτόν τον σύνδεσμο: <a href=\"%(link)s\">%(link)s</a>"
+
+#: taguette/templates/auth/email_reset_password.html:3
+#, python-format
+msgid "Your user name is: <strong>%(login)s</strong>"
+msgstr "Το όνομα χρήστη σας είναι: <strong>%(login)s</strong>"
+
+#: taguette/templates/auth/email_reset_password.html:5
+msgid "This link will expire in 1 day."
+msgstr "Αυτός ο σύνδεσμος θα λήξει σε 1 ημέρα."
+
+#: taguette/templates/auth/account.html:4
+#: taguette/templates/auth/external_account.html:4
+msgctxt "page title"
+msgid "Account settings"
+msgstr "Ρυθμίσεις λογαριασμού"
+
+#: taguette/templates/auth/account.html:7
+#: taguette/templates/auth/external_account.html:7
+msgctxt "title"
+msgid "Account settings"
+msgstr "Ρυθμίσεις λογαριασμού"
+
+#: taguette/templates/auth/account.html:20
+#: taguette/templates/auth/external_account.html:20
+msgctxt "form label for displayname"
+msgid "Display name"
+msgstr "Εμφανιζόμενο όνομα"
+
+#: taguette/templates/auth/account.html:33
+#: taguette/templates/auth/external_account.html:32
+msgctxt "form label for language selection"
+msgid "Language"
+msgstr "Γλώσσα"
+
+#: taguette/templates/auth/account.html:36
+#: taguette/templates/auth/external_account.html:35
+msgctxt "language selection option"
+msgid "Auto-detect"
+msgstr "Αυτόματος εντοπισμός"
+
+#: taguette/templates/auth/account.html:57
+#: taguette/templates/auth/external_account.html:44
+msgctxt "form submit button"
+msgid "Update"
+msgstr "Ενημέρωση"
+
+#: taguette/templates/auth/reset_password.html:13
+msgid ""
+"If you had set an email address in your profile, you can enter it below "
+"and a link to reset your password will be sent to you."
+msgstr ""
+"Εάν είχατε ορίσει μια διεύθυνση email στο προφίλ σας, μπορείτε να την "
+"εισαγάγετε παρακάτω και θα σας σταλεί ένας σύνδεσμος για να επαναφέρετε "
+"τον κωδικό πρόσβασής σας."
+
+#: taguette/templates/auth/reset_password.html:22
+msgctxt "password reset form submit button"
+msgid "Send"
+msgstr "Αποστολή"
+
+#: taguette/templates/auth/reset_password.html:26
+msgid ""
+"If you didn't set an email address, you can try contacting your server "
+"administrator."
+msgstr ""
+"Εάν δεν έχετε ορίσει μια διεύθυνση email, μπορείτε να δοκιμάσετε να "
+"επικοινωνήσετε με τον διαχειριστή του διακομιστή σας."
+
+#: taguette/templates/auth/account.html:44
+msgid "New password"
+msgstr "Νέος κωδικός πρόσβασης"
+
+#: taguette/templates/auth/account.html:50
+msgid "Repeat new password"
+msgstr "Επανάληψη νέου κωδικού πρόσβασης"
+
+#: taguette/templates/auth/cilogon.login.html:10
+msgid ""
+"LibreQDA uses <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> to authenticate users "
+"by redirecting them to their chosen identity provider."
+msgstr ""
+"Το LibreQDA χρησιμοποιεί το <a target=\"_blank\" "
+"href=\"https://www.cilogon.org/home\">CILogon</a> για την πιστοποίηση "
+"χρηστών, ανακατευθύνοντάς τους στον επιλεγμένο πάροχο ταυτότητας."
+
+#: taguette/templates/auth/cilogon.login.html:12
+msgid ""
+"\n"
+"            If your institution is not listed or authentication fails, "
+"please contact your institution's IT department.\n"
+"            You can refer them to <a "
+"href=\"https://www.cilogon.org/service/addidp\" target=\"_blank\">this "
+"page</a>.\n"
+"            <br>\n"
+"            Do not contact CILogon directly.\n"
+"            "
+msgstr ""
+"Εάν το ίδρυμά σας δεν είναι στη λίστα ή η πιστοποίηση αποτύχει, "
+"επικοινωνήστε με το τμήμα IT του ιδρύματός σας. Μπορείτε να τους "
+"παραπέμψετε σε <a href=\"https://www.cilogon.org/service/addidp\" "
+"target=\"_blank\">αυτή τη σελίδα</a>. Παρακαλώ, μην επικοινωνήσετε "
+"απευθείας με το CILogon."
+
+#: taguette/templates/auth/cilogon.login.html:32
+msgid "Select your institution"
+msgstr "Επιλέξτε το ίδρυμά σας"
+
+#: taguette/templates/auth/cilogon.login.html:49
+msgid "Continue to authentication with"
+msgstr "Συνέχεια για έλεγχο ταυτότητας με"
+
+#: taguette/templates/auth/cilogon.login.html:79
+msgid "Please select your institution from the list before continuing"
+msgstr "Παρακαλώ επιλέξτε το ίδρυμά σας από τη λίστα πριν συνεχίσετε"
+
+#: taguette/templates/modal/create_collection.html:6
+msgctxt "modal window title"
+msgid "Add a collection"
+msgstr "Προσθήκη συλλογής"
+
+#: taguette/templates/modal/create_collection.html:8
+msgctxt ""
+"modal window\n"
+"                    title"
+msgid "Edit collection"
+msgstr "Επεξεργασία συλλογής"
+
+#: taguette/templates/modal/create_collection.html:19
+#: taguette/templates/modal/create_document.html:58
+msgid "Reset"
+msgstr "Επαναφορά"
+
+#: taguette/templates/modal/create_collection.html:28
+#: taguette/templates/modal/create_collection.html:32
+msgid "Collection name"
+msgstr "Όνομα συλλογής"
+
+#: taguette/templates/modal/create_collection.html:35
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: taguette/templates/modal/create_collection.html:39
+msgid "Description (optional)"
+msgstr "Περιγραφή (προαιρετικό)"
+
+#: taguette/templates/modal/create_collection.html:42
+msgid ""
+"Parent\n"
+"                                    collection"
+msgstr "Γονική συλλογή"
+
+#: taguette/templates/modal/create_collection.html:67
+msgid "Currently assigned to the collection: "
+msgstr "Τρέχουσα ανάθεση στη συλλογή: "
+
+#: taguette/templates/modal/create_collection.html:74
+msgid "Add documents to this collection"
+msgstr "Προσθήκη εγγράφων σε αυτή τη συλλογή"
+
+#: taguette/templates/modal/create_collection.html:79
+msgid "Search documents..."
+msgstr "Αναζήτηση εγγράφων..."
+
+#: taguette/templates/modal/change_document.html:62
+#: taguette/templates/modal/create_collection.html:91
+#: taguette/templates/modal/create_highlight.html:30
+#: taguette/templates/modal/create_tag.html:60
+#: taguette/templates/modal/manage_collaborators.html:40
+msgid "Save & Close"
+msgstr "Αποθήκευση & Κλείσιμο"
+
+#: taguette/templates/modal/create_collection.html:95
+msgid "Delete collection"
+msgstr "Διαγραφή συλλογής"
+
+#: taguette/templates/modal/merge_tag.html:6
+msgctxt "merge modal"
+msgid "Merge codes"
+msgstr "Συγχώνευση κωδικών"
+
+#: taguette/templates/modal/merge_tag.html:17
+msgid "into"
+msgstr "σε"
+
+#: taguette/templates/modal/manage_collaborators.html:6
+msgid "Manage Collaborators"
+msgstr "Διαχείριση Συνεργατών"
+
+#: taguette/templates/modal/create_document.html:6
+msgctxt "modal window title"
+msgid "Add a document"
+msgstr "Προσθήκη εγγράφου"
+
+#: taguette/templates/modal/create_document.html:24
+msgid ""
+"Left to\n"
+"                                        right"
+msgstr "Από αριστερά προς τα δεξιά"
+
+#: taguette/templates/modal/create_document.html:31
+msgid ""
+"Right to\n"
+"                                        left"
+msgstr "Από δεξιά προς τα αριστερά"
+
+#: taguette/templates/modal/create_document.html:35
+msgctxt " document add form placeholder"
+msgid "Description (will be applied to every documents)"
+msgstr "Περιγραφή (θα εφαρμοστεί σε όλα τα έγγραφα)"
+
+#: taguette/templates/modal/create_document.html:45
+msgid "Assign all to:"
+msgstr "Ανάθεση όλων σε:"
+
+#: taguette/templates/modal/create_document.html:48
+msgid "No collection (root)"
+msgstr "Χωρίς συλλογή (ρίζα)"
+
+#: taguette/templates/modal/create_document.html:53
+msgid "Create new collection for all"
+msgstr "Δημιουργία νέας συλλογής για όλα"
+
+#: taguette/templates/modal/create_document.html:57
+msgid "Reset all to no collection"
+msgstr "Επαναφορά όλων σε καμία συλλογή"
+
+#: taguette/templates/modal/create_document.html:67
+msgid "Selected documents and collections"
+msgstr "Επιλεγμένα έγγραφα και συλλογές"
+
+#: taguette/templates/modal/create_document.html:77
+msgctxt ""
+"submit\n"
+"                    button"
+msgid "Import"
+msgstr "Εισαγωγή"
+
+#: taguette/templates/modal/create_highlight.html:5
+msgctxt "modal window title"
+msgid "Highlight"
+msgstr "Επισήμανση"
+
+#: taguette/templates/modal/create_highlight.html:14
+msgctxt "tag change form placeholder"
+msgid "Search for a code"
+msgstr "Αναζήτηση για κωδικό"
+
+#: taguette/templates/modal/create_highlight.html:31
+msgid "Delete highlight"
+msgstr "Διαγραφή επισήμανσης"
+
+#: taguette/templates/modal/change_document.html:6
+msgctxt "modal window title"
+msgid "Edit document"
+msgstr "Επεξεργασία εγγράφου"
+
+#: taguette/templates/modal/change_document.html:15
+msgctxt " document change form placeholder"
+msgid "Name"
+msgstr "Όνομα"
+
+#: taguette/templates/modal/change_document.html:24
+msgid ""
+"Left to\n"
+"                                    right"
+msgstr "Από αριστερά προς τα δεξιά"
+
+#: taguette/templates/modal/change_document.html:30
+msgid ""
+"Right to\n"
+"                                    left"
+msgstr "Από δεξιά προς τα αριστερά"
+
+#: taguette/templates/modal/change_document.html:37
+msgid "Collections"
+msgstr "Συλλογές"
+
+#: taguette/templates/modal/change_document.html:57
+msgctxt " document change form placeholder"
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: taguette/templates/modal/change_document.html:64
+msgid "Delete document"
+msgstr "Διαγραφή εγγράφου"
+
+#: taguette/templates/modal/create_tag.html:6
+msgctxt "modal window title"
+msgid "New tag"
+msgstr "Νέα ετικέτα"
+
+#: taguette/templates/modal/create_tag.html:8
+msgctxt "modal window title"
+msgid "Change code"
+msgstr "Αλλαγή κωδικού"
+
+#: taguette/templates/modal/create_tag.html:18
+msgctxt "tag change form placeholder"
+msgid "Parent code"
+msgstr "Γονικός κωδικός"
+
+#: taguette/templates/modal/create_tag.html:35
+msgctxt "tag change form placeholder"
+msgid "Name"
+msgstr "Όνομα"
+
+#: taguette/templates/modal/create_tag.html:38
+msgctxt " tag change form placeholder"
+msgid "Name"
+msgstr "Όνομα"
+
+#: taguette/templates/modal/create_tag.html:41
+msgctxt "tag change form placeholder"
+msgid "Color"
+msgstr "Χρώμα"
+
+#: taguette/templates/modal/create_tag.html:46
+#: taguette/templates/modal/create_tag.html:50
+msgctxt " tag change form placeholder"
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: taguette/templates/modal/create_tag.html:57
+msgctxt ""
+"button\n"
+"                    in tag change modal window"
+msgid "Merge..."
+msgstr "Συγχώνευση..."
+
+#: taguette/templates/modal/create_tag.html:66
+msgid "Delete tag"
+msgstr "Διαγραφή ετικέτας"
+
+#: taguette/templates/project_import_codebook.html:8
+msgid ""
+"The file should have a column for the tag names, called 'name' or 'tag' "
+"or 'path'. It can also optionally have a column called 'description'. "
+"Other columns are ignored."
+msgstr ""
+"Το αρχείο θα πρέπει να έχει μια στήλη για τα ονόματα των ετικετών, που "
+"ονομάζεται 'name' ή 'tag' ή 'path'. Μπορεί επίσης να έχει προαιρετικά μια"
+" στήλη που να ονομάζεται 'description'. Άλλες στήλες θα αγνοούνται."
+
+#: taguette/templates/project_import_codebook.html:15
+msgctxt "form label for project name (readonly)"
+msgid "Project:"
+msgstr "Έργο:"
+
+#: taguette/templates/project_import_codebook.html:21
+msgctxt "form label for codebook file"
+msgid "File:"
+msgstr "Αρχείο:"
+
+#: taguette/templates/project_import_codebook.html:24
+msgid "Accepted format: CSV"
+msgstr "Αποδεκτή μορφή: CSV"
+
+#: taguette/templates/project_import_codebook.html:29
+msgctxt "form submit button"
+msgid "Review"
+msgstr "Ανασκόπηση"
+
+#: taguette/main.py:341
 msgid "Port number on which to listen"
-msgstr "Αριθμός θύρας για ακρόαση"
+msgstr ""
 
-#: taguette/main.py:286
+#: taguette/main.py:344
 msgid "Address to bind on"
-msgstr "Διεύθυνση προς δέσμευση"
+msgstr ""
 
-#: taguette/main.py:288
+#: taguette/main.py:350
 msgid "Open web browser to the application"
-msgstr "Ανοίξτε τον περιηγητή διαδικτύου στην εφαρμογή"
+msgstr ""
 
-#: taguette/main.py:290
+#: taguette/main.py:356
 msgid "Don't open the web browser"
-msgstr "Μην ανοίγετε τον περιηγητή διαδικτύου"
+msgstr ""
 
-#: taguette/main.py:295
+#: taguette/main.py:365
 #, python-format
 msgid ""
 "Database location or connection string, for example 'project.db' or "
 "'postgresql://me:pw@localhost/mydb' (default: %(default)r)"
 msgstr ""
-"Τοποθεσία βάσης δεδομένων ή συμβολοσειρά σύνδεσης, για παράδειγμα "
-"'project.db' ή 'postgresql://me:pw@localhost/mydb' (προεπιλογή: "
-"%(default)r)"
 
-#: taguette/main.py:302
-msgid "Set the file creation mask (umask) on systems that support it."
+#: taguette/main.py:378
+msgid "Set the file creation mask (umask)on systems that support it."
 msgstr ""
-"Ρυθμίστε τη μάσκα δημιουργίας αρχείων (umask) σε συστήματα που την "
-"υποστηρίζουν."
 
-#: taguette/main.py:306
+#: taguette/main.py:387
 msgid "Don't change umask on startup"
-msgstr "Μην αλλάζετε την εντολή umask κατά την εκκίνηση"
+msgstr ""
 
-#: taguette/main.py:312
+#: taguette/main.py:395
 msgid "additional commands"
-msgstr "πρόσθετες εντολές"
+msgstr ""
 
-#: taguette/main.py:316
+#: taguette/main.py:399
 msgid "Manually trigger a database migration"
-msgstr "Μη αυτόματη ενεργοποίηση μιας μετεγκατάστασης βάσης δεδομένων"
+msgstr ""
 
-#: taguette/main.py:327
+#: taguette/main.py:412
 msgid "Print the default server configuration"
-msgstr "Εκτύπωση της προεπιλεγμένης διαμόρφωσης διακομιστή"
+msgstr ""
 
-#: taguette/main.py:329
+#: taguette/main.py:419
 msgid "Output to this file rather than stdout"
-msgstr "Έξοδος σε αυτό το αρχείο αντί για stdout"
+msgstr ""
 
-#: taguette/main.py:335
+#: taguette/main.py:425
 msgid "Run in server mode, suitable for a multi-user deployment"
 msgstr ""
-"Εκτελείται σε λειτουργία διακομιστή, κατάλληλο για ανάπτυξη από πολλούς "
-"χρήστες"
 
-#: taguette/main.py:337
+#: taguette/main.py:429
 msgid ""
 "Configuration file for the server. The default configuration can be "
 "generated using the `default-config` command"
 msgstr ""
-"Αρχείο διαμόρφωσης για τον διακομιστή. Η προεπιλεγμένη διαμόρφωση μπορεί "
-"να δημιουργηθεί χρησιμοποιώντας την εντολή 'default-config'."
 
-#: taguette/main.py:349
+#: taguette/main.py:445
 #, python-format
 msgid "Invalid umask: %(arg)s"
-msgstr "Μη έγκυρη εντολή umask: %(arg)s"
+msgstr ""
 
-#: taguette/main.py:373
+#: taguette/main.py:469
 #, python-format
 msgid "Missing required configuration variable %(var)s"
-msgstr "Λείπει η απαιτούμενη μεταβλητή διαμόρφωσης %(var)s"
+msgstr ""
 
-#: taguette/main.py:380
+#: taguette/main.py:478
 msgid "Invalid BASE_PATH"
-msgstr "Μη έγκυρο BASE_PATH"
+msgstr ""
 
-#: taguette/main.py:454
+#: taguette/main.py:574
 #, python-format
 msgid ""
 "\n"
@@ -112,11 +1575,30 @@ msgid ""
 "\n"
 "    %(url)s\n"
 msgstr ""
-"\n"
-"    Η LibreQDA %(version)s εκτελείται τώρα. Μπορείτε να συνδεθείτε σε "
-"αυτό με τον σύνδεσμο:\n"
-"\n"
-"    %(url)s\n"
+
+#: taguette/import_codebook.py:35
+msgid "Invalid file: CSV expected"
+msgstr "Μη έγκυρο αρχείο: αναμένεται CSV"
+
+#: taguette/import_codebook.py:42
+msgid "Not sure which column to use for tag name"
+msgstr "Δεν είμαι σίγουρος ποια στήλη να χρησιμοποιήσω για το όνομα ετικέτας"
+
+#: taguette/import_codebook.py:45
+msgid "No 'tag', 'name', or 'path' column"
+msgstr "Δεν υπάρχει στήλη 'tag', 'name' ή 'path'"
+
+#: taguette/import_codebook.py:83
+msgid "Not enough columns"
+msgstr "Δεν υπάρχουν αρκετές στήλες"
+
+#: taguette/import_codebook.py:88
+msgid "Empty tag name"
+msgstr "Κενό όνομα ετικέτας"
+
+#: taguette/import_codebook.py:104
+msgid "Invalid CSV file"
+msgstr "Μη έγκυρο αρχείο CSV"
 
 #: taguette/database/__init__.py:136
 msgid ""
@@ -124,10 +1606,6 @@ msgid ""
 "    The database schema used by Taguette has changed! We will try to\n"
 "    update your workspace automatically.\n"
 msgstr ""
-"\n"
-"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την LibreQDA "
-"έχει αλλάξει! Θα προσπαθήσουμε να\n"
-"    ενημερώσουμε αυτόματα τον χώρο εργασίας σας.\n"
 
 #: taguette/database/__init__.py:148
 #, python-format
@@ -137,12 +1615,6 @@ msgid ""
 "    goes horribly wrong, make sure to keep that file, and let us know:\n"
 "    %(backup)s\n"
 msgstr ""
-"\n"
-"    Δημιουργήθηκε ένα αντίγραφο ασφαλείας του αρχείου της βάσης δεδομένων"
-" σας. Εάν η ενημέρωση\n"
-"    δεν γίνει σωστά, φροντίστε να διατηρήσετε αυτό το αρχείο και "
-"ενημερώστε μας:\n"
-"    %(backup)s\n"
 
 #: taguette/database/__init__.py:160
 #, python-format
@@ -154,13 +1626,6 @@ msgid ""
 "data and\n"
 "    use `taguette --database=%(url)s migrate` if you want to proceed."
 msgstr ""
-"\n"
-"    Το σχήμα της βάσης δεδομένων που χρησιμοποιείται από την LibreQDA "
-"έχει αλλάξει! Επειδή δεν χρησιμοποιείτε\n"
-"    το SQLite, δεν θα επιχειρήσουμε αυτόματη μετεγκατάσταση. Δημιουργήστε"
-" αντίγραφα ασφαλείας των δεδομένων σας\n"
-"    και χρησιμοποιήστε το `taguette --database=%(url)s migrate` αν θέλετε"
-" να συνεχίσετε."
 
 #: taguette/validate.py:19
 msgid "Description is too long"
@@ -233,1171 +1698,4 @@ msgstr "Το όνομα του αρχείου είναι πολύ μεγάλο"
 #: taguette/validate.py:117
 msgid "Invalid file name"
 msgstr "Μη έγκυρο όνομα αρχείου"
-
-#: taguette/web/views.py:189
-msgid "Invalid login or password"
-msgstr "Μη έγκυρη σύνδεση ή κωδικός πρόσβασης"
-
-#: taguette/web/views.py:245 taguette/web/views.py:556
-#: taguette/web/views.py:722
-msgid "Passwords do not match"
-msgstr "Οι κωδικοί πρόσβασης δεν ταιριάζουν"
-
-#: taguette/web/views.py:247
-msgid "User name is taken"
-msgstr "Το όνομα χρήστη χρησιμοποιείται ήδη"
-
-#: taguette/web/views.py:254
-msgid "Email address is already used"
-msgstr "Η διεύθυνση email χρησιμοποιείται ήδη"
-
-#: taguette/web/views.py:264
-msgid "Terms of Service must be accepted"
-msgstr "Οι Όροι Παροχής Υπηρεσιών πρέπει να γίνουν αποδεκτοί"
-
-#: taguette/web/views.py:603
-msgid "This email address is not associated with any user"
-msgstr ""
-"Αυτή η διεύθυνση ηλεκτρονικού ταχυδρομείου δεν σχετίζεται με κανέναν "
-"χρήστη"
-
-#: taguette/web/views.py:632
-msgid "Password reset for Taguette"
-msgstr "Επαναφορά κωδικού πρόσβασς για την LibreQDA"
-
-#: taguette/web/views.py:675
-msgid "Invalid token"
-msgstr "Μη έγκυρος κλειδάριθμος"
-
-#: taguette/web/views.py:679
-msgid "No user associated with that token"
-msgstr "Κανένας χρήστης δεν σχετίζεται με αυτόν τον κλειδάριθμο"
-
-#: taguette/web/views.py:682
-msgid "Password has already been changed"
-msgstr "Ο κωδικός πρόσβασης έχει ήδη αλλάξει"
-
-#. Default tag name
-#: taguette/web/views.py:766
-msgid "interesting"
-msgstr "ενδιαφέρον"
-
-#. Default tag color
-#. Default tag description
-#: taguette/web/views.py:770
-msgid "Further review required"
-msgstr "Απαιτείται περαιτέρω ανασκόπηση"
-
-#: taguette/web/views.py:805
-msgid "You don't have permission to delete this project"
-msgstr "Δεν έχετε άδεια να διαγράψετε αυτό το έργο"
-
-#: taguette/web/views.py:839 taguette/web/views.py:866
-msgid "You don't have permission to import a codebook"
-msgstr "Δεν έχετε άδεια εισαγωγής βιβλίου ετικετών"
-
-#: taguette/web/views.py:885
-#, python-format
-msgid "Row %d: %s"
-msgstr "Γραμμή %d: %s"
-
-#: taguette/web/views.py:1023
-msgid "Error importing tags, concurrent changes caused a conflict"
-msgstr ""
-"Σφάλμα κατά την εισαγωγή ετικετών, οι ταυτόχρονες αλλαγές προκάλεσαν "
-"διένεξη"
-
-#: taguette/web/views.py:1038
-msgid "No file provided"
-msgstr "Δεν παρέχεται αρχείο"
-
-#: taguette/web/__init__.py:60 taguette/web/base.py:580
-msgctxt "page title"
-msgid "Error 404"
-msgstr "Σφάλμα 404"
-
-#: taguette/web/__init__.py:61 taguette/web/base.py:581
-msgid "This page does not exist."
-msgstr "Αυτή η σελίδα δεν υπάρχει."
-
-#: taguette/web/base.py:473
-#, fuzzy
-msgid ""
-" | Please report issues via <a href=\"https://gitlab.com/bin-"
-"cirst/libreqda/libre-qda/\">GitLab</a> "
-msgstr ""
-" | Παρακαλώ αναφέρετε προβλήματα ή άλλα ζητήματα μέσω του <a "
-"href=\"https://gitlab.cirst.ca/libreqda/libreqda\">GitLab</a> ή με μήνυμα"
-" στο <a href=\"mailto:phun@usherbrooke.ca\">phun@usherbrooke.ca</a>!"
-
-#: taguette/web/base.py:587
-#, python-format
-msgctxt "page title"
-msgid "Error %d"
-msgstr "Σφάλμα %d"
-
-#: taguette/web/api.py:53
-msgid "Not logged in"
-msgstr "Δεν έχετε συνδεθεί"
-
-#: taguette/web/api.py:85
-msgid "Tutorial - board games"
-msgstr ""
-
-#: taguette/web/api.py:86
-msgid "A demo project to showcase LibreQDA"
-msgstr ""
-
-#: taguette/web/api.py:167 taguette/web/api.py:198 taguette/web/api.py:291
-#: taguette/web/api.py:331 taguette/web/api.py:396 taguette/web/api.py:436
-#: taguette/web/api.py:477 taguette/web/api.py:502 taguette/web/api.py:593
-#: taguette/web/api.py:660 taguette/web/api.py:754 taguette/web/api.py:981
-msgid "Unauthorized"
-msgstr "Μη εξουσιοδοτημένος"
-
-#: taguette/web/api.py:441 taguette/web/api.py:480 taguette/web/api.py:512
-#: taguette/web/api.py:607 taguette/web/api.py:690
-msgid "No such tag"
-msgstr "Δεν υπάρχει τέτοια ετικέτα"
-
-#: taguette/web/api.py:610
-msgid "Empty highlight"
-msgstr ""
-
-#: taguette/web/api.py:664 taguette/web/api.py:757
-msgid "No such highlight"
-msgstr "Δεν υπάρχει τέτοια επισήμανση"
-
-#: taguette/web/api.py:918
-msgid "Bad page number"
-msgstr ""
-
-#: taguette/web/api.py:1044
-msgid "There must be one admin"
-msgstr "Πρέπει να υπάρχει ένας διαχειριστής"
-
-#: taguette/web/api.py:1099
-msgid ""
-"This database is an unknown version. It might have been written by a more"
-" recent version of Taguette, please check for updates"
-msgstr ""
-"Αυτή η βάση δεδομένων είναι από μια άγνωστη έκδοση της LibreQDA. Μπορεί "
-"να έχει δημιουργηθεί από μια πιο πρόσφατη έκδοση του LibreQDA. Ελέγξτε "
-"για ενημερώσεις."
-
-#: taguette/web/api.py:1105
-msgid "This database could not be updated to the current version"
-msgstr "Αυτή η βάση δεδομένων δεν ήταν δυνατόν να ενημερωθεί στην τρέχουσα έκδοση"
-
-#: taguette/web/api.py:1109 taguette/web/api.py:1143
-msgid "This is not a Taguette project file"
-msgstr "Αυτό δεν είναι ένα αρχείο έργου της LibreQDA"
-
-#: taguette/import_codebook.py:35
-msgid "Invalid file: CSV expected"
-msgstr "Μη έγκυρο αρχείο: αναμενόταν CSV"
-
-#: taguette/import_codebook.py:42
-msgid "Not sure which column to use for tag name"
-msgstr "Αβεβαιότητα για το ποια στήλη να χρησιμοποιηθεί για το όνομα της ετικέτας"
-
-#: taguette/import_codebook.py:45
-msgid "No 'tag', 'name', or 'path' column"
-msgstr "Δεν υπάρχει στήλη 'ετικέτα', 'όνομα', ή 'διαδρομή'"
-
-#: taguette/import_codebook.py:83
-msgid "Not enough columns"
-msgstr "Δεν υπάρχουν αρκετές στήλες"
-
-#: taguette/import_codebook.py:88
-msgid "Empty tag name"
-msgstr "Κενό όνομα ετικέτας"
-
-#: taguette/import_codebook.py:104
-msgid "Invalid CSV file"
-msgstr "Μη έγκυρο αρχείο CSV"
-
-#: taguette/templates/tos.html:4
-msgctxt "page title"
-msgid "Terms of Service"
-msgstr "Όροι Παροχής Υπηρεσιών"
-
-#: taguette/templates/modal/create_highlight.html:25
-#: taguette/templates/project.html:28
-#, fuzzy
-msgid "Create a code"
-msgstr "Δημιουργίας ετικέτας"
-
-#: taguette/templates/project.html:31
-msgid "More actions"
-msgstr ""
-
-#: taguette/templates/project.html:34
-msgid "See all highlights"
-msgstr "Δείτε όλες τις επισημάνσεις"
-
-#: taguette/templates/project.html:35
-msgid "Expand all"
-msgstr ""
-
-#: taguette/templates/project.html:36
-msgid "Collapse all"
-msgstr ""
-
-#: taguette/templates/project.html:41
-msgid "Sort by"
-msgstr ""
-
-#: taguette/templates/project.html:44
-msgid "Text [a&rarr;z]"
-msgstr ""
-
-#: taguette/templates/project.html:45
-msgid "Text [z&rarr;a]"
-msgstr ""
-
-#: taguette/templates/project.html:46
-msgid "Count [0&rarr;9]"
-msgstr ""
-
-#: taguette/templates/project.html:47
-msgid "Count [9&rarr;0]"
-msgstr ""
-
-#: taguette/templates/modal/create_highlight.html:14
-#: taguette/templates/project.html:55
-msgctxt "tag change form placeholder"
-msgid "Search for a code"
-msgstr ""
-
-#: taguette/templates/project.html:59
-#, fuzzy
-msgid "Back to highlights"
-msgstr "Επισημάνσεις"
-
-#: taguette/templates/project.html:74
-#, fuzzy
-msgid "Load a document from your bookmarks or on the right"
-msgstr "Τοποθετήστε ένα έγγραφο στα αριστερά"
-
-#: taguette/templates/project.html:92
-msgid "Add a document"
-msgstr "Προσθήκη εγγράφου"
-
-#: taguette/templates/project.html:96
-msgid "Loading..."
-msgstr "Φόρτωση..."
-
-#: taguette/templates/project.html:103
-msgid "Resume tutorial"
-msgstr ""
-
-#: taguette/templates/project_import_codebook.html:3
-#: taguette/templates/project_import_codebook_confirm.html:3
-msgctxt "page title"
-msgid "Import codebook"
-msgstr "Εισαγωγή βιβλίου ετικετών"
-
-#: taguette/templates/project_import_codebook.html:6
-#: taguette/templates/project_import_codebook_confirm.html:6
-msgctxt "title"
-msgid "Import a codebook"
-msgstr "Εισαγωγή βιβλίου ετικετών"
-
-#: taguette/templates/project_import_codebook.html:7
-#: taguette/templates/project_import_codebook_confirm.html:7
-msgid ""
-"Use this form to import an existing codebook into your project. Existing "
-"tags will not be deleted, new tags will be added alongside them."
-msgstr ""
-"Χρησιμοποιήστε αυτή τη φόρμα για να εισαγάγετε ένα υπάρχον βιβλίο "
-"ετικετών στο έργο σας. Οι υπάρχουσες ετικέτες δεν θα διαγραφούν, καθώς οι"
-" νέες ετικέτες θα προστεθούν κοντά σε αυτές."
-
-#: taguette/templates/project_import_codebook_confirm.html:11
-msgid "You are about to create the following tags:"
-msgstr "Πρόκειται να δημιουργήσετε τις ακόλουθες ετικέτες:"
-
-#: taguette/templates/project_import_codebook_confirm.html:19
-msgctxt "codebook import tag option"
-msgid "Replace"
-msgstr "Αντικατάσταση"
-
-#: taguette/templates/project_import_codebook_confirm.html:22
-msgctxt "codebook import tag option"
-msgid "Import"
-msgstr "Εισαγωγή"
-
-#: taguette/templates/project_import_codebook_confirm.html:44
-msgctxt "form submit button"
-msgid "Create tags"
-msgstr "Δημιουργία ετικετών"
-
-#: taguette/templates/project_delete.html:14
-#: taguette/templates/project_import_codebook.html:30
-#: taguette/templates/project_import_codebook_confirm.html:45
-msgctxt "cancel button"
-msgid "Go back"
-msgstr "Πίσω"
-
-#: taguette/templates/partials/hlinfo.html:5
-#, fuzzy
-msgid "New code"
-msgstr "Νέο έργο"
-
-#: taguette/templates/partials/hlinfo.html:10
-msgid "Existing code"
-msgstr ""
-
-#: taguette/templates/partials/project_sidebar.html:3
-msgid "Close"
-msgstr ""
-
-#. Left pane tab, keep short
-#: taguette/templates/partials/project_sidebar.html:10
-msgctxt "tab"
-msgid "Project info"
-msgstr "Πληροφορίες έργου"
-
-#: taguette/templates/partials/project_sidebar.html:19
-msgctxt "project metadata form label"
-msgid "Name"
-msgstr "Όνομα"
-
-#: taguette/templates/partials/project_sidebar.html:23
-msgctxt "project metadata form label"
-msgid "Description"
-msgstr "Περιγραφή"
-
-#: taguette/templates/modal/manage_collaborators.html:11
-#: taguette/templates/partials/project_sidebar.html:33
-msgctxt "modal window title"
-msgid "Add Collaborators"
-msgstr "Προσθήκη συνεργατών"
-
-#: taguette/templates/modal/manage_collaborators.html:19
-#: taguette/templates/partials/project_sidebar.html:42
-msgctxt "project members form placeholder"
-msgid "Username"
-msgstr "Όνομα χρήστη"
-
-#: taguette/templates/modal/manage_collaborators.html:24
-#: taguette/templates/partials/project_sidebar.html:46
-msgctxt "permission level"
-msgid "Full permissions"
-msgstr "Πλήρη δικαιώματα"
-
-#: taguette/templates/modal/manage_collaborators.html:25
-#: taguette/templates/partials/project_sidebar.html:47
-msgctxt "permission level"
-msgid "Can't change collaborators / delete project"
-msgstr "Δεν είναι δυνατή η αλλαγή συνεργατών / διαγραφή έργου"
-
-#: taguette/templates/modal/manage_collaborators.html:26
-#: taguette/templates/partials/project_sidebar.html:48
-msgctxt "permission level"
-msgid "View & make changes"
-msgstr "Προβολή και πραγματοποίηση αλλαγών"
-
-#: taguette/templates/modal/manage_collaborators.html:27
-#: taguette/templates/partials/project_sidebar.html:49
-msgctxt "permission level"
-msgid "View only"
-msgstr "Προβολή μόνο"
-
-#: taguette/templates/modal/manage_collaborators.html:30
-#: taguette/templates/partials/project_sidebar.html:52
-msgctxt "form submit button"
-msgid "Add to project"
-msgstr "Προσθήκη στο έργο"
-
-#: taguette/templates/modal/manage_collaborators.html:34
-#: taguette/templates/partials/project_sidebar.html:56
-msgid "Current Collaborators"
-msgstr "Τρέχοντες συνεργάτες"
-
-#: taguette/templates/partials/project_sidebar.html:60
-msgid "Save members"
-msgstr ""
-
-#: taguette/templates/partials/project_sidebar.html:67
-msgid "Export project"
-msgstr "Εξαγωγή έργου"
-
-#: taguette/templates/partials/project_sidebar.html:70
-msgid "Export codebook"
-msgstr "Εξαγωγή βιβλίου ετικετών"
-
-#: taguette/templates/partials/project_sidebar.html:73
-msgid "QDC (XML)"
-msgstr "QDC (XML)"
-
-#: taguette/templates/partials/document_toolbar.html:24
-#: taguette/templates/partials/project_sidebar.html:74
-msgid "Excel"
-msgstr "Excel"
-
-#: taguette/templates/partials/document_toolbar.html:25
-#: taguette/templates/partials/project_sidebar.html:75
-msgid "CSV"
-msgstr "CSV"
-
-#: taguette/templates/partials/document_toolbar.html:21
-#: taguette/templates/partials/project_sidebar.html:76
-msgid "HTML"
-msgstr "HTML"
-
-#: taguette/templates/partials/document_toolbar.html:22
-#: taguette/templates/partials/project_sidebar.html:77
-msgid "DOCX"
-msgstr "DOCX"
-
-#: taguette/templates/partials/document_toolbar.html:23
-#: taguette/templates/partials/project_sidebar.html:78
-msgid "PDF"
-msgstr "PDF"
-
-#: taguette/templates/partials/project_sidebar.html:83
-msgid "Import codebook"
-msgstr "Εισαγωγή βιβλίου ετικετών"
-
-#: taguette/templates/partials/project_sidebar.html:87
-msgid "Delete project"
-msgstr "Διαγραφή έργου"
-
-#: taguette/templates/partials/document_toolbar.html:4
-msgid "Bookmarks"
-msgstr ""
-
-#: taguette/templates/partials/document_toolbar.html:7
-msgid "..."
-msgstr ""
-
-#: taguette/templates/partials/document_toolbar.html:17
-#, fuzzy
-msgid "Export"
-msgstr "Εισαγωγή"
-
-#: taguette/templates/modal/create_document.html:33
-#: taguette/templates/modal/create_tag.html:57
-#: taguette/templates/modal/manage_collaborators.html:41
-#: taguette/templates/partials/spinner.html:5
-msgid "Cancel"
-msgstr "Άκυρο"
-
-#: taguette/templates/partials/confirm.html:6
-#, fuzzy
-msgctxt "confirm modal"
-msgid "Confirm"
-msgstr "Επιβεβαίωση κωδικού πρόσβασης"
-
-#: taguette/templates/partials/confirm.html:12
-#, fuzzy
-msgctxt "confirm modal"
-msgid "Cancel"
-msgstr "Άκυρο"
-
-#: taguette/templates/partials/confirm.html:13
-#, fuzzy
-msgctxt "confirm modal confirm"
-msgid "Confirm"
-msgstr "Επιβεβαίωση κωδικού πρόσβασης"
-
-#: taguette/templates/project_delete.html:3
-msgctxt "page title"
-msgid "Delete project"
-msgstr "Διαγραφή έργου"
-
-#: taguette/templates/project_delete.html:6
-msgctxt "title"
-msgid "Delete project: confirm?"
-msgstr "Διαγραφή έργου: επιβεβαίωση;"
-
-#: taguette/templates/project_delete.html:8
-#, python-format
-msgctxt "project delete page"
-msgid "Name: %(project_name)s"
-msgstr "Όνομα: %(project_name)s"
-
-#: taguette/templates/project_delete.html:9
-#, python-format
-msgid ""
-"Are you sure you want to delete this project? It currently has "
-"<strong>%(documents)s documents and %(highlights)s highlights in %(tags)s"
-" tags</strong>. There is no way to undo."
-msgstr ""
-"Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το έργο; Αυτή τη στιγμή έχει "
-"<strong>%(documents)s έγγραφα και %(highlights)s επισημάνσεις σε %(tags)s"
-" ετικέτες</strong>. Δεν υπάρχει τρόπος αναίρεσης."
-
-#: taguette/templates/project_delete.html:13
-msgctxt "submit button"
-msgid "Delete forever"
-msgstr "Διαγραφή για πάντα"
-
-#: taguette/templates/export_codebook.html:10
-#: taguette/templates/export_codebook.html:13
-msgctxt "exported codebook document title"
-msgid "Taguette Codebook"
-msgstr "Βιβλίο Ετικετών LibreQDA"
-
-#: taguette/templates/export_codebook.html:16
-#, python-format
-msgid "%(number)d highlight"
-msgid_plural "%(number)d highlights"
-msgstr[0] "%(number)d επισήμανση"
-msgstr[1] "%(number)d επισημάνσεις"
-
-#: taguette/templates/project_import.html:3
-msgctxt "page title"
-msgid "Import project"
-msgstr "Εισαγωγή έργου"
-
-#: taguette/templates/project_import.html:6
-msgctxt "title"
-msgid "Import a project"
-msgstr "Εισαγωγή έργου"
-
-#: taguette/templates/project_import.html:11
-msgctxt "form label for project file"
-msgid "File:"
-msgstr "Αρχείο:"
-
-#: taguette/templates/project_import.html:17
-msgctxt "form label for project dropdown"
-msgid "Project:"
-msgstr "Έργο:"
-
-#: taguette/templates/project_import.html:20
-msgid "No file selected..."
-msgstr "Δεν επιλέχθηκε αρχείο..."
-
-#: taguette/templates/project_import.html:25
-msgctxt "form submit button"
-msgid "Import project"
-msgstr "Εισαγωγή έργου"
-
-#: taguette/templates/project_import_codebook.html:8
-msgid ""
-"The file should have a column for the tag names, called 'name' or 'tag' "
-"or 'path'. It can also optionally have a column called 'description'. "
-"Other columns are ignored."
-msgstr ""
-"Το αρχείο θα πρέπει να έχει μια στήλη για τα ονόματα των ετικετών, που "
-"ονομάζεται 'name' ή 'tag' ή 'path'. Μπορεί επίσης να έχει προαιρετικά μια"
-" στήλη που να ονομάζεται 'description'. Άλλες στήλες θα αγνοούνται."
-
-#: taguette/templates/project_import_codebook.html:15
-msgctxt "form label for project name (readonly)"
-msgid "Project:"
-msgstr "Έργο:"
-
-#: taguette/templates/project_import_codebook.html:21
-msgctxt "form label for codebook file"
-msgid "File:"
-msgstr "Αρχείο:"
-
-#: taguette/templates/project_import_codebook.html:24
-msgid "Accepted format: CSV"
-msgstr "Αποδεκτή μορφή: CSV"
-
-#: taguette/templates/project_import_codebook.html:29
-msgctxt "form submit button"
-msgid "Review"
-msgstr "Ανασκόπηση"
-
-#: taguette/templates/welcome.html:4
-msgctxt "page title"
-msgid "Welcome"
-msgstr "Καλωσορίσατε"
-
-#: taguette/templates/welcome.html:8
-msgctxt "title"
-msgid "Welcome"
-msgstr "Καλωσορίσατε"
-
-#: taguette/templates/welcome.html:9
-#, fuzzy
-msgid ""
-"<span><a href=\"https://help.libreqda.org/\">LibreQDA</a></span> is an "
-"open-source web-based document tagging tool for qualitative data "
-"analysis."
-msgstr ""
-"<span style=\"font-family:BadScript;\"><a "
-"href=\"https://www.taguette.org/\">Η LibreQDA</a></span> είναι μια "
-"ανοιχτού κώδικα web-based εφαρμογή προσθήκης ετικετών για ποιοτική "
-"ανάλυση δεδομένων."
-
-#: taguette/templates/welcome.html:10
-#, fuzzy
-msgid ""
-"Using this tool, you can upload a collection of documents, create a "
-"hierarchy of codes, and annotate portions of documents with codes and "
-"notes that you can recall and organize later."
-msgstr ""
-"Χρησιμοποιώντας αυτή την εφαρμογή, μπορείτε να ανεβάσετε μια συλλογή "
-"εγγράφων, να δημιουργήσετε μια ιεραρχία ετικετών και να σχολιάσετε "
-"τμήματα εγγράφων με ετικέτες και σημειώσεις, τις οποίες μπορείτε αργότερα"
-" να ανακαλέσετε και να οργανώσετε."
-
-#: taguette/templates/welcome.html:12
-#, python-format
-msgid "<a href=\"%(url)s\">Register now</a> for free and get started!"
-msgstr "<a href=\"%(url)s\">Εγγραφείτε τώρα</a> δωρεάν και ξεκινήστε!"
-
-#: taguette/templates/modal/manage_collaborators.html:6
-msgid "Manage Collaborators"
-msgstr "Διαχείριση συνεργατών"
-
-#: taguette/templates/auth/account.html:26
-#: taguette/templates/auth/external_account.html:26
-#: taguette/templates/auth/login.html:78
-#: taguette/templates/auth/reset_password.html:17
-#: taguette/templates/modal/manage_collaborators.html:17
-msgctxt "form label for email address"
-msgid "Email"
-msgstr "Email"
-
-#: taguette/templates/modal/change_document.html:33
-#: taguette/templates/modal/create_highlight.html:30
-#: taguette/templates/modal/create_tag.html:56
-#: taguette/templates/modal/manage_collaborators.html:40
-msgid "Save & Close"
-msgstr "Αποθήκευση και κλείσιμο"
-
-#: taguette/templates/modal/create_highlight.html:5
-msgctxt "modal window title"
-msgid "Highlight"
-msgstr "Επισήμανση"
-
-#: taguette/templates/modal/create_highlight.html:31
-msgid "Delete highlight"
-msgstr "Διαγραφής επισήμανση"
-
-#: taguette/templates/modal/create_document.html:6
-msgctxt "modal window title"
-msgid "Add a document"
-msgstr "Προσθήκη εγγράφου"
-
-#: taguette/templates/modal/change_document.html:21
-#: taguette/templates/modal/create_document.html:20
-msgid "Left to right"
-msgstr "Κείμενο από αριστερά προς τα δεξιά"
-
-#: taguette/templates/modal/change_document.html:25
-#: taguette/templates/modal/create_document.html:24
-msgid "Right to left"
-msgstr "Κείμενο από δεξιά προς τα αριστερά"
-
-#: taguette/templates/modal/create_document.html:28
-msgctxt "document add form placeholder"
-msgid "Description"
-msgstr "Περιγραφή"
-
-#: taguette/templates/modal/create_document.html:32
-msgctxt "submit button"
-msgid "Import"
-msgstr "Εισαγωγή"
-
-#: taguette/templates/modal/change_document.html:6
-msgctxt "modal window title"
-msgid "Edit document"
-msgstr "Επεξεργασία εγγράφου"
-
-#: taguette/templates/modal/change_document.html:14
-msgctxt "document change form placeholder"
-msgid "Name"
-msgstr "Όνομα"
-
-#: taguette/templates/modal/change_document.html:29
-msgctxt "document change form placeholder"
-msgid "Description"
-msgstr "Περιγραφή"
-
-#: taguette/templates/modal/change_document.html:34
-msgid "Delete document"
-msgstr "Διαγραφή εγγράφου"
-
-#: taguette/templates/modal/merge_tag.html:6
-msgctxt "merge modal"
-msgid "Merge codes"
-msgstr ""
-
-#: taguette/templates/modal/merge_tag.html:17
-msgid "into"
-msgstr ""
-
-#: taguette/templates/modal/create_tag.html:6
-msgctxt "modal window title"
-msgid "New tag"
-msgstr "Νέα ετικέτα"
-
-#: taguette/templates/modal/create_tag.html:8
-#, fuzzy
-msgctxt "modal window title"
-msgid "Change code"
-msgstr "Αλλαγή ετικέτας"
-
-#: taguette/templates/modal/create_tag.html:18
-#, fuzzy
-msgctxt "tag change form placeholder"
-msgid "Parent code"
-msgstr ""
-
-#: taguette/templates/modal/create_tag.html:35
-#: taguette/templates/modal/create_tag.html:37
-msgctxt "tag change form placeholder"
-msgid "Name"
-msgstr "Όνομα"
-
-#: taguette/templates/modal/create_tag.html:40
-msgctxt "tag change form placeholder"
-msgid "Color"
-msgstr ""
-
-#: taguette/templates/modal/create_tag.html:44
-#: taguette/templates/modal/create_tag.html:47
-#, fuzzy
-msgctxt " tag change form placeholder"
-msgid "Description"
-msgstr "Περιγραφή"
-
-#: taguette/templates/modal/create_tag.html:53
-#, fuzzy
-msgctxt ""
-"button\n"
-"                    in tag change modal window"
-msgid "Merge..."
-msgstr "Συγχώνευση..."
-
-#: taguette/templates/modal/create_tag.html:60
-msgid "Delete tag"
-msgstr "Διαγραφή ετικέτας"
-
-#: taguette/templates/cookies_prompt.html:3
-msgctxt "page title"
-msgid "Cookie warning"
-msgstr "Cookike προειδοποίησης"
-
-#: taguette/templates/cookies_prompt.html:6
-msgctxt "title"
-msgid "Cookie warning"
-msgstr "Cookike προειδοποίησης"
-
-#: taguette/templates/cookies_prompt.html:7
-msgid ""
-"This website uses cookies to store your identity (if you choose to log "
-"in) and as a protection against <a href=\"https://en.wikipedia.org/wiki"
-"/Cross-site_request_forgery\">cross-site request forgery (CSRF)</a>. "
-"Before continuing, you must accept their use by clicking the button "
-"below. Those <strong>are not</strong> \"third-party\" or \"tracking\" "
-"cookies."
-msgstr ""
-"Αυτός ο ιστότοπος χρησιμοποιεί cookies για την αποθήκευση της ταυτότητάς "
-"σας (εάν επιλέξετε να συνδεθείτε) και ως προστασία έναντι της <a "
-"href=\"https://en.wikipedia.org/wiki/Cross-"
-"site_request_forgery\">πλαστογράφησης αιτημάτων μεταξύ ιστότοπων (CSRF "
-")</a>. Πριν συνεχίσετε, πρέπει να αποδεχτείτε τη χρήση τους κάνοντας κλικ"
-" στο παρακάτω κουμπί. Αυτά <strong>δεν</strong> είναι cookie \"τρίτου "
-"μέρους\" ή \"παρακολούθησης\"."
-
-#: taguette/templates/cookies_prompt.html:12
-msgctxt "button on cookie warning page"
-msgid "Accept cookies"
-msgstr "Αποδοχή cookies"
-
-#: taguette/templates/project_new.html:3
-msgctxt "page title"
-msgid "New project"
-msgstr "Νέο έργο"
-
-#: taguette/templates/project_new.html:6
-msgctxt "title"
-msgid "New project"
-msgstr "Νέο έργο"
-
-#: taguette/templates/project_new.html:13
-msgctxt "form label for new project name"
-msgid "Name"
-msgstr "Όνομα"
-
-#: taguette/templates/project_new.html:19
-msgctxt "form label for new project description"
-msgid "Description"
-msgstr "Περιγραφή"
-
-#: taguette/templates/project_new.html:26
-msgctxt "form submit button"
-msgid "Create"
-msgstr "Δημιουργία"
-
-#: taguette/templates/export_highlights.html:6
-#: taguette/templates/export_highlights.html:18
-#, python-format
-msgctxt "exported highlights document title"
-msgid "Taguette highlights: %(path)s"
-msgstr "Επισημάνσεις LibreQDA: %(path)s"
-
-#: taguette/templates/export_highlights.html:8
-#: taguette/templates/export_highlights.html:20
-msgctxt "exported highlights document title"
-msgid "Taguette highlights"
-msgstr "Επισημάνσεις LibreQDA"
-
-#: taguette/templates/export_highlights.html:25
-#, python-format
-msgctxt "exported highlight details"
-msgid "<strong>Document:</strong> %(doc)s"
-msgstr "<strong>Έγγραφο:</strong> %(doc)s"
-
-#: taguette/templates/export_highlights.html:26
-msgctxt "exported highlight details"
-msgid "Tags:"
-msgstr "Ετικέτες:"
-
-#: taguette/templates/auth/reset_password.html:3
-#: taguette/templates/new_password.html:3
-msgctxt "page title"
-msgid "Reset password"
-msgstr "Επαναφορά κωδικού πρόσβασης"
-
-#: taguette/templates/new_password.html:10
-msgid "Please enter a new password below:"
-msgstr "Εισαγάγετε έναν νέο κωδικό πρόσβασης παρακάτω:"
-
-#: taguette/templates/auth/login.html:34 taguette/templates/auth/login.html:66
-#: taguette/templates/new_password.html:15
-msgctxt "form label"
-msgid "Password"
-msgstr "Κωδικός πρόσβασης"
-
-#: taguette/templates/auth/login.html:72
-#: taguette/templates/new_password.html:21
-msgctxt "form label"
-msgid "Confirm password"
-msgstr "Επιβεβαίωση κωδικού πρόσβασης"
-
-#: taguette/templates/new_password.html:28
-msgctxt "form submit button"
-msgid "Set new password"
-msgstr "Ορίστε νέο κωδικό πρόσβασης"
-
-#: taguette/templates/index.html:25
-#, python-format
-msgid "Welcome %(user_display_name)s"
-msgstr "Καλωσορίσατε %(user_display_name)s"
-
-#: taguette/templates/index.html:27
-msgid "Welcome!"
-msgstr "Καλωσορίσατε"
-
-#: taguette/templates/index.html:33
-#, fuzzy
-msgid "Create a new project"
-msgstr "Δημιουργία νέου έργου"
-
-#: taguette/templates/index.html:38
-#, fuzzy
-msgid "Import a project file"
-msgstr "Εισαγωγή ενός αρχείου έργου"
-
-#: taguette/templates/index.html:42
-#, fuzzy
-msgid "Demo project"
-msgstr "Νέο έργο"
-
-#: taguette/templates/index.html:46
-#, fuzzy
-msgid "Here are your projects"
-msgstr "Εδώ βρίσκονται τα έργα σας"
-
-#: taguette/templates/index.html:69
-msgid "No projects available at the moment. Create or import one to get started."
-msgstr ""
-
-#: taguette/templates/auth/token_needed.html:3
-msgctxt "page title"
-msgid "Error"
-msgstr "Σφάλμα"
-
-#: taguette/templates/auth/token_needed.html:6
-msgid ""
-"Your browser did not supply a secret token to authenticate with the "
-"application. Please check the console for the correct URL to log in, or "
-"simply restart Taguette."
-msgstr ""
-"Το πρόγραμμα περιήγησής σας δεν παρείχε μυστικό κλειδάριθμο για "
-"εξουσιοδότηση με την εφαρμογή. Ελέγξτε την κονσόλα για να συνδεθείτε στη "
-"σωστή διεύθυνση URL, ή απλά επανεκκινήστε την LibreQDA."
-
-#: taguette/templates/auth/cilogon.login.html:3
-#: taguette/templates/auth/login.html:3
-msgctxt "page title"
-msgid "Log in"
-msgstr "Σύνδεση"
-
-#: taguette/templates/auth/cilogon.login.html:8
-#: taguette/templates/auth/login.html:9
-msgctxt "tab"
-msgid "Log in"
-msgstr "Σύνδεση"
-
-#: taguette/templates/auth/cilogon.login.html:9
-msgid "Authentication process by CILogon"
-msgstr ""
-
-#: taguette/templates/auth/cilogon.login.html:10
-msgid ""
-"<a target=\"_blank\" href=\"https://www.cilogon.org/home\">CILogon</a> "
-"facilitates secure\n"
-"                access to CyberInfrastructures and supports thousands of "
-"identity providers (IdPs) including University\n"
-"                campuses around the world."
-msgstr ""
-
-#: taguette/templates/auth/cilogon.login.html:13
-msgid ""
-"After you click \"Sign In with CILogon\", simply SELECT your home "
-"institution and then proceed\n"
-"                with the authentication process at your institution."
-msgstr ""
-
-#: taguette/templates/auth/cilogon.login.html:25
-msgid "Select from list"
-msgstr ""
-
-#: taguette/templates/auth/cilogon.login.html:34
-#, fuzzy
-msgid "Log in with"
-msgstr "Σύνδεση"
-
-#: taguette/templates/auth/account.html:4
-#: taguette/templates/auth/external_account.html:4
-msgctxt "page title"
-msgid "Account settings"
-msgstr "Ρυθμίσεις λογαριασμού"
-
-#: taguette/templates/auth/account.html:7
-#: taguette/templates/auth/external_account.html:7
-msgctxt "title"
-msgid "Account settings"
-msgstr "Ρυθμίσεις λογαριασμού"
-
-#: taguette/templates/auth/account.html:14
-#: taguette/templates/auth/external_account.html:14
-#: taguette/templates/auth/login.html:28 taguette/templates/auth/login.html:59
-msgctxt "form label for user name"
-msgid "Login"
-msgstr "Όνομα χρήστη"
-
-#: taguette/templates/auth/account.html:20
-#: taguette/templates/auth/external_account.html:20
-msgctxt "form label for displayname"
-msgid "Display name"
-msgstr ""
-
-#: taguette/templates/auth/account.html:29
-#: taguette/templates/auth/login.html:81
-msgid ""
-"Optional. <em>We will not share your email with anyone. This is only used"
-" in case you forget your password.</em>"
-msgstr ""
-"Προαιρετικό. <em>Δεν θα μοιραστούμε το email σας με κανέναν. Αυτό "
-"χρησιμοποιείται μόνο σε περίπτωση που ξεχάσετε τον κωδικό πρόσβασής "
-"σας.</em>"
-
-#: taguette/templates/auth/account.html:33
-#: taguette/templates/auth/external_account.html:32
-msgctxt "form label for language selection"
-msgid "Language"
-msgstr "Γλώσσα"
-
-#: taguette/templates/auth/account.html:36
-#: taguette/templates/auth/external_account.html:35
-msgctxt "language selection option"
-msgid "Auto-detect"
-msgstr "Αυτόματος εντοπισμός"
-
-#: taguette/templates/auth/account.html:44
-msgid "New password"
-msgstr "Νέος κωδικός πρόσβασης"
-
-#: taguette/templates/auth/account.html:50
-msgid "Repeat new password"
-msgstr "Επανάληψη νέου κωδικού πρόσβασης"
-
-#: taguette/templates/auth/account.html:57
-#: taguette/templates/auth/external_account.html:44
-msgctxt "form submit button"
-msgid "Update"
-msgstr "Ενημέρωση"
-
-#: taguette/templates/auth/reset_password.html:13
-msgid ""
-"If you had set an email address in your profile, you can enter it below "
-"and a link to reset your password will be sent to you."
-msgstr ""
-"Εάν είχατε ορίσει μια διεύθυνση email στο προφίλ σας, μπορείτε να την "
-"εισαγάγετε παρακάτω και θα σας σταλεί ένας σύνδεσμος για να επαναφέρετε "
-"τον κωδικό πρόσβασής σας."
-
-#: taguette/templates/auth/reset_password.html:22
-msgctxt "password reset form submit button"
-msgid "Send"
-msgstr "Αποστολή"
-
-#: taguette/templates/auth/reset_password.html:26
-msgid ""
-"If you didn't set an email address, you can try contacting your server "
-"administrator."
-msgstr ""
-"Εάν δεν έχετε ορίσει μια διεύθυνση email, μπορείτε να δοκιμάσετε να "
-"επικοινωνήσετε με τον διαχειριστή του διακομιστή σας."
-
-#: taguette/templates/auth/login.html:12
-msgctxt "tab"
-msgid "Register"
-msgstr "Εγγραφή"
-
-#: taguette/templates/auth/login.html:41
-msgctxt "form submit button"
-msgid "Log in"
-msgstr "Σύνδεση"
-
-#: taguette/templates/auth/login.html:42
-msgctxt "form link"
-msgid "Forgot password"
-msgstr "Ξεχάσατε τον κωδικό πρόσβασης;"
-
-#: taguette/templates/auth/login.html:62
-msgid "Please use only letters, numbers, dot, underscore, and dashes (._-)"
-msgstr ""
-
-#: taguette/templates/auth/login.html:86
-msgctxt "link from registration form"
-msgid "Terms of service"
-msgstr "Όροι Παροχής Υπηρεσιών"
-
-#: taguette/templates/auth/login.html:90
-#, python-format
-msgid "I accept the <a href=\"%(url)s\">terms of service</a>"
-msgstr "Αποδέχομαι τους <a href=\"%(url)s\">Όρους Παροχής Υπηρεσιών</a>"
-
-#: taguette/templates/auth/login.html:97
-msgctxt "form submit button"
-msgid "Register"
-msgstr "Εγγραφή"
-
-#: taguette/templates/auth/email_reset_password.html:1
-#, python-format
-msgid ""
-"Someone has requested to reset the password on the Taguette account "
-"associated with this email. If this was you, please follow this link: <a "
-"href=\"%(link)s\">%(link)s</a>"
-msgstr ""
-"Κάποιος ζήτησε να επαναφέρει τον κωδικό πρόσβασης ενός λογαριασμού της "
-"LibreQDA, ο οποίος σχετίζεται με αυτό το email. Εάν ήσασταν εσείς, "
-"ακολουθήστε αυτόν τον σύνδεσμο: <a href=\"%(link)s\">%(link)s</a>"
-
-#: taguette/templates/auth/email_reset_password.html:3
-#, python-format
-msgid "Your user name is: <strong>%(login)s</strong>"
-msgstr "Το δικό σας όνομα χρήστη είναι: <strong>%(login)s</strong>"
-
-#: taguette/templates/auth/email_reset_password.html:5
-msgid "This link will expire in 1 day."
-msgstr "Αυτός ο σύνδεσμος θα λήξει σε 1 ημέρα."
-
-#: taguette/templates/base.html:35
-#, fuzzy
-msgid "Edit project"
-msgstr "Νέο έργο"
-
-#: taguette/templates/base.html:42
-#, fuzzy
-msgctxt "search form placeholder"
-msgid "Search in documents"
-msgstr "Επεξεργασία εγγράφου"
-
-#: taguette/templates/base.html:53
-#, fuzzy, python-format
-msgctxt "navigation item"
-msgid "LibreQDA Guide %(external_icon)s"
-msgstr "Οδηγός LibreQDA %(external_icon)s"
-
-#: taguette/templates/base.html:57
-msgid "Single-user mode"
-msgstr "Λειτουργία ενός χρήστη"
-
-#: taguette/templates/base.html:61
-msgctxt "navigation dropdown menu"
-msgid "Account"
-msgstr "Λογαριασμός"
-
-#: taguette/templates/base.html:63
-msgctxt "navigation item"
-msgid "Settings"
-msgstr "Ρυθμίσεις"
-
-#: taguette/templates/base.html:65
-msgctxt "navigation item"
-msgid "Terms of Service"
-msgstr "Όροι Παροχής Υπηρεσιών"
-
-#: taguette/templates/base.html:67
-msgctxt "navigation item"
-msgid "Log out"
-msgstr "Αποσύνδεση"
-
-#: taguette/templates/base.html:72
-msgctxt "navigation item"
-msgid "Log in"
-msgstr "Σύνδεση"
-
-#: taguette/templates/base.html:87
-#, fuzzy, python-format
-msgid ""
-"LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
-"/bin-cirst/libreqda/libre-"
-"qda/-/blob/main/LICENSE.txt?ref_type=heads\">BSD-3-Clause license</a>, "
-"&#169; Plateforme en humanités numériques (Université de Sherbrooke) and "
-"contributors\n"
-"            | &#169; Remi Rampin and Taguette contributors | <a "
-"href=\"https://help.libreqda.org/\">User Documentation</a>"
-msgstr ""
-"Η έκδοση LibreQDA %(version)s κυκλοφορεί με τους όρους της άδειας <a "
-"href=\"https://gitlab.cirst.ca/libreqda/libreqda/blob/main/LICENSE.txt\">BSD-3-Clause</a>,"
-" &#169; Rémi Rampin και συνεισφέροντες στη Taguette | <a "
-"href=\"https://www.taguette.org/getting-started.html\">Τεκμηρίωση "
-"χρήστη</a>"
-
-#~ msgid "User name or email address is taken"
-#~ msgstr ""
-
-#~ msgid "You have no projects yet."
-#~ msgstr "Δεν έχετε δημιουργήσει ακόμη έργα."
-
-#~ msgctxt "tab"
-#~ msgid "Documents"
-#~ msgstr "Έγγραφα"
-
-#~ msgid "Manage collaborators"
-#~ msgstr "Διαχείριση συνεργατών"
-
-#~ msgid "Backlight"
-#~ msgstr "Οπισθοφωτισμός"
-
-#~ msgid "Export this view"
-#~ msgstr "Εξαγωγή αυτής της προβολής"
-
-#~ msgctxt "form placeholder"
-#~ msgid "Enter a document name"
-#~ msgstr "Εισαγωγή ονόματος αρχείου"
-
-#~ msgid "<em>n</em>ew highlight <span class=\"sr-only\">(shortcut: n)</span>"
-#~ msgstr "νέα επισήμανση (n)"
-
-#~ msgctxt "navigation item"
-#~ msgid "Home"
-#~ msgstr "Αρχική"
 

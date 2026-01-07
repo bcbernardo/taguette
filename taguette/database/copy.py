@@ -2,8 +2,9 @@ from collections import defaultdict
 import logging
 import opentelemetry.trace
 
-from .models import Project, Privileges, ProjectMember, TextDirection, \
-    Document, Command, Highlight, Tag, highlight_tags
+from .models import (Project, Privileges, ProjectMember, TextDirection,
+                     Document, Command, Highlight, Tag, highlight_tags,
+                     Collection, collection_documents)
 from .. import convert
 from ..utils import DefaultMap
 from .. import validate
@@ -78,6 +79,11 @@ def copy_project(
             row['parent_id'] = mapping[row['parent_id']]
         return row
 
+    def transform_collection(row, mapping):
+        if 'parent_id' in row and row['parent_id'] in mapping:
+            row['parent_id'] = mapping[row['parent_id']]
+        return {**row, 'owner_login': None}
+
     # Copy tags
     mapping_tags = copy(
         Tag.__table__, 'id',
@@ -111,6 +117,28 @@ def copy_project(
         dict(highlight_id=mapping_highlights, tag_id=mapping_tags),
         200,
         condition=highlight_tags.c.tag_id.in_(mapping_tags.keys()),
+    )
+
+    # Copy collections
+    mapping_collections = copy(
+        Collection.__table__, 'id',
+        dict(project_id=mapping_project),
+        50,
+        condition=Collection.project_id == project_id,
+        validators=dict(
+            name=lambda v: isinstance(v, str) and len(v.strip()) > 0,
+            description=lambda v: v is None or isinstance(v, str),
+        ),
+        transform=transform_collection
+    )
+
+    # Copy collection documents association
+    copy(
+        collection_documents, None,
+        dict(collection_id=mapping_collections, document_id=mapping_document),
+        200,
+        condition=collection_documents.c.collection_id.in_(
+            mapping_collections.keys()),
     )
 
     def validate_text_direction(direction):
@@ -172,6 +200,22 @@ def copy_project(
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
+            # Collections fields
+            collections=lambda v: (
+                isinstance(v, list)
+                and all(isinstance(e, int) for e in v)
+            ),
+            collection_id=lambda v: isinstance(v, int),
+            collection_name=lambda v: isinstance(
+                v, str) and len(v.strip()) > 0,
+            parent_id=lambda v: (
+                v is None or isinstance(v, int) or (
+                    isinstance(v, str) and v.isdigit())
+            ),
+            document_ids=lambda v: (
+                isinstance(v, list)
+                and all(isinstance(e, int) for e in v)
+            ),
         )
 
         field_transformers = dict(
@@ -179,12 +223,27 @@ def copy_project(
             tag_id=lambda v: mv(mapping_tags, v),
             src_tag_id=lambda v: mv(mapping_tags, v),
             tags=lambda tags: [mv(mapping_tags, t) for t in tags],
+            # Collections transformers
+            collections=lambda collections: [
+                mv(mapping_collections, c) for c in collections],
+            collection_id=lambda v: mv(mapping_collections, v),
+            parent_id=lambda v: mv(mapping_collections, int(
+                v)) if v is not None else None,
+            document_ids=lambda document_ids: [
+                mv(mapping_document, d) for d in document_ids],
         )
 
         # Map JSON fields
         for field, value in list(payload.items()):
             try:
-                if not field_validators[field](value):
+                if (field in field_validators and
+                        not field_validators[field](value)):
+                    print(field, value)
+                    if field == 'parent_id':
+                        print("mapping_collections:", mapping_collections)
+                        print("validation result:",
+                              field_validators[field](value))
+                        print("value type:", type(value))
                     raise ValueError("Invalid field %r in command" % field)
             except validate.InvalidFormat:
                 raise ValueError("Invalid field %r in command" % field)
@@ -243,7 +302,7 @@ def copy_table(
     if condition is not None:
         query = query.where(condition)
 
-    if table == Tag.__table__:
+    if table == Tag.__table__ or table == Collection.__table__:
         count_query = src_db.execute(
             func.count().select().select_from(query.alias()))
         total_rows = count_query.scalar()
@@ -259,9 +318,9 @@ def copy_table(
 
         rows = [dict(row) for row in batch]
 
-        if table == Tag.__table__:
-            roots, hierarchies = build_tag_hierarchies(rows)
-            insert_tags_recursively(
+        if table == Tag.__table__ or table == Collection.__table__:
+            roots, hierarchies = build_hierarchies(rows)
+            insert_hierarchically(
                 dest_db,
                 roots,
                 hierarchies,
@@ -279,48 +338,61 @@ def copy_table(
     return mapping
 
 
-def build_tag_hierarchies(tags):
-    """Build a hierarchy for tags to manage parent-child relationships."""
+def build_hierarchies(items):
+    """Build a hierarchy for items with parent_id relationships."""
     hierarchies = defaultdict(list)
     roots = []
-    for tag in tags:
-        if tag['parent_id'] is None:
-            roots.append(tag)
+    for item in items:
+        if item['parent_id'] is None:
+            roots.append(item)
         else:
-            hierarchies[tag['parent_id']].append(tag)
+            hierarchies[item['parent_id']].append(item)
     return roots, hierarchies
 
 
-def insert_tags_recursively(dest_db, roots, hierarchies, mapping,
-                            table, pkey, fkeys, transform, validators):
-    """Insert tags recursively to respect parent-child relationships."""
-    for tag in roots:
-        tag_id = tag[pkey]
-        # Get primary key, remove it
-        if pkey is not None:
-            tag.pop(pkey)
-        # Map foreign keys
-        for field, fkey_map in fkeys.items():
-            tag[field] = fkey_map[tag[field]]
-        # Generic transform
-        if transform is not None:
-            tag = transform(tag, mapping)
+def validate_item(item, validators):
+    """Validate an item against the provided validators."""
+    if validators:
+        for key, value in item.items():
+            if key in validators:
+                if not validators[key](value):
+                    raise ValueError(
+                        f"Data failed validation (column {key})")
+
+
+def prepare_item_for_insertion(item, pkey, fkeys, transform, mapping):
+    """Prepare an item for insertion by removing pkey, mapping foreign keys,
+    and applying transform."""
+    item_id = item[pkey]
+    # Get primary key, remove it
+    if pkey is not None:
+        item.pop(pkey)
+    # Map foreign keys
+    for field, fkey_map in fkeys.items():
+        item[field] = fkey_map[item[field]]
+    # Generic transform
+    if transform is not None:
+        item = transform(item, mapping)
+    return item_id, item
+
+
+def insert_hierarchically(dest_db, roots, hierarchies, mapping,
+                          table, pkey, fkeys, transform, validators):
+    """Insert items recursively to respect parent-child relationships."""
+    for item in roots:
+        item_id, prepared_item = prepare_item_for_insertion(
+            item, pkey, fkeys, transform, mapping)
         # Validate
-        if validators:
-            for key, value in tag.items():
-                if key in validators:
-                    if not validators[key](value):
-                        raise ValueError(
-                            f"Data failed validation (column {key})")
+        validate_item(prepared_item, validators)
         # Have to insert one-by-one for inserted_primary_key
-        ins = dest_db.execute(table.insert(), tag)
+        ins = dest_db.execute(table.insert(), prepared_item)
         # Store new primary key
         if pkey is not None:
-            mapping[tag_id], = ins.inserted_primary_key
-        if tag_id in hierarchies:
-            insert_tags_recursively(
+            mapping[item_id], = ins.inserted_primary_key
+        if item_id in hierarchies:
+            insert_hierarchically(
                 dest_db,
-                hierarchies[tag_id],
+                hierarchies[item_id],
                 hierarchies,
                 mapping,
                 table,
@@ -352,12 +424,7 @@ def insert_rows(dest_db,
         if transform is not None:
             row = transform(row, mapping)
         # Validate
-        if validators:
-            for key, value in row.items():
-                if key in validators:
-                    if not validators[key](value):
-                        raise ValueError(
-                            f"Data failed validation (column {key})")
+        validate_item(row, validators)
         # Have to insert one-by-one for inserted_primary_key
         ins = dest_db.execute(table.insert(), row)
         # Store new primary key

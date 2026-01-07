@@ -1,0 +1,35 @@
+/* Treeview Styles */
+
+/* Collection highlight */
+.highlight-collection {
+    background-color: $color-highlight-bg !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-collection.fade-out {
+    background-color: transparent !important;
+}
+
+/* Document highlight */
+.highlight-document {
+    background-color: $color-highlight-bg !important;
+    transition: background-color 1s ease;
+}
+
+.highlight-document.fade-out {
+    background-color: transparent !important;
+}
+
+/* Override bootstrap-treeview icon spacing */
+body #treeview-documents span.icon {
+    margin-right: 10px !important;
+    width: 12px !important;
+}
+
+/* Indent documents within collections */
+#treeview-documents .document-link {
+    padding-left: 50px !important;
+    padding-right: 60px !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
