@@ -4,7 +4,8 @@
 
 // Get current highlight version (V1 is default)
 function getHighlightVersion() {
-    return localStorage.getItem('highlightVersion') || 'v1';
+    // return localStorage.getItem('highlightVersion') || 'v1';
+    return 'v1';
 }
 
 // NEW selector
