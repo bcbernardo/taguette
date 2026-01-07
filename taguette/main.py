@@ -13,6 +13,8 @@ import string
 import subprocess
 import sys
 import tornado.ioloop
+from tornado.httpserver import HTTPServer
+from tornado.netutil import bind_unix_socket
 from urllib.parse import urlparse
 import webbrowser
 
@@ -386,6 +388,10 @@ def main():
         const=None,
         help=_("Don't change umask on startup"),
     )
+    parser.add_argument('--base_path', default='/',
+                        help=_("Base path for the URL"))
+    parser.add_argument('--unix_socket', default=None,
+                        help=_("Unix socket to bind to instead of port"))
     parser.set_defaults(
         func=None,  # Function to run instead of default, e.g. migrate, server
         func1=None,  # Run immediately, e.g. before anything is logged
@@ -500,6 +506,8 @@ def main():
             SECRET_KEY=secret,
             COOKIES_PROMPT=False,
             HTML_OUT_SIZE_LIMIT=5000000,  # 5 MB
+            BASE_PATH=args.base_path,
+            UNIX_SOCKET=args.unix_socket,
         )
 
     # Loki integration
@@ -540,11 +548,16 @@ def main():
     if config["ALLOW_EXTERNAL_LOGIN_BYPASS"]:
         xsrf_cookies = False
     app = make_app(config, debug=args.debug, xsrf_cookies=xsrf_cookies)
-    app.listen(
-        config["PORT"],
-        address=config["BIND_ADDRESS"],
-        xheaders=config.get("X_HEADERS", False),
-    )
+    if args.unix_socket:
+        server = HTTPServer(app)
+        socket = bind_unix_socket(args.unix_socket)
+        server.add_socket(socket)
+    else:
+        app.listen(
+            config["PORT"],
+            address=config["BIND_ADDRESS"],
+            xheaders=config.get("X_HEADERS", False),
+        )
     loop = tornado.ioloop.IOLoop.current()
 
     db = app.DBSession()
@@ -569,15 +582,23 @@ def main():
         logger.warning("Debug mode is ON")
         asyncio.get_event_loop().set_debug(True)
 
-    url = get_join_url(app)
-    print(
-        _(
-            "\n    Taguette %(version)s is now running. You can connect to it "
-            "using this link:\n\n    %(url)s\n"
+    if args.unix_socket:
+        print(
+            _(
+                "\n    Taguette %(version)s is now running using "
+                "UNIX socket %(socket)s") %
+            dict(socket=args.unix_socket, version=exact_version()),
+            flush=True
         )
-        % dict(url=url, version=exact_version()),
-        flush=True,
-    )
+    else:
+        url = get_join_url(app)
+        print(
+            _(
+                "\n    Taguette %(version)s is now running. You can "
+                "connect to it using this link:\n\n    %(url)s\n") %
+            dict(url=url, version=exact_version()),
+            flush=True
+        )
 
     if args.browser and not args.debug:
         loop.call_later(0.01, webbrowser.open, url)
