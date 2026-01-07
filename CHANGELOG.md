@@ -1,6 +1,21 @@
 LibreQDA Changelog
 ==================
 
+1.1.0 (2026-01-07)
+------------------
+- Document collections
+- Language selector on welcome page
+- Usage tips
+- Update translations
+- Update tests
+- SCSS refactoring
+- Allow theming (custom templates and CSS)
+- Allow to run on Unix socket (MR )
+- Bugfixes:
+  - Multiple display issues
+  - OAuth cookies
+  - Document deletion
+
 1.0.2 (2025-07-25)
 ------------------
 - Update CILogon authentication template and make it responsive

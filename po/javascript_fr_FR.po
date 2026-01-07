@@ -365,11 +365,11 @@ msgstr "Importer des documents"
 
 #: taguette/static/js/document/manager.js:314
 msgid " = Documents without collection"
-msgstr ""
+msgstr " = Documents sans collection"
 
 #: taguette/static/js/document/manager.js:315
 msgid " = Documents currently assigned to a collection"
-msgstr ""
+msgstr " = Documents déjà dans un collection"
 
 #: taguette/static/js/document/manager.js:386
 #: taguette/static/js/document/manager.js:488
