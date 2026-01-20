@@ -621,7 +621,9 @@ class TagMerge(BaseHandler):
             .where(database.highlight_tags.c.tag_id == tag_src.id)
             .values(tag_id=tag_dest.id)
         )
-        # Delete tag_src
+        self.db.query(database.Tag).filter(
+            database.Tag.parent_id == tag_src.id
+        ).update({database.Tag.parent_id: tag_dest.id})
         self.db.delete(tag_src)
 
         cmd = database.Command.tag_merge(
