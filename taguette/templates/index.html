@@ -112,6 +112,12 @@
             {% endif %}
         </div>
 
+        <!-- No results message -->
+        <div id="no-results-message" class="text-center py-4 d-none">
+            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+            <p class="text-muted">{% trans %}No projects found matching your search.{% endtrans %}</p>
+        </div>
+
         <!-- Pagination buttons -->
         {% if projects|length > 8 %}
         <div class="text-center mt-4" id="projects-pagination">
@@ -135,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('demo-project-container');
     const searchInput = document.getElementById('project-search');
     const paginationDiv = document.getElementById('projects-pagination');
+    const noResultsMsg = document.getElementById('no-results-message');
 
     if (!container) return;
 
@@ -172,7 +179,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             // Hide pagination when searching
             if (paginationDiv) paginationDiv.style.display = 'none';
+            // Show no results message if needed
+            if (noResultsMsg) {
+                if (filteredProjects.length === 0) {
+                    noResultsMsg.classList.remove('d-none');
+                } else {
+                    noResultsMsg.classList.add('d-none');
+                }
+            }
         } else {
+            // Hide no results message
+            if (noResultsMsg) noResultsMsg.classList.add('d-none');
             // Normal pagination
             filteredProjects.slice(0, visibleCount).forEach(function(el) {
                 el.style.display = '';
