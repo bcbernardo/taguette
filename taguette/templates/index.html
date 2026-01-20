@@ -58,7 +58,15 @@
         </a>
     </div>
 
-    <p>{% trans %}Here are your projects{% endtrans %}:</p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="mb-0">{% trans %}Here are your projects{% endtrans %}:</p>
+        {% if projects|length > 1 %}
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="project-search" placeholder="{% trans %}Search projects...{% endtrans %}">
+        </div>
+        {% endif %}
+    </div>
     {% if not can_import_project %}
         <p class="alert alert-info">{% trans %}Please note that you cannot create a project at this time. You must be sponsored by a Canadian Access Federation (CAF) user.{% endtrans %}</p>
     {% endif %}
@@ -103,6 +111,118 @@
                 </div>
             {% endif %}
         </div>
+
+        <!-- Pagination buttons -->
+        {% if projects|length > 8 %}
+        <div class="text-center mt-4" id="projects-pagination">
+            <button class="btn btn-outline-primary" id="btn-show-more">
+                <i class="fas fa-chevron-down"></i> {% trans %}Show more{% endtrans %}
+                <span class="badge bg-secondary ms-2" id="hidden-count">{{ projects|length - 8 }}</span>
+            </button>
+            <button class="btn btn-outline-secondary d-none" id="btn-show-less">
+                <i class="fas fa-chevron-up"></i> {% trans %}Show less{% endtrans %}
+            </button>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnShowMore = document.getElementById('btn-show-more');
+    const btnShowLess = document.getElementById('btn-show-less');
+    const hiddenCount = document.getElementById('hidden-count');
+    const container = document.getElementById('demo-project-container');
+    const searchInput = document.getElementById('project-search');
+    const paginationDiv = document.getElementById('projects-pagination');
+
+    if (!container) return;
+
+    const projects = Array.from(container.querySelectorAll('.col.project'));
+    const initialCount = 8;
+    const stepCount = 4;
+    let visibleCount = initialCount;
+    let filteredProjects = projects;
+    let searchTerm = '';
+
+    function filterProjects() {
+        if (!searchTerm) {
+            filteredProjects = projects;
+        } else {
+            const term = searchTerm.toLowerCase();
+            filteredProjects = projects.filter(function(el) {
+                const name = el.querySelector('h3')?.textContent?.toLowerCase() || '';
+                const desc = el.querySelector('.description-text')?.textContent?.toLowerCase() || '';
+                return name.includes(term) || desc.includes(term);
+            });
+        }
+    }
+
+    function updateVisibility() {
+        const isSearching = searchTerm.length > 0;
+
+        projects.forEach(function(el) {
+            el.style.display = 'none';
+        });
+
+        if (isSearching) {
+            // Show all matching results when searching
+            filteredProjects.forEach(function(el) {
+                el.style.display = '';
+            });
+            // Hide pagination when searching
+            if (paginationDiv) paginationDiv.style.display = 'none';
+        } else {
+            // Normal pagination
+            filteredProjects.slice(0, visibleCount).forEach(function(el) {
+                el.style.display = '';
+            });
+
+            if (paginationDiv) {
+                paginationDiv.style.display = '';
+                const remaining = filteredProjects.length - visibleCount;
+
+                if (remaining > 0) {
+                    btnShowMore.classList.remove('d-none');
+                    hiddenCount.textContent = remaining;
+                } else {
+                    btnShowMore.classList.add('d-none');
+                }
+
+                if (visibleCount > initialCount) {
+                    btnShowLess.classList.remove('d-none');
+                } else {
+                    btnShowLess.classList.add('d-none');
+                }
+            }
+        }
+    }
+
+    // Initial state
+    updateVisibility();
+
+    if (btnShowMore) {
+        btnShowMore.addEventListener('click', function() {
+            visibleCount = Math.min(visibleCount + stepCount, filteredProjects.length);
+            updateVisibility();
+        });
+    }
+
+    if (btnShowLess) {
+        btnShowLess.addEventListener('click', function() {
+            visibleCount = initialCount;
+            updateVisibility();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchTerm = this.value.trim();
+            visibleCount = initialCount;
+            filterProjects();
+            updateVisibility();
+        });
+    }
+});
+</script>
 {% endblock %}
