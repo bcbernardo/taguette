@@ -86,8 +86,7 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
         treeData.push(...collectionNodes);
     }
     
-    // Only show uncategorized documents if no filtered collections or if searching
-    const shouldShowUncategorized = !filteredCollections || filteredCollections.length === 0;
+    const shouldShowUncategorized = true;
     
     if (shouldShowUncategorized) {
         const uncategorizedDocs = [];
