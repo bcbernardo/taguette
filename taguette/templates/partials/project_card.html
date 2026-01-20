@@ -13,6 +13,7 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item action-edit" href="#" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}" data-project-description="{{ project.description }}"><i class="fas fa-edit me-2"></i>{% trans %}Edit{% endtrans %}</a></li>
                     <li><a class="dropdown-item" href="{{ reverse_url('export_project_sqlite', project.id) }}"><i class="fas fa-download me-2"></i>{% trans %}Export{% endtrans %}</a></li>
+                    <li><a class="dropdown-item action-archive" href="#" data-project-id="{{ project.id }}"><i class="fas fa-archive me-2"></i>{% trans %}Archive{% endtrans %}</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="{{ reverse_url('delete_project', project.id) }}"><i class="fas fa-trash me-2"></i>{% trans %}Delete{% endtrans %}</a></li>
                 </ul>

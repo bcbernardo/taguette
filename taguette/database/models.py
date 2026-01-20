@@ -283,6 +283,7 @@ class Project(Base):
     description = Column(Text, nullable=False)
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
+    is_archived = Column(Boolean, nullable=False, default=False)
     members = relationship('ProjectMember', cascade='all,delete-orphan',
                            back_populates='project')
     commands = relationship('Command', cascade='all,delete-orphan',
@@ -874,7 +875,8 @@ Project.tag_count = column_property(
 Project.member_count = column_property(
     select([func.count(ProjectMember.user_login)])
     .where(ProjectMember.project_id == Project.id)
-    .as_scalar()
+    .correlate(Project)
+    .scalar_subquery()
 )
 
 

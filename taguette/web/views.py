@@ -94,7 +94,7 @@ class Index(BaseHandler):
                 user=user,
                 user_login=Markup(json.dumps(self.current_user)),
                 user_display_name=user_display_name,
-                projects=[m.project for m in user.project_memberships],
+                projects=[m.project for m in user.project_memberships if not m.project.is_archived],
                 can_create_project=user.role.can_create_project(),
                 can_change_role=user.role.can_change_role(),
                 can_import_project=(
@@ -1009,6 +1009,55 @@ class ProjectDelete(BaseHandler):
         self.db.delete(project)
         self.db.commit()
         return self.redirect(self.reverse_url("index"))
+
+
+class ProjectArchive(BaseHandler):
+    @authenticated
+    @PROM_REQUESTS.sync("archive_project")
+    def post(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_delete_project():
+            raise HTTPError(403)
+        logger.info(
+            "Archiving project %d %r user=%r",
+            project.id,
+            project.name,
+            self.current_user,
+        )
+        project.is_archived = True
+        self.db.commit()
+        return self.redirect(self.reverse_url("index"))
+
+
+class ProjectUnarchive(BaseHandler):
+    @authenticated
+    @PROM_REQUESTS.sync("unarchive_project")
+    def post(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_delete_project():
+            raise HTTPError(403)
+        logger.info(
+            "Unarchiving project %d %r user=%r",
+            project.id,
+            project.name,
+            self.current_user,
+        )
+        project.is_archived = False
+        self.db.commit()
+        return self.redirect(self.reverse_url("archived_projects"))
+
+
+class ArchivedProjects(BaseHandler):
+    @authenticated
+    @PROM_REQUESTS.sync("archived_projects")
+    def get(self):
+        user = self.db.query(database.User).get(self.current_user)
+        projects = [m.project for m in user.project_memberships if m.project.is_archived]
+        return self.render(
+            "archived_projects.html",
+            user=user,
+            projects=projects,
+        )
 
 
 class ImportCodebook(BaseHandler):
