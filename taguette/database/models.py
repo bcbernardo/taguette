@@ -870,6 +870,13 @@ Project.tag_count = column_property(
     .as_scalar()
 )
 
+# Property to count members associate with projet
+Project.member_count = column_property(
+    select([func.count(ProjectMember.user_login)])
+    .where(ProjectMember.project_id == Project.id)
+    .as_scalar()
+)
+
 
 class EdugainIdps(Base):
     __tablename__ = 'edigainidps'

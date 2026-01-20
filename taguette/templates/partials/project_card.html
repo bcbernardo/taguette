@@ -25,13 +25,17 @@
             </div>
             <hr class="custom-hr mt-auto">
             <div class="d-flex justify-content-between px-3 pb-3 stats-container">
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" title="{% trans %}Documents{% endtrans %}">
                     <i class="fas fa-file-alt"></i>
-                    <span class="quote2 mx-2">{{ project.document_count }} document(s)</span>
+                    <span class="quote2 mx-2">{{ project.document_count }}</span>
                 </div>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" title="{% trans %}Codes{% endtrans %}">
                     <i class="fas fa-stream"></i>
-                    <span class="quote2 mx-2">{{ project.tag_count }} code(s)</span>
+                    <span class="quote2 mx-2">{{ project.tag_count }}</span>
+                </div>
+                <div class="d-flex align-items-center" title="{% trans %}Collaborators{% endtrans %}">
+                    <i class="fas fa-users"></i>
+                    <span class="quote2 mx-2">{{ project.member_count }}</span>
                 </div>
             </div>
         </a>
