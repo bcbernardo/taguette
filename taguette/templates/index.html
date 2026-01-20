@@ -133,6 +133,35 @@
     </div>
 </div>
 
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProjectModalLabel">{% trans %}Edit project{% endtrans %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-project-form">
+                    <input type="hidden" id="edit-project-id">
+                    <div class="mb-3">
+                        <label for="edit-project-name" class="form-label">{% trans %}Name{% endtrans %}</label>
+                        <input type="text" class="form-control" id="edit-project-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-project-description" class="form-label">{% trans %}Description{% endtrans %}</label>
+                        <textarea class="form-control" id="edit-project-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+                <button type="button" class="btn btn-primary" id="btn-save-project">{% trans %}Save{% endtrans %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const btnShowMore = document.getElementById('btn-show-more');
@@ -238,6 +267,65 @@ document.addEventListener('DOMContentLoaded', function() {
             visibleCount = initialCount;
             filterProjects();
             updateVisibility();
+        });
+    }
+
+    // Edit project functionality
+    const editModal = document.getElementById('editProjectModal');
+    const editProjectId = document.getElementById('edit-project-id');
+    const editProjectName = document.getElementById('edit-project-name');
+    const editProjectDescription = document.getElementById('edit-project-description');
+    const btnSaveProject = document.getElementById('btn-save-project');
+
+    document.querySelectorAll('.action-edit').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const projectId = this.dataset.projectId;
+            const projectName = this.dataset.projectName;
+            const projectDescription = this.dataset.projectDescription || '';
+
+            editProjectId.value = projectId;
+            editProjectName.value = projectName;
+            editProjectDescription.value = projectDescription;
+
+            const modal = new bootstrap.Modal(editModal);
+            modal.show();
+        });
+    });
+
+    if (btnSaveProject) {
+        btnSaveProject.addEventListener('click', function() {
+            const projectId = editProjectId.value;
+            const name = editProjectName.value.trim();
+            const description = editProjectDescription.value.trim();
+
+            if (!name) {
+                editProjectName.classList.add('is-invalid');
+                return;
+            }
+            editProjectName.classList.remove('is-invalid');
+
+            const xsrf = getCookie('_xsrf');
+            fetch('/api/project/' + projectId + '?_xsrf=' + encodeURIComponent(xsrf), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    description: description
+                })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    console.error('Error saving project');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error saving project:', error);
+            });
         });
     }
 });

@@ -876,11 +876,10 @@ Index project view custom
 .project-card {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     height: 230px;
     width: 100%;
     background-color: #fff;
-    text-align: center;
+    text-align: left;
     border-radius: 10px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     margin-bottom: 20px;
@@ -891,13 +890,18 @@ Index project view custom
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    text-align: left;
+}
+
+.description-container p {
+    margin: 0;
+    text-align: left;
 }
 
 .description-text {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
-    padding-left: 15px;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 0;
@@ -999,7 +1003,7 @@ Index project view custom
     text-align: left;
     overflow: auto;
     max-height: 80px;
-    margin: 0 3px;
+    margin: 0;
 }
 
 .custom-hr {
