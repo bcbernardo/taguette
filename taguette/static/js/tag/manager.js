@@ -205,7 +205,19 @@ function removeTag(id) {
 function mergeTags(tag_src, tag_dest) {
     const tagToRemove = findTag(tag_src);
     const tagToUpdate = findTag(tag_dest);
+
+    if (!tagToRemove || !tagToUpdate) return;
+
     tagToUpdate.count = parseInt(tagToUpdate.count) + parseInt(tagToRemove.count);
+
+    if (tagToRemove.children && tagToRemove.children.length > 0) {
+        for (const child of tagToRemove.children) {
+            child.parent = tag_dest;
+        }
+        tagToUpdate.children = tagToUpdate.children || [];
+        tagToUpdate.children.push(...tagToRemove.children);
+        tagToRemove.children = [];
+    }
 
     findTagAndDelete(tag_src);
     updateTagsList();
