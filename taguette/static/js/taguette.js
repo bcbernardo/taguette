@@ -598,7 +598,44 @@ function mergeTag(tag_id) {
     document.getElementById('tag-merge-form').reset();
     document.getElementById('tag-merge-src-id').value = '' + tag_id;
     document.getElementById('tag-merge-src-name').value = tag.path;
+
+    document.getElementById('tag-merge-warning').classList.add('d-none');
+    document.getElementById('tag-merge-warning-text').textContent = '';
+
     $(document.getElementById('tag-merge-modal')).modal('show');
+}
+
+function updateMergeWarning() {
+    const warningDiv = document.getElementById('tag-merge-warning');
+    const warningText = document.getElementById('tag-merge-warning-text');
+
+    const srcId = document.getElementById('tag-merge-src-id').value;
+    const destId = document.getElementById('tag-merge-dest').value;
+
+    if (!srcId || !destId) {
+        warningDiv.classList.add('d-none');
+        return;
+    }
+
+    const srcTag = findTag(parseInt(srcId));
+    const destTag = findTag(parseInt(destId));
+
+    if (srcTag && srcTag.children && srcTag.children.length > 0 && destTag) {
+        const childCount = srcTag.children.length;
+        warningText.textContent = gettext("This tag has %(count)s child tag(s) that will be moved to \"%(dest)s\".", {count: childCount, dest: destTag.path});
+        warningDiv.classList.remove('d-none');
+    } else {
+        warningDiv.classList.add('d-none');
+    }
+}
+
+const mergeSelectDropdown = document.getElementById('tag-hierarchy-merge-select');
+if (mergeSelectDropdown) {
+    mergeSelectDropdown.addEventListener('click', function(e) {
+        if (e.target.classList.contains('dropdown-item')) {
+            setTimeout(updateMergeWarning, 50);
+        }
+    });
 }
 
 // Merge modal submit button
