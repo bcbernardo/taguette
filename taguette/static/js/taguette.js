@@ -1018,7 +1018,7 @@ function scrollToHighlight(highlight_id, search_text=null) {
         // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
             const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
-            switch (currentHighlightVersion) {
+            switch (getHighlightVersion()) {
                 case 'v1':
                     let count_lines = 0;
                     data_highlight_selector.each(function(){
