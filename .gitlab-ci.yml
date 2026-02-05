@@ -1,5 +1,4 @@
 variables:
-  #CI_TEST_IMAGE: "moussatoure/libreqda:tests" #Docker Hub use TODO:phun account later
   CI_TEST_IMAGE: "${CI_REGISTRY_IMAGE}:tests" #GitLab Registry
 stages:
   - prepare_image

@@ -25,7 +25,7 @@ from tornado.web import HTTPError, RequestHandler
 from urllib.parse import urlencode
 from pathlib import Path
 
-from .. import __version__, exact_version
+from .. import exact_version
 from .. import database
 from ..utils import background_task
 
@@ -197,30 +197,67 @@ class Application(GracefulExitApplication):
 
         self.tag_default_color = config.get('TAG_DEFAULT_COLOR', '#000000')
 
-        # Get messages from taguette.org
+        # Get messages, from specified url or hardcoded.
         self.messages = []
         self.messages_event = asyncio.Event()
         self.check_messages()
 
     async def _check_messages(self):
-        http_client = AsyncHTTPClient()
-        response = await http_client.fetch(
-            'https://msg.taguette.org/%s' % __version__,
-            headers={'Accept': 'application/json', 'User-Agent': 'Taguette'})
-        obj = json.loads(response.body.decode('utf-8'))
-        self.messages = [
-            {
-                'text': msg['text'],
-                'html': bleach.clean(
-                    msg['html'],
-                    tags=['a', 'br', 'strong', 'em'],
-                    attributes={'a': ['href', 'title']},
-                )
-            }
-            for msg in obj['messages']
-        ]
-        for msg in self.messages:
-            logger.warning("LibreQDA message: %s", msg['text'])
+        # Check if a hardcoded message is configured
+        if self.config.get('HARDCODED_MESSAGE'):
+            msg_config = self.config['HARDCODED_MESSAGE']
+            # Support both dict format and simple string
+            if isinstance(msg_config, dict):
+                self.messages = [{
+                    'text': msg_config.get('text', ''),
+                    'html': bleach.clean(
+                        msg_config.get('html', msg_config.get('text', '')),
+                        tags=['a', 'br', 'hr', 'strong', 'em'],
+                        attributes={'a': ['href', 'title']},
+                    )
+                }]
+            else:
+                # Simple string message
+                self.messages = [{
+                    'text': str(msg_config),
+                    'html': bleach.clean(
+                        str(msg_config),
+                        tags=['a', 'br', 'strong', 'em'],
+                        attributes={'a': ['href', 'title']},
+                    )
+                }]
+            for msg in self.messages:
+                logger.warning("LibreQDA message: %s", msg['text'])
+            self.messages_event.set()
+            return
+
+        # Check if a custom URL is configured
+        if self.config.get('MESSAGES_URL'):
+            http_client = AsyncHTTPClient()
+            response = await http_client.fetch(
+                self.config['MESSAGES_URL'],
+                headers={
+                    'Accept': 'application/json',
+                    'User-Agent': 'Taguette'
+                })
+            obj = json.loads(response.body.decode('utf-8'))
+            self.messages = [
+                {
+                    'text': msg['text'],
+                    'html': bleach.clean(
+                        msg['html'],
+                        tags=['a', 'br', 'strong', 'em'],
+                        attributes={'a': ['href', 'title']},
+                    )
+                }
+                for msg in obj['messages']
+            ]
+            for msg in self.messages:
+                logger.warning("LibreQDA message: %s", msg['text'])
+            self.messages_event.set()
+            return
+
+        # No message configuration found
         self.messages_event.set()
 
     @staticmethod
