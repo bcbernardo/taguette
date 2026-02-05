@@ -260,12 +260,13 @@ function extractTextFromHtml(html) {
 }
 
 function extractFormattedContent(html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    const plainText = extractTextFromHtml(html);
+    try {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const plainText = extractTextFromHtml(html);
 
-    const formattedPortions = [];
-    let index = 1;
+        const formattedPortions = [];
+        let index = 1;
 
     function countOccurrencesUpTo(searchText, node) {
         let count = 0;
@@ -294,35 +295,58 @@ function extractFormattedContent(html) {
         return count + 1;
     }
 
-    function processNode(node) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            let format = null;
-            switch (node.tagName) {
-                case 'STRONG': case 'B': format = 'bold'; break;
-                case 'EM': case 'I': format = 'italic'; break;
-                case 'U': format = "underline"; break;
-                case 'H1': format = "heading1"; break;
-                case 'H2': format = "heading2"; break;
-                case 'H3': format = "heading3"; break;
-                case 'H4': case 'H5': case 'H6': format = "bold"; break;
-            }
-
-            if (format) {
-                const text = node.textContent;
-                formattedPortions.push({
-                    index: index++,
-                    text: text,
-                    format: format,
-                    wordPosition: countOccurrencesUpTo(text, node)
-                });
-            }
+    function processNode(node, depth = 0) {
+        if (depth > 100) {
+            return;
         }
+        
+        try {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                let format = null;
+                switch (node.tagName) {
+                    case 'STRONG': case 'B': format = 'bold'; break;
+                    case 'EM': case 'I': format = 'italic'; break;
+                    case 'U': format = "underline"; break;
+                    case 'H1': format = "heading1"; break;
+                    case 'H2': format = "heading2"; break;
+                    case 'H3': format = "heading3"; break;
+                    case 'H4': case 'H5': case 'H6': format = "bold"; break;
+                }
 
-        Array.from(node.childNodes).forEach(child => processNode(child));
+                if (format) {
+                    const text = node.textContent;
+                    if (text && text.trim().length > 0) {
+                        try {
+                            const wordPosition = countOccurrencesUpTo(text, node);
+                            formattedPortions.push({
+                                index: index++,
+                                text: text,
+                                format: format,
+                                wordPosition: wordPosition
+                            });
+                        } catch (error) {
+                            formattedPortions.push({
+                                index: index++,
+                                text: text,
+                                format: format,
+                                wordPosition: 0
+                            });
+                        }
+                    }
+                }
+            }
+
+            Array.from(node.childNodes).forEach(child => processNode(child, depth + 1));
+        } catch (error) {
+            log("Error in processNode", 'error', {error, depth});
+        }
     }
 
-    processNode(div);
+        processNode(div);
 
-    return { html, plainText, formattedPortions };
+        return { html, plainText, formattedPortions };
+    } catch (error) {
+        throw error;
+    }
 }
 

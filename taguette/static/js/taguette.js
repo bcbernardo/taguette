@@ -986,18 +986,22 @@ function loadDocument(document_id, highlight_id = null, splitParagraphs = true, 
             chunk_offsets = [];
 
             for (let i = 0; i < contents.contents.length; ++i) {
-                let chunk = contents.contents[i];
-                let elem = document.createElement('div');
-                elem.setAttribute('id', 'doc-offset-' + chunk.offset);
-                disableEditing(elem);
-                addDragFunctionality(elem);
-                elem.innerHTML = chunk.contents;
-                document_contents.appendChild(elem);
-                const textStructure = extractFormattedContent(chunk.contents);
-                setHighlights(textStructure, elem, info.highlights, info.text_direction);
-                globalDefs = null;
-                wordTracker = {};
-                chunk_offsets.push(chunk.offset);
+                try {
+                    let chunk = contents.contents[i];
+                    let elem = document.createElement('div');
+                    elem.setAttribute('id', 'doc-offset-' + chunk.offset);
+                    disableEditing(elem);
+                    addDragFunctionality(elem);
+                    elem.innerHTML = chunk.contents;
+                    document_contents.appendChild(elem);
+                    const textStructure = extractFormattedContent(chunk.contents);
+                    setHighlights(textStructure, elem, info.highlights, info.text_direction);
+                    globalDefs = null;
+                    wordTracker = {};
+                    chunk_offsets.push(chunk.offset);
+                } catch (error) {
+                    log(`Error processing chunk ${i} of document ${document_id}`, 'error', {error});
+                }
             }
 
             current_document = document_id;

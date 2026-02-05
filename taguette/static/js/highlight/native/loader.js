@@ -67,7 +67,11 @@ function ntv_loadDocument(document_id, highlight_id = null, splitParagraphs = tr
             // Double RAF: ensures DOM layout is complete before measuring rects
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    ntv_renderAllHighlights(Object.values(ntv_highlights));
+                    try {
+                        ntv_renderAllHighlights(Object.values(ntv_highlights));
+                    } catch (error) {
+                        log("[ntv] Error rendering highlights", 'error', error);
+                    }
                 });
             });
             
