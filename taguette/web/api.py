@@ -978,17 +978,49 @@ class Highlights(BaseHandler):
             .all()
         )
 
+        # Group tags from identical, contained, or containing highlights
+        result_highlights = []
+        for hl, direction in highlights:
+            all_tag_ids = set(t.id for t in hl.tags)
+            
+            # Find related highlights: identical, contained within, or containing this highlight
+            related_highlights = (
+                self.db.query(database.Highlight)
+                .options(joinedload(database.Highlight.tags))
+                .filter(
+                    database.Highlight.document_id == hl.document_id,
+                    database.Highlight.id != hl.id,
+                    or_(
+                        and_(
+                            database.Highlight.start_offset == hl.start_offset,
+                            database.Highlight.end_offset == hl.end_offset
+                        ),
+                        and_(
+                            database.Highlight.start_offset >= hl.start_offset,
+                            database.Highlight.end_offset <= hl.end_offset
+                        ),
+                        and_(
+                            database.Highlight.start_offset <= hl.start_offset,
+                            database.Highlight.end_offset >= hl.end_offset
+                        )
+                    )
+                )
+                .all()
+            )
+            
+            for related_hl in related_highlights:
+                all_tag_ids.update(t.id for t in related_hl.tags)
+            
+            result_highlights.append({
+                'id': hl.id,
+                'document_id': hl.document_id,
+                'content': hl.snippet,
+                'tags': sorted(all_tag_ids),
+                'text_direction': direction.name,
+            })
+
         return self.send_json({
-            'highlights': [
-                {
-                    'id': hl.id,
-                    'document_id': hl.document_id,
-                    'content': hl.snippet,
-                    'tags': [t.id for t in hl.tags],
-                    'text_direction': direction.name,
-                }
-                for hl, direction in highlights
-            ],
+            'highlights': result_highlights,
             'pages': math.ceil(total / self.PAGE_SIZE),
         })
 
