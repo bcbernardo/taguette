@@ -625,6 +625,7 @@ class Tag(Base):
 
     path = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
+    color = Column(String(6), nullable=True, server_default='ffff00')
 
     __table_args__ = (
         UniqueConstraint('project_id', 'path'),
