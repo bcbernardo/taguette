@@ -836,7 +836,7 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 1, 'tag_id': 3,
-             'tag_path': 'people', 'description': "People of interest"})
+             'tag_path': 'people', 'description': "People of interest", 'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
@@ -847,7 +847,7 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 2, 'tag_id': 4,
-             'tag_path': 'interesting\\places', 'description': ''})
+             'tag_path': 'interesting\\places', 'description': '', 'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -1817,13 +1817,13 @@ class TestMultiuser(MyHTTPTestCase):
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 7,
-                  'tag_path': 'db2tag11'}),
+                  'tag_path': 'db2tag11', 'color': 'ffff00'}),
                 (32, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': -3,
-                  'tag_path': 'db2tagF'}),
+                  'tag_path': 'db2tagF', 'color': 'ffff00'}),
                 (33, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 8,
-                  'tag_path': 'db2tag12'}),
+                  'tag_path': 'db2tag12', 'color': 'ffff00'}),
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
@@ -2260,7 +2260,7 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new',
+                    'tag_path': 'people', 'description': 'new', 'color': 'ffff00',
                 }),
             ],
         )
@@ -2314,11 +2314,11 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 1,
-                    'tag_path': 'interesting', 'description': 'yes replace',
+                    'tag_path': 'interesting', 'description': 'yes replace', 'color': 'ffff00',
                 }),
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new',
+                    'tag_path': 'people', 'description': 'new', 'color': 'ffff00',
                 }),
             ],
         )
