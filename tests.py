@@ -1137,9 +1137,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'start_offset': 0, 'end_offset': 4,
+                    {'id': 2, 'start_offset': 0, 'tag_colors': ['ffff00'], 'end_offset': 4,
                      'tags': [4]},
-                    {'id': 3, 'start_offset': 13, 'end_offset': 17,
+                    {'id': 3, 'start_offset': 13, 'tag_colors': ['ffff00', 'ffff00'], 'end_offset': 17,
                      'tags': [2, 3]},
                 ],
                 'text_direction': 'LEFT_TO_RIGHT',
@@ -1617,12 +1617,14 @@ class TestMultiuser(MyHTTPTestCase):
             project=project1,
             path='db%dtag%d1' % (db_num, project_num),
             description='',
+            color='ffff00',
         )
         db.add(tag1)
         tag2 = database.Tag(
             project=project1,
             path='db%dtag%d2' % (db_num, project_num),
             description='',
+            color='ff00ff',
         )
         db.add(tag2)
         db.flush()
@@ -1853,12 +1855,12 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertRowsEqualsExceptDates(
             db1.execute(database.Tag.__table__.select()),
             [
-                (1, 1, 'db1tag11', ''),
-                (2, 1, 'db1tag12', ''),
-                (4, 2, 'db1tag21', ''),
-                (5, 2, 'db1tag22', ''),
-                (7, 3, 'db2tag11', ''),
-                (8, 3, 'db2tag12', ''),
+                (1, 1, 'db1tag11', '', 'ffff00'),
+                (2, 1, 'db1tag12', '', 'ff00ff'),
+                (4, 2, 'db1tag21', '', 'ffff00'),
+                (5, 2, 'db1tag22', '', 'ff00ff'),
+                (7, 3, 'db2tag11', '', 'ffff00'),
+                (8, 3, 'db2tag12', '', 'ff00ff'),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -2011,8 +2013,8 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Tag.__table__.c.id)
             ),
             [
-                (1, 1, 'db1tag21', ''),
-                (2, 1, 'db1tag22', ''),
+                (1, 1, 'db1tag21', '', 'ffff00'),
+                (2, 1, 'db1tag22', '', 'ff00ff'),
             ],
         )
         self.assertRowsEqualsExceptDates(

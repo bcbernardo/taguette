@@ -195,7 +195,8 @@ class Document(BaseHandler):
                 {'id': hl.id,
                  'start_offset': hl.start_offset,
                  'end_offset': hl.end_offset,
-                 'tags': [t.id for t in hl.tags]}
+                 'tags': [t.id for t in hl.tags],
+                 'tag_colors': [t.color for t in hl.tags]}
                 for hl in highlights
             ],
         })

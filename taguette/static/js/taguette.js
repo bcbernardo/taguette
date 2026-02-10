@@ -1205,6 +1205,17 @@ function setHighlight(highlight) {
   tag_names = tag_names.join(", ");
   try {
     highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
+    var color = '#ffff00';
+    if (highlight.tag_colors && highlight.tag_colors.length > 0) {
+      var apiColor = highlight.tag_colors[0];
+      if (apiColor) {
+        color = '#' + apiColor;
+      }
+    }
+    var highlightElements = document.querySelectorAll('.highlight-' + id);
+    for (var i = 0; i < highlightElements.length; i++) {
+      highlightElements[i].style.backgroundColor = color;
+    }
     console.log("Highlight set:", highlight);
   } catch(error) {
     console.error(
