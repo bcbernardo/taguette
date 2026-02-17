@@ -220,6 +220,7 @@ DEFAULT_CONFIG = {
     "OPF_OUT_SIZE_LIMIT": 5000000,  # 5 MB
     "HTML_OUT_SIZE_LIMIT": 2000000,  # 2 MB
     'LOKI_URL': 'http://localhost:3100',
+    'UNIX_SOCKET': None
 }
 
 REQUIRED_CONFIG = [
