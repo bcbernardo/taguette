@@ -1126,19 +1126,26 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     );
   }
   showSpinner();
-  req.then(function(reply) {
-    console.log("Tag posted");
+   req.then(function(reply) {
+     console.log("Tag posted");
 
-    // Check this tag in the list, or remember to check it once it appears
-    var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
-    if(tag_checkbox) {
-      tag_checkbox.checked = true;
-    }
-    last_added_tag = reply.id;
+     // Store the tag in local tags object with color
+     var tag = {id: reply.id, path: tag_path, description: document.getElementById('tag-add-description').value};
+     if ('color' in reply) {
+       tag.color = reply.color;
+     }
+     addTag(tag);
 
-    $(tag_add_modal).modal('hide');
-    document.getElementById('tag-add-form').reset();
-  })
+     // Check this tag in the list, or remember to check it once it appears
+     var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
+     if(tag_checkbox) {
+       tag_checkbox.checked = true;
+     }
+     last_added_tag = reply.id;
+
+     $(tag_add_modal).modal('hide');
+     document.getElementById('tag-add-form').reset();
+   })
   .catch(function(error) {
     console.error("Failed to create tag:", error);
     alert(gettext("Couldn't create tag!") + "\n\n" + error);
@@ -1984,11 +1991,15 @@ function longPollForEvents() {
       } else if(event.type === 'highlight_delete') {
         removeHighlight(event.highlight_id);
       } else if(event.type === 'tag_add') {
-        addTag({
+        var tag = {
           id: event.tag_id,
           path: event.tag_path,
           description: event.description
-        });
+        };
+        if ('color' in event) {
+          tag.color = event.color;
+        }
+        addTag(tag);
       } else if(event.type === 'tag_delete') {
         removeTag(event.tag_id);
       } else if(event.type === 'tag_merge') {

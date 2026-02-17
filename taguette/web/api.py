@@ -342,7 +342,7 @@ class TagAdd(BaseHandler):
             self.db.refresh(cmd)
             self.application.notify_project(project.id, cmd)
 
-            return self.send_json({'id': tag.id})
+            return self.send_json({'id': tag.id, 'color': tag.color})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagAdd: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
@@ -387,7 +387,7 @@ class TagUpdate(BaseHandler):
                 self.db.refresh(cmd)
                 self.application.notify_project(project.id, cmd)
 
-            return self.send_json({'id': tag.id})
+            return self.send_json({'id': tag.id, 'color': tag.color})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagUpdate: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
