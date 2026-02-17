@@ -439,11 +439,18 @@ class Command(Base):
     @command_fields(
         columns=['project_id', 'document_id'],
         payload_fields=[
-            'highlight_id', 'start_offset', 'end_offset', 'tags',
+            'highlight_id', 'start_offset', 'end_offset', 'tags', 'tag_colors',
         ],
     )
     def highlight_add(cls, user_login, document, highlight, tags):
         assert isinstance(highlight.id, int)
+        # Query tag colors for the tags
+        from sqlalchemy.orm import Session
+        session = Session.object_session(document)
+        tag_colors_list = [
+            t.color
+            for t in session.query(Tag).filter(Tag.id.in_(tags)).all()
+        ]
         return cls(
             user_login=user_login,
             project_id=document.project_id,
@@ -452,7 +459,8 @@ class Command(Base):
                      'highlight_id': highlight.id,
                      'start_offset': highlight.start_offset,
                      'end_offset': highlight.end_offset,
-                     'tags': tags},
+                     'tags': tags,
+                     'tag_colors': tag_colors_list},
         )
 
     @classmethod

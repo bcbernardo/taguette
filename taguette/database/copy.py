@@ -158,6 +158,10 @@ def copy_project(
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
             color=lambda v: v is None or (isinstance(v, str) and len(v) == 6),
+            tag_colors= lambda v: (
+                isinstance(v, list)
+                and all(lambda e: e is None or (isinstance(e, str) and len(e) == 6) for e in v)
+            )
         )
 
         field_transformers = dict(

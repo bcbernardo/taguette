@@ -1985,7 +1985,8 @@ function longPollForEvents() {
             id: event.highlight_id,
             start_offset: event.start_offset,
             end_offset: event.end_offset,
-            tags: event.tags
+            tags: event.tags,
+            tag_colors: event.tag_colors
           });
         }
       } else if(event.type === 'highlight_delete') {

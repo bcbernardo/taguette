@@ -908,7 +908,7 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 5, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 5,
-             'tags': [], 'tag_count_changes': {}})
+             'tags': [], 'tag_count_changes': {}, 'tag_colors': []})
         poll_proj1 = await self.poll_event(1, 5)
 
         # Update highlight 1 in document 1: change position
@@ -922,7 +922,7 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 6, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [], 'tag_count_changes': {}})
+             'tags': [], 'tag_count_changes': {}, 'tag_colors': []})
         poll_proj1 = await self.poll_event(1, 6)
 
         # Update highlight 1 in document 1: change tags
@@ -936,7 +936,7 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 7, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [1], 'tag_count_changes': {'1': 1}})
+             'tags': [1], 'tag_count_changes': {'1': 1}, 'tag_colors': ['ffff00']})
         poll_proj1 = await self.poll_event(1, 7)
 
         # Change project 2 metadata (invalid)
@@ -1019,7 +1019,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 10, 'highlight_id': 2,
              'document_id': 2, 'start_offset': 0, 'end_offset': 4,
-             'tags': [4], 'tag_count_changes': {'4': 1}})
+             'tags': [4], 'tag_count_changes': {'4': 1},
+             'tag_colors':['ffff00']})
         poll_proj2 = await self.poll_event(2, 10)
 
         # Create highlight 3 in document 2
@@ -1033,7 +1034,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 11, 'highlight_id': 3,
              'document_id': 2, 'start_offset': 13, 'end_offset': 17,
-             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1}})
+             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1},
+             'tag_colors': ['ffff00', 'ffff00']})
         poll_proj2 = await self.poll_event(2, 11)
 
         # Create highlight 4 in document 2
@@ -1047,7 +1049,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 12, 'highlight_id': 4,
              'document_id': 2, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': 1},
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 12)
 
         # Delete highlight 4 in document 2
@@ -1072,7 +1075,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 14, 'highlight_id': 5,
              'document_id': 3, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': 1},
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 14)
 
         # List highlights in project 2 under 'people'
@@ -1679,6 +1683,7 @@ class TestMultiuser(MyHTTPTestCase):
         db.delete(hl_fake)
 
     def assertRowsEqualsExceptDates(self, first, second):
+        self.maxDiff = None
         self.assertEqual(*[
             [
                 [item for item in row if not isinstance(item, datetime)]
@@ -1828,16 +1833,20 @@ class TestMultiuser(MyHTTPTestCase):
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
-                  'start_offset': 3, 'end_offset': 6, 'tags': []}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [],
+                  'tag_colors': []}),
                 (36, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [8]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [8],
+                  'tag_colors': ['ff00ff']}),
                 (37, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': -3,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [7],
+                  'tag_colors': ['ffff00']}),
                 (38, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 8,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [7],
+                  'tag_colors': ['ffff00']}),
                 (39, 'db1user', 3, 7,
                  {'type': 'highlight_delete', 'highlight_id': -3}),
                 (40, 'db1user', 3, None, {'type': 'project_import'}),
@@ -1984,16 +1993,20 @@ class TestMultiuser(MyHTTPTestCase):
                  {'type': 'tag_delete', 'tag_id': -6}),
                 (9, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 1,
-                  'start_offset': 3, 'end_offset': 6, 'tags': []}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [],
+                  'tag_colors': []}),
                 (10, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 1,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [2]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [2],
+                  'tag_colors': ['ff00ff']}),
                 (11, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': -6,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [1]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [1],
+                  'tag_colors': ['ffff00']}),
                 (12, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 2,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [1]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [1],
+                  'tag_colors': ['ffff00']}),
                 (13, 'admin', 1, 1,
                  {'type': 'highlight_delete', 'highlight_id': -6}),
             ],
