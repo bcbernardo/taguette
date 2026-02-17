@@ -734,7 +734,8 @@ class Project(BaseHandler):
             str(tag.id): {'id': tag.id,
                           'path': tag.path,
                           'description': tag.description,
-                          'count': tag.highlights_count}
+                          'count': tag.highlights_count,
+                          'color': tag.color}
             for tag in project.tags
         })
         members = (
