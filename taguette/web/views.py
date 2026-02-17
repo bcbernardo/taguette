@@ -672,6 +672,7 @@ class ImportCodebook(BaseHandler):
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
+                        color='ffff00',  # Default color
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)

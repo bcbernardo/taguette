@@ -157,6 +157,7 @@ def copy_project(
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
+            color=lambda v: v is None or (isinstance(v, str) and len(v) == 6),
         )
 
         field_transformers = dict(
