@@ -430,7 +430,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
     def init_json_locale(self):
         script_dir = Path(__file__).parent
         templates_dir = script_dir.parent / "templates"
-        template_translation_file_path  = \
+        template_translation_file_path = \
             (f"{templates_dir}/alt_templates/"
              f"{self.application.config['THEME']}/trans.json")
         self.template_env.globals['json_locale'].load_json(
