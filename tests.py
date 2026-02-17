@@ -804,6 +804,7 @@ class TestMultiuser(MyHTTPTestCase):
                         "1": {
                             "count": 0, "id": 1, "path": "interesting",
                             "description": "Further review required",
+                            "color": "ffff00",
                         },
                     },
                     sort_keys=True),
