@@ -411,7 +411,7 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
     def _tpl_trans(context, msgid):
         return context['json_locale'].get_trans(
             msgid,
-            context['current_language'])
+            context['handler'].language)
     template_env.globals['alt_trans'] = _tpl_trans
     template_env.globals['json_locale'] = JSONLocale()
 
