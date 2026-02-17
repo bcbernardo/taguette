@@ -1683,7 +1683,6 @@ class TestMultiuser(MyHTTPTestCase):
         db.delete(hl_fake)
 
     def assertRowsEqualsExceptDates(self, first, second):
-        self.maxDiff = None
         self.assertEqual(*[
             [
                 [item for item in row if not isinstance(item, datetime)]
