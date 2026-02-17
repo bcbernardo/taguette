@@ -1,4 +1,6 @@
 import asyncio
+from json import JSONDecodeError
+
 import bleach
 import contextlib
 import functools
@@ -118,6 +120,7 @@ class PseudoLocale(tornado.locale.Locale):
     def pgettext(self, context, message, plural_message=None, count=None):
         return self.translate(message, plural_message, count)
 
+
 class JSONLocale:
     translations = {}
 
@@ -127,7 +130,7 @@ class JSONLocale:
                 try:
                     self.translations = json.load(f)
                     return True
-                except:
+                except JSONDecodeError:
                     return False
         return False
 
@@ -141,6 +144,7 @@ class JSONLocale:
         if(self.load_json(json_path)):
             return self.get_trans(msgid, language_code)
         return msgid
+
 
 class GracefulExitApplication(tornado.web.Application):
     def __init__(self, *args, **kwargs):
@@ -426,9 +430,9 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
     def init_json_locale(self):
         script_dir = Path(__file__).parent
         templates_dir = script_dir.parent / "templates"
-        template_translation_file_path  = (
-                templates_dir /
-                f"alt_templates/{self.application.config['THEME']}/trans.json")
+        template_translation_file_path  = \
+            (f"{templates_dir}/alt_templates/"
+             f"{self.application.config['THEME']}/trans.json")
         self.template_env.globals['json_locale'].load_json(
             template_translation_file_path)
 
