@@ -138,10 +138,6 @@ def copy_project(
         def mv(mapping, value):
             return mapping.get(value, -abs(value))
 
-        def validate_color(v):
-            valid_chars = '0123456789abcdef'
-            return v is None or (isinstance(v, str) and len(v) == 6 and (c in valid_chars for c in v))
-
         field_validators = dict(
             type=lambda v: True,  # Already checked above
             description=validate.description,
@@ -161,10 +157,10 @@ def copy_project(
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
-            color=validate_color,
+            color=validate.validate_color,
             tag_colors=lambda v: (
                 isinstance(v, list)
-                and all(validate_color(e) for e in v)
+                and all(validate.validate_color(e) for e in v)
             )
         )
 

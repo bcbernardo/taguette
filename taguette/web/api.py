@@ -6,7 +6,6 @@ import logging
 import math
 import os
 import prometheus_client
-import re
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload
@@ -54,10 +53,6 @@ def api_auth(method):
         return method(self, *args, **kwargs)
 
     return wrapper
-
-
-def validate_color(color):
-    return (not color) or re.match('^[0-9a-fA-F]{6}$', color)
 
 
 class CheckUser(BaseHandler):
@@ -321,7 +316,7 @@ class TagAdd(BaseHandler):
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
             tag_color = obj.get('color', 'ffff00')  # Default to yellow if not provided
-            if not validate_color(tag_color):
+            if not validate.validate_color(tag_color):
                 return self.send_error_json(400, self.gettext("Invalid color format"))
             tag = database.Tag(project=project,
                                path=obj['path'],
@@ -367,11 +362,9 @@ class TagUpdate(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     tag.description = obj['description']
-                # Handle color field if provided
                 if 'color' in obj:
                     color = obj['color']
-                    # Validate color format (should be 6 hex characters)
-                    if not validate_color(color):
+                    if not validate.validate_color(color):
                         return self.send_error_json(400, self.gettext("Invalid color format"))
                     tag.color = color
                 cmd = database.Command.tag_add(
