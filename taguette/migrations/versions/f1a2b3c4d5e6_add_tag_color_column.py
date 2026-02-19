@@ -17,7 +17,9 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('tags', sa.Column('color', sa.String(6), nullable=True, server_default='ffff00'))
+    op.add_column('tags',
+                  sa.Column('color', sa.String(6),
+                            nullable=True, server_default='ffff00'))
 
 
 def downgrade():

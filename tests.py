@@ -837,7 +837,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 1, 'tag_id': 3,
-             'tag_path': 'people', 'description': "People of interest", 'color': 'ffff00'})
+             'tag_path': 'people', 'description': "People of interest",
+             'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
@@ -848,7 +849,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 2, 'tag_id': 4,
-             'tag_path': 'interesting\\places', 'description': '', 'color': 'ffff00'})
+             'tag_path': 'interesting\\places', 'description': '',
+             'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -936,7 +938,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 7, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [1], 'tag_count_changes': {'1': 1}, 'tag_colors': ['ffff00']})
+             'tags': [1], 'tag_count_changes': {'1': 1},
+             'tag_colors': ['ffff00']})
         poll_proj1 = await self.poll_event(1, 7)
 
         # Change project 2 metadata (invalid)
@@ -1020,7 +1023,7 @@ class TestMultiuser(MyHTTPTestCase):
             {'type': 'highlight_add', 'id': 10, 'highlight_id': 2,
              'document_id': 2, 'start_offset': 0, 'end_offset': 4,
              'tags': [4], 'tag_count_changes': {'4': 1},
-             'tag_colors':['ffff00']})
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 10)
 
         # Create highlight 3 in document 2
@@ -1142,9 +1145,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'start_offset': 0, 'tag_colors': ['ffff00'], 'end_offset': 4,
-                     'tags': [4]},
-                    {'id': 3, 'start_offset': 13, 'tag_colors': ['ffff00', 'ffff00'], 'end_offset': 17,
+                    {'id': 2, 'start_offset': 0, 'tag_colors': ['ffff00'],
+                     'end_offset': 4, 'tags': [4]},
+                    {'id': 3, 'start_offset': 13,
+                     'tag_colors': ['ffff00', 'ffff00'], 'end_offset': 17,
                      'tags': [2, 3]},
                 ],
                 'text_direction': 'LEFT_TO_RIGHT',
@@ -2273,7 +2277,8 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new', 'color': 'ffff00',
+                    'tag_path': 'people', 'description': 'new',
+                    'color': 'ffff00',
                 }),
             ],
         )
@@ -2327,11 +2332,13 @@ class TestMultiuser(MyHTTPTestCase):
             [
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 1,
-                    'tag_path': 'interesting', 'description': 'yes replace', 'color': 'ffff00',
+                    'tag_path': 'interesting', 'description': 'yes replace',
+                    'color': 'ffff00',
                 }),
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
-                    'tag_path': 'people', 'description': 'new', 'color': 'ffff00',
+                    'tag_path': 'people', 'description': 'new',
+                    'color': 'ffff00',
                 }),
             ],
         )

@@ -315,9 +315,11 @@ class TagAdd(BaseHandler):
             obj = self.get_json()
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
-            tag_color = obj.get('color', 'ffff00')  # Default to yellow if not provided
+            tag_color = obj.get('color', 'ffff00')
             if not validate.validate_color(tag_color):
-                return self.send_error_json(400, self.gettext("Invalid color format"))
+                return self.send_error_json(
+                    400,
+                    self.gettext("Invalid color format"))
             tag = database.Tag(project=project,
                                path=obj['path'],
                                description=obj['description'],
@@ -365,7 +367,9 @@ class TagUpdate(BaseHandler):
                 if 'color' in obj:
                     color = obj['color']
                     if not validate.validate_color(color):
-                        return self.send_error_json(400, self.gettext("Invalid color format"))
+                        return self.send_error_json(
+                            400,
+                            self.gettext("Invalid color format"))
                     tag.color = color
                 cmd = database.Command.tag_add(
                     self.current_user,

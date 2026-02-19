@@ -136,4 +136,5 @@ fix_filename.windows = os.name == 'nt'
 
 def validate_color(v):
     valid_chars = '0123456789abcdef'
-    return v is None or (isinstance(v, str) and len(v) == 6 and (c in valid_chars for c in v))
+    return v is None or (isinstance(v, str) and len(v) == 6
+                         and (c in valid_chars for c in v))
