@@ -84,4 +84,6 @@ taguette3.11
 
 loki-compactor
 .gitlab-ci-local.yml
->>>>>>> origin/develop
+
+# Local files
+local-files/
