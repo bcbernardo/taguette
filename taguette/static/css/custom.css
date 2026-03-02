@@ -616,6 +616,20 @@ a.dropdown-item:hover {
     border-radius: 10px;
 }
 
+/* Badge row in highlight entries: principal left, associated right */
+.badge-outline-tag {
+    font-size: 0.85em;
+}
+
+/* SVG underlines in highlight results */
+.tag-underline-svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
 .draggable {
     /*cursor: grab;*/
     user-select: none;
