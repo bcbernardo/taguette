@@ -982,41 +982,76 @@ class Highlights(BaseHandler):
         result_highlights = []
         for hl, direction in highlights:
             all_tag_ids = set(t.id for t in hl.tags)
-            
-            # Find related highlights: identical, contained within, or containing this highlight
+
+            # Find related highlights: any overlap (identical, contained, containing, or partial)
             related_highlights = (
                 self.db.query(database.Highlight)
                 .options(joinedload(database.Highlight.tags))
                 .filter(
                     database.Highlight.document_id == hl.document_id,
                     database.Highlight.id != hl.id,
-                    or_(
-                        and_(
-                            database.Highlight.start_offset == hl.start_offset,
-                            database.Highlight.end_offset == hl.end_offset
-                        ),
-                        and_(
-                            database.Highlight.start_offset >= hl.start_offset,
-                            database.Highlight.end_offset <= hl.end_offset
-                        ),
-                        and_(
-                            database.Highlight.start_offset <= hl.start_offset,
-                            database.Highlight.end_offset >= hl.end_offset
-                        )
-                    )
+                    database.Highlight.start_offset < hl.end_offset,
+                    database.Highlight.end_offset > hl.start_offset,
                 )
                 .all()
             )
-            
+
             for related_hl in related_highlights:
                 all_tag_ids.update(t.id for t in related_hl.tags)
-            
+
+            # Find the union range across all overlapping highlights
+            all_highlights = [hl] + list(related_highlights)
+            union_start = min(h.start_offset for h in all_highlights)
+            union_end = max(h.end_offset for h in all_highlights)
+
+            # Try to find a single highlight that covers the full union
+            largest_hl = None
+            for h in all_highlights:
+                if h.start_offset == union_start and h.end_offset == union_end:
+                    largest_hl = h
+                    break
+
+            if largest_hl is not None:
+                content = largest_hl.snippet
+            else:
+                # Partial overlap: extract union content from the document
+                doc = self.db.query(database.Document).get(hl.document_id)
+                if doc and doc.contents:
+                    content = extract.extract(doc.contents,
+                                              union_start, union_end)
+                else:
+                    # Fallback to the current highlight's snippet
+                    content = hl.snippet
+
+            # Build tag_ranges: for each highlight, compute relative offsets
+            tag_ranges = []
+            tag_color_map = {}
+            for h in all_highlights:
+                for t in h.tags:
+                    tag_color_map[t.id] = t.color
+                    tag_ranges.append({
+                        'tag_id': t.id,
+                        'color': t.color,
+                        'start': h.start_offset - union_start,
+                        'end': h.end_offset - union_start,
+                    })
+
+            # Deduplicate tag_ranges (same tag_id + start + end)
+            seen = set()
+            unique_tag_ranges = []
+            for tr in tag_ranges:
+                key = (tr['tag_id'], tr['start'], tr['end'])
+                if key not in seen:
+                    seen.add(key)
+                    unique_tag_ranges.append(tr)
+
             result_highlights.append({
                 'id': hl.id,
                 'document_id': hl.document_id,
-                'content': hl.snippet,
+                'content': content,
                 'tags': sorted(all_tag_ids),
                 'text_direction': direction.name,
+                'tag_ranges': unique_tag_ranges,
             })
 
         return self.send_json({
