@@ -84,7 +84,10 @@ function projectMetadataChanged() {
         };
         postJSON(`/api/project/${project_id}`, meta)
             .then(function () {
-                setProjectMetadata(meta, false);
+                setProjectMetadata({
+                    project_name: meta.name,
+                    description: meta.description,
+                }, false);
             })
             .catch(function (error) {
                 log("Failed to update project metadata:", 'error', {error});
