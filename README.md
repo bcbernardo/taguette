@@ -54,6 +54,7 @@ You can entirely configure LibreQDA interface by creating a theme.
 1. Run `poetry run make-theme [theme-name]`. That will create 2 folders :
    - `taguette/static/scss/themes/[theme-name]` where the custom css are stored
    - `taguette/templates/alt_templates/[theme-name]` where you can override templates with the same hierarchy as in the `templates` folder
+   - `taguette/static/alt_templates/[theme-name]` where you can put the files that you want to access in your custom template
 2. Add this line in `taguette.conf`: `THEME = "theme-name"`
 
 License
