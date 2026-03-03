@@ -64,7 +64,7 @@
               </form>
           {% endif %}
           <ul class="navbar-nav">
-            {% if active_page != "welcome" %}
+            {% if active_page != "welcome" or show_language_selector %}
                 {% if not user %}
                 <li class="nav-item">
                     <form action="{{ reverse_url('index') }}" method="post">
@@ -73,7 +73,7 @@
                                 <option value="{{ lang_code }}"{% if lang_code == current_language %} selected{% endif %}>{{ lang_name }}</option>
                             {% endfor %}
                         </select>
-                        {% if active_page %}
+                        {% if active_page and active_page != "welcome" %}
                             <input type="hidden" name="url" value="{{ reverse_url(active_page) }}" />
                         {% else %}
                             <input type="hidden" name="url" value="{{ reverse_url("index") }}" />
@@ -81,6 +81,8 @@
                     </form>
                 </li>
                 {% endif %}
+            {% endif %}
+            {% if active_page != "welcome" %}
                 <li class="nav-item">
                   {% set external_icon %}<i class="fa fa-book-open"></i>{% endset %}
                   <a id="intro-documentation" class="nav-link" href="https://aide.libreqda.org" target="_blank" rel="noopener">{% trans "navigation item" %}LibreQDA Guide {{ external_icon }}{% endtrans %}</a>

@@ -20,6 +20,10 @@ def get_template_dir(theme_name):
     return templates_dir / "alt_templates" / theme_name
 
 
+def get_assets_dir(theme_name):
+    return static_dir / "alt_templates" / theme_name
+
+
 def compile_scss(theme_name):
     theme_dir = get_theme_dir(theme_name)
     scss_input = theme_dir / "theme.scss"
@@ -61,18 +65,25 @@ def copy_default_theme(destination_theme_name):
 def create_directories(theme_name):
     theme_dir = get_theme_dir(theme_name)
     template_dir = get_template_dir(theme_name)
+    assets_dir = get_assets_dir(theme_name)
     if not os.path.exists(theme_dir):
         os.makedirs(theme_dir, exist_ok=True)
         copy_default_theme(theme_name)
-        print(f"Theme folder created : {theme_dir}")
+        print(f"Theme directory created : {theme_dir}")
     else:
-        print(f"Theme folder already exists : {theme_dir}")
+        print(f"Theme directory already exists : {theme_dir}")
 
     if not os.path.exists(template_dir):
         os.makedirs(template_dir, exist_ok=True)
-        print(f"Templates folder created : {template_dir}")
+        print(f"Templates directory created : {template_dir}")
     else:
-        print(f"Templates folder already exists : {template_dir}")
+        print(f"Templates directory already exists : {template_dir}")
+
+    if not os.path.exists(assets_dir):
+        os.makedirs(assets_dir, exist_ok=True)
+        print(f"Assets directory created : {assets_dir}")
+    else:
+        print(f"Assets directory already exists : {assets_dir}")
 
 
 def main():
