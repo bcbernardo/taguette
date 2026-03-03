@@ -1340,16 +1340,15 @@ function loadTag(tag_path, page) {
                 leftBadges.appendChild(doclink);
                 leftBadges.appendChild(document.createTextNode(' '));
 
-                // Separate principal tag from associated tags
-                const principalTagInfo = findTag(tag_path);
-                const principalTagId = principalTagInfo ? principalTagInfo.id : null;
+                // Separate principal tags (selected in treeview) from associated tags
+                const selectedTagIds = new Set(selectedTags.map(t => t.id));
 
                 let principalTags = [];
                 let associatedTags = [];
                 hl.tags.forEach(function (tagId) {
                     const tag = findTag(tagId);
                     if (tag) {
-                        if (tag.id === principalTagId) {
+                        if (selectedTagIds.has(tag.id)) {
                             principalTags.push(tag);
                         } else {
                             associatedTags.push(tag);
