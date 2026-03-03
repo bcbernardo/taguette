@@ -1,4 +1,6 @@
 import asyncio
+from json import JSONDecodeError
+
 import bleach
 import contextlib
 import functools
@@ -117,6 +119,31 @@ class PseudoLocale(tornado.locale.Locale):
 
     def pgettext(self, context, message, plural_message=None, count=None):
         return self.translate(message, plural_message, count)
+
+
+class JSONLocale:
+    translations = {}
+
+    def load_json(self, json_path):
+        if os.path.isfile(json_path):
+            with open(json_path) as f:
+                try:
+                    self.translations = json.load(f)
+                    return True
+                except JSONDecodeError:
+                    return False
+        return False
+
+    def get_trans(self, msgid, language_code):
+        if msgid in self.translations:
+            if language_code in self.translations[msgid]:
+                return self.translations[msgid][language_code]
+        return msgid
+
+    def get_trans_from_json(self, msgid, language_code, json_path):
+        if(self.load_json(json_path)):
+            return self.get_trans(msgid, language_code)
+        return msgid
 
 
 class GracefulExitApplication(tornado.web.Application):
@@ -380,6 +407,14 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         return Markup(context['handler'].xsrf_form_html())
     template_env.globals['xsrf_form_html'] = _tpl_xsrf_form_html
 
+    @jinja2.pass_context
+    def _tpl_trans(context, msgid):
+        return context['json_locale'].get_trans(
+            msgid,
+            context['handler'].language)
+    template_env.globals['alt_trans'] = _tpl_trans
+    template_env.globals['json_locale'] = JSONLocale()
+
     def __init__(self, application, request, **kwargs):
         super(BaseHandler, self).__init__(application, request, **kwargs)
         self._db = None
@@ -389,6 +424,17 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         if not self.language:
             self.language = self.application.config['DEFAULT_LANGUAGE']
             self.set_cookie('language', self.language)
+
+        self.init_json_locale()
+
+    def init_json_locale(self):
+        script_dir = Path(__file__).parent
+        templates_dir = script_dir.parent / "templates"
+        template_translation_file_path = \
+            (f"{templates_dir}/alt_templates/"
+             f"{self.application.config['THEME']}/trans.json")
+        self.template_env.globals['json_locale'].load_json(
+            template_translation_file_path)
 
     def set_default_headers(self):
         self.set_header('Server', 'LibreQDA/%s' % exact_version())
