@@ -84,7 +84,10 @@ function projectMetadataChanged() {
         };
         postJSON(`/api/project/${project_id}`, meta)
             .then(function () {
-                setProjectMetadata(meta, false);
+                setProjectMetadata({
+                    project_name: meta.name,
+                    description: meta.description,
+                }, false);
             })
             .catch(function (error) {
                 log("Failed to update project metadata:", 'error', {error});
@@ -964,70 +967,8 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-let globalDefs = null;
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
-    if (getHighlightVersion() === 'v2' && typeof ntv_loadDocument === 'function') {
-        return ntv_loadDocument(document_id, highlight_id, splitParagraphs, search_text);
-    }
-    if (document_id === null) {
-        document_contents.style.direction = 'ltr';
-        document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
-        return;
-    }
-    showSpinner();
-    const info = getJSON(`/api/project/${project_id}/document/${document_id}`);
-    const contents = getJSON(`/api/project/${project_id}/document/${document_id}/contents`);
-    Promise.all([info, contents])
-        .then(function (results) {
-            const info = results[0];
-            const contents = results[1];
-            document_contents.innerHTML = '';
-            highlights = {};
-            chunk_offsets = [];
-
-            for (let i = 0; i < contents.contents.length; ++i) {
-                let chunk = contents.contents[i];
-                let elem = document.createElement('div');
-                elem.setAttribute('id', 'doc-offset-' + chunk.offset);
-                disableEditing(elem);
-                addDragFunctionality(elem);
-                elem.innerHTML = chunk.contents;
-                document_contents.appendChild(elem);
-                const textStructure = extractFormattedContent(chunk.contents);
-                setHighlights(textStructure, elem, info.highlights, info.text_direction);
-                globalDefs = null;
-                wordTracker = {};
-                chunk_offsets.push(chunk.offset);
-            }
-
-            current_document = document_id;
-
-            toggleToolbarActions(true);
-
-            updateDocumentLinkHighlight(current_document);
-
-            log(`Loaded document ${document_id}`);
-
-            for (let i = 0; i < info.highlights.length; ++i) {
-                const id = '' + info.highlights[i].id;
-                highlights[id] = info.highlights[i];
-            }
-
-            log(`Loaded ${info.highlights.length} highlight`);
-
-            // Update document export button
-            updateDocumentExportButton(project_id, document_id);
-
-            updateLinksTarget(document_contents);
-
-            // Scroll up
-            scrollToHighlight(highlight_id, search_text);
-        })
-        .catch(function (error) {
-            log("Failed to load document", 'error', {error});
-            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error});
-        })
-        .then(hideSpinner);
+    loadDocumentHighlights(document_id, highlight_id, splitParagraphs, search_text);
 }
 
 function disableEditing(element) {
@@ -1054,38 +995,32 @@ function scrollToHighlight(highlight_id, search_text=null) {
             toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
         // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
-            const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
-            switch (currentHighlightVersion) {
-                case 'v1':
-                    let count_lines = 0;
-                    data_highlight_selector.each(function(){
-                        const line_id = $(this).data('parent-line-id'),
-                            div_to_highlight = $(`div[data-line--id="${line_id}"]`);
-                        div_to_highlight.addClass('flash-once');
-                        if(count_lines++ === 0) {
-                            scroll_position = div_to_highlight.offset().top;
-                        }
-                    });
-                    break;
-                case 'v2':
-                    // Find start and end lines
-                    if(data_highlight_selector.length > 0) {
-                        let start_positon = data_highlight_selector.first().offset().top,
-                            end_positon = data_highlight_selector.last().offset().top,
-                            highlight_next = false;
-                        $('#ntv-document-content p').each(function(){
-                            let start_p = $(this).offset().top,
-                                end_p = start_p + $(this).outerHeight();
-                            if(((start_p <= start_positon) && (end_p >= start_positon)) || highlight_next) {
-                                $(this).addClass('flash-once');
-                                highlight_next = true;
-                            }
-                            if((start_p <= end_positon) && (end_p >= end_positon)) {
-                                highlight_next = false;
-                            }
-                        });
-                        scroll_position = data_highlight_selector.offset().top - 25;
+            const hl = highlights['' + highlight_id];
+            const container = document.getElementById('highlight-content');
+            if (hl && container) {
+                const textNodes = collectTextNodes(container);
+                const { fullText, charMap } = buildCharMap(textNodes);
+                const startChar = getCharIndexFromUTF8Index(fullText, hl.start_offset);
+                const endChar = getCharIndexFromUTF8Index(fullText, hl.end_offset);
+                const startEntry = charMap[Math.max(0, startChar)];
+                const endEntry = charMap[Math.min(charMap.length - 1, endChar - 1)];
+
+                if (startEntry && endEntry) {
+                    const range = document.createRange();
+                    range.setStart(startEntry.node, startEntry.offset);
+                    range.setEnd(endEntry.node, endEntry.offset + 1);
+
+                    const rects = range.getClientRects();
+                    if (rects.length > 0) {
+                        scroll_position = rects[0].top + window.scrollY - 25;
                     }
+
+                    // Flash only the block elements that contain the highlighted text
+                    const startBlock = startEntry.node.parentElement.closest('p, .document-chunk');
+                    const endBlock = endEntry.node.parentElement.closest('p, .document-chunk');
+                    if (startBlock) startBlock.classList.add('flash-once');
+                    if (endBlock && endBlock !== startBlock) endBlock.classList.add('flash-once');
+                }
             }
         }
 
@@ -1160,6 +1095,202 @@ function updateDocumentLinkHighlight(current_document) {
     }
 }
 
+function showTagUnderlineTooltip(event, tagId, color) {
+    let tooltip = document.getElementById('tag-underline-tooltip');
+
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'tag-underline-tooltip';
+        document.body.appendChild(tooltip);
+
+        Object.assign(tooltip.style, {
+            position: 'fixed',
+            padding: '10px',
+            background: '#fff',
+            border: '2px solid #333',
+            borderRadius: '6px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            fontSize: '13px',
+            pointerEvents: 'none',
+            zIndex: '10000',
+            maxWidth: '300px',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+        });
+    }
+
+    const tag = findTag(tagId);
+    if (!tag) return;
+
+    tooltip.innerHTML = `
+        <div style="display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px;">
+            <div style="
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 3px;
+                background-color: ${color};
+                color: white;
+                font-size: 11px;
+                max-width: 100%;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            ">
+                ${tag.path}
+            </div>
+        </div>
+    `;
+
+    tooltip.style.display = 'block';
+    tooltip.style.left = (event.clientX + 10) + 'px';
+    tooltip.style.top = (event.clientY + 10) + 'px';
+}
+
+function hideTagUnderlineTooltip() {
+    const tooltip = document.getElementById('tag-underline-tooltip');
+    if (tooltip) tooltip.style.display = 'none';
+}
+
+/**
+ * Collect all text nodes under a DOM element in document order.
+ */
+function collectTextNodes(node) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+    let n;
+    while ((n = walker.nextNode())) {
+        textNodes.push(n);
+    }
+    return textNodes;
+}
+
+/**
+ * Apply colored SVG underlines to a content div based on tag_ranges.
+ * Uses Range.getClientRects() to get pixel positions, then draws SVG lines.
+ */
+function applyTagUnderlines(contentDiv, tagRanges, principalTagId) {
+    if (!tagRanges || tagRanges.length === 0) return;
+
+    // Make contentDiv a positioning context for the SVG overlay
+    contentDiv.style.position = 'relative';
+
+    const textNodes = collectTextNodes(contentDiv);
+    const fullText = textNodes.map(n => n.nodeValue).join('');
+    if (fullText.length === 0) return;
+
+    // Build char index -> { node, offsetInNode } mapping
+    const charMap = [];
+    for (let tni = 0; tni < textNodes.length; tni++) {
+        const nodeText = textNodes[tni].nodeValue;
+        for (let j = 0; j < nodeText.length; j++) {
+            charMap.push({ node: textNodes[tni], offset: j });
+        }
+    }
+
+    // Convert UTF-8 byte offsets to char indices
+    const ranges = tagRanges.map(tr => ({
+        tag_id: tr.tag_id,
+        color: tr.color,
+        startChar: getCharIndexFromUTF8Index(fullText, tr.start),
+        endChar: getCharIndexFromUTF8Index(fullText, tr.end),
+    }));
+
+    // Sort by start, then larger ranges first
+    ranges.sort((a, b) => a.startChar - b.startChar || (b.endChar - b.startChar) - (a.endChar - a.startChar));
+
+    // Assign lanes for overlapping ranges
+    const laneEnds = [];
+    const rangeLanes = ranges.map(range => {
+        for (let lane = 0; lane < laneEnds.length; lane++) {
+            if (laneEnds[lane] <= range.startChar) {
+                laneEnds[lane] = range.endChar;
+                return lane;
+            }
+        }
+        laneEnds.push(range.endChar);
+        return laneEnds.length - 1;
+    });
+
+    const totalLanes = laneEnds.length;
+    const LINE_HEIGHT = 3;
+    const LINE_GAP = 2;
+    const BASE_OFFSET = 2;
+    const extraSpace = BASE_OFFSET + totalLanes * (LINE_HEIGHT + LINE_GAP);
+
+    // Add bottom padding so SVG lines don't overlap the badges
+    contentDiv.style.paddingBottom = extraSpace + 'px';
+
+    // Increase line-height to make room for stacked underlines between text lines
+    if (totalLanes > 0) {
+        contentDiv.style.lineHeight = (1.6 + totalLanes * 0.3) + 'em';
+    }
+
+    // Create SVG overlay
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('tag-underline-svg');
+    svg.style.position = 'absolute';
+    svg.style.left = '0';
+    svg.style.top = '0';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.pointerEvents = 'none';
+    svg.style.overflow = 'visible';
+
+    const containerRect = contentDiv.getBoundingClientRect();
+
+    for (let ri = 0; ri < ranges.length; ri++) {
+        const range = ranges[ri];
+        const lane = rangeLanes[ri];
+        if (range.startChar >= range.endChar || range.startChar >= charMap.length) continue;
+
+        const effectiveEnd = Math.min(range.endChar, charMap.length);
+
+        // Create a DOM Range to get bounding rects
+        const domRange = document.createRange();
+        const startEntry = charMap[range.startChar];
+        const endEntry = charMap[effectiveEnd - 1];
+        domRange.setStart(startEntry.node, startEntry.offset);
+        domRange.setEnd(endEntry.node, endEntry.offset + 1);
+
+        const rects = domRange.getClientRects();
+
+        for (let r = 0; r < rects.length; r++) {
+            const rect = rects[r];
+            const x = rect.left - containerRect.left;
+            const y = rect.bottom - containerRect.top + BASE_OFFSET + lane * (LINE_HEIGHT + LINE_GAP);
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', y + LINE_HEIGHT / 2);
+            line.setAttribute('x2', x + rect.width);
+            line.setAttribute('y2', y + LINE_HEIGHT / 2);
+            line.setAttribute('stroke', range.color);
+            line.setAttribute('stroke-width', LINE_HEIGHT);
+            line.setAttribute('stroke-linecap', 'round');
+            if (range.tag_id !== principalTagId) {
+                line.setAttribute('stroke-dasharray', '8 6');
+                line.setAttribute('stroke-linecap', 'butt');
+            }
+            line.classList.add('smooth-stroke');
+            line.style.pointerEvents = 'all';
+            line.style.cursor = 'pointer';
+            line.style.transition = 'stroke-width 0.2s';
+
+            line.addEventListener('mouseenter', function (e) {
+                line.setAttribute('stroke-width', LINE_HEIGHT + 2);
+                showTagUnderlineTooltip(e, range.tag_id, range.color);
+            });
+            line.addEventListener('mouseleave', function () {
+                line.setAttribute('stroke-width', LINE_HEIGHT);
+                hideTagUnderlineTooltip();
+            });
+
+            svg.appendChild(line);
+        }
+    }
+
+    contentDiv.appendChild(svg);
+}
+
 function loadTag(tag_path, page) {
     if (page === undefined) {
         page = 1;
@@ -1197,33 +1328,85 @@ function loadTag(tag_path, page) {
                 elem.appendChild(content);
                 elem.appendChild(document.createTextNode(' '));
 
+                // Badge row: doclink + principal left, associated right
+                let badgeRow = document.createElement('div');
+                badgeRow.className = 'row';
+
+                let leftBadges = document.createElement('div');
+                leftBadges.className = 'col-10';
+
                 let doclink = document.createElement('a');
                 doclink.className = 'badge badge-primary';
-                
                 const documentPath = buildDocumentPath(hl.document_id);
                 doclink.textContent = documentPath;
                 linkDocument(doclink, hl.document_id, hl.id);
-                elem.appendChild(doclink);
-                elem.appendChild(document.createTextNode(' '));
+                leftBadges.appendChild(doclink);
+                leftBadges.appendChild(document.createTextNode(' '));
 
-                let tag_names = hl.tags.map(function (tag) {
-                    return findTag(tag).path;
-                });
-                tag_names.sort();
-                for (let j = 0; j < tag_names.length; ++j) {
-                    if (j > 0) {
-                        elem.appendChild(document.createTextNode(' '));
+                // Separate principal tags (selected in treeview) from associated tags
+                const selectedTagIds = new Set(selectedTags.map(t => t.id));
+
+                let principalTags = [];
+                let associatedTags = [];
+                hl.tags.forEach(function (tagId) {
+                    const tag = findTag(tagId);
+                    if (tag) {
+                        if (selectedTagIds.has(tag.id)) {
+                            principalTags.push(tag);
+                        } else {
+                            associatedTags.push(tag);
+                        }
                     }
+                });
+
+                // Principal tag badge (left)
+                for (let j = 0; j < principalTags.length; j++) {
                     let taglink = document.createElement('a');
-                    const tag = findTag(tag_names[j])
                     taglink.className = 'badge';
-                    taglink.setAttribute('style', `background-color: ${tag.color}; color: white; font-weight: bold;`);
-                    taglink.textContent = tag_names[j];
-                    // linkTag(taglink, taglink.textContent, false);
-                    elem.appendChild(taglink);
+                    taglink.setAttribute('style', `background-color: ${principalTags[j].color}; color: white; font-weight: bold;`);
+                    taglink.textContent = principalTags[j].path;
+                    leftBadges.appendChild(taglink);
                 }
 
+                badgeRow.appendChild(leftBadges);
+
+                // Associated tags (right, outline style)
+                if (associatedTags.length > 0) {
+                    let rightBadges = document.createElement('div');
+                    rightBadges.className = 'col-2 text-end';
+
+                    let label = document.createElement('small');
+                    label.textContent = gettext('tags associés :');
+                    label.style.color = '#6c757d';
+                    label.style.marginRight = '4px';
+                    rightBadges.appendChild(label);
+
+                    associatedTags.sort((a, b) => a.path.localeCompare(b.path));
+                    for (let j = 0; j < associatedTags.length; j++) {
+                        if (j > 0) {
+                            rightBadges.appendChild(document.createTextNode(' '));
+                        }
+                        let taglink = document.createElement('a');
+                        taglink.className = 'badge badge-outline-tag';
+                        taglink.setAttribute('style',
+                            `border: 2px dashed ${associatedTags[j].color}; color: ${associatedTags[j].color}; background: transparent; font-weight: bold;`
+                        );
+                        taglink.textContent = associatedTags[j].path;
+                        rightBadges.appendChild(taglink);
+                    }
+                    badgeRow.appendChild(rightBadges);
+                }
+
+                elem.appendChild(badgeRow);
+
                 document_contents.appendChild(elem);
+
+                // Apply SVG underlines after element is in the DOM (needed for getBoundingClientRect)
+                if (hl.tag_ranges && hl.tag_ranges.length > 0) {
+                    const principalTag = findTag(tag_path);
+                    const principalTagId = principalTag ? principalTag.id : null;
+                    applyTagUnderlines(content, hl.tag_ranges, principalTagId);
+                }
             }
             if (result.highlights.length === 0) {
                 document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
