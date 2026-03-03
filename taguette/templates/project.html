@@ -220,63 +220,10 @@
 <script type="text/javascript" src="{{ static_url('js/collection/hierarchy-select.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/collection/context-menu.js') }}"></script>
 
-<!-- highlight - V1 (custom/ - Architecture plainText + SVG) -->
-<script type="text/javascript" src="{{ static_url('js/highlight/custom/utils.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/highlight/custom/render.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/highlight/custom/crud.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/highlight/custom/main.js') }}"></script>
-
-<!-- highlight - V2 (native/ - HTML intact + SVG overlay) -->
-<script type="text/javascript" src="{{ static_url('js/highlight/native/renderer.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/highlight/native/crud.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('js/highlight/native/loader.js') }}"></script>
-
-<!-- Switch Highlight V1/V2 -->
-<script>
-    let currentHighlightVersion = getHighlightVersion();
-
-    function applyVersionStyle(version, toggleButton, versionLabel) {
-        versionLabel.classList.remove('bg-secondary', 'bg-success');
-        toggleButton.classList.remove('btn-outline-secondary', 'btn-outline-success');
-
-        if (version === 'v1') {
-            versionLabel.textContent = gettext('Clean Display');
-            versionLabel.classList.add('bg-secondary');
-            toggleButton.classList.add('btn-outline-secondary');
-            toggleButton.title = gettext('Clean display (simple text) - Click to switch to Rich');
-        } else if (version === 'v2') {
-            versionLabel.textContent = gettext('Rich Display');
-            versionLabel.classList.add('bg-success');
-            toggleButton.classList.add('btn-outline-success');
-            toggleButton.title = gettext('Rich display (preserves formatting) - Click to switch to Clean');
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const toggleButton = document.getElementById('highlight-version-toggle');
-        const versionLabel = document.getElementById('highlight-version-label');
-
-        if (toggleButton && versionLabel) {
-            applyVersionStyle(currentHighlightVersion, toggleButton, versionLabel);
-
-            toggleButton.addEventListener('click', function () {
-                if (currentHighlightVersion === 'v1') {
-                    currentHighlightVersion = 'v2';
-                    localStorage.setItem('highlightVersion', 'v2');
-                    applyVersionStyle('v2', toggleButton, versionLabel);
-                    showAlert(gettext('Rich Display enabled!'), 'success');
-                    window.location.reload();
-                } else {
-                    currentHighlightVersion = 'v1';
-                    localStorage.setItem('highlightVersion', 'v1');
-                    applyVersionStyle('v1', toggleButton, versionLabel);
-                    showAlert(gettext('Clean Display enabled!'), 'info');
-                    window.location.reload();
-                }
-            });
-        }
-    });
-</script>
+<!-- highlight system -->
+<script type="text/javascript" src="{{ static_url('js/highlight/renderer.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/highlight/loader.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/highlight/crud.js') }}"></script>
 
 <!-- search documents -->
 <script type="text/javascript" src="{{ static_url('js/project/search.js') }}"></script>

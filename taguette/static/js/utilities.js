@@ -2,11 +2,6 @@
  * Utilities
  */
 
-// Get current highlight version (V1 is default)
-function getHighlightVersion() {
-    return localStorage.getItem('highlightVersion') || 'v1';
-}
-
 // NEW selector
 jQuery.expr[':'].contains_insensitive = function(a, i, m) {
     return jQuery(a).text().toUpperCase()
@@ -252,6 +247,16 @@ function patchJSON(url = '', data = {}, args) {
 
 // Returns the byte length of a string encoded in UTF-8
 // https://stackoverflow.com/q/5515869/711380
+function getCharIndexFromUTF8Index(str, utf8Index) {
+    let charIndex = 0;
+    let currentUTF8Index = 0;
+    while (currentUTF8Index < utf8Index && charIndex < str.length) {
+        currentUTF8Index += lengthUTF8(str.charAt(charIndex));
+        charIndex++;
+    }
+    return charIndex;
+}
+
 function lengthUTF8(s) {
     if (window.TextEncoder) {
         return (new TextEncoder('utf-8').encode(s)).length;
@@ -496,24 +501,24 @@ function locatePos(pos) {
 
 let current_selection = null;
 
-// Describe the selection e.g. [14, 56]
 function describeSelection() {
-    if (getHighlightVersion() === 'v2' && typeof ntv_describeSelection === 'function') {
-        return ntv_describeSelection();
-    }
-    
     const sel = window.getSelection();
-    if (sel.rangeCount !== 0) {
-        const range = sel.getRangeAt(0);
-        if (!range.collapsed) {
-            const start = describePos(range.startContainer, range.startOffset);
-            const end = describePos(range.endContainer, range.endOffset);
-            if (start !== null && end !== null) {
-                return [start, end];
-            }
-        }
-    }
-    return null;
+    if (sel.rangeCount === 0 || sel.isCollapsed) return null;
+
+    const range = sel.getRangeAt(0);
+    const container = document.getElementById('highlight-content');
+    if (!container || !container.contains(range.commonAncestorContainer)) return null;
+
+    const tempRange = document.createRange();
+    tempRange.selectNodeContents(container);
+    tempRange.setEnd(range.startContainer, range.startOffset);
+    const startOffset = lengthUTF8(tempRange.toString());
+
+    tempRange.selectNodeContents(container);
+    tempRange.setEnd(range.endContainer, range.endOffset);
+    const endOffset = lengthUTF8(tempRange.toString());
+
+    return [startOffset, endOffset];
 }
 
 function splitAtPos(pos, after) {
