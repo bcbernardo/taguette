@@ -108,7 +108,7 @@ class Index(BaseHandler):
             )
         elif not self.application.config["MULTIUSER"]:
             token = self.get_query_argument("token", None)
-            if (self.application.config['UNIX_SOCKET'] or
+            if (self.application.config.get('UNIX_SOCKET') or
                     (token and token == self.application.single_user_token)):
                 self.login("admin")
                 return self.redirect(self.reverse_url("index"))

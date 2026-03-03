@@ -983,7 +983,8 @@ class Highlights(BaseHandler):
         for hl, direction in highlights:
             all_tag_ids = set(t.id for t in hl.tags)
 
-            # Find related highlights: any overlap (identical, contained, containing, or partial)
+            # Find related highlights: any overlap
+            # (identical, contained, containing, or partial)
             related_highlights = (
                 self.db.query(database.Highlight)
                 .options(joinedload(database.Highlight.tags))
@@ -1051,7 +1052,10 @@ class Highlights(BaseHandler):
                 'content': content,
                 'tags': sorted(all_tag_ids),
                 'text_direction': direction.name,
-                'tag_ranges': unique_tag_ranges,
+                'tag_ranges': sorted(
+                    unique_tag_ranges,
+                    key=lambda tr: tr['tag_id'],
+                ),
             })
 
         return self.send_json({

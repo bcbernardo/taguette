@@ -39,7 +39,7 @@ function loadDocumentHighlights(document_id, highlight_id, splitParagraphs, sear
             contentDiv.style.lineHeight = '1.6';
 
             const allHTML = contents.contents.map((chunk, index) => {
-                return `<div id="chunk-${chunk.offset}" class="document-chunk" data-chunk-index="${index}">${chunk.contents}</div>`;
+                return `<div id="doc-offset-${chunk.offset}" class="document-chunk" data-chunk-index="${index}">${chunk.contents}</div>`;
             }).join('\n');
 
             contentDiv.innerHTML = allHTML;

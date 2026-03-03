@@ -486,10 +486,22 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(await response.json(), {
                 'highlights': [
                     {'id': 3, 'document_id': 2, 'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent",
+                     'tag_ranges': [
+                         {'tag_id': 2, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                         {'tag_id': 3, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 5, 'document_id': 3, 'tags': [3],
                      'text_direction': 'RIGHT_TO_LEFT',
-                     'content': "<strong>Opinion</strong>"},
+                     'content': "<strong>Opinion</strong>",
+                     'tag_ranges': [
+                         {'tag_id': 3, 'color': '#000000',
+                          'start': 0, 'end': 7},
+                    ],
+                    },
                 ],
                 'pages': 1,
             })
@@ -502,7 +514,12 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(await response.json(), {
                 'highlights': [
                     {'id': 2, 'document_id': 2, 'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff",
+                     'tag_ranges': [
+                         {'tag_id': 4, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                 ],
                 'pages': 1,
             })
@@ -515,9 +532,21 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(await response.json(), {
                 'highlights': [
                     {'id': 2, 'document_id': 2, 'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff",
+                     'tag_ranges': [
+                         {'tag_id': 4, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 3, 'document_id': 2, 'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent",
+                     'tag_ranges': [
+                         {'tag_id': 2, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                         {'tag_id': 3, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                 ],
                 'pages': 1,
             })
@@ -528,12 +557,29 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(await response.json(), {
                 'highlights': [
                     {'id': 2, 'document_id': 2, 'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff",
+                     'tag_ranges': [
+                         {'tag_id': 4, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 3, 'document_id': 2, 'tags': [2, 3],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent",
+                     'tag_ranges': [
+                         {'tag_id': 2, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                         {'tag_id': 3, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 5, 'document_id': 3, 'tags': [3],
                      'text_direction': 'RIGHT_TO_LEFT',
-                     'content': "<strong>Opinion</strong>"},
+                     'content': "<strong>Opinion</strong>",
+                     'tag_ranges': [
+                         {'tag_id': 3, 'color': '#000000',
+                          'start': 0, 'end': 7},
+                    ],
+                    },
                 ],
                 'pages': 1,
             })
@@ -798,12 +844,27 @@ class TestMultiUserProject(TestMultiUser):
             self.assertEqual(await response.json(), {
                 'highlights': [
                     {'id': 2, 'document_id': 2, 'tags': [4],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "diff",
+                     'tag_ranges': [
+                         {'tag_id': 4, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 3, 'document_id': 2, 'tags': [2],
-                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent"},
+                     'text_direction': 'LEFT_TO_RIGHT', 'content': "tent",
+                     'tag_ranges': [
+                         {'tag_id': 2, 'color': '#000000',
+                          'start': 0, 'end': 4},
+                    ],
+                    },
                     {'id': 5, 'document_id': 3, 'tags': [2],
                      'text_direction': 'RIGHT_TO_LEFT',
-                     'content': "<strong>Opinion</strong>"},
+                     'content': "<strong>Opinion</strong>",
+                     'tag_ranges': [
+                         {'tag_id': 2, 'color': '#000000',
+                          'start': 0, 'end': 7},
+                    ],
+                    },
                 ],
                 'pages': 1,
             })
