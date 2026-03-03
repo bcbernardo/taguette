@@ -1376,7 +1376,7 @@ function loadTag(tag_path, page) {
                     rightBadges.className = 'col-2 text-end';
 
                     let label = document.createElement('small');
-                    label.textContent = gettext('tags associés :');
+                    label.textContent = gettext('associated tags:');
                     label.style.color = '#6c757d';
                     label.style.marginRight = '4px';
                     rightBadges.appendChild(label);
