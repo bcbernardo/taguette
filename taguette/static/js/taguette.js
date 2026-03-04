@@ -453,6 +453,13 @@ function createTag(fromHighlight, selection, parent) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
     }
 
+    const tagPreview = document.getElementById('tag-selection-preview');
+    if (tagPreview) {
+        const showPreview = !!(selection || (fromHighlight && current_selection_text));
+        tagPreview.textContent = formatSelectionPreview(current_selection_text);
+        tagPreview.style.display = showPreview && current_selection_text ? '' : 'none';
+    }
+
     if(selection) {
         document.getElementById('tag-highlight-add-start').value = selection[0];
         document.getElementById('tag-highlight-add-end').value = selection[1];
@@ -681,6 +688,7 @@ const highlight_add_modal = document.getElementById('highlight-add-modal');
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
+    current_selection_text = current_selection ? window.getSelection().toString() : null;
     log('current selection offset : ' + current_selection);
     let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
@@ -707,11 +715,23 @@ function selectionChanged() {
 
 document.addEventListener('selectionchange', selectionChanged);
 
+function formatSelectionPreview(text, maxLen = 150) {
+    if (!text) return '';
+    const trimmed = text.trim();
+    const truncated = trimmed.length > maxLen ? trimmed.slice(0, maxLen) + ' [...]' : trimmed;
+    return '\u201C' + truncated + '\u201D';
+}
+
 function createHighlight(selection) {
     document.getElementById('hlinfo').style.display = 'none';
     document.getElementById('highlight-add-id').value = '';
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
+    const hlPreview = document.getElementById('highlight-selection-preview');
+    if (hlPreview) {
+        hlPreview.textContent = formatSelectionPreview(current_selection_text);
+        hlPreview.style.display = current_selection_text ? '' : 'none';
+    }
     highlightModalReset();
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }

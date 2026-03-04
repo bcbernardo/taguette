@@ -500,6 +500,7 @@ function locatePos(pos) {
 }
 
 let current_selection = null;
+let current_selection_text = null;
 
 function describeSelection() {
     const sel = window.getSelection();
