@@ -688,7 +688,9 @@ const highlight_add_modal = document.getElementById('highlight-add-modal');
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
-    current_selection_text = current_selection ? window.getSelection().toString() : null;
+    if (current_selection) {
+        current_selection_text = window.getSelection().toString();
+    }
     log('current selection offset : ' + current_selection);
     let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
@@ -747,6 +749,16 @@ function editHighlight() {
     document.getElementById('highlight-add-id').value = id;
     document.getElementById('highlight-add-start').value = highlights[id].start_offset;
     document.getElementById('highlight-add-end').value = highlights[id].end_offset;
+    const hlPreview = document.getElementById('highlight-selection-preview');
+    if (hlPreview) {
+        const _tmp = document.createElement('div');
+        _tmp.innerHTML = (highlights[id].snippet || '')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p>|<\/div>|<\/h[1-6]>|<\/li>/gi, '\n');
+        const snippet = _tmp.textContent.trim().replace(/\n{3,}/g, '\n\n') || null;
+        hlPreview.textContent = formatSelectionPreview(snippet);
+        hlPreview.style.display = snippet ? '' : 'none';
+    }
     const hl_tags = highlights['' + id].tags;
     const allNodes = treeview_tags_highlight.treeview('getEnabled');
     for (let i = 0; i < hl_tags.length; ++i) {
