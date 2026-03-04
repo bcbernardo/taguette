@@ -1328,21 +1328,6 @@ function loadTag(tag_path, page) {
                 elem.appendChild(content);
                 elem.appendChild(document.createTextNode(' '));
 
-                // Badge row: doclink + principal left, associated right
-                let badgeRow = document.createElement('div');
-                badgeRow.className = 'row';
-
-                let leftBadges = document.createElement('div');
-                leftBadges.className = 'col-10';
-
-                let doclink = document.createElement('a');
-                doclink.className = 'badge badge-primary';
-                const documentPath = buildDocumentPath(hl.document_id);
-                doclink.textContent = documentPath;
-                linkDocument(doclink, hl.document_id, hl.id);
-                leftBadges.appendChild(doclink);
-                leftBadges.appendChild(document.createTextNode(' '));
-
                 // Separate principal tags (selected in treeview) from associated tags
                 const selectedTagIds = new Set(selectedTags.map(t => t.id));
 
@@ -1359,45 +1344,50 @@ function loadTag(tag_path, page) {
                     }
                 });
 
-                // Principal tag badge (left)
+                // Row 1: doclink + principal tag badges
+                let badgeRow = document.createElement('div');
+                badgeRow.className = 'd-flex flex-wrap gap-1 align-items-center';
+
+                let doclink = document.createElement('a');
+                doclink.className = 'badge badge-primary';
+                const documentPath = buildDocumentPath(hl.document_id);
+                doclink.textContent = documentPath;
+                linkDocument(doclink, hl.document_id, hl.id);
+                badgeRow.appendChild(doclink);
+
                 for (let j = 0; j < principalTags.length; j++) {
                     let taglink = document.createElement('a');
                     taglink.className = 'badge';
                     taglink.setAttribute('style', `background-color: ${principalTags[j].color}; color: white; font-weight: bold;`);
                     taglink.textContent = principalTags[j].path;
-                    leftBadges.appendChild(taglink);
+                    badgeRow.appendChild(taglink);
                 }
 
-                badgeRow.appendChild(leftBadges);
+                elem.appendChild(badgeRow);
 
-                // Associated tags (right, outline style)
+                // Row 2: "Associated tags:" label + associated tag badges (only if any)
                 if (associatedTags.length > 0) {
-                    let rightBadges = document.createElement('div');
-                    rightBadges.className = 'col-2 text-end';
+                    let assocRow = document.createElement('div');
+                    assocRow.className = 'd-flex flex-wrap gap-2 align-items-center mt-2';
 
                     let label = document.createElement('small');
-                    label.textContent = gettext('associated tags:');
+                    label.textContent = gettext('Overlapping:');
                     label.style.color = '#6c757d';
-                    label.style.marginRight = '4px';
-                    rightBadges.appendChild(label);
+                    assocRow.appendChild(label);
 
                     associatedTags.sort((a, b) => a.path.localeCompare(b.path));
                     for (let j = 0; j < associatedTags.length; j++) {
-                        if (j > 0) {
-                            rightBadges.appendChild(document.createTextNode(' '));
-                        }
                         let taglink = document.createElement('a');
                         taglink.className = 'badge badge-outline-tag';
                         taglink.setAttribute('style',
                             `border: 2px dashed ${associatedTags[j].color}; color: ${associatedTags[j].color}; background: transparent; font-weight: bold;`
                         );
                         taglink.textContent = associatedTags[j].path;
-                        rightBadges.appendChild(taglink);
+                        assocRow.appendChild(taglink);
                     }
-                    badgeRow.appendChild(rightBadges);
-                }
 
-                elem.appendChild(badgeRow);
+                    elem.appendChild(assocRow);
+                }
 
                 document_contents.appendChild(elem);
 
