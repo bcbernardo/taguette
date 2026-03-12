@@ -837,6 +837,17 @@ let members_initial = {};
 let members_displayed = {};
 
 function _memberRow(login, user, can_edit, is_self) {
+    // Check if this user is the only admin
+    const adminCount = Object.values(members).filter(m => m.privileges === 'ADMIN').length;
+    const is_only_admin = is_self && user.privileges === 'ADMIN' && adminCount === 1;
+
+    let leaveBtn = '';
+    if (is_self && !is_only_admin) {
+        leaveBtn = '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group">Leave project</button>';
+    } else if (!is_self) {
+        leaveBtn = '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>';
+    }
+
     let elem = document.createElement('div');
     elem.className = 'row members-item';
     elem.innerHTML = '<div class="col-md-4 text-center">' +
@@ -851,8 +862,7 @@ function _memberRow(login, user, can_edit, is_self) {
         '    <option value="READ">' + gettext("View only") + '</option>' +
         '  </select>' +
         '</div>' +
-        (is_self ? '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group">Leave project</button>' :
-            '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>') +
+        leaveBtn +
         '<hr class="custom-hr" />';
 
     [].forEach.call(elem.querySelectorAll('option'), function (e) {
@@ -861,10 +871,13 @@ function _memberRow(login, user, can_edit, is_self) {
         }
     });
 
-    elem.querySelector('button').addEventListener('click', function () {
-        elem.parentNode.removeChild(elem);
-        delete members_displayed[login];
-    });
+    const btn = elem.querySelector('button');
+    if (btn) {
+        btn.addEventListener('click', function () {
+            elem.parentNode.removeChild(elem);
+            delete members_displayed[login];
+        });
+    }
 
     return elem;
 }
