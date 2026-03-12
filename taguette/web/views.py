@@ -1290,6 +1290,8 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync("project")
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
+        if project.is_archived:
+            return self.redirect(self.reverse_url('archived_projects'))
         is_demo = self.get_argument("demo", None)
         demo_highlights_location = []
         user = self.db.query(database.User).get(self.current_user)

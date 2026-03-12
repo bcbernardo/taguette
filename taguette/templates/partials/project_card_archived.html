@@ -2,9 +2,7 @@
     <div class="project-card">
         <!-- Header with name and actions -->
         <div class="d-flex justify-content-between align-items-start px-3 pt-3">
-            <a href="{{ reverse_url('project', project.id) }}" class="no-underline flex-grow-1">
-                <h3 class="name" title="{{ project.name }}">{{ project.name }}</h3>
-            </a>
+            <h3 class="name" title="{{ project.name }}">{{ project.name }}</h3>
             <!-- Actions dropdown -->
             <div class="dropdown project-actions">
                 <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -18,8 +16,8 @@
                 </ul>
             </div>
         </div>
-        <!-- Card link -->
-        <a href="{{ reverse_url('project', project.id) }}" class="no-underline project-card-link d-flex flex-column flex-grow-1">
+        <!-- Card body (no link) -->
+        <div class="d-flex flex-column flex-grow-1">
             <div class="px-3 pt-2 description-container">
                 <p class="quote2 description-text">{{ project.description | truncate(100, true, '...') }}</p>
             </div>
@@ -38,6 +36,6 @@
                     <span class="quote2 mx-2">{{ project.member_count }}</span>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 </div>
