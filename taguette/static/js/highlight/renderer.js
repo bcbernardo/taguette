@@ -1,6 +1,6 @@
-const LINE_HEIGHT = 4;
-const LINE_GAP = 3;
-const BASE_OFFSET = 3;
+const LINE_HEIGHT = 3;
+const LINE_GAP = 2;
+const BASE_OFFSET = 2;
 
 function renderHighlights(hlList) {
     const container = document.getElementById('highlight-content');
@@ -14,7 +14,7 @@ function renderHighlights(hlList) {
 
     let layoutChanged = false;
     targetMaxLanes.forEach((maxLanes, el) => {
-        const newLH = (1.6 + maxLanes * 0.3) + 'em';
+        const newLH = (1.6 + maxLanes * 0.18) + 'em';
         if (el.style.lineHeight !== newLH) {
             el.style.lineHeight = newLH;
             layoutChanged = true;
