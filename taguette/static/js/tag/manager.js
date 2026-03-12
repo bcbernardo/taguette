@@ -47,10 +47,6 @@ function highlightTag(tagId) {
     const nodeId = getNodeIdFromTreeviewByTagId(treeview_tags, tagId);
     const nodeElement = treeview_tags.find(`li[data-nodeid="${nodeId}"]`);
 
-    if (nodeElement.length > 0) {
-        nodeElement[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
     nodeElement.addClass('highlight-tag');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
