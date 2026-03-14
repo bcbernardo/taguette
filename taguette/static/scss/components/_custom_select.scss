@@ -80,17 +80,17 @@
     align-items: center;
 }
 
-.create-document-option a {
-    width: 100%;
+.bookmark-hint {
+    cursor: default;
     padding: 8px 10px;
-    cursor: pointer;
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+    color: $color-bg-text;
+    opacity: 0.6;
+    pointer-events: none;
 }
 
-.create-document-option a:hover {
-   color: $color-bg;
+.custom-select.empty .selected-value {
+    font-style: italic;
+    opacity: 0.6;
 }
 
 .select-dropdown li label {

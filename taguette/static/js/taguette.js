@@ -391,10 +391,18 @@ document.getElementById('document-change-delete').addEventListener('click', func
  */
 
 let sortTags = ['path', 'asc'];
+let compactLayout = false;
+
+function toggleCompactLayout() {
+    compactLayout = document.getElementById('compact-layout-toggle').checked;
+    document.getElementById('codebook-header-controls').classList.toggle('d-none', compactLayout);
+    document.querySelector('.bordered-container').classList.toggle('compact-layout', compactLayout);
+    updateTagsList();
+}
 
 function sortTagsBy(field, dir) {
     sortTags = [field, dir];
-    let options = document.getElementById('tag-sortby-menu').querySelectorAll('a.dropdown-item');
+    let options = document.querySelectorAll('#tag-menu-more-actions a.sort-option');
     let optionSorts = [['path', 'asc'], ['path', 'desc'], ['count', 'asc'], ['count', 'desc'],];
     for (let i = 0; i < optionSorts.length; ++i) {
         if (optionSorts[i][0] === field && optionSorts[i][1] === dir) {

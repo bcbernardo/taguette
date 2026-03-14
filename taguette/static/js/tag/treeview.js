@@ -223,7 +223,9 @@ function initTagsTreeview(filterTags = null, callback = null) {
 
     const treeData = convertToTreeNode(filterTags, true);
 
-    const customNodeOptions = customNodeRow(true, false);
+    const customNodeOptions = customNodeRow(true, false, compactLayout);
+
+    treeview_tags.toggleClass('compact-layout', compactLayout);
 
     const options = {
         data: treeData,
@@ -231,17 +233,31 @@ function initTagsTreeview(filterTags = null, callback = null) {
         customizeBadges: function(container, node, tree) {
             container.addClass('tag-badges');
             if (node.tags && node.tags.length > 0) {
-                container.append($('<span>', {
-                    class: 'badge badge-primary badge-fixed-width',
-                    title: gettext('Documents'),
-                    text: node.tags[0]
-                }));
-                if (node.tags.length > 1) {
+                if (compactLayout) {
+                    const tag = findTag(node.id);
                     container.append($('<span>', {
-                        class: 'badge badge-secondary badge-fixed-width',
-                        title: gettext('Highlights'),
-                        text: node.tags[1]
+                        class: 'badge badge-primary badge-compact',
+                        title: gettext('Documents'),
+                        text: tag ? tag.count_document : 0
                     }));
+                    container.append($('<span>', {
+                        class: 'badge badge-secondary badge-compact',
+                        title: gettext('Highlights'),
+                        text: tag ? tag.count : 0
+                    }));
+                } else {
+                    container.append($('<span>', {
+                        class: 'badge badge-primary badge-fixed-width',
+                        title: gettext('Documents'),
+                        text: node.tags[0]
+                    }));
+                    if (node.tags.length > 1) {
+                        container.append($('<span>', {
+                            class: 'badge badge-secondary badge-fixed-width',
+                            title: gettext('Highlights'),
+                            text: node.tags[1]
+                        }));
+                    }
                 }
             }
         },
@@ -480,7 +496,7 @@ function addTagDragDrop() {
     });
 }
 
-function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
+function customNodeRow(isTagContextMenu = false, isHighlightTag = false, showCountsInTooltip = false) {
 
     return {
         customContent: true,
@@ -494,7 +510,14 @@ function customNodeRow(isTagContextMenu = false, isHighlightTag = false) {
             element.attr('id', `${node.nodeId}`);
             element.attr('data-tag-id', `${node.id}`);
             const tooltipText = gettext('Click to explore • Right-click for options');
-            const tooltip = `${node.text}\n\n${tooltipText}`;
+            let tooltip = node.text;
+            if (showCountsInTooltip) {
+                const tag = findTag(node.id);
+                if (tag) {
+                    tooltip += `\n${gettext('Documents')}: ${tag.count_document}  •  ${gettext('Highlights')}: ${tag.count}`;
+                }
+            }
+            tooltip += `\n\n${tooltipText}`;
             element.attr('title', tooltip);
             element.attr('data-test-id', isHighlightTag ? `tag-node-highlight-${node.id}`
                 : `tag-node-${node.id}`);
@@ -540,6 +563,7 @@ $(document).ready(function() {
     ];
 
     initHelpPopover('tag-treeview-help-icon', sections);
+    initHelpPopover('dropdown-tips-btn', sections);
 });
 
 function saveTagExpandedState() {

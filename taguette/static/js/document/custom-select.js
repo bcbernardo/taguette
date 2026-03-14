@@ -55,6 +55,7 @@ function createHandler(option) {
 function updateSelectedValue(text) {
     selectedValue.textContent = text;
     selectedValue.title = text;
+    customSelect.classList.toggle('empty', !text);
 }
 
 // Toggle toolbar actions

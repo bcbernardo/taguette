@@ -619,10 +619,15 @@ function initHelpPopover(elementId, sections) {
 
     const popoverElement = document.getElementById(elementId);
     if (popoverElement) {
+        const existing = bootstrap.Popover.getInstance(popoverElement);
+        if (existing) existing.dispose();
         new bootstrap.Popover(popoverElement, {
             content: helpContent,
             html: true,
-            sanitize: false
+            sanitize: false,
+            trigger: 'focus',
+            placement: 'left',
+            fallbackPlacements: ['top', 'bottom', 'right']
         });
     }
 }
