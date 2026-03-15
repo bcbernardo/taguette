@@ -6,7 +6,6 @@
     max-width: 100%;
     font-size: 1.15rem;
     color: $color-bg-text;
-    z-index: 1;
 }
 
 @media (max-width: 768px) {
@@ -15,8 +14,14 @@
     }
 }
 
+/* In the toolbar, flex-grow-1 controls sizing — percentage width causes overflow */
+.toolbar-container .custom-select {
+    width: auto;
+}
+
 .select-button {
     width: 100%;
+    min-width: 0;
     height: $btn-height-default;
     font-size: 1.15rem;
     background-color: $color-bg;
@@ -59,6 +64,7 @@
     border-radius: 0.5rem;
     padding: 10px;
     margin-top: 10px;
+    z-index: 10;
     max-height: $dropdown-max-height;
     overflow-y: auto;
     transition: 0.5s ease;

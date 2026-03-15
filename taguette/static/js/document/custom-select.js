@@ -66,7 +66,9 @@ function toggleToolbarActions(show = false) {
 
         if(current_document) {
             const doc = documents[current_document];
-            updateSelectedValue(doc.name);
+            updateSelectedValue(doc ? doc.name : '');
+        } else {
+            updateSelectedValue('');
         }
     } else {
         toolbarActionButtons.style.setProperty('display', 'none', 'important');

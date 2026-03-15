@@ -395,7 +395,6 @@ let compactLayout = false;
 
 function toggleCompactLayout() {
     compactLayout = document.getElementById('compact-layout-toggle').checked;
-    document.getElementById('codebook-header-controls').classList.toggle('d-none', compactLayout);
     document.querySelector('.bordered-container').classList.toggle('compact-layout', compactLayout);
     updateTagsList();
 }

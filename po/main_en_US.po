@@ -350,7 +350,7 @@ msgstr "New project"
 #: taguette/templates/base.html:58
 msgctxt "search form placeholder"
 msgid "Search in documents"
-msgstr "Edit document"
+msgstr "Search documents"
 
 #: taguette/templates/base.html:86
 #, python-format
@@ -405,7 +405,7 @@ msgid ""
 msgstr ""
 "LibreQDA %(version)s is released under a <a href=\"https://gitlab.com"
 "/bin-cirst/libreqda/libre-qda/blob/main/LICENSE.txt\">BSD-3-Clause "
-"license</a>, LibreQDA is an experimental flavour of Taguette<br/>&#169; "
+"license</a><br/>&#169; "
 "Rémi Rampin, <a href=\"https://www.usherbrooke.ca/flsh/recherche/centres-"
 "groupes-et-equipes-de-recherche/phun\" target=\"_blank\">PHuN</a> and "
 "Taguette contributors | <a href=\"https://help.libreqda.org/\">User "

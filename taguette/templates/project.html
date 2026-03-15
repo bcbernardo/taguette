@@ -28,47 +28,43 @@
                     </button>
                 </div>
                 <div class="codebook-toolbar panel-content flex-grow-1 min-width-0">
-                    <div class="codebook-controls d-flex gap-2 align-items-center">
-                        <div class="dropdown">
-                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
-                                id="tag-more-action-button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                                aria-haspopup="true" aria-expanded="false"
-                                title="{% trans %}More actions{% endtrans %}">
-                                <i class="fas fa-bars"></i><span class="btn-label"> {% trans %}More actions{% endtrans %}</span>
+                    <div class="compact-toggle-wrap form-check form-switch mb-0 d-flex align-items-center">
+                        <input class="form-check-input me-1" type="checkbox" role="switch"
+                            id="compact-layout-toggle" onchange="toggleCompactLayout()">
+                        <label class="form-check-label small" for="compact-layout-toggle">
+                            {% trans %}Compact{% endtrans %}
+                        </label>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
+                            id="tag-more-action-button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            aria-haspopup="true" aria-expanded="false"
+                            title="{% trans %}More actions{% endtrans %}">
+                            <i class="fas fa-bars"></i><span class="btn-label"> {% trans %}More actions{% endtrans %}</span>
+                        </button>
+                        <div class="dropdown-menu" id="tag-menu-more-actions"
+                            aria-labelledby="tag-more-action-button">
+                            <h6 class="dropdown-header">{% trans %}Sort by{% endtrans %}</h6>
+                            <a class="dropdown-item sort-option active" href="javascript:sortTagsBy('path', 'asc')">{% trans
+                                %}Text [a&rarr;z]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text
+                                [z&rarr;a]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count
+                                [0&rarr;9]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count
+                                [9&rarr;0]{% endtrans %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/"
+                                data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans
+                                %}</a>
+                            <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans
+                                %}Expand all{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans
+                                %}Collapse all{% endtrans %}</a>
+                            <div class="dropdown-divider"></div>
+                            <button type="button" class="dropdown-item" id="dropdown-tips-btn">
+                                <i class="fas fa-question-circle me-1"></i> {% trans %}Tips{% endtrans %}
                             </button>
-                            <div class="dropdown-menu" id="tag-menu-more-actions"
-                                aria-labelledby="tag-more-action-button">
-                                <h6 class="dropdown-header">{% trans %}Sort by{% endtrans %}</h6>
-                                <a class="dropdown-item sort-option active" href="javascript:sortTagsBy('path', 'asc')">{% trans
-                                    %}Text [a&rarr;z]{% endtrans %}</a>
-                                <a class="dropdown-item sort-option" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text
-                                    [z&rarr;a]{% endtrans %}</a>
-                                <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count
-                                    [0&rarr;9]{% endtrans %}</a>
-                                <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count
-                                    [9&rarr;0]{% endtrans %}</a>
-                                <div class="dropdown-divider"></div>
-                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/"
-                                    data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans
-                                    %}</a>
-                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans
-                                    %}Expand all{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans
-                                    %}Collapse all{% endtrans %}</a>
-                                <div class="dropdown-divider"></div>
-                                <button type="button" class="dropdown-item" id="dropdown-tips-btn">
-                                    <i class="fas fa-question-circle me-1"></i> {% trans %}Tips{% endtrans %}
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center">
-                            <input class="form-check-input me-1" type="checkbox" role="switch"
-                                id="compact-layout-toggle" onchange="toggleCompactLayout()">
-                            <label class="form-check-label small" for="compact-layout-toggle">
-                                {% trans %}Compact{% endtrans %}
-                            </label>
-                        </div>
-                        <div id="codebook-header-controls" class="ms-auto d-flex gap-1 align-items-center">
                         </div>
                     </div>
                     <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4"
@@ -117,7 +113,7 @@
         <div class="bordered-container sticky-top">
             <div class="documents-header-wrap px-2 pt-2 pb-1 d-flex align-items-start gap-2">
                 <div class="document-toolbar panel-content flex-grow-1 min-width-0">
-                    <div class="d-flex gap-2 align-items-center">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
                         <a class="btn btn-sm btn-outline-primary rounded-4 flex-grow-1 text-center"
                             href="javascript:createCollection()" data-test-id="create-collection-link"
                             title="{% trans %}Add a collection{% endtrans %}">
@@ -129,8 +125,6 @@
                             <i class="fas fa-plus"></i> {% trans %}Documents{% endtrans %}
                         </a>
                     </div>
-                    <input type="text" class="form-control mt-2 mb-1" id="input-search-titles" autocomplete="off"
-                        placeholder="{% trans %}Search titles and collections name{% endtrans %}">
                 </div>
                 <div class="panel-side-controls d-flex flex-column align-items-center gap-1 flex-shrink-0">
                     <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="{% trans %}Toggle panel{% endtrans %}">
@@ -141,6 +135,10 @@
                         <i class="fas fa-question-circle"></i>
                     </button>
                 </div>
+            </div>
+            <div class="panel-content px-2 pb-1">
+                <input type="text" class="form-control" id="input-search-titles" autocomplete="off"
+                    placeholder="{% trans %}Search titles{% endtrans %}">
             </div>
             <!-- Documents treeview -->
             <div class="panel-content" id="treeview-documents">

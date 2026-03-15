@@ -236,11 +236,6 @@ function initTagsTreeview(filterTags = null, callback = null) {
                 if (compactLayout) {
                     const tag = findTag(node.id);
                     container.append($('<span>', {
-                        class: 'badge badge-primary badge-compact',
-                        title: gettext('Documents'),
-                        text: tag ? tag.count_document : 0
-                    }));
-                    container.append($('<span>', {
                         class: 'badge badge-secondary badge-compact',
                         title: gettext('Highlights'),
                         text: tag ? tag.count : 0
