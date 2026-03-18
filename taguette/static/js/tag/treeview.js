@@ -193,7 +193,9 @@ function convertToTreeNode(data, includeTags) {
         } else {
             return {
                 totalCount: item.count > 100 ? '+100' : item.count.toString(),
-                totalDocumentCount: item.count_document > 100 ? '+100' : item.count_document.toString()
+                totalDocumentCount: item.count_document > 100 ? '+100' : item.count_document.toString(),
+                rawCount: item.count,
+                rawDocumentCount: item.count_document
             };
         }
     }
@@ -209,6 +211,7 @@ function convertToTreeNode(data, includeTags) {
         if (includeTags) {
             let counts = getNodeCount(item);
             node.tags = [`${counts.totalDocumentCount}`, `${counts.totalCount}`];
+            node.rawCounts = [counts.rawDocumentCount, counts.rawCount];
         }
 
         return node;
@@ -233,23 +236,26 @@ function initTagsTreeview(filterTags = null, callback = null) {
         customizeBadges: function(container, node, tree) {
             container.addClass('tag-badges');
             if (node.tags && node.tags.length > 0) {
+                const rawCounts = node.rawCounts || [];
+                const docTitle = gettext('Documents') + (rawCounts[0] > 100 ? ': ' + rawCounts[0] : '');
+                const hlTitle = gettext('Highlights') + (rawCounts[1] > 100 ? ': ' + rawCounts[1] : '');
                 if (compactLayout) {
                     const tag = findTag(node.id);
                     container.append($('<span>', {
                         class: 'badge badge-secondary badge-compact',
-                        title: gettext('Highlights'),
+                        title: hlTitle,
                         text: tag ? tag.count : 0
                     }));
                 } else {
                     container.append($('<span>', {
                         class: 'badge badge-primary badge-fixed-width',
-                        title: gettext('Documents'),
+                        title: docTitle,
                         text: node.tags[0]
                     }));
                     if (node.tags.length > 1) {
                         container.append($('<span>', {
                             class: 'badge badge-secondary badge-fixed-width',
-                            title: gettext('Highlights'),
+                            title: hlTitle,
                             text: node.tags[1]
                         }));
                     }
