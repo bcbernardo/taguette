@@ -21,6 +21,7 @@ def upgrade():
     with op.batch_alter_table('projects', schema=None) as batch_op:
         batch_op.add_column(sa.Column('is_archived', sa.Boolean(), nullable=False, server_default='false'))
 
+    op.execute('UPDATE projects SET is_archived = false WHERE is_archived != false')
     # ### end Alembic commands ###
 
 
