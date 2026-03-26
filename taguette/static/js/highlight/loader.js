@@ -5,6 +5,7 @@ function loadDocumentHighlights(document_id, highlight_id, splitParagraphs, sear
         document_contents.style.direction = 'ltr';
         document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' +
             gettext("Load a document on the left") + '</p>';
+        toggleToolbarActions(false);
         return;
     }
 

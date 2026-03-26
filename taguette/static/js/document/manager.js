@@ -119,45 +119,42 @@ function generateDocumentSelectPicker() {
         dropdown.removeChild(dropdown.firstChild);
     }
 
-    // Fill up the list again
-    let createListItem = document.createElement('li');
-    createListItem.setAttribute('role', 'option');
-    createListItem.setAttribute('data-test-id', 'create-document-link');
-    createListItem.classList.add('create-document-option');
-    const labelImportNewDocument = gettext('Import new document');
-    createListItem.innerHTML = `<a href="javascript:createDocument()">${labelImportNewDocument}</a>`;
-
-    dropdown.appendChild(createListItem);
-
     const entries = Object.entries(documents);
     sortByKey(entries, function(e) {
         return e[1].name;
     });
 
     // keep only favorites
-    entries.forEach(([key, doc]) => {
+    const favorites = entries.filter(([key, doc]) => doc.favorite === true);
 
-        if (doc.favorite !== true) {
-            return;
-        }
+    if (favorites.length === 0) {
+        let hintItem = document.createElement('li');
+        hintItem.classList.add('bookmark-hint');
+        hintItem.setAttribute('role', 'option');
+        hintItem.innerHTML = `<em>${gettext('Left-click a document to bookmark it')}</em>`;
+        dropdown.appendChild(hintItem);
+        document.querySelector('.custom-select').classList.add('empty');
+    } else {
+        document.querySelector('.custom-select').classList.remove('empty');
+        favorites.forEach(([key, doc]) => {
+            let listItem = document.createElement('li');
+            listItem.setAttribute('role', 'option');
 
-        let listItem = document.createElement('li');
-        listItem.setAttribute('role', 'option');
+            let input = document.createElement('input');
+            input.setAttribute('type', 'radio');
+            input.setAttribute('id', 'doc-' + doc.id);
+            input.setAttribute('name', 'document');
 
-        let input = document.createElement('input');
-        input.setAttribute('type', 'radio');
-        input.setAttribute('id', 'doc-' + doc.id);
-        input.setAttribute('name', 'document');
+            let label = document.createElement('label');
+            label.setAttribute('for', 'doc-' + doc.id);
+            label.innerHTML = `${escapeHtml(doc.name)}`;
 
-        let label = document.createElement('label');
-        label.setAttribute('for', 'doc-' + doc.id);
-        label.innerHTML = `${escapeHtml(doc.name)}`;
+            listItem.appendChild(input);
+            listItem.appendChild(label);
 
-        listItem.appendChild(input);
-        listItem.appendChild(label);
-
-        dropdown.appendChild(listItem);
-    });
+            dropdown.appendChild(listItem);
+        });
+    }
 }
 
 function submitDocumentUpdate(document, callbackSuccess, callbackFail) {

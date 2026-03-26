@@ -22,14 +22,49 @@
 
 /* Override bootstrap-treeview icon spacing */
 body #treeview-documents span.icon {
-    margin-right: 10px !important;
+    margin-right: 5px !important;
     width: 12px !important;
 }
 
-/* Indent documents within collections */
+#treeview-documents .document-badges {
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* Collection rows as section dividers */
+#treeview-documents .list-group-item.collection-context-menu {
+    background-color: $color-gray-100;
+    font-weight: 600;
+    border-bottom: 1px solid $color-gray-300;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    padding-left: 6px !important;
+    margin-top: 2px;
+}
+
+/* Document rows: thin left stripe, minimal indent, white background overrides parent collection grey */
 #treeview-documents .document-link {
-    padding-left: 50px !important;
-    padding-right: 60px !important;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    padding-left: 10px !important;
+    padding-right: 8px !important;
+    border-left: 3px solid $color-gray-300;
+    background-color: $color-bg !important;
+}
+
+#treeview-documents .list-group-item > .w-100 {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+#treeview-documents .document-link-a {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#treeview-documents .list-group-item {
+    font-size: 0.9rem;
 }
