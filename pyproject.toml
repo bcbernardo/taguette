@@ -2,6 +2,10 @@
 name = "taguette"
 version = "1.0.1"
 description = "Free and open source qualitative research tool"
+packages = [
+    { include = "taguette" },
+    { include = "scripts" },
+]
 
 license = "BSD-3-Clause"
 

@@ -846,6 +846,11 @@ def _compile_group_array_sqlite(element, compiler, **kw):
     return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
 
 
+@compiles(GroupArray, 'mysql')
+def _compile_group_array_mysql(element, compiler, **kw):
+    return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
+
+
 Tag.document_ids = column_property(
     select([GroupArray(document_alias.id)])
     .select_from(highlight_tags)
