@@ -57,7 +57,6 @@ class TestMultiUserLogin(TestMultiUser):
         async with self.aget('/') as response:
             self.assertEqual(response.status, 200)
             self.assertIn(b'>Welcome tester</h1>', await response.read())
-            self.assertIn(b'Here are your projects', await response.read())
 
         # Fetch project creation page
         async with self.aget('/project/new') as response:

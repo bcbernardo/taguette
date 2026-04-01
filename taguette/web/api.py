@@ -7,7 +7,7 @@ import logging
 import math
 import os
 import prometheus_client
-from sqlalchemy import and_, exists, func, distinct, not_, or_
+from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
 from sqlalchemy.orm import aliased, defer, joinedload, subqueryload
 import tempfile

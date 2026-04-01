@@ -94,7 +94,10 @@ class Index(BaseHandler):
                 user=user,
                 user_login=Markup(json.dumps(self.current_user)),
                 user_display_name=user_display_name,
-                projects=[m.project for m in user.project_memberships if not m.project.is_archived],
+                projects=[
+                    m.project for m in user.project_memberships
+                    if not m.project.is_archived
+                ],
                 can_create_project=user.role.can_create_project(),
                 can_change_role=user.role.can_change_role(),
                 can_import_project=(
@@ -1052,7 +1055,10 @@ class ArchivedProjects(BaseHandler):
     @PROM_REQUESTS.sync("archived_projects")
     def get(self):
         user = self.db.query(database.User).get(self.current_user)
-        projects = [m.project for m in user.project_memberships if m.project.is_archived]
+        projects = [
+            m.project for m in user.project_memberships
+            if m.project.is_archived
+        ]
         return self.render(
             "archived_projects.html",
             user=user,
