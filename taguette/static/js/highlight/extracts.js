@@ -218,15 +218,16 @@ function loadTag(tag_path, page) {
                 elem.appendChild(content);
                 elem.appendChild(document.createTextNode(' '));
 
-                // Separate principal tags (selected in treeview) from associated tags
-                const selectedTagIds = new Set(selectedTags.map(t => t.id));
+                // Separate principal tags (the tag being viewed) from associated tags
+                const principalTag = findTag(tag_path);
+                const principalTagId = principalTag ? principalTag.id : null;
 
                 let principalTags = [];
                 let associatedTags = [];
                 hl.tags.forEach(function (tagId) {
                     const tag = findTag(tagId);
                     if (tag) {
-                        if (selectedTagIds.has(tag.id)) {
+                        if (tag.id === principalTagId) {
                             principalTags.push(tag);
                         } else {
                             associatedTags.push(tag);
@@ -261,9 +262,37 @@ function loadTag(tag_path, page) {
                     assocRow.className = 'd-flex flex-wrap gap-2 align-items-center mt-2';
 
                     let label = document.createElement('small');
-                    label.textContent = gettext('Overlapping:');
                     label.style.color = '#6c757d';
+                    label.style.cursor = 'pointer';
+                    let allCheck = document.createElement('i');
+                    allCheck.className = 'far fa-square me-1';
+                    label.appendChild(allCheck);
+                    label.appendChild(document.createTextNode(gettext('Overlapping')));
                     assocRow.appendChild(label);
+
+                    const syncAllCheck = () => {
+                        const badges = assocRow.querySelectorAll('.badge-outline-tag');
+                        const allPinned = badges.length > 0 && Array.from(badges).every(b => b.classList.contains('badge-outline-tag--pinned'));
+                        allCheck.className = allPinned ? 'fas fa-check-square me-1' : 'far fa-square me-1';
+                    };
+
+                    label.addEventListener('click', function () {
+                        const badges = assocRow.querySelectorAll('.badge-outline-tag');
+                        const allPinned = Array.from(badges).every(b => b.classList.contains('badge-outline-tag--pinned'));
+                        const newPinned = !allPinned;
+                        badges.forEach(function (badge) {
+                            badge.classList.toggle('badge-outline-tag--pinned', newPinned);
+                            const icon = badge.querySelector('.badge-outline-tag-check');
+                            icon.className = newPinned
+                                ? 'fas fa-check-square me-1 badge-outline-tag-check'
+                                : 'far fa-square me-1 badge-outline-tag-check';
+                            const tagId = parseInt(badge.getAttribute('data-overlay-tag-id'));
+                            content.querySelectorAll('line[data-overlay-tag-id="' + tagId + '"]').forEach(function (l) {
+                                l.style.display = newPinned ? '' : 'none';
+                            });
+                        });
+                        syncAllCheck();
+                    });
 
                     associatedTags.sort((a, b) => a.path.localeCompare(b.path));
                     for (let j = 0; j < associatedTags.length; j++) {
@@ -272,7 +301,10 @@ function loadTag(tag_path, page) {
                         taglink.setAttribute('style',
                             `border: 2px dashed ${associatedTags[j].color}; color: ${associatedTags[j].color}; background: transparent; font-weight: bold; cursor: pointer;`
                         );
-                        taglink.textContent = associatedTags[j].path;
+                        let checkIcon = document.createElement('i');
+                        checkIcon.className = 'far fa-square me-1 badge-outline-tag-check';
+                        taglink.appendChild(checkIcon);
+                        taglink.appendChild(document.createTextNode(associatedTags[j].path));
                         taglink.setAttribute('data-overlay-tag-id', associatedTags[j].id);
                         taglink.addEventListener('mouseenter', function () {
                             const tagId = parseInt(this.getAttribute('data-overlay-tag-id'));
@@ -281,10 +313,23 @@ function loadTag(tag_path, page) {
                             });
                         });
                         taglink.addEventListener('mouseleave', function () {
+                            if (this.classList.contains('badge-outline-tag--pinned')) return;
                             const tagId = parseInt(this.getAttribute('data-overlay-tag-id'));
                             content.querySelectorAll('line[data-overlay-tag-id="' + tagId + '"]').forEach(function (l) {
                                 l.style.display = 'none';
                             });
+                        });
+                        taglink.addEventListener('click', function () {
+                            const tagId = parseInt(this.getAttribute('data-overlay-tag-id'));
+                            const pinned = this.classList.toggle('badge-outline-tag--pinned');
+                            const icon = this.querySelector('.badge-outline-tag-check');
+                            icon.className = pinned
+                                ? 'fas fa-check-square me-1 badge-outline-tag-check'
+                                : 'far fa-square me-1 badge-outline-tag-check';
+                            content.querySelectorAll('line[data-overlay-tag-id="' + tagId + '"]').forEach(function (l) {
+                                l.style.display = pinned ? '' : 'none';
+                            });
+                            syncAllCheck();
                         });
                         assocRow.appendChild(taglink);
                     }
@@ -296,8 +341,6 @@ function loadTag(tag_path, page) {
 
                 // Apply SVG underlines after element is in the DOM (needed for getBoundingClientRect)
                 if (hl.tag_ranges && hl.tag_ranges.length > 0) {
-                    const principalTag = findTag(tag_path);
-                    const principalTagId = principalTag ? principalTag.id : null;
                     applyTagUnderlines(content, hl.tag_ranges, principalTagId);
                 }
             }
