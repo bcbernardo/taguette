@@ -205,10 +205,10 @@ function highlightToRects(highlight, fullText, charMap, containerRect) {
         range.setEnd(endEntry.node, endEntry.offset + 1);
 
         const clientRects = range.getClientRects();
-        const rects = [];
+        const raw = [];
         for (const r of clientRects) {
             if (r.width > 0 && r.height > 0) {
-                rects.push({
+                raw.push({
                     x: r.left - containerRect.left,
                     y: r.top - containerRect.top,
                     width: r.width,
@@ -216,11 +216,57 @@ function highlightToRects(highlight, fullText, charMap, containerRect) {
                 });
             }
         }
-        return rects;
+        return deduplicateRects(raw);
     } catch (e) {
         log(`Error creating range for highlight ${highlight.id}: ${e.message}`, 'error');
         return null;
     }
+}
+
+function deduplicateRects(rects) {
+    // Remove exact duplicates
+    const unique = [];
+    for (const r of rects) {
+        const isDupe = unique.some(u =>
+            Math.abs(u.x - r.x) < 1 && Math.abs(u.y - r.y) < 1 &&
+            Math.abs(u.width - r.width) < 1 && Math.abs(u.height - r.height) < 1
+        );
+        if (!isDupe) unique.push(r);
+    }
+
+    // 2. Remove block-level rects (taller than text rects)
+    const medianHeight = unique.length > 0
+        ? unique.map(r => r.height).sort((a, b) => a - b)[Math.floor(unique.length / 2)]
+        : 20;
+    const result = [];
+    for (const r of unique) {
+        if (r.height > medianHeight * 1.3) {
+            const hasOverlapping = unique.some(other => {
+                if (other === r) return false;
+                return Math.abs(r.y - other.y) < r.height &&
+                       other.height <= medianHeight * 1.1;
+            });
+            if (hasOverlapping) continue; // skip this block-level rect
+        }
+        result.push(r);
+    }
+
+    // Merge adjacent rects on the same visual line
+    result.sort((a, b) => a.y - b.y || a.x - b.x);
+    const merged = [];
+    for (const rect of result) {
+        const last = merged[merged.length - 1];
+        if (last && Math.abs(last.y - rect.y) < 3) {
+            const gap = rect.x - (last.x + last.width);
+            if (gap < 2) {
+                last.width = Math.max(last.x + last.width, rect.x + rect.width) - last.x;
+                last.height = Math.max(last.height, rect.height);
+                continue;
+            }
+        }
+        merged.push({ ...rect });
+    }
+    return merged;
 }
 
 function assignSmartLanes(rectsInLine) {
