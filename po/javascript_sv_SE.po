@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2026-01-06 11:06-0500\n"
+"POT-Creation-Date: 2026-04-03 12:02-0400\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
 "Last-Translator: <dion.jeremie.2@courrier.uqam.ca> with LLM assistance\n"
 "Language: sv_SE\n"
@@ -23,60 +23,60 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.17.0\n"
 
-#: taguette/static/js/polling-event.js:141
+#: taguette/static/js/polling-event.js:131
 msgid "It appears that you have been logged out."
 msgstr "Det verkar som att du har blivit utloggad."
 
-#: taguette/static/js/polling-event.js:144
+#: taguette/static/js/polling-event.js:134
 msgid "You can no longer access this project."
 msgstr "Du har inte längre åtkomst till det här projektet."
 
-#: taguette/static/js/tag/treeview.js:236
+#: taguette/static/js/tag/treeview.js:240
 msgid "Documents"
 msgstr "Dokument"
 
-#: taguette/static/js/tag/treeview.js:242
+#: taguette/static/js/tag/treeview.js:241
 msgid "Highlights"
 msgstr "Markeringar"
 
-#: taguette/static/js/tag/treeview.js:496
+#: taguette/static/js/tag/treeview.js:513
 msgid "Click to explore • Right-click for options"
 msgstr "Klicka för att utforska • Högerklicka för alternativ"
 
-#: taguette/static/js/tag/treeview.js:526
+#: taguette/static/js/tag/treeview.js:550
 msgid "Right-click on a code:"
 msgstr "Högerklicka på en kod:"
 
-#: taguette/static/js/tag/treeview.js:528
+#: taguette/static/js/tag/treeview.js:552
 msgid "Add child code"
 msgstr "Lägg till underordnad kod"
 
-#: taguette/static/js/tag/treeview.js:529
+#: taguette/static/js/tag/treeview.js:553
 msgid "Edit code"
 msgstr "Redigera kod"
 
-#: taguette/static/js/tag/treeview.js:530
+#: taguette/static/js/tag/treeview.js:554
 msgid "Merge codes"
 msgstr "Slå samman koder"
 
-#: taguette/static/js/tag/treeview.js:531
+#: taguette/static/js/tag/treeview.js:555
 msgid "Delete code"
 msgstr "Ta bort kod"
 
-#: taguette/static/js/tag/treeview.js:535
+#: taguette/static/js/tag/treeview.js:559
 msgid "Click on a code:"
 msgstr "Klicka på en kod:"
 
-#: taguette/static/js/tag/treeview.js:537
+#: taguette/static/js/tag/treeview.js:561
 msgid "Filter highlights by this code"
 msgstr "Filtrera markeringar efter denna kod"
 
 #: taguette/static/js/collection/hierarchy-select.js:15
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:291 taguette/static/js/taguette.js:542
-#: taguette/static/js/taguette.js:1566
+#: taguette/static/js/taguette.js:294 taguette/static/js/taguette.js:559
+#: taguette/static/js/taguette.js:1446
 msgid "None"
 msgstr "Ingen"
 
@@ -132,95 +132,103 @@ msgstr "ta bort förälder"
 msgid "delete"
 msgstr "ta bort"
 
-#: taguette/static/js/highlight/native/loader.js:7
-#: taguette/static/js/taguette.js:937
+#: taguette/static/js/highlight/extracts.js:270
+msgid "Overlapping"
+msgstr "Överlappande"
+
+#: taguette/static/js/highlight/extracts.js:348
+msgid "No highlights with this tag yet."
+msgstr "Inga markeringar med denna kod ännu."
+
+#: taguette/static/js/highlight/loader.js:7
 msgid "Load a document on the left"
 msgstr "Ladda ett dokument till vänster"
 
 #: taguette/static/js/collection/context-menu.js:26
-#: taguette/static/js/document/treeview.js:541
+#: taguette/static/js/document/treeview.js:526
 msgid "Add sub-collection"
 msgstr "Lägg till undersamling"
 
 #: taguette/static/js/collection/context-menu.js:31
-#: taguette/static/js/document/treeview.js:542
+#: taguette/static/js/document/treeview.js:527
 msgid "Edit collection"
 msgstr "Redigera samling"
 
 #: taguette/static/js/collection/context-menu.js:39
-#: taguette/static/js/document/treeview.js:543
+#: taguette/static/js/document/treeview.js:528
 msgid "Remove parent"
 msgstr "Ta bort överordnad"
 
 #: taguette/static/js/collection/context-menu.js:47
-#: taguette/static/js/document/treeview.js:544
-#: taguette/static/js/taguette.js:1612
+#: taguette/static/js/document/treeview.js:529
+#: taguette/static/js/taguette.js:1492
 msgid "Delete collection"
 msgstr "Ta bort samling"
 
-#: taguette/static/js/taguette.js:311
+#: taguette/static/js/taguette.js:314
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Är du säker på att du vill ta bort dokumentet '%(doc)s'?"
 
-#: taguette/static/js/taguette.js:356
+#: taguette/static/js/taguette.js:359
 msgid "Document name cannot be empty"
 msgstr "Dokumentets namn får inte vara tomt"
 
-#: taguette/static/js/taguette.js:496
+#: taguette/static/js/taguette.js:513
 msgid "Invalid tag name"
 msgstr "Ogiltigt kodnamn"
 
-#: taguette/static/js/taguette.js:501
+#: taguette/static/js/taguette.js:518
 msgid "Impossible to define the same tag as parent"
 msgstr "Omöjligt att definiera samma kod som överordnad"
 
-#: taguette/static/js/taguette.js:564
+#: taguette/static/js/taguette.js:581
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Är du säker på att du vill ta bort koden '%(tag)s'?"
 
-#: taguette/static/js/taguette.js:617
+#: taguette/static/js/taguette.js:642
+#, python-format
+msgid "This tag has %(count)s child tag(s) that will be moved to \"%(dest)s\"."
+msgstr "Denna tagg har %(count)s underordnad(e) tagg(ar) som kommer att flyttas till \"%(dest)s\"."
+
+#: taguette/static/js/taguette.js:671
 msgid "Couldn't merge tags!"
 msgstr "Kunde inte slå samman koder!"
 
-#: taguette/static/js/taguette.js:776
+#: taguette/static/js/taguette.js:866
 msgid "Full permissions"
 msgstr "Fullständiga behörigheter"
 
-#: taguette/static/js/taguette.js:777
+#: taguette/static/js/taguette.js:867
 msgid "Can't change collaborators / delete project"
 msgstr "Kan inte ändra medarbetare / ta bort projekt"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:868
 msgid "View & make changes"
 msgstr "Visa och gör ändringar"
 
-#: taguette/static/js/taguette.js:779
+#: taguette/static/js/taguette.js:869
 msgid "View only"
 msgstr "Visa endast"
 
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:851
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:943
 msgid "Already a member!"
 msgstr "Redan medlem!"
 
-#: taguette/static/js/taguette.js:866
+#: taguette/static/js/taguette.js:958
 msgid "This user doesn't exist!"
 msgstr "Den här användaren finns inte!"
 
-#: taguette/static/js/taguette.js:1192
-msgid "No highlights with this tag yet."
-msgstr "Inga markeringar med denna kod ännu."
-
-#: taguette/static/js/taguette.js:1335
+#: taguette/static/js/taguette.js:1215
 msgid "No document or collection found"
 msgstr "Inget dokument eller samling hittades"
 
-#: taguette/static/js/taguette.js:1374
+#: taguette/static/js/taguette.js:1254
 msgid "No tag found"
 msgstr "Ingen kod hittades"
 
-#: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
+#: taguette/static/js/taguette.js:1469 taguette/static/js/taguette.js:1691
 #, python-format
 msgid ""
 "Are you sure you want to delete the collection '%(name)s'? Its documents "
@@ -229,17 +237,17 @@ msgstr ""
 "Är du säker på att du vill ta bort samlingen '%(name)s'? Dess dokument "
 "kommer att flyttas."
 
-#: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
-#: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
+#: taguette/static/js/taguette.js:1475 taguette/static/js/taguette.js:1518
+#: taguette/static/js/taguette.js:1534 taguette/static/js/taguette.js:1699
 msgid "Error deleting collection: "
 msgstr "Fel vid borttagning av samling: "
 
-#: taguette/static/js/taguette.js:1602
+#: taguette/static/js/taguette.js:1482
 #, python-format
 msgid "The collection '%(name)s' has subcollections. How do you want to proceed?"
 msgstr "Samlingen '%(name)s' har undersamlingar. Hur vill du fortsätta?"
 
-#: taguette/static/js/taguette.js:1680
+#: taguette/static/js/taguette.js:1560
 #, python-format
 msgid ""
 "Are you sure you want to remove collection '%(name)s' from parent "
@@ -248,27 +256,27 @@ msgstr ""
 "Är du säker på att du vill ta bort samlingen '%(name)s' från överordnad "
 "'%(parent)s'?"
 
-#: taguette/static/js/taguette.js:1696
+#: taguette/static/js/taguette.js:1576
 msgid "Error removing collection parent: "
 msgstr "Fel vid borttagning av överordnad samling: "
 
-#: taguette/static/js/taguette.js:1755
+#: taguette/static/js/taguette.js:1635
 msgid "Collection name is required"
 msgstr "Samlingsnamn krävs"
 
-#: taguette/static/js/taguette.js:1760
+#: taguette/static/js/taguette.js:1640
 msgid "A collection cannot be its own parent."
 msgstr "En samling kan inte vara sin egen överordnade."
 
-#: taguette/static/js/taguette.js:1789
+#: taguette/static/js/taguette.js:1669
 msgid "Error updating collection: "
 msgstr "Fel vid uppdatering av samling: "
 
-#: taguette/static/js/taguette.js:1790
+#: taguette/static/js/taguette.js:1670
 msgid "Error creating collection: "
 msgstr "Fel vid skapande av samling: "
 
-#: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
+#: taguette/static/js/taguette.js:1688 taguette/static/js/taguette.js:1696
 msgid "Collection deleted!"
 msgstr "Samling borttagen!"
 
@@ -290,58 +298,58 @@ msgstr ""
 "<ul><li>Användaren kan inte hittas</li><li>Användaren är redan "
 "sponsrad</li><li>Användarrollen kan inte ändras</li></ul>"
 
-#: taguette/static/js/document/treeview.js:119
+#: taguette/static/js/document/treeview.js:115
 msgid "Without collection"
 msgstr "Utan samling"
 
-#: taguette/static/js/document/treeview.js:151
+#: taguette/static/js/document/treeview.js:147
 #, python-format
 msgid "Click to open • %(key)s+Click to select • Right-click for options"
 msgstr ""
 "Klicka för att öppna • %(key)s+Klicka för att välja • Högerklicka för "
 "alternativ"
 
-#: taguette/static/js/document/treeview.js:198
+#: taguette/static/js/document/treeview.js:188
 msgid "Documents count"
 msgstr "Antal dokument"
 
-#: taguette/static/js/document/treeview.js:391
+#: taguette/static/js/document/treeview.js:376
 #, python-format
 msgid "You can drag and drop %s documents to a collection"
 msgstr "Du kan dra och släppa %s dokument till en samling"
 
-#: taguette/static/js/document/treeview.js:539
+#: taguette/static/js/document/treeview.js:524
 msgid "Right-click on a collection:"
 msgstr "Högerklicka på en samling:"
 
-#: taguette/static/js/document/treeview.js:548
+#: taguette/static/js/document/treeview.js:533
 msgid "Right-click on a document:"
 msgstr "Högerklicka på ett dokument:"
 
 #: taguette/static/js/document/context-menu.js:30
-#: taguette/static/js/document/treeview.js:550
+#: taguette/static/js/document/treeview.js:535
 msgid "Edit document"
 msgstr "Redigera dokument"
 
-#: taguette/static/js/document/treeview.js:551
+#: taguette/static/js/document/treeview.js:536
 msgid "Toggle bookmark"
 msgstr "Växla bokmärke"
 
 #: taguette/static/js/document/context-menu.js:41
-#: taguette/static/js/document/treeview.js:552
+#: taguette/static/js/document/treeview.js:537
 msgid "Delete document"
 msgstr "Ta bort dokument"
 
-#: taguette/static/js/document/treeview.js:556
+#: taguette/static/js/document/treeview.js:541
 msgid "Select multiple documents:"
 msgstr "Välj flera dokument:"
 
-#: taguette/static/js/document/treeview.js:558
+#: taguette/static/js/document/treeview.js:543
 #, python-format
 msgid "Hold %(key)s and click documents"
 msgstr "Håll %(key)s och klicka på dokument"
 
-#: taguette/static/js/document/treeview.js:559
+#: taguette/static/js/document/treeview.js:544
 msgid "Drag selected documents to a collection"
 msgstr "Dra valda dokument till en samling"
 
@@ -359,24 +367,20 @@ msgstr "Lägg till i bokmärken"
 msgid "There are no documents in this project yet."
 msgstr "Det finns inga dokument i det här projektet ännu."
 
-#: taguette/static/js/document/manager.js:127
-msgid "Import new document"
-msgstr "Importera nytt dokument"
-
-#: taguette/static/js/document/manager.js:314
+#: taguette/static/js/document/manager.js:311
 msgid " = Documents without collection"
 msgstr " = Dokument utan samling"
 
-#: taguette/static/js/document/manager.js:315
+#: taguette/static/js/document/manager.js:312
 msgid " = Documents currently assigned to a collection"
 msgstr " = Dokument som för närvarande är tilldelade en samling"
 
-#: taguette/static/js/document/manager.js:386
-#: taguette/static/js/document/manager.js:488
+#: taguette/static/js/document/manager.js:383
+#: taguette/static/js/document/manager.js:485
 msgid "Currently in"
 msgstr "För närvarande i"
 
-#: taguette/static/js/document/manager.js:413
+#: taguette/static/js/document/manager.js:410
 msgid "No documents available"
 msgstr "Inga dokument tillgängliga"
 
@@ -404,8 +408,8 @@ msgid ""
 "<p>Visit our <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
 "target=\"_blank\">Gitlab repository</a></p>"
 msgstr ""
-"<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\" "
-"target=\"_blank\">Gitlab-arkiv</a></p>"
+"<p>Besök vårt <a href=\"https://gitlab.com/bin-cirst/libreqda/libre-qda\""
+" target=\"_blank\">Gitlab-arkiv</a></p>"
 
 #: taguette/static/js/project/intro.js:19
 msgid "<p>To consult the documentation</p>"
@@ -416,12 +420,12 @@ msgid "<p>A demo project has been added to your home page.</p>"
 msgstr "<p>Ett demoprojekt har lagts till på din startsida.</p>"
 
 #: taguette/static/js/project/intro.js:31
-#: taguette/static/js/project/intro.js:176
+#: taguette/static/js/project/intro.js:177
 msgid "Next"
 msgstr "Nästa"
 
 #: taguette/static/js/project/intro.js:32
-#: taguette/static/js/project/intro.js:177
+#: taguette/static/js/project/intro.js:178
 msgid "Back"
 msgstr "Tillbaka"
 
@@ -477,14 +481,14 @@ msgid ""
 "<p>Click on a document to view its contents. Use the star to save your "
 "bookmarks.</p>"
 msgstr ""
-"<p>Klicka på ett dokument för att visa dess innehåll. Använd stjärnan för "
-"att spara bokmärken.</p>"
+"<p>Klicka på ett dokument för att visa dess innehåll. Använd stjärnan för"
+" att spara bokmärken.</p>"
 
-#: taguette/static/js/project/intro.js:102
+#: taguette/static/js/project/intro.js:103
 msgid "Coding"
 msgstr "Kodning"
 
-#: taguette/static/js/project/intro.js:103
+#: taguette/static/js/project/intro.js:104
 msgid ""
 "<p>Select a portion of text with your cursor. Two buttons will appear to "
 "assign a code to the selection.</p>"
@@ -492,11 +496,11 @@ msgstr ""
 "<p>Markera en del av texten med markören. Två knappar visas för att "
 "tilldela en kod.</p>"
 
-#: taguette/static/js/project/intro.js:112
+#: taguette/static/js/project/intro.js:113
 msgid "Selecting a code"
 msgstr "Välja en kod"
 
-#: taguette/static/js/project/intro.js:113
+#: taguette/static/js/project/intro.js:114
 msgid ""
 "<p>From the menu, select one or more codes that correspond to the content"
 " of the selection and save the changes. In this case, the selection "
@@ -506,11 +510,11 @@ msgstr ""
 "markeringen och spara ändringarna. I detta fall avser markeringen att "
 "stärka sociala relationer.</p>"
 
-#: taguette/static/js/project/intro.js:120
+#: taguette/static/js/project/intro.js:121
 msgid "Exploring the codes"
 msgstr "Utforska koderna"
 
-#: taguette/static/js/project/intro.js:121
+#: taguette/static/js/project/intro.js:122
 msgid ""
 "<p>You can explore the text selections tagged with each code at any time "
 "during or after the coding process.</p><br><p> Show all of the selections"
@@ -520,11 +524,11 @@ msgstr ""
 "kod.</p><br><p>Visa alla markeringar som är kodade med en kod genom att "
 "klicka på den i kodboken.</p>"
 
-#: taguette/static/js/project/intro.js:126
+#: taguette/static/js/project/intro.js:127
 msgid "Narrowing your search"
 msgstr "Begränsa din sökning"
 
-#: taguette/static/js/project/intro.js:127
+#: taguette/static/js/project/intro.js:128
 msgid ""
 "<p>If there are a large number of selections shown, you can refine the "
 "results with an advanced search.</p>"
@@ -532,11 +536,11 @@ msgstr ""
 "<p>Om många markeringar visas kan du förfina resultaten med avancerad "
 "sökning.</p>"
 
-#: taguette/static/js/project/intro.js:133
+#: taguette/static/js/project/intro.js:134
 msgid "Conditional selections"
 msgstr "Villkorliga markeringar"
 
-#: taguette/static/js/project/intro.js:134
+#: taguette/static/js/project/intro.js:135
 msgid ""
 "<p>By right-clicking, you can specify conditions to either add or exclude"
 " additional codes.</p>"
@@ -544,11 +548,11 @@ msgstr ""
 "<p>Genom att högerklicka kan du ange villkor för att lägga till eller "
 "utesluta ytterligare koder.</p>"
 
-#: taguette/static/js/project/intro.js:141
+#: taguette/static/js/project/intro.js:142
 msgid "Exploring the list"
 msgstr "Utforska listan"
 
-#: taguette/static/js/project/intro.js:142
+#: taguette/static/js/project/intro.js:143
 msgid ""
 "<p>The labels shown with this query indicate that the selections must "
 "necessarily include the codes <i>barriers</i> and <i>skills "
@@ -557,54 +561,58 @@ msgstr ""
 "<p>Etiketterna i denna fråga visar att markeringarna måste innehålla "
 "koderna <i>hinder</i> och <i>kompetensutveckling</i>.</p>"
 
-#: taguette/static/js/project/intro.js:148
+#: taguette/static/js/project/intro.js:149
 msgid "Navigating to documents"
 msgstr "Navigera till dokument"
 
-#: taguette/static/js/project/intro.js:149
+#: taguette/static/js/project/intro.js:150
 msgid ""
 "<p>By clicking on the name of the document, you can return to the "
 "context.</p>"
 msgstr "<p>Genom att klicka på dokumentets namn kan du återgå till kontexten.</p>"
 
-#: taguette/static/js/project/intro.js:155
+#: taguette/static/js/project/intro.js:156
 msgid "Returning to the selections"
 msgstr "Återgå till markeringarna"
 
-#: taguette/static/js/project/intro.js:156
+#: taguette/static/js/project/intro.js:157
 msgid ""
 "<p>After consulting the context, you can return to the list of selections"
 " previously identified using the advanced search.</p>"
 msgstr ""
-"<p>Efter att ha granskat kontexten kan du återgå till listan över tidigare "
-"identifierade markeringar via avancerad sökning.</p>"
+"<p>Efter att ha granskat kontexten kan du återgå till listan över "
+"tidigare identifierade markeringar via avancerad sökning.</p>"
 
-#: taguette/static/js/project/intro.js:162
+#: taguette/static/js/project/intro.js:163
 msgid "Exporting"
 msgstr "Exportera"
 
-#: taguette/static/js/project/intro.js:163
+#: taguette/static/js/project/intro.js:164
 msgid ""
 "<p>You can choose to download these selections to your computer, as "
 "needed.</p>"
 msgstr "<p>Du kan vid behov ladda ner dessa markeringar till din dator.</p>"
 
-#: taguette/static/js/project/intro.js:167
+#: taguette/static/js/project/intro.js:168
 msgid "Time to code!"
 msgstr "Dags att koda!"
 
-#: taguette/static/js/project/intro.js:168
+#: taguette/static/js/project/intro.js:169
 msgid ""
 "<p>Use LibreQDA however you wish, knowing that your data is always saved "
 "to your personal account. Feel free to further familiarize yourself with "
 "these functions by continuing to code and explore these fictional "
 "interviews about board games.</p>"
 msgstr ""
-"<p>Använd LibreQDA som du vill, med vetskapen att dina data alltid sparas "
-"på ditt personliga konto. Fortsätt gärna att bekanta dig med funktionerna "
-"genom att fortsätta koda och utforska dessa fiktiva intervjuer om "
-"brädspel.</p>"
+"<p>Använd LibreQDA som du vill, med vetskapen att dina data alltid sparas"
+" på ditt personliga konto. Fortsätt gärna att bekanta dig med "
+"funktionerna genom att fortsätta koda och utforska dessa fiktiva "
+"intervjuer om brädspel.</p>"
 
-#: taguette/static/js/project/intro.js:178
+#: taguette/static/js/project/intro.js:179
 msgid "Done"
 msgstr "Klar"
+
+#~ msgid "Import new document"
+#~ msgstr "Importera nytt dokument"
+
