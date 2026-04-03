@@ -458,15 +458,15 @@ msgstr "Teruggaan"
 
 #: taguette/templates/archived_projects.html:9 taguette/templates/index.html:60
 msgid "Archived projects"
-msgstr ""
+msgstr "Gearchiveerde projecten"
 
 #: taguette/templates/archived_projects.html:13
 msgid "Back to projects"
-msgstr ""
+msgstr "Terug naar projecten"
 
 #: taguette/templates/archived_projects.html:25
 msgid "No archived projects."
-msgstr ""
+msgstr "Geen gearchiveerde projecten."
 
 #: taguette/templates/alt_templates/phun/welcome.html:12
 #: taguette/templates/alt_templates/phun/welcome_old.html:11
@@ -513,7 +513,7 @@ msgstr "Annuleren"
 
 #: taguette/templates/project.html:22 taguette/templates/project.html:130
 msgid "Toggle panel"
-msgstr ""
+msgstr "Paneel in-/uitschakelen"
 
 #: taguette/templates/project.html:26 taguette/templates/project.html:66
 #: taguette/templates/project.html:134
@@ -522,7 +522,7 @@ msgstr "Tips"
 
 #: taguette/templates/project.html:35
 msgid "Compact"
-msgstr ""
+msgstr "Compact"
 
 #: taguette/templates/project.html:42 taguette/templates/project.html:43
 msgid "More actions"
@@ -541,18 +541,24 @@ msgid ""
 "Text\n"
 "                                [z&rarr;a]"
 msgstr ""
+"Tekst\n"
+"                                [z&rarr;a]"
 
 #: taguette/templates/project.html:52
 msgid ""
 "Count\n"
 "                                [0&rarr;9]"
 msgstr ""
+"Aantal\n"
+"                                [0&rarr;9]"
 
 #: taguette/templates/project.html:54
 msgid ""
 "Count\n"
 "                                [9&rarr;0]"
 msgstr ""
+"Aantal\n"
+"                                [9&rarr;0]"
 
 #: taguette/templates/project.html:58
 msgid "See all highlights"
@@ -596,7 +602,7 @@ msgstr "Een collectie toevoegen"
 
 #: taguette/templates/project.html:120
 msgid "Collection"
-msgstr ""
+msgstr "Verzameling"
 
 #: taguette/templates/project.html:124
 msgid "Add a document"
@@ -606,11 +612,11 @@ msgstr "Een document toevoegen"
 #: taguette/templates/partials/project_card_archived.html:26
 #: taguette/templates/project.html:125
 msgid "Documents"
-msgstr ""
+msgstr "Documenten"
 
 #: taguette/templates/project.html:141
 msgid "Search titles"
-msgstr ""
+msgstr "Titels zoeken"
 
 #: taguette/templates/project.html:145
 msgid "Loading..."
@@ -700,7 +706,7 @@ msgstr "Demo project"
 
 #: taguette/templates/index.html:68
 msgid "Search projects..."
-msgstr ""
+msgstr "Projecten zoeken..."
 
 #: taguette/templates/index.html:73
 msgid ""
@@ -718,19 +724,19 @@ msgstr ""
 
 #: taguette/templates/index.html:120
 msgid "No projects found matching your search."
-msgstr ""
+msgstr "Geen projecten gevonden die overeenkomen met uw zoekopdracht."
 
 #: taguette/templates/index.html:127
 msgid "Show more"
-msgstr ""
+msgstr "Meer weergeven"
 
 #: taguette/templates/index.html:131
 msgid "Show less"
-msgstr ""
+msgstr "Minder weergeven"
 
 #: taguette/templates/index.html:150
 msgid "Name"
-msgstr ""
+msgstr "Naam"
 
 #: taguette/templates/index.html:154
 #: taguette/templates/modal/create_collection.html:35
@@ -739,7 +745,7 @@ msgstr "Beschrijving"
 
 #: taguette/templates/partials/project_card.html:14
 msgid "Edit"
-msgstr ""
+msgstr "Bewerken"
 
 #: taguette/templates/partials/project_card.html:15
 #: taguette/templates/partials/project_card_archived.html:13
@@ -748,22 +754,22 @@ msgstr "Exporteren"
 
 #: taguette/templates/partials/project_card.html:16
 msgid "Archive"
-msgstr ""
+msgstr "Archiveren"
 
 #: taguette/templates/partials/project_card.html:18
 #: taguette/templates/partials/project_card_archived.html:15
 msgid "Delete"
-msgstr ""
+msgstr "Verwijderen"
 
 #: taguette/templates/partials/project_card.html:33
 #: taguette/templates/partials/project_card_archived.html:30
 msgid "Codes"
-msgstr ""
+msgstr "Codes"
 
 #: taguette/templates/partials/project_card.html:37
 #: taguette/templates/partials/project_card_archived.html:34
 msgid "Collaborators"
-msgstr ""
+msgstr "Medewerkers"
 
 #: taguette/templates/partials/project_sidebar.html:3
 msgid "Close"
@@ -881,12 +887,12 @@ msgstr "Bladwijzers"
 
 #: taguette/templates/partials/document_toolbar.html:9
 msgid "Left-click a document to bookmark it"
-msgstr ""
+msgstr "Klik met de linkermuisknop op een document om het als bladwijzer op te slaan"
 
 #: taguette/templates/partials/document_toolbar.html:20
 #: taguette/templates/partials/document_toolbar.html:24
 msgid "Download this view"
-msgstr ""
+msgstr "Download deze weergave"
 
 #: taguette/templates/partials/confirm.html:6
 msgctxt "confirm modal"
@@ -913,7 +919,7 @@ msgstr "Bestaande code"
 
 #: taguette/templates/partials/project_card_archived.html:12
 msgid "Unarchive"
-msgstr ""
+msgstr "Uit archief halen"
 
 #: taguette/templates/welcome.html:8
 msgctxt "title"

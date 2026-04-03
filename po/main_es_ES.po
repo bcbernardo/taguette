@@ -455,15 +455,15 @@ msgstr "Retroceder"
 
 #: taguette/templates/archived_projects.html:9 taguette/templates/index.html:60
 msgid "Archived projects"
-msgstr ""
+msgstr "Proyectos archivados"
 
 #: taguette/templates/archived_projects.html:13
 msgid "Back to projects"
-msgstr ""
+msgstr "Volver a los proyectos"
 
 #: taguette/templates/archived_projects.html:25
 msgid "No archived projects."
-msgstr ""
+msgstr "No hay proyectos archivados."
 
 #: taguette/templates/alt_templates/phun/welcome.html:12
 #: taguette/templates/alt_templates/phun/welcome_old.html:11
@@ -510,7 +510,7 @@ msgstr "Cancelar"
 
 #: taguette/templates/project.html:22 taguette/templates/project.html:130
 msgid "Toggle panel"
-msgstr ""
+msgstr "Alternar panel"
 
 #: taguette/templates/project.html:26 taguette/templates/project.html:66
 #: taguette/templates/project.html:134
@@ -519,7 +519,7 @@ msgstr "Consejos"
 
 #: taguette/templates/project.html:35
 msgid "Compact"
-msgstr ""
+msgstr "Compacto"
 
 #: taguette/templates/project.html:42 taguette/templates/project.html:43
 msgid "More actions"
@@ -538,18 +538,24 @@ msgid ""
 "Text\n"
 "                                [z&rarr;a]"
 msgstr ""
+"Texto\n"
+"                                [z&rarr;a]"
 
 #: taguette/templates/project.html:52
 msgid ""
 "Count\n"
 "                                [0&rarr;9]"
 msgstr ""
+"Cantidad\n"
+"                                [0&rarr;9]"
 
 #: taguette/templates/project.html:54
 msgid ""
 "Count\n"
 "                                [9&rarr;0]"
 msgstr ""
+"Cantidad\n"
+"                                [9&rarr;0]"
 
 #: taguette/templates/project.html:58
 msgid "See all highlights"
@@ -591,7 +597,7 @@ msgstr "Añadir una colección"
 
 #: taguette/templates/project.html:120
 msgid "Collection"
-msgstr ""
+msgstr "Colección"
 
 #: taguette/templates/project.html:124
 msgid "Add a document"
@@ -601,11 +607,11 @@ msgstr "Añadir un documento"
 #: taguette/templates/partials/project_card_archived.html:26
 #: taguette/templates/project.html:125
 msgid "Documents"
-msgstr ""
+msgstr "Documentos"
 
 #: taguette/templates/project.html:141
 msgid "Search titles"
-msgstr ""
+msgstr "Buscar títulos"
 
 #: taguette/templates/project.html:145
 msgid "Loading..."
@@ -695,7 +701,7 @@ msgstr "Proyecto de demostración"
 
 #: taguette/templates/index.html:68
 msgid "Search projects..."
-msgstr ""
+msgstr "Buscar proyectos..."
 
 #: taguette/templates/index.html:73
 msgid ""
@@ -711,19 +717,19 @@ msgstr "No hay proyectos disponibles. Crea o importa uno para empezar."
 
 #: taguette/templates/index.html:120
 msgid "No projects found matching your search."
-msgstr ""
+msgstr "No se encontraron proyectos que coincidan con su búsqueda."
 
 #: taguette/templates/index.html:127
 msgid "Show more"
-msgstr ""
+msgstr "Mostrar más"
 
 #: taguette/templates/index.html:131
 msgid "Show less"
-msgstr ""
+msgstr "Mostrar menos"
 
 #: taguette/templates/index.html:150
 msgid "Name"
-msgstr ""
+msgstr "Nombre"
 
 #: taguette/templates/index.html:154
 #: taguette/templates/modal/create_collection.html:35
@@ -732,7 +738,7 @@ msgstr "Descripción"
 
 #: taguette/templates/partials/project_card.html:14
 msgid "Edit"
-msgstr ""
+msgstr "Editar"
 
 #: taguette/templates/partials/project_card.html:15
 #: taguette/templates/partials/project_card_archived.html:13
@@ -741,22 +747,22 @@ msgstr "Exportar"
 
 #: taguette/templates/partials/project_card.html:16
 msgid "Archive"
-msgstr ""
+msgstr "Archivar"
 
 #: taguette/templates/partials/project_card.html:18
 #: taguette/templates/partials/project_card_archived.html:15
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 #: taguette/templates/partials/project_card.html:33
 #: taguette/templates/partials/project_card_archived.html:30
 msgid "Codes"
-msgstr ""
+msgstr "Códigos"
 
 #: taguette/templates/partials/project_card.html:37
 #: taguette/templates/partials/project_card_archived.html:34
 msgid "Collaborators"
-msgstr ""
+msgstr "Colaboradores"
 
 #: taguette/templates/partials/project_sidebar.html:3
 msgid "Close"
@@ -874,12 +880,12 @@ msgstr "Marcadores"
 
 #: taguette/templates/partials/document_toolbar.html:9
 msgid "Left-click a document to bookmark it"
-msgstr ""
+msgstr "Haga clic izquierdo en un documento para marcarlo"
 
 #: taguette/templates/partials/document_toolbar.html:20
 #: taguette/templates/partials/document_toolbar.html:24
 msgid "Download this view"
-msgstr ""
+msgstr "Descargar esta vista"
 
 #: taguette/templates/partials/confirm.html:6
 msgctxt "confirm modal"
@@ -906,7 +912,7 @@ msgstr "Código existente"
 
 #: taguette/templates/partials/project_card_archived.html:12
 msgid "Unarchive"
-msgstr ""
+msgstr "Desarchivar"
 
 #: taguette/templates/welcome.html:8
 msgctxt "title"

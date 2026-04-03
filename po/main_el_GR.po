@@ -458,15 +458,15 @@ msgstr "Πίσω"
 
 #: taguette/templates/archived_projects.html:9 taguette/templates/index.html:60
 msgid "Archived projects"
-msgstr ""
+msgstr "Αρχειοθετημένα έργα"
 
 #: taguette/templates/archived_projects.html:13
 msgid "Back to projects"
-msgstr ""
+msgstr "Επιστροφή στα έργα"
 
 #: taguette/templates/archived_projects.html:25
 msgid "No archived projects."
-msgstr ""
+msgstr "Δεν υπάρχουν αρχειοθετημένα έργα."
 
 #: taguette/templates/alt_templates/phun/welcome.html:12
 #: taguette/templates/alt_templates/phun/welcome_old.html:11
@@ -513,7 +513,7 @@ msgstr "Ακύρωση"
 
 #: taguette/templates/project.html:22 taguette/templates/project.html:130
 msgid "Toggle panel"
-msgstr ""
+msgstr "Εναλλαγή πλαισίου"
 
 #: taguette/templates/project.html:26 taguette/templates/project.html:66
 #: taguette/templates/project.html:134
@@ -522,7 +522,7 @@ msgstr "Συμβουλές"
 
 #: taguette/templates/project.html:35
 msgid "Compact"
-msgstr ""
+msgstr "Συμπαγής"
 
 #: taguette/templates/project.html:42 taguette/templates/project.html:43
 msgid "More actions"
@@ -541,18 +541,24 @@ msgid ""
 "Text\n"
 "                                [z&rarr;a]"
 msgstr ""
+"Κείμενο\n"
+"                                [z&rarr;a]"
 
 #: taguette/templates/project.html:52
 msgid ""
 "Count\n"
 "                                [0&rarr;9]"
 msgstr ""
+"Αριθμός\n"
+"                                [0&rarr;9]"
 
 #: taguette/templates/project.html:54
 msgid ""
 "Count\n"
 "                                [9&rarr;0]"
 msgstr ""
+"Αριθμός\n"
+"                                [9&rarr;0]"
 
 #: taguette/templates/project.html:58
 msgid "See all highlights"
@@ -594,7 +600,7 @@ msgstr "Προσθήκη συλλογής"
 
 #: taguette/templates/project.html:120
 msgid "Collection"
-msgstr ""
+msgstr "Συλλογή"
 
 #: taguette/templates/project.html:124
 msgid "Add a document"
@@ -604,11 +610,11 @@ msgstr "Προσθήκη εγγράφου"
 #: taguette/templates/partials/project_card_archived.html:26
 #: taguette/templates/project.html:125
 msgid "Documents"
-msgstr ""
+msgstr "Έγγραφα"
 
 #: taguette/templates/project.html:141
 msgid "Search titles"
-msgstr ""
+msgstr "Αναζήτηση τίτλων"
 
 #: taguette/templates/project.html:145
 msgid "Loading..."
@@ -698,7 +704,7 @@ msgstr "Έργο επίδειξης"
 
 #: taguette/templates/index.html:68
 msgid "Search projects..."
-msgstr ""
+msgstr "Αναζήτηση έργων..."
 
 #: taguette/templates/index.html:73
 msgid ""
@@ -717,19 +723,19 @@ msgstr ""
 
 #: taguette/templates/index.html:120
 msgid "No projects found matching your search."
-msgstr ""
+msgstr "Δεν βρέθηκαν έργα που να ταιριάζουν με την αναζήτησή σας."
 
 #: taguette/templates/index.html:127
 msgid "Show more"
-msgstr ""
+msgstr "Εμφάνιση περισσότερων"
 
 #: taguette/templates/index.html:131
 msgid "Show less"
-msgstr ""
+msgstr "Εμφάνιση λιγότερων"
 
 #: taguette/templates/index.html:150
 msgid "Name"
-msgstr ""
+msgstr "Όνομα"
 
 #: taguette/templates/index.html:154
 #: taguette/templates/modal/create_collection.html:35
@@ -738,7 +744,7 @@ msgstr "Περιγραφή"
 
 #: taguette/templates/partials/project_card.html:14
 msgid "Edit"
-msgstr ""
+msgstr "Επεξεργασία"
 
 #: taguette/templates/partials/project_card.html:15
 #: taguette/templates/partials/project_card_archived.html:13
@@ -747,22 +753,22 @@ msgstr "Εξαγωγή"
 
 #: taguette/templates/partials/project_card.html:16
 msgid "Archive"
-msgstr ""
+msgstr "Αρχειοθέτηση"
 
 #: taguette/templates/partials/project_card.html:18
 #: taguette/templates/partials/project_card_archived.html:15
 msgid "Delete"
-msgstr ""
+msgstr "Διαγραφή"
 
 #: taguette/templates/partials/project_card.html:33
 #: taguette/templates/partials/project_card_archived.html:30
 msgid "Codes"
-msgstr ""
+msgstr "Κωδικοί"
 
 #: taguette/templates/partials/project_card.html:37
 #: taguette/templates/partials/project_card_archived.html:34
 msgid "Collaborators"
-msgstr ""
+msgstr "Συνεργάτες"
 
 #: taguette/templates/partials/project_sidebar.html:3
 msgid "Close"
@@ -880,12 +886,12 @@ msgstr "Σελιδοδείκτες"
 
 #: taguette/templates/partials/document_toolbar.html:9
 msgid "Left-click a document to bookmark it"
-msgstr ""
+msgstr "Κάντε αριστερό κλικ σε ένα έγγραφο για προσθήκη σελιδοδείκτη"
 
 #: taguette/templates/partials/document_toolbar.html:20
 #: taguette/templates/partials/document_toolbar.html:24
 msgid "Download this view"
-msgstr ""
+msgstr "Λήψη αυτής της προβολής"
 
 #: taguette/templates/partials/confirm.html:6
 msgctxt "confirm modal"
@@ -912,7 +918,7 @@ msgstr "Υπάρχων κωδικός"
 
 #: taguette/templates/partials/project_card_archived.html:12
 msgid "Unarchive"
-msgstr ""
+msgstr "Αναίρεση αρχειοθέτησης"
 
 #: taguette/templates/welcome.html:8
 msgctxt "title"
