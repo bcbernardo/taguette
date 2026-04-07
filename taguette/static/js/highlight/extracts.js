@@ -57,7 +57,7 @@ function hideTagUnderlineTooltip() {
  * Apply colored SVG underlines to a content div based on tag_ranges.
  * Uses Range.getClientRects() to get pixel positions, then draws SVG lines.
  */
-function applyTagUnderlines(contentDiv, tagRanges, principalTagId) {
+function applyTagUnderlines(contentDiv, tagRanges, principalTagIds) {
     if (!tagRanges || tagRanges.length === 0) return;
 
     // Make contentDiv a positioning context for the SVG overlay
@@ -155,7 +155,7 @@ function applyTagUnderlines(contentDiv, tagRanges, principalTagId) {
             line.setAttribute('stroke', range.color);
             line.setAttribute('stroke-width', LINE_HEIGHT);
             line.setAttribute('stroke-linecap', 'round');
-            if (range.tag_id !== principalTagId) {
+            if (!principalTagIds.has(range.tag_id)) {
                 line.setAttribute('stroke-dasharray', '8 6');
                 line.setAttribute('stroke-linecap', 'butt');
                 line.setAttribute('data-overlay-tag-id', range.tag_id);
@@ -219,15 +219,32 @@ function loadTag(tag_path, page) {
                 elem.appendChild(document.createTextNode(' '));
 
                 // Separate principal tags (the tag being viewed) from associated tags
-                const principalTag = findTag(tag_path);
-                const principalTagId = principalTag ? principalTag.id : null;
+                // When tag_path contains operators (∩∪¬), extract individual tag paths
+                const principalTagIds = new Set();
+                const pathParts = tag_path.split(/[∩∪¬]/);
+                for (const part of pathParts) {
+                    const trimmed = part.trim();
+                    if (trimmed) {
+                        const t = findTag(trimmed);
+                        if (t) principalTagIds.add(t.id);
+                    }
+                }
+                // Remove NOT-excluded tags from principal set
+                const notParts = tag_path.split('¬').slice(1);
+                for (const part of notParts) {
+                    const trimmed = part.split(/[∩∪]/)[0].trim();
+                    if (trimmed) {
+                        const t = findTag(trimmed);
+                        if (t) principalTagIds.delete(t.id);
+                    }
+                }
 
                 let principalTags = [];
                 let associatedTags = [];
                 hl.tags.forEach(function (tagId) {
                     const tag = findTag(tagId);
                     if (tag) {
-                        if (tag.id === principalTagId) {
+                        if (principalTagIds.has(tag.id)) {
                             principalTags.push(tag);
                         } else {
                             associatedTags.push(tag);
@@ -341,7 +358,7 @@ function loadTag(tag_path, page) {
 
                 // Apply SVG underlines after element is in the DOM (needed for getBoundingClientRect)
                 if (hl.tag_ranges && hl.tag_ranges.length > 0) {
-                    applyTagUnderlines(content, hl.tag_ranges, principalTagId);
+                    applyTagUnderlines(content, hl.tag_ranges, principalTagIds);
                 }
             }
             if (result.highlights.length === 0) {
@@ -431,6 +448,7 @@ function loadTag(tag_path, page) {
             }, 0);
         })
         .catch(function (error) {
+            console.error("Failed to load tag highlights", error);
             log("Failed to load tag highlights", 'error', {error});
             showAlert(`${gettext("Error loading tag highlights!")} \n \n`, 'error', {error})
         })

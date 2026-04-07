@@ -990,11 +990,15 @@ class Highlights(BaseHandler):
 
         # Handle exclusions
         if any(exclude_paths):
-            exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
-                                .join(tag, hl_tag.c.tag_id == tag.id)
-                                .filter(tag.path.in_(exclude_paths),
-                                        tag.project == project)
-                                .subquery())
+            excl_tag = aliased(database.Tag)
+            excl_hl_tag = database.highlight_tags.alias()
+            exclude_subquery = (
+                self.db.query(excl_hl_tag.c.highlight_id)
+                .join(excl_tag,
+                      excl_hl_tag.c.tag_id == excl_tag.id)
+                .filter(excl_tag.path.in_(exclude_paths),
+                        excl_tag.project == project)
+                .subquery())
             query = query.filter(
                 not_(database.Highlight.id.in_(exclude_subquery)))
 
