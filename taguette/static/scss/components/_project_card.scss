@@ -29,7 +29,6 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
-    padding-left: 15px;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 0;
@@ -132,7 +131,7 @@
     text-align: left;
     overflow: auto;
     max-height: 80px;
-    margin: 0 3px;
+    margin: 0;
 }
 
 .custom-hr {

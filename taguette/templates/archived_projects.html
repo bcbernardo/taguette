@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block morejs %}
+    <script type="text/javascript" src="{{ static_url('js/utilities.js') }}"></script>
+{% endblock %}
+
+{% block contents %}
+<div class="container py-4">
+    <h1>{% trans %}Archived projects{% endtrans %}</h1>
+
+    <div class="d-flex flex-column flex-sm-row justify-content-start mb-4 mt-4">
+        <a href="{{ reverse_url('index') }}" class="btn btn-secondary me-sm-3 mb-2">
+            <i class="fas fa-arrow-left"></i> {% trans %}Back to projects{% endtrans %}
+        </a>
+    </div>
+
+    <div class="main">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-4 g-4">
+            {% if projects %}
+                {% for project in projects %}
+                    {% include 'partials/project_card_archived.html' %}
+                {% endfor %}
+            {% else %}
+                <div class="col">
+                    <p class="text-muted">{% trans %}No archived projects.{% endtrans %}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.action-unarchive').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const projectId = this.dataset.projectId;
+            const xsrf = getCookie('_xsrf');
+            fetch('/project/' + projectId + '/unarchive?_xsrf=' + encodeURIComponent(xsrf), {
+                method: 'POST'
+            }).then(function(response) {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -500,6 +500,7 @@ function locatePos(pos) {
 }
 
 let current_selection = null;
+let current_selection_text = null;
 
 function describeSelection() {
     const sel = window.getSelection();
@@ -618,10 +619,35 @@ function initHelpPopover(elementId, sections) {
 
     const popoverElement = document.getElementById(elementId);
     if (popoverElement) {
-        new bootstrap.Popover(popoverElement, {
+        const existing = bootstrap.Popover.getInstance(popoverElement);
+        if (existing) existing.dispose();
+
+        const popover = new bootstrap.Popover(popoverElement, {
             content: helpContent,
             html: true,
-            sanitize: false
+            sanitize: false,
+            trigger: 'manual',
+            placement: 'left',
+            fallbackPlacements: ['top', 'bottom', 'right']
         });
+
+        if (popoverElement._helpClickHandler) {
+            popoverElement.removeEventListener('click', popoverElement._helpClickHandler);
+        }
+        popoverElement._helpClickHandler = (e) => {
+            e.stopPropagation();
+            popover.toggle();
+        };
+        popoverElement.addEventListener('click', popoverElement._helpClickHandler);
+
+        if (!popoverElement._helpOutsideHandler) {
+            popoverElement._helpOutsideHandler = (e) => {
+                const tip = document.querySelector('.popover');
+                if (tip && !tip.contains(e.target) && e.target !== popoverElement) {
+                    popover.hide();
+                }
+            };
+            document.addEventListener('click', popoverElement._helpOutsideHandler);
+        }
     }
 }

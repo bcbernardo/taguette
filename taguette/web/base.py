@@ -141,7 +141,7 @@ class JSONLocale:
         return msgid
 
     def get_trans_from_json(self, msgid, language_code, json_path):
-        if(self.load_json(json_path)):
+        if (self.load_json(json_path)):
             return self.get_trans(msgid, language_code)
         return msgid
 

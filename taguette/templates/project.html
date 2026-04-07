@@ -17,64 +17,66 @@
     <div class="col-12 col-md-2-5 order-2 order-md-1" id="left-panel">
         {% include 'partials/project_sidebar.html' %}
         <div class="bordered-container sticky-top">
-            <div class="text-end">
-            <div class="d-inline-block text-start">
-                <button type="button" class="btn border-0 btn-sm" id="tag-treeview-help-icon"
-                        data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus"
-                        data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
+            <div class="codebook-header-wrap px-2 pt-2 pb-1 d-flex align-items-start gap-2">
+                <div class="panel-side-controls d-flex flex-column align-items-center gap-1 flex-shrink-0">
+                    <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary" title="{% trans %}Toggle panel{% endtrans %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn border-0 btn-sm" id="tag-treeview-help-icon"
+                            title="{% trans %}Tips{% endtrans %}">
                         <i class="fas fa-question-circle"></i>
-                </button>
-                <button id="toggle-left-panel" class="btn btn-sm btn-outline-secondary ms-2" title="Toggle Panel">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            </div>
-            </div>
-            <div class="row py-1 panel-content">
-                <div class="col-md-12 mb-3 mx-1">
-                    <div class="d-flex flex-wrap gap-2">
-                        <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4 ms-2"
-                            href="javascript:createTag()" data-test-id="create-tag-link"> <i class="fas fa-plus"></i> {%
-                            trans %}Create a code{% endtrans %}</a>
-                        <div class="dropdown ms-2">
-                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
-                                id="tag-more-action-button" data-bs-toggle="dropdown" aria-haspopup="true"
-                                aria-expanded="false">
-                                <i class="fas fa-bars"></i> {% trans %}More actions{% endtrans %}
+                    </button>
+                </div>
+                <div class="codebook-toolbar panel-content flex-grow-1 min-width-0">
+                    <div class="compact-toggle-wrap form-check form-switch mb-0 d-flex align-items-center">
+                        <input class="form-check-input me-1" type="checkbox" role="switch"
+                            id="compact-layout-toggle" onchange="toggleCompactLayout()">
+                        <label class="form-check-label small" for="compact-layout-toggle">
+                            {% trans %}Compact{% endtrans %}
+                        </label>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
+                            id="tag-more-action-button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            aria-haspopup="true" aria-expanded="false"
+                            title="{% trans %}More actions{% endtrans %}">
+                            <i class="fas fa-bars"></i><span class="btn-label"> {% trans %}More actions{% endtrans %}</span>
+                        </button>
+                        <div class="dropdown-menu" id="tag-menu-more-actions"
+                            aria-labelledby="tag-more-action-button">
+                            <h6 class="dropdown-header">{% trans %}Sort by{% endtrans %}</h6>
+                            <a class="dropdown-item sort-option active" href="javascript:sortTagsBy('path', 'asc')">{% trans
+                                %}Text [a&rarr;z]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text
+                                [z&rarr;a]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count
+                                [0&rarr;9]{% endtrans %}</a>
+                            <a class="dropdown-item sort-option" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count
+                                [9&rarr;0]{% endtrans %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/"
+                                data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans
+                                %}</a>
+                            <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans
+                                %}Expand all{% endtrans %}</a>
+                            <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans
+                                %}Collapse all{% endtrans %}</a>
+                            <div class="dropdown-divider"></div>
+                            <button type="button" class="dropdown-item" id="dropdown-tips-btn">
+                                <i class="fas fa-question-circle me-1"></i> {% trans %}Tips{% endtrans %}
                             </button>
-                            <div class="dropdown-menu" id="tag-menu-more-actions"
-                                aria-labelledby="tag-more-action-button">
-                                <a id="load-all-tags" class="dropdown-item" href="/project/{{ project.id }}/highlights/"
-                                    data-test-id="see-all-highlights-button">{% trans %}See all highlights{% endtrans
-                                    %}</a>
-                                <a class="dropdown-item" href="javascript:expandAllNodes(treeview_tags)">{% trans
-                                    %}Expand all{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:collapseAllNodes(treeview_tags)">{% trans
-                                    %}Collapse all{% endtrans %}</a>
-                            </div>
-                        </div>
-                        <div class="dropdown ms-2">
-                            <button class="btn btn-sm rounded-4 btn-outline-primary" type="button"
-                                id="tag-sortby-button" data-bs-toggle="dropdown" aria-haspopup="true"
-                                aria-expanded="false">
-                                <i class="fa fa-sort"></i> {% trans %}Sort by{% endtrans %}
-                            </button>
-                            <div class="dropdown-menu" id="tag-sortby-menu" aria-labelledby="tag-sortby-button">
-                                <a class="dropdown-item active" href="javascript:sortTagsBy('path', 'asc')">{% trans
-                                    %}Text [a&rarr;z]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('path', 'desc')">{% trans %}Text
-                                    [z&rarr;a]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'asc')">{% trans %}Count
-                                    [0&rarr;9]{% endtrans %}</a>
-                                <a class="dropdown-item" href="javascript:sortTagsBy('count', 'desc')">{% trans %}Count
-                                    [9&rarr;0]{% endtrans %}</a>
-                            </div>
                         </div>
                     </div>
+                    <a id="create-tag-link" class="btn btn-sm btn-primary rounded-4"
+                        href="javascript:createTag()" data-test-id="create-tag-link"
+                        title="{% trans %}Create a code{% endtrans %}">
+                        <i class="fas fa-plus"></i><span class="btn-label"> {% trans %}Create a code{% endtrans %}</span>
+                    </a>
                 </div>
             </div>
             <div class="mb-2 panel-content">
                 <div class="form-group">
-                    <input type="text" class="form-control" id="input-search-tags" placeholder="{% trans " tag change
+                    <input type="text" class="form-control" id="input-search-tags" autocomplete="off" placeholder="{% trans " tag change
                         form placeholder" %}Search for a code{% endtrans %}">
                 </div>
                 <div id="tag-selection-criteria-area" class="tag-selection-box mt-3 mb-3">
@@ -109,25 +111,34 @@
     <!-- List of documents -->
     <div class="col-12 col-md-2-5 order-1 order-md-3" id="right-panel">
         <div class="bordered-container sticky-top">
-            <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary ms-2" title="Toggle Panel">
-                <i class="fas fa-chevron-right"></i>
-            </button>
-            <button type="button" class="btn border-0 btn-sm" id="treeview-help-icon"
-                    data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus"
-                    data-bs-html="true" title="{% trans %}Tips{% endtrans %}">
-                    <i class="fas fa-question-circle"></i>
-            </button>
-            <div class="row  panel-content">
-                <div class="col-md-12">
-                    <a class="btn btn-sm btn-primary rounded-4 ms-2 float-end mb-3" href="javascript:createDocument()"
-                        data-test-id="create-document-link"><i class="fas fa-plus"></i> {% trans %}Add a document{%
-                        endtrans %}</a>
-                    <a class="btn btn-sm btn-outline-primary rounded-4 ms-2 float-end mb-3"
-                        href="javascript:createCollection()" data-test-id="create-collection-link"><i
-                            class="fas fa-folder-plus"></i> {% trans %}Add a collection{% endtrans %}</a>
-                    <input type="text" class="form-control mt-3 mb-3" id="input-search-titles"
-                        placeholder="{% trans %}Search titles and collections name{% endtrans %}">
+            <div class="documents-header-wrap px-2 pt-2 pb-1 d-flex align-items-start gap-2">
+                <div class="document-toolbar panel-content flex-grow-1 min-width-0">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <a class="btn btn-sm btn-outline-primary rounded-4 flex-grow-1 text-center"
+                            href="javascript:createCollection()" data-test-id="create-collection-link"
+                            title="{% trans %}Add a collection{% endtrans %}">
+                            <i class="fas fa-folder-plus"></i> {% trans %}Collection{% endtrans %}
+                        </a>
+                        <a class="btn btn-sm btn-primary rounded-4 flex-grow-1 text-center" href="javascript:createDocument()"
+                            data-test-id="create-document-link"
+                            title="{% trans %}Add a document{% endtrans %}">
+                            <i class="fas fa-plus"></i> {% trans %}Documents{% endtrans %}
+                        </a>
+                    </div>
                 </div>
+                <div class="panel-side-controls d-flex flex-column align-items-center gap-1 flex-shrink-0">
+                    <button id="toggle-right-panel" class="btn btn-sm btn-outline-secondary" title="{% trans %}Toggle panel{% endtrans %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn border-0 btn-sm" id="treeview-help-icon"
+                            title="{% trans %}Tips{% endtrans %}">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="panel-content px-2 pb-1">
+                <input type="text" class="form-control" id="input-search-titles" autocomplete="off"
+                    placeholder="{% trans %}Search titles{% endtrans %}">
             </div>
             <!-- Documents treeview -->
             <div class="panel-content" id="treeview-documents">
@@ -224,6 +235,7 @@
 <script type="text/javascript" src="{{ static_url('js/highlight/renderer.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/highlight/loader.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('js/highlight/crud.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('js/highlight/extracts.js') }}"></script>
 
 <!-- search documents -->
 <script type="text/javascript" src="{{ static_url('js/project/search.js') }}"></script>

@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2026-01-06 11:06-0500\n"
+"POT-Creation-Date: 2026-04-03 12:02-0400\n"
 "PO-Revision-Date: 2022-09-30 20:04+0800\n"
 "Last-Translator: <dion.jeremie.2@courrier.uqam.ca>, with LLM assistance\n"
 "Language: id_ID\n"
@@ -22,60 +22,60 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.17.0\n"
 
-#: taguette/static/js/polling-event.js:141
+#: taguette/static/js/polling-event.js:131
 msgid "It appears that you have been logged out."
 msgstr "Sepertinya Anda telah keluar."
 
-#: taguette/static/js/polling-event.js:144
+#: taguette/static/js/polling-event.js:134
 msgid "You can no longer access this project."
 msgstr "Anda tidak dapat lagi mengakses proyek ini."
 
-#: taguette/static/js/tag/treeview.js:236
+#: taguette/static/js/tag/treeview.js:240
 msgid "Documents"
 msgstr "Dokumen"
 
-#: taguette/static/js/tag/treeview.js:242
+#: taguette/static/js/tag/treeview.js:241
 msgid "Highlights"
 msgstr "Sorotan"
 
-#: taguette/static/js/tag/treeview.js:496
+#: taguette/static/js/tag/treeview.js:513
 msgid "Click to explore • Right-click for options"
 msgstr "Klik untuk menjelajahi • Klik kanan untuk opsi"
 
-#: taguette/static/js/tag/treeview.js:526
+#: taguette/static/js/tag/treeview.js:550
 msgid "Right-click on a code:"
 msgstr "Klik kanan pada kode:"
 
-#: taguette/static/js/tag/treeview.js:528
+#: taguette/static/js/tag/treeview.js:552
 msgid "Add child code"
 msgstr "Tambah kode anak"
 
-#: taguette/static/js/tag/treeview.js:529
+#: taguette/static/js/tag/treeview.js:553
 msgid "Edit code"
 msgstr "Sunting kode"
 
-#: taguette/static/js/tag/treeview.js:530
+#: taguette/static/js/tag/treeview.js:554
 msgid "Merge codes"
 msgstr "Gabungkan kode"
 
-#: taguette/static/js/tag/treeview.js:531
+#: taguette/static/js/tag/treeview.js:555
 msgid "Delete code"
 msgstr "Hapus kode"
 
-#: taguette/static/js/tag/treeview.js:535
+#: taguette/static/js/tag/treeview.js:559
 msgid "Click on a code:"
 msgstr "Klik pada kode:"
 
-#: taguette/static/js/tag/treeview.js:537
+#: taguette/static/js/tag/treeview.js:561
 msgid "Filter highlights by this code"
 msgstr "Saring sorotan berdasarkan kode ini"
 
 #: taguette/static/js/collection/hierarchy-select.js:15
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:291 taguette/static/js/taguette.js:542
-#: taguette/static/js/taguette.js:1566
+#: taguette/static/js/taguette.js:294 taguette/static/js/taguette.js:559
+#: taguette/static/js/taguette.js:1446
 msgid "None"
 msgstr "Tidak ada"
 
@@ -131,95 +131,103 @@ msgstr "hapusInduk"
 msgid "delete"
 msgstr "hapus"
 
-#: taguette/static/js/highlight/native/loader.js:7
-#: taguette/static/js/taguette.js:937
+#: taguette/static/js/highlight/extracts.js:270
+msgid "Overlapping"
+msgstr "Tumpang tindih"
+
+#: taguette/static/js/highlight/extracts.js:348
+msgid "No highlights with this tag yet."
+msgstr "Belum ada sorotan dengan kode ini."
+
+#: taguette/static/js/highlight/loader.js:7
 msgid "Load a document on the left"
 msgstr "Muat dokumen di kiri"
 
 #: taguette/static/js/collection/context-menu.js:26
-#: taguette/static/js/document/treeview.js:541
+#: taguette/static/js/document/treeview.js:526
 msgid "Add sub-collection"
 msgstr "Tambah sub-koleksi"
 
 #: taguette/static/js/collection/context-menu.js:31
-#: taguette/static/js/document/treeview.js:542
+#: taguette/static/js/document/treeview.js:527
 msgid "Edit collection"
 msgstr "Sunting koleksi"
 
 #: taguette/static/js/collection/context-menu.js:39
-#: taguette/static/js/document/treeview.js:543
+#: taguette/static/js/document/treeview.js:528
 msgid "Remove parent"
 msgstr "Hapus induk"
 
 #: taguette/static/js/collection/context-menu.js:47
-#: taguette/static/js/document/treeview.js:544
-#: taguette/static/js/taguette.js:1612
+#: taguette/static/js/document/treeview.js:529
+#: taguette/static/js/taguette.js:1492
 msgid "Delete collection"
 msgstr "Hapus koleksi"
 
-#: taguette/static/js/taguette.js:311
+#: taguette/static/js/taguette.js:314
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Anda yakin ingin menghapus dokumen '%(doc)s'?"
 
-#: taguette/static/js/taguette.js:356
+#: taguette/static/js/taguette.js:359
 msgid "Document name cannot be empty"
 msgstr "Nama dokumen tidak boleh kosong"
 
-#: taguette/static/js/taguette.js:496
+#: taguette/static/js/taguette.js:513
 msgid "Invalid tag name"
 msgstr "Nama kode tidak valid"
 
-#: taguette/static/js/taguette.js:501
+#: taguette/static/js/taguette.js:518
 msgid "Impossible to define the same tag as parent"
 msgstr "Tidak mungkin mendefinisikan kode yang sama sebagai induk"
 
-#: taguette/static/js/taguette.js:564
+#: taguette/static/js/taguette.js:581
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Anda yakin ingin menghapus kode '%(tag)s'?"
 
-#: taguette/static/js/taguette.js:617
+#: taguette/static/js/taguette.js:642
+#, python-format
+msgid "This tag has %(count)s child tag(s) that will be moved to \"%(dest)s\"."
+msgstr "Tag ini memiliki %(count)s tag turunan yang akan dipindahkan ke \"%(dest)s\"."
+
+#: taguette/static/js/taguette.js:671
 msgid "Couldn't merge tags!"
 msgstr "Tidak dapat menggabungkan kode!"
 
-#: taguette/static/js/taguette.js:776
+#: taguette/static/js/taguette.js:866
 msgid "Full permissions"
 msgstr "Izin penuh"
 
-#: taguette/static/js/taguette.js:777
+#: taguette/static/js/taguette.js:867
 msgid "Can't change collaborators / delete project"
 msgstr "Tidak dapat mengubah kolaborator / menghapus proyek"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:868
 msgid "View & make changes"
 msgstr "Lihat & buat perubahan"
 
-#: taguette/static/js/taguette.js:779
+#: taguette/static/js/taguette.js:869
 msgid "View only"
 msgstr "Lihat saja"
 
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:851
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:943
 msgid "Already a member!"
 msgstr "Sudah menjadi anggota!"
 
-#: taguette/static/js/taguette.js:866
+#: taguette/static/js/taguette.js:958
 msgid "This user doesn't exist!"
 msgstr "Pengguna ini tidak ada!"
 
-#: taguette/static/js/taguette.js:1192
-msgid "No highlights with this tag yet."
-msgstr "Belum ada sorotan dengan kode ini."
-
-#: taguette/static/js/taguette.js:1335
+#: taguette/static/js/taguette.js:1215
 msgid "No document or collection found"
 msgstr "Tidak ada dokumen atau koleksi ditemukan"
 
-#: taguette/static/js/taguette.js:1374
+#: taguette/static/js/taguette.js:1254
 msgid "No tag found"
 msgstr "Tidak ada kode ditemukan"
 
-#: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
+#: taguette/static/js/taguette.js:1469 taguette/static/js/taguette.js:1691
 #, python-format
 msgid ""
 "Are you sure you want to delete the collection '%(name)s'? Its documents "
@@ -228,44 +236,44 @@ msgstr ""
 "Anda yakin ingin menghapus koleksi '%(name)s'? Dokumennya akan "
 "dipindahkan."
 
-#: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
-#: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
+#: taguette/static/js/taguette.js:1475 taguette/static/js/taguette.js:1518
+#: taguette/static/js/taguette.js:1534 taguette/static/js/taguette.js:1699
 msgid "Error deleting collection: "
 msgstr "Gagal menghapus koleksi: "
 
-#: taguette/static/js/taguette.js:1602
+#: taguette/static/js/taguette.js:1482
 #, python-format
 msgid "The collection '%(name)s' has subcollections. How do you want to proceed?"
 msgstr "Koleksi '%(name)s' memiliki sub-koleksi. Bagaimana Anda ingin melanjutkan?"
 
-#: taguette/static/js/taguette.js:1680
+#: taguette/static/js/taguette.js:1560
 #, python-format
 msgid ""
 "Are you sure you want to remove collection '%(name)s' from parent "
 "'%(parent)s'?"
 msgstr "Anda yakin ingin menghapus koleksi '%(name)s' dari induk '%(parent)s'?"
 
-#: taguette/static/js/taguette.js:1696
+#: taguette/static/js/taguette.js:1576
 msgid "Error removing collection parent: "
 msgstr "Gagal menghapus induk koleksi: "
 
-#: taguette/static/js/taguette.js:1755
+#: taguette/static/js/taguette.js:1635
 msgid "Collection name is required"
 msgstr "Nama koleksi wajib diisi"
 
-#: taguette/static/js/taguette.js:1760
+#: taguette/static/js/taguette.js:1640
 msgid "A collection cannot be its own parent."
 msgstr "Koleksi tidak dapat menjadi induknya sendiri."
 
-#: taguette/static/js/taguette.js:1789
+#: taguette/static/js/taguette.js:1669
 msgid "Error updating collection: "
 msgstr "Gagal memperbarui koleksi: "
 
-#: taguette/static/js/taguette.js:1790
+#: taguette/static/js/taguette.js:1670
 msgid "Error creating collection: "
 msgstr "Gagal membuat koleksi: "
 
-#: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
+#: taguette/static/js/taguette.js:1688 taguette/static/js/taguette.js:1696
 msgid "Collection deleted!"
 msgstr "Koleksi dihapus!"
 
@@ -287,56 +295,56 @@ msgstr ""
 "ditemukan</li><li>Pengguna sudah disponsori</li><li>Peran pengguna tidak "
 "dapat diubah</li></ul>"
 
-#: taguette/static/js/document/treeview.js:119
+#: taguette/static/js/document/treeview.js:115
 msgid "Without collection"
 msgstr "Tanpa koleksi"
 
-#: taguette/static/js/document/treeview.js:151
+#: taguette/static/js/document/treeview.js:147
 #, python-format
 msgid "Click to open • %(key)s+Click to select • Right-click for options"
 msgstr "Klik untuk membuka • %(key)s+Klik untuk memilih • Klik kanan untuk opsi"
 
-#: taguette/static/js/document/treeview.js:198
+#: taguette/static/js/document/treeview.js:188
 msgid "Documents count"
 msgstr "Jumlah dokumen"
 
-#: taguette/static/js/document/treeview.js:391
+#: taguette/static/js/document/treeview.js:376
 #, python-format
 msgid "You can drag and drop %s documents to a collection"
 msgstr "Anda dapat menyeret dan meletakkan %s dokumen ke koleksi"
 
-#: taguette/static/js/document/treeview.js:539
+#: taguette/static/js/document/treeview.js:524
 msgid "Right-click on a collection:"
 msgstr "Klik kanan pada koleksi:"
 
-#: taguette/static/js/document/treeview.js:548
+#: taguette/static/js/document/treeview.js:533
 msgid "Right-click on a document:"
 msgstr "Klik kanan pada dokumen:"
 
 #: taguette/static/js/document/context-menu.js:30
-#: taguette/static/js/document/treeview.js:550
+#: taguette/static/js/document/treeview.js:535
 msgid "Edit document"
 msgstr "Sunting dokumen"
 
-#: taguette/static/js/document/treeview.js:551
+#: taguette/static/js/document/treeview.js:536
 msgid "Toggle bookmark"
 msgstr "Alihkan penanda"
 
 #: taguette/static/js/document/context-menu.js:41
-#: taguette/static/js/document/treeview.js:552
+#: taguette/static/js/document/treeview.js:537
 msgid "Delete document"
 msgstr "Hapus dokumen"
 
-#: taguette/static/js/document/treeview.js:556
+#: taguette/static/js/document/treeview.js:541
 msgid "Select multiple documents:"
 msgstr "Pilih beberapa dokumen:"
 
-#: taguette/static/js/document/treeview.js:558
+#: taguette/static/js/document/treeview.js:543
 #, python-format
 msgid "Hold %(key)s and click documents"
 msgstr "Tahan %(key)s dan klik dokumen"
 
-#: taguette/static/js/document/treeview.js:559
+#: taguette/static/js/document/treeview.js:544
 msgid "Drag selected documents to a collection"
 msgstr "Seret dokumen yang dipilih ke koleksi"
 
@@ -354,24 +362,20 @@ msgstr "Tambahkan ke penanda"
 msgid "There are no documents in this project yet."
 msgstr "Belum ada dokumen di proyek ini."
 
-#: taguette/static/js/document/manager.js:127
-msgid "Import new document"
-msgstr "Impor dokumen baru"
-
-#: taguette/static/js/document/manager.js:314
+#: taguette/static/js/document/manager.js:311
 msgid " = Documents without collection"
 msgstr " = Dokumen tanpa koleksi"
 
-#: taguette/static/js/document/manager.js:315
+#: taguette/static/js/document/manager.js:312
 msgid " = Documents currently assigned to a collection"
 msgstr " = Dokumen yang saat ini ditetapkan ke koleksi"
 
-#: taguette/static/js/document/manager.js:386
-#: taguette/static/js/document/manager.js:488
+#: taguette/static/js/document/manager.js:383
+#: taguette/static/js/document/manager.js:485
 msgid "Currently in"
 msgstr "Saat ini di"
 
-#: taguette/static/js/document/manager.js:413
+#: taguette/static/js/document/manager.js:410
 msgid "No documents available"
 msgstr "Tidak ada dokumen tersedia"
 
@@ -411,12 +415,12 @@ msgid "<p>A demo project has been added to your home page.</p>"
 msgstr "<p>Proyek demo telah ditambahkan ke beranda Anda.</p>"
 
 #: taguette/static/js/project/intro.js:31
-#: taguette/static/js/project/intro.js:176
+#: taguette/static/js/project/intro.js:177
 msgid "Next"
 msgstr "Berikutnya"
 
 #: taguette/static/js/project/intro.js:32
-#: taguette/static/js/project/intro.js:177
+#: taguette/static/js/project/intro.js:178
 msgid "Back"
 msgstr "Kembali"
 
@@ -476,11 +480,11 @@ msgstr ""
 "<p>Klik dokumen untuk melihat isinya. Gunakan bintang untuk menyimpan "
 "penanda Anda.</p>"
 
-#: taguette/static/js/project/intro.js:102
+#: taguette/static/js/project/intro.js:103
 msgid "Coding"
 msgstr "Pengodean"
 
-#: taguette/static/js/project/intro.js:103
+#: taguette/static/js/project/intro.js:104
 msgid ""
 "<p>Select a portion of text with your cursor. Two buttons will appear to "
 "assign a code to the selection.</p>"
@@ -488,11 +492,11 @@ msgstr ""
 "<p>Pilih sebagian teks dengan kursor Anda. Dua tombol akan muncul untuk "
 "menetapkan kode ke pilihan.</p>"
 
-#: taguette/static/js/project/intro.js:112
+#: taguette/static/js/project/intro.js:113
 msgid "Selecting a code"
 msgstr "Memilih kode"
 
-#: taguette/static/js/project/intro.js:113
+#: taguette/static/js/project/intro.js:114
 msgid ""
 "<p>From the menu, select one or more codes that correspond to the content"
 " of the selection and save the changes. In this case, the selection "
@@ -502,11 +506,11 @@ msgstr ""
 "pilihan dan simpan perubahannya. Dalam kasus ini, pilihan mengacu pada "
 "penguatan hubungan sosial.</p>"
 
-#: taguette/static/js/project/intro.js:120
+#: taguette/static/js/project/intro.js:121
 msgid "Exploring the codes"
 msgstr "Menjelajahi kode"
 
-#: taguette/static/js/project/intro.js:121
+#: taguette/static/js/project/intro.js:122
 msgid ""
 "<p>You can explore the text selections tagged with each code at any time "
 "during or after the coding process.</p><br><p> Show all of the selections"
@@ -516,11 +520,11 @@ msgstr ""
 " atau setelah proses pengodean.</p><br><p>Tampilkan semua pilihan yang "
 "diberi kode dari buku kode dengan mengekliknya.</p>"
 
-#: taguette/static/js/project/intro.js:126
+#: taguette/static/js/project/intro.js:127
 msgid "Narrowing your search"
 msgstr "Mempersempit pencarian Anda"
 
-#: taguette/static/js/project/intro.js:127
+#: taguette/static/js/project/intro.js:128
 msgid ""
 "<p>If there are a large number of selections shown, you can refine the "
 "results with an advanced search.</p>"
@@ -528,11 +532,11 @@ msgstr ""
 "<p>Jika ada banyak pilihan yang ditampilkan, Anda dapat menyaring hasil "
 "dengan pencarian lanjutan.</p>"
 
-#: taguette/static/js/project/intro.js:133
+#: taguette/static/js/project/intro.js:134
 msgid "Conditional selections"
 msgstr "Pilihan bersyarat"
 
-#: taguette/static/js/project/intro.js:134
+#: taguette/static/js/project/intro.js:135
 msgid ""
 "<p>By right-clicking, you can specify conditions to either add or exclude"
 " additional codes.</p>"
@@ -540,11 +544,11 @@ msgstr ""
 "<p>Dengan mengeklik kanan, Anda dapat menentukan kondisi untuk menambah "
 "atau mengecualikan kode tambahan.</p>"
 
-#: taguette/static/js/project/intro.js:141
+#: taguette/static/js/project/intro.js:142
 msgid "Exploring the list"
 msgstr "Menjelajahi daftar"
 
-#: taguette/static/js/project/intro.js:142
+#: taguette/static/js/project/intro.js:143
 msgid ""
 "<p>The labels shown with this query indicate that the selections must "
 "necessarily include the codes <i>barriers</i> and <i>skills "
@@ -554,21 +558,21 @@ msgstr ""
 "harus menyertakan kode <i>hambatan</i> dan <i>pengembangan "
 "keterampilan</i>.</p>"
 
-#: taguette/static/js/project/intro.js:148
+#: taguette/static/js/project/intro.js:149
 msgid "Navigating to documents"
 msgstr "Menavigasi ke dokumen"
 
-#: taguette/static/js/project/intro.js:149
+#: taguette/static/js/project/intro.js:150
 msgid ""
 "<p>By clicking on the name of the document, you can return to the "
 "context.</p>"
 msgstr "<p>Dengan mengeklik nama dokumen, Anda dapat kembali ke konteks.</p>"
 
-#: taguette/static/js/project/intro.js:155
+#: taguette/static/js/project/intro.js:156
 msgid "Returning to the selections"
 msgstr "Kembali ke pilihan"
 
-#: taguette/static/js/project/intro.js:156
+#: taguette/static/js/project/intro.js:157
 msgid ""
 "<p>After consulting the context, you can return to the list of selections"
 " previously identified using the advanced search.</p>"
@@ -576,11 +580,11 @@ msgstr ""
 "<p>Setelah melihat konteks, Anda dapat kembali ke daftar pilihan yang "
 "sebelumnya diidentifikasi menggunakan pencarian lanjutan.</p>"
 
-#: taguette/static/js/project/intro.js:162
+#: taguette/static/js/project/intro.js:163
 msgid "Exporting"
 msgstr "Mengekspor"
 
-#: taguette/static/js/project/intro.js:163
+#: taguette/static/js/project/intro.js:164
 msgid ""
 "<p>You can choose to download these selections to your computer, as "
 "needed.</p>"
@@ -588,11 +592,11 @@ msgstr ""
 "<p>Anda dapat memilih untuk mengunduh pilihan ini ke komputer Anda, "
 "sesuai kebutuhan.</p>"
 
-#: taguette/static/js/project/intro.js:167
+#: taguette/static/js/project/intro.js:168
 msgid "Time to code!"
 msgstr "Waktunya mengode!"
 
-#: taguette/static/js/project/intro.js:168
+#: taguette/static/js/project/intro.js:169
 msgid ""
 "<p>Use LibreQDA however you wish, knowing that your data is always saved "
 "to your personal account. Feel free to further familiarize yourself with "
@@ -604,7 +608,10 @@ msgstr ""
 "fungsi ini dengan terus mengode dan menjelajahi wawancara fiksi tentang "
 "permainan papan ini.</p>"
 
-#: taguette/static/js/project/intro.js:178
+#: taguette/static/js/project/intro.js:179
 msgid "Done"
 msgstr "Selesai"
+
+#~ msgid "Import new document"
+#~ msgstr "Impor dokumen baru"
 

@@ -19,7 +19,9 @@ class SeleniumTest(MyHTTPTestCase):
             options.add_argument('--disable-gpu')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--no-sandbox')
-            options.binary_location = '/usr/bin/google-chrome-stable'
+            options.binary_location = os.environ.get(
+                'CHROMIUM_BINARY', '/usr/bin/chromium'
+            )
             chrome_driver_binary = "/usr/bin/chromedriver"
             self.driver = webdriver.Chrome(chrome_driver_binary,
                                            options=options)

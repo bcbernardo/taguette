@@ -283,6 +283,7 @@ class Project(Base):
     description = Column(Text, nullable=False)
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
+    is_archived = Column(Boolean, nullable=False, default=False)
     members = relationship('ProjectMember', cascade='all,delete-orphan',
                            back_populates='project')
     commands = relationship('Command', cascade='all,delete-orphan',
@@ -845,6 +846,11 @@ def _compile_group_array_sqlite(element, compiler, **kw):
     return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
 
 
+@compiles(GroupArray, 'mysql')
+def _compile_group_array_mysql(element, compiler, **kw):
+    return "GROUP_CONCAT(DISTINCT %s)" % compiler.process(element.clauses)
+
+
 Tag.document_ids = column_property(
     select([GroupArray(document_alias.id)])
     .select_from(highlight_tags)
@@ -868,6 +874,14 @@ Project.tag_count = column_property(
     select([func.count(Tag.id)])
     .where(Tag.project_id == Project.id)
     .as_scalar()
+)
+
+# Property to count members associate with projet
+Project.member_count = column_property(
+    select([func.count(ProjectMember.user_login)])
+    .where(ProjectMember.project_id == Project.id)
+    .correlate(Project)
+    .scalar_subquery()
 )
 
 

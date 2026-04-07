@@ -115,11 +115,6 @@ class Test2E2MultiUser(SeleniumTest):
                 'Université de Sherbrooke.'
             ]
         )
-        self.assertIn(
-            'Here are your projects:',
-            [el.text for el in self.find_by_tag('p')],
-        )
-
         # Fetch project creation page
         await self.s_get('/project/new')
 

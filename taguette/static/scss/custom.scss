@@ -288,7 +288,6 @@ li.tag-current {
 .reduced-col {
     flex: 0 0 5% !important;
     max-width: 5% !important;
-    overflow: hidden;
 }
 
 .reduced-col .panel-content {
@@ -357,6 +356,9 @@ Index project view custom
     color: rgb(33, 37, 41);
     text-align: left;
 }
+
+/* Utility */
+.min-width-0 { min-width: 0; }
 
 /* document toolbar */
 
