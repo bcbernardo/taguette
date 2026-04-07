@@ -1,29 +1,44 @@
-<div class="col project">
-    <a href="{{ reverse_url('project', project.id) }}{% if demo %}?demo=true{% endif %}" class="no-underline">
-        <div class="project-card">
-            <div class="d-flex justify-content-end px-3 pt-3">
-                <!-- <i class="fas fa-edit" onclick=""></i>-->
+<div class="col project" data-project-id="{{ project.id }}">
+    <div class="project-card">
+        <!-- Header with name and actions -->
+        <div class="d-flex justify-content-between align-items-start px-3 pt-3">
+            <a href="{{ reverse_url('project', project.id) }}{% if demo %}?demo=true{% endif %}" class="no-underline flex-grow-1">
+                <h3 class="name" title="{{ project.name }}">{{ project.name }}</h3>
+            </a>
+            <!-- Actions dropdown -->
+            <div class="dropdown project-actions">
+                <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item action-edit" href="#" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}" data-project-description="{{ project.description }}"><i class="fas fa-edit me-2"></i>{% trans %}Edit{% endtrans %}</a></li>
+                    <li><a class="dropdown-item" href="{{ reverse_url('export_project_sqlite', project.id) }}"><i class="fas fa-download me-2"></i>{% trans %}Export{% endtrans %}</a></li>
+                    <li><a class="dropdown-item action-archive" href="#" data-project-id="{{ project.id }}"><i class="fas fa-archive me-2"></i>{% trans %}Archive{% endtrans %}</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{{ reverse_url('delete_project', project.id) }}"><i class="fas fa-trash me-2"></i>{% trans %}Delete{% endtrans %}</a></li>
+                </ul>
             </div>
-            <div class="px-3 d-flex align-items-center">
-               <!-- <div class="project-icon mr-2 d-flex align-items-center justify-content-center">
-                    <span class="text">{{ project.name[0] }}</span>
-                </div>-->
-                <h3 class="name px-3" title="{{ project.name }}">{{ project.name }}</h3>
-            </div>
-            <div class="px-3 pt-4 description-container">
+        </div>
+        <!-- Card link -->
+        <a href="{{ reverse_url('project', project.id) }}{% if demo %}?demo=true{% endif %}" class="no-underline project-card-link d-flex flex-column flex-grow-1">
+            <div class="px-3 pt-2 description-container">
                 <p class="quote2 description-text">{{ project.description | truncate(100, true, '...') }}</p>
             </div>
             <hr class="custom-hr mt-auto">
             <div class="d-flex justify-content-between px-3 pb-3 stats-container">
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" title="{% trans %}Documents{% endtrans %}">
                     <i class="fas fa-file-alt"></i>
-                    <span class="quote2 mx-2">{{ project.document_count }} document(s)</span>
+                    <span class="quote2 mx-2">{{ project.document_count }}</span>
                 </div>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" title="{% trans %}Codes{% endtrans %}">
                     <i class="fas fa-stream"></i>
-                    <span class="quote2 mx-2">{{ project.tag_count }} code(s)</span>
+                    <span class="quote2 mx-2">{{ project.tag_count }}</span>
+                </div>
+                <div class="d-flex align-items-center" title="{% trans %}Collaborators{% endtrans %}">
+                    <i class="fas fa-users"></i>
+                    <span class="quote2 mx-2">{{ project.member_count }}</span>
                 </div>
             </div>
-        </div>
-    </a>
+        </a>
+    </div>
 </div>

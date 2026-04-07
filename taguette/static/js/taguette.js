@@ -84,7 +84,10 @@ function projectMetadataChanged() {
         };
         postJSON(`/api/project/${project_id}`, meta)
             .then(function () {
-                setProjectMetadata(meta, false);
+                setProjectMetadata({
+                    project_name: meta.name,
+                    description: meta.description,
+                }, false);
             })
             .catch(function (error) {
                 log("Failed to update project metadata:", 'error', {error});
@@ -388,10 +391,17 @@ document.getElementById('document-change-delete').addEventListener('click', func
  */
 
 let sortTags = ['path', 'asc'];
+let compactLayout = false;
+
+function toggleCompactLayout() {
+    compactLayout = document.getElementById('compact-layout-toggle').checked;
+    document.querySelector('.bordered-container').classList.toggle('compact-layout', compactLayout);
+    updateTagsList();
+}
 
 function sortTagsBy(field, dir) {
     sortTags = [field, dir];
-    let options = document.getElementById('tag-sortby-menu').querySelectorAll('a.dropdown-item');
+    let options = document.querySelectorAll('#tag-menu-more-actions a.sort-option');
     let optionSorts = [['path', 'asc'], ['path', 'desc'], ['count', 'asc'], ['count', 'desc'],];
     for (let i = 0; i < optionSorts.length; ++i) {
         if (optionSorts[i][0] === field && optionSorts[i][1] === dir) {
@@ -448,6 +458,13 @@ function createTag(fromHighlight, selection, parent) {
     document.getElementById('tag-add-merge').style.display = 'none';
     if (fromHighlight) {
         document.getElementById('tag-add-path').value = document.getElementById('input-search-tags-highlight').value;
+    }
+
+    const tagPreview = document.getElementById('tag-selection-preview');
+    if (tagPreview) {
+        const showPreview = !!(selection || (fromHighlight && current_selection_text));
+        tagPreview.textContent = formatSelectionPreview(current_selection_text);
+        tagPreview.style.display = showPreview && current_selection_text ? '' : 'none';
     }
 
     if(selection) {
@@ -678,6 +695,9 @@ const highlight_add_modal = document.getElementById('highlight-add-modal');
 // Updates current_selection and visibility of the controls
 function selectionChanged() {
     current_selection = describeSelection();
+    if (current_selection) {
+        current_selection_text = window.getSelection().toString();
+    }
     log('current selection offset : ' + current_selection);
     let hlinfo = document.getElementById('hlinfo');
     if (current_selection !== null) {
@@ -704,11 +724,23 @@ function selectionChanged() {
 
 document.addEventListener('selectionchange', selectionChanged);
 
+function formatSelectionPreview(text, maxLen = 150) {
+    if (!text) return '';
+    const trimmed = text.trim();
+    const truncated = trimmed.length > maxLen ? trimmed.slice(0, maxLen) + ' [...]' : trimmed;
+    return '\u201C' + truncated + '\u201D';
+}
+
 function createHighlight(selection) {
     document.getElementById('hlinfo').style.display = 'none';
     document.getElementById('highlight-add-id').value = '';
     document.getElementById('highlight-add-start').value = selection[0];
     document.getElementById('highlight-add-end').value = selection[1];
+    const hlPreview = document.getElementById('highlight-selection-preview');
+    if (hlPreview) {
+        hlPreview.textContent = formatSelectionPreview(current_selection_text);
+        hlPreview.style.display = current_selection_text ? '' : 'none';
+    }
     highlightModalReset();
     $(highlight_add_modal).modal('show').drags({handle: '.modal-header'});
 }
@@ -724,6 +756,16 @@ function editHighlight() {
     document.getElementById('highlight-add-id').value = id;
     document.getElementById('highlight-add-start').value = highlights[id].start_offset;
     document.getElementById('highlight-add-end').value = highlights[id].end_offset;
+    const hlPreview = document.getElementById('highlight-selection-preview');
+    if (hlPreview) {
+        const _tmp = document.createElement('div');
+        _tmp.innerHTML = (highlights[id].snippet || '')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p>|<\/div>|<\/h[1-6]>|<\/li>/gi, '\n');
+        const snippet = _tmp.textContent.trim().replace(/\n{3,}/g, '\n\n') || null;
+        hlPreview.textContent = formatSelectionPreview(snippet);
+        hlPreview.style.display = snippet ? '' : 'none';
+    }
     const hl_tags = highlights['' + id].tags;
     const allNodes = treeview_tags_highlight.treeview('getEnabled');
     for (let i = 0; i < hl_tags.length; ++i) {
@@ -802,6 +844,17 @@ let members_initial = {};
 let members_displayed = {};
 
 function _memberRow(login, user, can_edit, is_self) {
+    // Check if this user is the only admin
+    const adminCount = Object.values(members).filter(m => m.privileges === 'ADMIN').length;
+    const is_only_admin = is_self && user.privileges === 'ADMIN' && adminCount === 1;
+
+    let leaveBtn = '';
+    if (is_self && !is_only_admin) {
+        leaveBtn = '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group">Leave project</button>';
+    } else if (!is_self) {
+        leaveBtn = '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>';
+    }
+
     let elem = document.createElement('div');
     elem.className = 'row members-item';
     elem.innerHTML = '<div class="col-md-4 text-center">' +
@@ -816,8 +869,7 @@ function _memberRow(login, user, can_edit, is_self) {
         '    <option value="READ">' + gettext("View only") + '</option>' +
         '  </select>' +
         '</div>' +
-        (is_self ? '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group">Leave project</button>' :
-            '<button type="button" style="height: 35px" class="btn btn-danger col-md-4 form-group"' + (can_edit ? '' : ' disabled') + '>Remove collaborator</button>') +
+        leaveBtn +
         '<hr class="custom-hr" />';
 
     [].forEach.call(elem.querySelectorAll('option'), function (e) {
@@ -826,10 +878,13 @@ function _memberRow(login, user, can_edit, is_self) {
         }
     });
 
-    elem.querySelector('button').addEventListener('click', function () {
-        elem.parentNode.removeChild(elem);
-        delete members_displayed[login];
-    });
+    const btn = elem.querySelector('button');
+    if (btn) {
+        btn.addEventListener('click', function () {
+            elem.parentNode.removeChild(elem);
+            delete members_displayed[login];
+        });
+    }
 
     return elem;
 }
@@ -964,70 +1019,8 @@ document.getElementById('members-current').addEventListener('submit', function (
 
 const document_contents = document.getElementById('document-contents');
 
-let globalDefs = null;
 function loadDocument(document_id, highlight_id = null, splitParagraphs = true, search_text = null) {
-    if (getHighlightVersion() === 'v2' && typeof ntv_loadDocument === 'function') {
-        return ntv_loadDocument(document_id, highlight_id, splitParagraphs, search_text);
-    }
-    if (document_id === null) {
-        document_contents.style.direction = 'ltr';
-        document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
-        return;
-    }
-    showSpinner();
-    const info = getJSON(`/api/project/${project_id}/document/${document_id}`);
-    const contents = getJSON(`/api/project/${project_id}/document/${document_id}/contents`);
-    Promise.all([info, contents])
-        .then(function (results) {
-            const info = results[0];
-            const contents = results[1];
-            document_contents.innerHTML = '';
-            highlights = {};
-            chunk_offsets = [];
-
-            for (let i = 0; i < contents.contents.length; ++i) {
-                let chunk = contents.contents[i];
-                let elem = document.createElement('div');
-                elem.setAttribute('id', 'doc-offset-' + chunk.offset);
-                disableEditing(elem);
-                addDragFunctionality(elem);
-                elem.innerHTML = chunk.contents;
-                document_contents.appendChild(elem);
-                const textStructure = extractFormattedContent(chunk.contents);
-                setHighlights(textStructure, elem, info.highlights, info.text_direction);
-                globalDefs = null;
-                wordTracker = {};
-                chunk_offsets.push(chunk.offset);
-            }
-
-            current_document = document_id;
-
-            toggleToolbarActions(true);
-
-            updateDocumentLinkHighlight(current_document);
-
-            log(`Loaded document ${document_id}`);
-
-            for (let i = 0; i < info.highlights.length; ++i) {
-                const id = '' + info.highlights[i].id;
-                highlights[id] = info.highlights[i];
-            }
-
-            log(`Loaded ${info.highlights.length} highlight`);
-
-            // Update document export button
-            updateDocumentExportButton(project_id, document_id);
-
-            updateLinksTarget(document_contents);
-
-            // Scroll up
-            scrollToHighlight(highlight_id, search_text);
-        })
-        .catch(function (error) {
-            log("Failed to load document", 'error', {error});
-            showAlert(`${gettext("Error loading document!")} \n \n`, 'error', {error});
-        })
-        .then(hideSpinner);
+    loadDocumentHighlights(document_id, highlight_id, splitParagraphs, search_text);
 }
 
 function disableEditing(element) {
@@ -1054,38 +1047,32 @@ function scrollToHighlight(highlight_id, search_text=null) {
             toolbar_height = $("#document-view").prev(".toolbar-container").outerHeight();
         // Find highlight position and go to it
         if (highlight_id !== null && !isNaN(highlight_id)) {
-            const data_highlight_selector = $(`[data-highlight-id='${highlight_id}']`);
-            switch (currentHighlightVersion) {
-                case 'v1':
-                    let count_lines = 0;
-                    data_highlight_selector.each(function(){
-                        const line_id = $(this).data('parent-line-id'),
-                            div_to_highlight = $(`div[data-line--id="${line_id}"]`);
-                        div_to_highlight.addClass('flash-once');
-                        if(count_lines++ === 0) {
-                            scroll_position = div_to_highlight.offset().top;
-                        }
-                    });
-                    break;
-                case 'v2':
-                    // Find start and end lines
-                    if(data_highlight_selector.length > 0) {
-                        let start_positon = data_highlight_selector.first().offset().top,
-                            end_positon = data_highlight_selector.last().offset().top,
-                            highlight_next = false;
-                        $('#ntv-document-content p').each(function(){
-                            let start_p = $(this).offset().top,
-                                end_p = start_p + $(this).outerHeight();
-                            if(((start_p <= start_positon) && (end_p >= start_positon)) || highlight_next) {
-                                $(this).addClass('flash-once');
-                                highlight_next = true;
-                            }
-                            if((start_p <= end_positon) && (end_p >= end_positon)) {
-                                highlight_next = false;
-                            }
-                        });
-                        scroll_position = data_highlight_selector.offset().top - 25;
+            const hl = highlights['' + highlight_id];
+            const container = document.getElementById('highlight-content');
+            if (hl && container) {
+                const textNodes = collectTextNodes(container);
+                const { fullText, charMap } = buildCharMap(textNodes);
+                const startChar = getCharIndexFromUTF8Index(fullText, hl.start_offset);
+                const endChar = getCharIndexFromUTF8Index(fullText, hl.end_offset);
+                const startEntry = charMap[Math.max(0, startChar)];
+                const endEntry = charMap[Math.min(charMap.length - 1, endChar - 1)];
+
+                if (startEntry && endEntry) {
+                    const range = document.createRange();
+                    range.setStart(startEntry.node, startEntry.offset);
+                    range.setEnd(endEntry.node, endEntry.offset + 1);
+
+                    const rects = range.getClientRects();
+                    if (rects.length > 0) {
+                        scroll_position = rects[0].top + window.scrollY - 25;
                     }
+
+                    // Flash only the block elements that contain the highlighted text
+                    const startBlock = startEntry.node.parentElement.closest('p, .document-chunk');
+                    const endBlock = endEntry.node.parentElement.closest('p, .document-chunk');
+                    if (startBlock) startBlock.classList.add('flash-once');
+                    if (endBlock && endBlock !== startBlock) endBlock.classList.add('flash-once');
+                }
             }
         }
 
@@ -1160,165 +1147,21 @@ function updateDocumentLinkHighlight(current_document) {
     }
 }
 
-function loadTag(tag_path, page) {
-    if (page === undefined) {
-        page = 1;
+/**
+ * Collect all text nodes under a DOM element in document order.
+ */
+function collectTextNodes(node) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+    let n;
+    while ((n = walker.nextNode())) {
+        textNodes.push(n);
     }
-    if(tag_path !== undefined) {
-        showSpinner();
-    }
-    getJSON(
-        `/api/project/${project_id}/highlights/${encodeURIComponent(tag_path)}?page=${page}`
-    )
-        .then(function (result) {
-            log(`Loaded highlights for tag ${tag_path}`);
-            document_contents.style.direction = 'ltr';
-            current_tag = tag_path;
-            // current_document = null;
-            let document_links = document.getElementsByClassName('document-link-current');
-            for (let i = document_links.length - 1; i >= 0; --i) {
-                document_links[i].classList.remove('document-link-current');
-            }
-            // No need to clear the 'tag-current', we are calling updateTagsList() below
-            document_contents.innerHTML = '';
-            highlights = {};
-            for (let i = 0; i < result.highlights.length; ++i) {
-                const hl = result.highlights[i];
-                let content = document.createElement('div');
-                if (hl.text_direction === 'RIGHT_TO_LEFT') {
-                    content.style.direction = 'rtl';
-                } else {
-                    content.style.direction = 'ltr';
-                }
-                content.innerHTML = result.highlights[i].content;
-                let elem = document.createElement('div');
-                elem.className = 'highlight-entry';
-                elem.setAttribute('id', 'highlight-entry-' + hl.id);
-                elem.appendChild(content);
-                elem.appendChild(document.createTextNode(' '));
-
-                let doclink = document.createElement('a');
-                doclink.className = 'badge badge-primary';
-                
-                const documentPath = buildDocumentPath(hl.document_id);
-                doclink.textContent = documentPath;
-                linkDocument(doclink, hl.document_id, hl.id);
-                elem.appendChild(doclink);
-                elem.appendChild(document.createTextNode(' '));
-
-                let tag_names = hl.tags.map(function (tag) {
-                    return findTag(tag).path;
-                });
-                tag_names.sort();
-                for (let j = 0; j < tag_names.length; ++j) {
-                    if (j > 0) {
-                        elem.appendChild(document.createTextNode(' '));
-                    }
-                    let taglink = document.createElement('a');
-                    const tag = findTag(tag_names[j])
-                    taglink.className = 'badge';
-                    taglink.setAttribute('style', `background-color: ${tag.color}; color: white; font-weight: bold;`);
-                    taglink.textContent = tag_names[j];
-                    // linkTag(taglink, taglink.textContent, false);
-                    elem.appendChild(taglink);
-                }
-
-                document_contents.appendChild(elem);
-            }
-            if (result.highlights.length === 0) {
-                document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
-            }
-
-            // Pagination controls
-            function makePageLink(page_nb, label, current, enabled) {
-                let item;
-                if (current) {
-                    item = document.createElement('li');
-                    item.className = 'page-item active';
-                    item.innerHTML = '<span class="page-link">' + label + '<span class="sr-only">(current)</span></span>';
-                } else if (!enabled) {
-                    item = document.createElement('li');
-                    item.className = 'page-item disabled';
-                    item.innerHTML = '<span class="page-link">' + label + '</span>';
-                } else {
-                    item = document.createElement('li');
-                    item.className = 'page-item';
-                    let link = document.createElement('a');
-                    link.className = 'page-link';
-                    link.setAttribute('href', '#');
-                    link.innerText = label;
-                    link.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        loadTag(tag_path, page_nb);
-                    });
-                    item.appendChild(link);
-                }
-                return item;
-            }
-
-            if (result.pages > 1 || page !== 1) {
-                if (result.pages === undefined && page !== 1) {
-                    result.pages = 1;
-                }
-                let pagination = document.createElement('nav');
-                pagination.setAttribute('aria-label', "Page navigation");
-                let pagination_ul = document.createElement('ul');
-                pagination_ul.className = 'pagination justify-content-center';
-                const min_page = Math.max(2, page - 2);
-                const max_page = Math.min(result.pages - 1, page + 2);
-
-                // Previous button
-                pagination_ul.appendChild(makePageLink(page - 1, "Previous", false, page > 1));
-                // Page 1
-                pagination_ul.appendChild(makePageLink(1, 1, 1 === page, 1 !== page));
-                // "..." between 1 and other pages, if appropriate
-                if (min_page > 2) {
-                    pagination_ul.appendChild(makePageLink(page, "...", false, false));
-                }
-                // Other pages
-                for (let i = min_page; i <= max_page; ++i) {
-                    pagination_ul.appendChild(makePageLink(i, i, i === page, i !== page));
-                }
-                // "..." between other pages and last page, if appropriate
-                if (max_page < result.pages - 1) {
-                    pagination_ul.appendChild(makePageLink(page, "...", false, false));
-                }
-                // Last page
-                pagination_ul.appendChild(makePageLink(result.pages, result.pages, result.pages === page, result.pages !== page));
-                // Next button
-                pagination_ul.appendChild(makePageLink(page + 1, "Next", false, page < result.pages));
-
-                pagination.appendChild(pagination_ul);
-                document_contents.appendChild(pagination);
-            }
-
-            // Update export button
-            const  items = document.querySelectorAll('#document-export-dropdown-menu a');
-            for (let i = 0; i < items.length; ++i) {
-                const ext = items[i].getAttribute('data-extension');
-                if (items[i].getAttribute('data-highlights') !== 'false') {
-                    items[i].setAttribute('href', base_path + '/project/' + project_id + '/export/highlights/' + encodeURIComponent(tag_path) + '.' + ext,);
-                    items[i].style.display = '';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
-
-            toggleToolbarActions(true)
-
-            // Scroll up
-            window.setTimeout(function () {
-                window.scrollTo(0, 0);
-            }, 0);
-        })
-        .catch(function (error) {
-            log("Failed to load tag highlights", 'error', {error});
-            showAlert(`${gettext("Error loading tag highlights!")} \n \n`, 'error', {error})
-        })
-        .then(function (result) {
-            hideSpinner();
-        });
+    return textNodes;
 }
+
+// showTagUnderlineTooltip, hideTagUnderlineTooltip, applyTagUnderlines, loadTag
+// moved to highlight/extracts.js
 
 // Load the document if the URL includes one
 setTimeout(function () {

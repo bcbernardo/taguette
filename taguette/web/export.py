@@ -39,6 +39,7 @@ def init_PROM_EXPORT(w):
 def return_doc(wrapped):
     """Decorator for returning a file, or a conversion error.
     """
+
     async def wrapper(self, *args):
         ext = args[-1].lower()
         try:

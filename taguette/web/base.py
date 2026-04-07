@@ -141,7 +141,7 @@ class JSONLocale:
         return msgid
 
     def get_trans_from_json(self, msgid, language_code, json_path):
-        if(self.load_json(json_path)):
+        if (self.load_json(json_path)):
             return self.get_trans(msgid, language_code)
         return msgid
 
@@ -212,7 +212,7 @@ class Application(GracefulExitApplication):
             logger.info("Starting in multi-user mode")
             if not self.terms_of_service:
                 logger.warning("No terms of service set")
-        elif config['UNIX_SOCKET']:
+        elif config.get('UNIX_SOCKET'):
             self.single_user_token = None
             logger.info("Starting with unix socket")
         else:

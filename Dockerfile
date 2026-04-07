@@ -1,7 +1,9 @@
-FROM --platform=$BUILDPLATFORM python:3.10 AS build
+FROM python:3.10 AS build
 
 # Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - && /root/.local/bin/poetry config virtualenvs.create false
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    /root/.local/bin/poetry config virtualenvs.create false && \
+    /root/.local/bin/poetry self add poetry-plugin-export
 
 # Copy files
 WORKDIR /usr/src/app
@@ -11,7 +13,7 @@ RUN mkdir scripts
 COPY scripts/update_translations.sh scripts/
 
 # Install translation dependencies
-RUN /root/.local/bin/poetry install --only=i18n
+RUN /root/.local/bin/poetry install --only=i18n --no-root
 
 # Compile translations
 RUN scripts/update_translations.sh
@@ -22,9 +24,7 @@ RUN /root/.local/bin/poetry export -o requirements.txt --without=dev -E postgres
 
 FROM python:3.10
 
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
+RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
 
 # Install Calibre from Ubuntu distro
 RUN apt-get update && \
@@ -38,6 +38,7 @@ RUN pip --disable-pip-version-check install --no-cache-dir -r requirements.txt
 # Copy files
 WORKDIR /usr/src/app
 COPY taguette taguette
+COPY scripts scripts
 COPY pyproject.toml poetry.lock README.md tests.py ./
 
 # Install app
@@ -49,5 +50,5 @@ COPY --from=build /usr/src/app/taguette/l10n taguette/l10n
 VOLUME /data
 ENV HOME=/data
 EXPOSE 7465
-ENTRYPOINT ["/tini", "--", "taguette", "--no-browser", "--bind=0.0.0.0"]
+ENTRYPOINT ["tini", "--", "taguette", "--no-browser", "--bind=0.0.0.0"]
 CMD []

@@ -21,7 +21,6 @@ function convertCollectionsToTreeNode(data) {
         const collectionNode = {
             id: 'collection_' + collection.id,
             text: collection.name,
-            icon: 'fas fa-folder',
             selectable: false,
             nodes: []
         };
@@ -33,7 +32,6 @@ function convertCollectionsToTreeNode(data) {
                     collectionNode.nodes.push({
                         id: 'document_' + docId,
                         text: document.name,
-                        icon: 'fas fa-file-alt',
                         selectable: true,
                         document_id: parseInt(docId)
                     });
@@ -86,8 +84,7 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
         treeData.push(...collectionNodes);
     }
     
-    // Only show uncategorized documents if no filtered collections or if searching
-    const shouldShowUncategorized = !filteredCollections || filteredCollections.length === 0;
+    const shouldShowUncategorized = true;
     
     if (shouldShowUncategorized) {
         const uncategorizedDocs = [];
@@ -105,7 +102,6 @@ function convertDocumentsToTreeNode(filteredCollections = null) {
                 uncategorizedDocs.push({
                     id: 'document_' + docId,
                     text: document.name,
-                    icon: 'fas fa-file-alt',
                     selectable: true,
                     document_id: parseInt(docId)
                 });
@@ -163,13 +159,7 @@ function customDocumentNodeRow() {
             setTimeout(function() {
                 if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
                    element.addClass('collection-context-menu');
-                   
-                   if (element.find('.expand-icon, .collapse-icon, i[class*="fa-folder"]').length === 0) {
-                       element.prepend('<i class="fas fa-folder" style="margin-right: 10px;"></i>');
-                   }
                 }
-                element.find('.expand-icon, .collapse-icon').css('margin-right', '10px');
-                element.find('i[class*="fa-chevron"], i[class*="fa-folder"], i[class*="fa-file"]').css('margin-right', '10px');
             }, 10);
         }
     };
@@ -184,7 +174,7 @@ function initDocumentsTreeview(filteredCollections = null, callback = null) {
     const options = {
         data: treeData,
         ...customNodeOptions,
-        showIcon: true,
+        showIcon: false,
         showBorder: true,
         showTags: true,
         levels: 1,
@@ -255,14 +245,6 @@ function initDocumentsTreeview(filteredCollections = null, callback = null) {
         setTimeout(function () {
             addDocumentDragDrop();
 
-            if (node.id && (node.id.startsWith('collection_') || node.id === 'uncategorized')) {
-                const nodeElement = $('#treeview-documents').find(`li[data-nodeid="${node.nodeId}"]`);
-                const folderIcon = nodeElement.find('.node-icon');
-                if (folderIcon.length > 0) {
-                    const newIconClass = node.state.expanded ? 'fas fa-folder-open' : 'fas fa-folder';
-                    folderIcon.removeClass('fas fa-folder fas fa-folder-open').addClass(newIconClass);
-                }
-            }
         }, 10);
     });
     
@@ -333,6 +315,9 @@ function highlightCollection(collectionId) {
     nodeElement.addClass('highlight-collection');
     setTimeout(() => {
         nodeElement.addClass('fade-out');
+        setTimeout(() => {
+            nodeElement.removeClass('highlight-collection fade-out');
+        }, 1000);
     }, 3000);
 }
 

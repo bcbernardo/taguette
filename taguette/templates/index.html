@@ -56,9 +56,19 @@
         <a href="#" class="btn btn-secondary me-sm-3 mb-2" id="a-start-demo">
             <i class="fas fa-play"></i> {% trans %}Demo project{% endtrans %}
         </a>
+        <a href="{{ reverse_url('archived_projects') }}" class="btn btn-outline-secondary me-sm-3 mb-2">
+            <i class="fas fa-archive"></i> {% trans %}Archived projects{% endtrans %}
+        </a>
     </div>
 
-    <p>{% trans %}Here are your projects{% endtrans %}:</p>
+    {% if projects|length > 1 %}
+    <div class="mb-3">
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="project-search" placeholder="{% trans %}Search projects...{% endtrans %}">
+        </div>
+    </div>
+    {% endif %}
     {% if not can_import_project %}
         <p class="alert alert-info">{% trans %}Please note that you cannot create a project at this time. You must be sponsored by a Canadian Access Federation (CAF) user.{% endtrans %}</p>
     {% endif %}
@@ -103,6 +113,239 @@
                 </div>
             {% endif %}
         </div>
+
+        <!-- No results message -->
+        <div id="no-results-message" class="text-center py-4 d-none">
+            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+            <p class="text-muted">{% trans %}No projects found matching your search.{% endtrans %}</p>
+        </div>
+
+        <!-- Pagination buttons -->
+        {% if projects|length > 8 %}
+        <div class="text-center mt-4" id="projects-pagination">
+            <button class="btn btn-outline-primary" id="btn-show-more">
+                <i class="fas fa-chevron-down"></i> {% trans %}Show more{% endtrans %}
+                <span class="badge bg-secondary ms-2" id="hidden-count">{{ projects|length - 8 }}</span>
+            </button>
+            <button class="btn btn-outline-secondary d-none" id="btn-show-less">
+                <i class="fas fa-chevron-up"></i> {% trans %}Show less{% endtrans %}
+            </button>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProjectModalLabel">{% trans %}Edit project{% endtrans %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-project-form">
+                    <input type="hidden" id="edit-project-id">
+                    <div class="mb-3">
+                        <label for="edit-project-name" class="form-label">{% trans %}Name{% endtrans %}</label>
+                        <input type="text" class="form-control" id="edit-project-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-project-description" class="form-label">{% trans %}Description{% endtrans %}</label>
+                        <textarea class="form-control" id="edit-project-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+                <button type="button" class="btn btn-primary" id="btn-save-project">{% trans %}Save{% endtrans %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnShowMore = document.getElementById('btn-show-more');
+    const btnShowLess = document.getElementById('btn-show-less');
+    const hiddenCount = document.getElementById('hidden-count');
+    const container = document.getElementById('demo-project-container');
+    const searchInput = document.getElementById('project-search');
+    const paginationDiv = document.getElementById('projects-pagination');
+    const noResultsMsg = document.getElementById('no-results-message');
+
+    if (!container) return;
+
+    const projects = Array.from(container.querySelectorAll('.col.project'));
+    const initialCount = 8;
+    const stepCount = 4;
+    let visibleCount = initialCount;
+    let filteredProjects = projects;
+    let searchTerm = '';
+
+    function filterProjects() {
+        if (!searchTerm) {
+            filteredProjects = projects;
+        } else {
+            const term = searchTerm.toLowerCase();
+            filteredProjects = projects.filter(function(el) {
+                const name = el.querySelector('h3')?.textContent?.toLowerCase() || '';
+                const desc = el.querySelector('.description-text')?.textContent?.toLowerCase() || '';
+                return name.includes(term) || desc.includes(term);
+            });
+        }
+    }
+
+    function updateVisibility() {
+        const isSearching = searchTerm.length > 0;
+
+        projects.forEach(function(el) {
+            el.style.display = 'none';
+        });
+
+        if (isSearching) {
+            // Show all matching results when searching
+            filteredProjects.forEach(function(el) {
+                el.style.display = '';
+            });
+            // Hide pagination when searching
+            if (paginationDiv) paginationDiv.style.display = 'none';
+            // Show no results message if needed
+            if (noResultsMsg) {
+                if (filteredProjects.length === 0) {
+                    noResultsMsg.classList.remove('d-none');
+                } else {
+                    noResultsMsg.classList.add('d-none');
+                }
+            }
+        } else {
+            // Hide no results message
+            if (noResultsMsg) noResultsMsg.classList.add('d-none');
+            // Normal pagination
+            filteredProjects.slice(0, visibleCount).forEach(function(el) {
+                el.style.display = '';
+            });
+
+            if (paginationDiv) {
+                paginationDiv.style.display = '';
+                const remaining = filteredProjects.length - visibleCount;
+
+                if (remaining > 0) {
+                    btnShowMore.classList.remove('d-none');
+                    hiddenCount.textContent = remaining;
+                } else {
+                    btnShowMore.classList.add('d-none');
+                }
+
+                if (visibleCount > initialCount) {
+                    btnShowLess.classList.remove('d-none');
+                } else {
+                    btnShowLess.classList.add('d-none');
+                }
+            }
+        }
+    }
+
+    // Initial state
+    updateVisibility();
+
+    if (btnShowMore) {
+        btnShowMore.addEventListener('click', function() {
+            visibleCount = Math.min(visibleCount + stepCount, filteredProjects.length);
+            updateVisibility();
+        });
+    }
+
+    if (btnShowLess) {
+        btnShowLess.addEventListener('click', function() {
+            visibleCount = initialCount;
+            updateVisibility();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchTerm = this.value.trim();
+            visibleCount = initialCount;
+            filterProjects();
+            updateVisibility();
+        });
+    }
+
+    // Edit project functionality
+    const editModal = document.getElementById('editProjectModal');
+    const editProjectId = document.getElementById('edit-project-id');
+    const editProjectName = document.getElementById('edit-project-name');
+    const editProjectDescription = document.getElementById('edit-project-description');
+    const btnSaveProject = document.getElementById('btn-save-project');
+
+    document.querySelectorAll('.action-edit').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const projectId = this.dataset.projectId;
+            const projectName = this.dataset.projectName;
+            const projectDescription = this.dataset.projectDescription || '';
+
+            editProjectId.value = projectId;
+            editProjectName.value = projectName;
+            editProjectDescription.value = projectDescription;
+
+            const modal = new bootstrap.Modal(editModal);
+            modal.show();
+        });
+    });
+
+    if (btnSaveProject) {
+        btnSaveProject.addEventListener('click', function() {
+            const projectId = editProjectId.value;
+            const name = editProjectName.value.trim();
+            const description = editProjectDescription.value.trim();
+
+            if (!name) {
+                editProjectName.classList.add('is-invalid');
+                return;
+            }
+            editProjectName.classList.remove('is-invalid');
+
+            const xsrf = getCookie('_xsrf');
+            fetch('/api/project/' + projectId + '?_xsrf=' + encodeURIComponent(xsrf), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    description: description
+                })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    console.error('Error saving project');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error saving project:', error);
+            });
+        });
+    }
+
+    // Archive project functionality
+    document.querySelectorAll('.action-archive').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const projectId = this.dataset.projectId;
+            const xsrf = getCookie('_xsrf');
+            fetch('/project/' + projectId + '/archive?_xsrf=' + encodeURIComponent(xsrf), {
+                method: 'POST'
+            }).then(function(response) {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

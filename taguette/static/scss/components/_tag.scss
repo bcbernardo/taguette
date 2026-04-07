@@ -15,7 +15,7 @@
 }
 
 .tag-text {
-    font-size: 1rem !important;
+    font-size: 0.9rem !important;
     letter-spacing: -0.5px !important;
     white-space: normal !important;
     overflow: visible !important;
@@ -64,6 +64,140 @@
 
 #tag-selection-return a {
   display: none;
+}
+
+/* Codebook toolbar: column layout — toggle (centered), more actions, create code */
+.codebook-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 0.4rem;
+
+    .compact-toggle-wrap {
+        align-self: center;
+    }
+
+    > .dropdown {
+        display: flex;
+        .btn { flex: 1; justify-content: center; }
+    }
+
+    #create-tag-link {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Compact: single row — create code (icon), more actions (icon), toggle (no label) */
+.bordered-container.compact-layout .codebook-toolbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+
+    .compact-toggle-wrap {
+        order: 3;
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        justify-content: center;
+        padding-left: 0;
+        .form-check-input { margin-left: 0; }
+        .form-check-label { display: none; }
+    }
+
+    > .dropdown {
+        order: 2;
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        .btn { flex: 1; justify-content: center; }
+    }
+
+    #create-tag-link {
+        order: 1;
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        justify-content: center;
+    }
+}
+
+/* Document toolbar */
+.document-toolbar {
+    padding-bottom: 0.4rem;
+
+    /* Prevent buttons from shrinking so they wrap instead of clipping */
+    .d-flex.flex-wrap .btn {
+        flex-shrink: 0;
+    }
+}
+
+/* Compact layout: hide button text labels */
+.bordered-container.compact-layout .btn-label {
+    display: none;
+}
+
+.bordered-container.compact-layout #tag-treeview-help-icon {
+    display: none;
+}
+
+#treeview-tags.compact-layout {
+    .list-group-item {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        line-height: 1.2;
+        align-items: center !important;
+    }
+
+    .tag-text {
+        font-size: 0.78rem !important;
+        max-height: 18px !important;
+        letter-spacing: -0.3px !important;
+        padding-right: 2px !important;
+    }
+
+    span.indent {
+        margin-left: 4px !important;
+        margin-right: 4px !important;
+    }
+
+    span.icon {
+        width: 10px !important;
+        margin-right: 2px !important;
+    }
+
+    .expand-icon {
+        min-width: 16px !important;
+        padding: 1px !important;
+        font-size: 0.7rem;
+    }
+
+    span[class^="vertical-line-"] {
+        width: 3px !important;
+    }
+}
+
+.badge-compact {
+    font-size: 0.7rem !important;
+    padding: 2px 5px !important;
+    border-radius: 10px !important;
+    min-width: 22px;
+    text-align: center;
+    align-self: center;
+}
+
+
+/* Collapsed panels: just enough padding to keep buttons clear of the border */
+#left-panel.reduced-col .bordered-container,
+#right-panel.reduced-col .bordered-container {
+    padding: 6px;
+    overflow: visible;
+}
+
+#left-panel.reduced-col .codebook-header-wrap,
+#right-panel.reduced-col .documents-header-wrap {
+    padding: 0 !important;
+    gap: 0 !important;
 }
 
 /* Tag highlight */

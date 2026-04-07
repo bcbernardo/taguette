@@ -24,6 +24,7 @@
   <div class="form-group row">
     <div class="col-sm-10 offset-sm-2">
       <button type="submit" class="btn btn-primary" data-test-id="save-project-button">{% trans "form submit button" %}Create{% endtrans %}</button>
+      <a href="{{ reverse_url('index') }}" class="btn btn-secondary ms-2">{% trans %}Cancel{% endtrans %}</a>
     </div>
   </div>
 </form>

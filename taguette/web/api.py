@@ -9,7 +9,7 @@ import os
 import prometheus_client
 from sqlalchemy import and_, func, distinct, not_, or_
 from sqlalchemy.exc import IntegrityError, DatabaseError, NoSuchTableError
-from sqlalchemy.orm import aliased, defer, joinedload
+from sqlalchemy.orm import aliased, defer, joinedload, subqueryload
 import tempfile
 from tornado.concurrent import Future
 import tornado.log
@@ -912,19 +912,52 @@ class Highlights(BaseHandler):
         if any(list_of_paths) and operator_type == 'or':
             query = query.filter(tag.path.in_(list_of_paths))
         elif any(list_of_paths) and operator_type == 'and':
-            subquery = (self.db.query(hl_tag.c.highlight_id)
-                        .join(tag, hl_tag.c.tag_id == tag.id)
-                        .filter(
-                tag.path.in_(list_of_paths),
-                tag.project == project
+            # Spatial AND: highlight must have or overlap each tag
+            query = (
+                self.db.query(database.Highlight, document.text_direction)
+                .options(subqueryload(database.Highlight.tags))
+                .join(document,
+                      document.id == database.Highlight.document_id)
+                .filter(document.project == project)
             )
-                .group_by(hl_tag.c.highlight_id)
-                .having(
-                func.count(distinct(tag.id)) == len(list_of_paths)
-            )
-                .subquery())
-            query = query.join(
-                subquery, subquery.c.highlight_id == database.Highlight.id)
+
+            for path in list_of_paths:
+                hl2 = aliased(database.Highlight)
+                hl_tag2 = aliased(database.highlight_tags)
+                tag2 = aliased(database.Tag)
+                has_tag = (
+                    self.db.query(hl_tag.c.highlight_id)
+                    .join(tag, hl_tag.c.tag_id == tag.id)
+                    .filter(
+                        hl_tag.c.highlight_id
+                        == database.Highlight.id,
+                        tag.path == path,
+                        tag.project == project,
+                    )
+                    .correlate(database.Highlight)
+                    .exists()
+                )
+                overlap_other = (
+                    self.db.query(hl2.id)
+                    .join(hl_tag2,
+                          hl_tag2.c.highlight_id == hl2.id)
+                    .join(tag2,
+                          hl_tag2.c.tag_id == tag2.id)
+                    .filter(
+                        tag2.path == path,
+                        tag2.project == project,
+                        hl2.document_id
+                        == database.Highlight.document_id,
+                        hl2.start_offset
+                        < database.Highlight.end_offset,
+                        hl2.end_offset
+                        > database.Highlight.start_offset,
+                        hl2.id != database.Highlight.id,
+                    )
+                    .correlate(database.Highlight)
+                    .exists()
+                )
+                query = query.filter(or_(has_tag, overlap_other))
         elif any(list_of_paths) and operator_type == 'mixed':
             or_conditions = []
             # check to remove  ! if necessary
@@ -957,11 +990,15 @@ class Highlights(BaseHandler):
 
         # Handle exclusions
         if any(exclude_paths):
-            exclude_subquery = (self.db.query(hl_tag.c.highlight_id)
-                                .join(tag, hl_tag.c.tag_id == tag.id)
-                                .filter(tag.path.in_(exclude_paths),
-                                        tag.project == project)
-                                .subquery())
+            excl_tag = aliased(database.Tag)
+            excl_hl_tag = database.highlight_tags.alias()
+            exclude_subquery = (
+                self.db.query(excl_hl_tag.c.highlight_id)
+                .join(excl_tag,
+                      excl_hl_tag.c.tag_id == excl_tag.id)
+                .filter(excl_tag.path.in_(exclude_paths),
+                        excl_tag.project == project)
+                .subquery())
             query = query.filter(
                 not_(database.Highlight.id.in_(exclude_subquery)))
 
@@ -970,25 +1007,107 @@ class Highlights(BaseHandler):
             database.Highlight.start_offset
         )
 
-        total = query.count()
-        highlights = (
-            query
-            .offset(page * self.PAGE_SIZE)
-            .limit(self.PAGE_SIZE)
-            .all()
-        )
+        # Deduplicate results
+        all_results = query.all()
+        seen_ids = set()
+        unique_results = []
+        for hl, direction in all_results:
+            if hl.id not in seen_ids:
+                seen_ids.add(hl.id)
+                unique_results.append((hl, direction))
+
+        total = len(unique_results)
+        highlights = unique_results[
+            page * self.PAGE_SIZE:(page + 1) * self.PAGE_SIZE
+        ]
+
+        # Group tags from identical, contained, or containing highlights
+        result_highlights = []
+        grouped_hl_ids = set()
+        for hl, direction in highlights:
+            # Skip if already grouped with a previous highlight
+            if hl.id in grouped_hl_ids:
+                continue
+            all_tag_ids = set(t.id for t in hl.tags)
+
+            # Find related highlights: any overlap
+            # (identical, contained, containing, or partial)
+            related_highlights = (
+                self.db.query(database.Highlight)
+                .options(joinedload(database.Highlight.tags))
+                .filter(
+                    database.Highlight.document_id == hl.document_id,
+                    database.Highlight.id != hl.id,
+                    database.Highlight.start_offset < hl.end_offset,
+                    database.Highlight.end_offset > hl.start_offset,
+                )
+                .all()
+            )
+
+            for related_hl in related_highlights:
+                all_tag_ids.update(t.id for t in related_hl.tags)
+                grouped_hl_ids.add(related_hl.id)
+
+            # Find the union range across all overlapping highlights
+            all_highlights = [hl] + list(related_highlights)
+            union_start = min(h.start_offset for h in all_highlights)
+            union_end = max(h.end_offset for h in all_highlights)
+
+            # Try to find a single highlight that covers the full union
+            largest_hl = None
+            for h in all_highlights:
+                if h.start_offset == union_start and h.end_offset == union_end:
+                    largest_hl = h
+                    break
+
+            if largest_hl is not None:
+                content = largest_hl.snippet
+            else:
+                # Partial overlap: extract union content from the document
+                doc = self.db.query(database.Document).get(hl.document_id)
+                if doc and doc.contents:
+                    content = extract.extract(doc.contents,
+                                              union_start, union_end)
+                else:
+                    # Fallback to the current highlight's snippet
+                    content = hl.snippet
+
+            # Build tag_ranges: for each highlight, compute relative offsets
+            tag_ranges = []
+            tag_color_map = {}
+            for h in all_highlights:
+                for t in h.tags:
+                    tag_color_map[t.id] = t.color
+                    tag_ranges.append({
+                        'tag_id': t.id,
+                        'color': t.color,
+                        'start': h.start_offset - union_start,
+                        'end': h.end_offset - union_start,
+                    })
+
+            # Deduplicate tag_ranges (same tag_id + start + end)
+            seen = set()
+            unique_tag_ranges = []
+            for tr in tag_ranges:
+                key = (tr['tag_id'], tr['start'], tr['end'])
+                if key not in seen:
+                    seen.add(key)
+                    unique_tag_ranges.append(tr)
+
+            result_highlights.append({
+                'id': hl.id,
+                'document_id': hl.document_id,
+                'content': content,
+                'tags': sorted(all_tag_ids),
+                'text_direction': direction.name,
+                'tag_ranges': sorted(
+                    unique_tag_ranges,
+                    key=lambda tr: tr['tag_id'],
+                ),
+            })
 
         return self.send_json({
-            'highlights': [
-                {
-                    'id': hl.id,
-                    'document_id': hl.document_id,
-                    'content': hl.snippet,
-                    'tags': [t.id for t in hl.tags],
-                    'text_direction': direction.name,
-                }
-                for hl, direction in highlights
-            ],
+            'highlights': result_highlights,
             'pages': math.ceil(total / self.PAGE_SIZE),
         })
 

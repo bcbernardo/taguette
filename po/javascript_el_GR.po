@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Taguette\n"
 "Report-Msgid-Bugs-To: hi@taguette.org\n"
-"POT-Creation-Date: 2026-01-06 11:06-0500\n"
+"POT-Creation-Date: 2026-04-03 12:02-0400\n"
 "PO-Revision-Date: 2019-05-08 22:49+0000\n"
 "Last-Translator: <dion.jeremie.2@courrier.uqam.ca> with LLM assistance\n"
 "Language: el_GR\n"
@@ -23,60 +23,60 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.17.0\n"
 
-#: taguette/static/js/polling-event.js:141
+#: taguette/static/js/polling-event.js:131
 msgid "It appears that you have been logged out."
 msgstr "Φαίνεται ότι έχετε αποσυνδεθεί."
 
-#: taguette/static/js/polling-event.js:144
+#: taguette/static/js/polling-event.js:134
 msgid "You can no longer access this project."
 msgstr "Δεν έχετε πλέον πρόσβαση σε αυτό το έργο."
 
-#: taguette/static/js/tag/treeview.js:236
+#: taguette/static/js/tag/treeview.js:240
 msgid "Documents"
 msgstr "Έγγραφα"
 
-#: taguette/static/js/tag/treeview.js:242
+#: taguette/static/js/tag/treeview.js:241
 msgid "Highlights"
 msgstr "Επισημάνσεις"
 
-#: taguette/static/js/tag/treeview.js:496
+#: taguette/static/js/tag/treeview.js:513
 msgid "Click to explore • Right-click for options"
 msgstr "Κάντε κλικ για εξερεύνηση • Δεξί κλικ για επιλογές"
 
-#: taguette/static/js/tag/treeview.js:526
+#: taguette/static/js/tag/treeview.js:550
 msgid "Right-click on a code:"
 msgstr "Δεξί κλικ σε έναν κωδικό:"
 
-#: taguette/static/js/tag/treeview.js:528
+#: taguette/static/js/tag/treeview.js:552
 msgid "Add child code"
 msgstr "Προσθήκη θυγατρικού κωδικού"
 
-#: taguette/static/js/tag/treeview.js:529
+#: taguette/static/js/tag/treeview.js:553
 msgid "Edit code"
 msgstr "Επεξεργασία κωδικού"
 
-#: taguette/static/js/tag/treeview.js:530
+#: taguette/static/js/tag/treeview.js:554
 msgid "Merge codes"
 msgstr "Συγχώνευση κωδικών"
 
-#: taguette/static/js/tag/treeview.js:531
+#: taguette/static/js/tag/treeview.js:555
 msgid "Delete code"
 msgstr "Διαγραφή κωδικού"
 
-#: taguette/static/js/tag/treeview.js:535
+#: taguette/static/js/tag/treeview.js:559
 msgid "Click on a code:"
 msgstr "Κάντε κλικ σε έναν κωδικό:"
 
-#: taguette/static/js/tag/treeview.js:537
+#: taguette/static/js/tag/treeview.js:561
 msgid "Filter highlights by this code"
 msgstr "Φιλτράρισμα επισημάνσεων με αυτόν τον κωδικό"
 
 #: taguette/static/js/collection/hierarchy-select.js:15
 #: taguette/static/js/tag/hierarchy-select.js:15
-#: taguette/static/js/taguette.js:291 taguette/static/js/taguette.js:542
-#: taguette/static/js/taguette.js:1566
+#: taguette/static/js/taguette.js:294 taguette/static/js/taguette.js:559
+#: taguette/static/js/taguette.js:1446
 msgid "None"
 msgstr "Κανένα"
 
@@ -132,95 +132,103 @@ msgstr "διαγραφή Γονέα"
 msgid "delete"
 msgstr "διαγραφή"
 
-#: taguette/static/js/highlight/native/loader.js:7
-#: taguette/static/js/taguette.js:937
+#: taguette/static/js/highlight/extracts.js:270
+msgid "Overlapping"
+msgstr "Επικαλυπτόμενα"
+
+#: taguette/static/js/highlight/extracts.js:348
+msgid "No highlights with this tag yet."
+msgstr "Δεν υπάρχουν ακόμη επισημάνσεις με αυτήν την ετικέτα."
+
+#: taguette/static/js/highlight/loader.js:7
 msgid "Load a document on the left"
 msgstr "Φορτώστε ένα έγγραφο αριστερά"
 
 #: taguette/static/js/collection/context-menu.js:26
-#: taguette/static/js/document/treeview.js:541
+#: taguette/static/js/document/treeview.js:526
 msgid "Add sub-collection"
 msgstr "Προσθήκη υπο-συλλογής"
 
 #: taguette/static/js/collection/context-menu.js:31
-#: taguette/static/js/document/treeview.js:542
+#: taguette/static/js/document/treeview.js:527
 msgid "Edit collection"
 msgstr "Επεξεργασία συλλογής"
 
 #: taguette/static/js/collection/context-menu.js:39
-#: taguette/static/js/document/treeview.js:543
+#: taguette/static/js/document/treeview.js:528
 msgid "Remove parent"
 msgstr "Αφαίρεση γονικού"
 
 #: taguette/static/js/collection/context-menu.js:47
-#: taguette/static/js/document/treeview.js:544
-#: taguette/static/js/taguette.js:1612
+#: taguette/static/js/document/treeview.js:529
+#: taguette/static/js/taguette.js:1492
 msgid "Delete collection"
 msgstr "Διαγραφή συλλογής"
 
-#: taguette/static/js/taguette.js:311
+#: taguette/static/js/taguette.js:314
 #, python-format
 msgid "Are you sure you want to delete the document '%(doc)s'?"
 msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετε το έγγραφο '%(doc)s';"
 
-#: taguette/static/js/taguette.js:356
+#: taguette/static/js/taguette.js:359
 msgid "Document name cannot be empty"
 msgstr "Το όνομα του εγγράφου δεν μπορεί να είναι κενό"
 
-#: taguette/static/js/taguette.js:496
+#: taguette/static/js/taguette.js:513
 msgid "Invalid tag name"
 msgstr "Μη έγκυρο όνομα ετικέτας"
 
-#: taguette/static/js/taguette.js:501
+#: taguette/static/js/taguette.js:518
 msgid "Impossible to define the same tag as parent"
 msgstr "Αδύνατη η ορισμός της ίδιας ετικέτας ως γονική"
 
-#: taguette/static/js/taguette.js:564
+#: taguette/static/js/taguette.js:581
 #, python-format
 msgid "Are you sure you want to delete the tag '%(tag)s'?"
 msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετε την ετικέτα '%(tag)s';"
 
-#: taguette/static/js/taguette.js:617
+#: taguette/static/js/taguette.js:642
+#, python-format
+msgid "This tag has %(count)s child tag(s) that will be moved to \"%(dest)s\"."
+msgstr "Αυτή η ετικέτα έχει %(count)s θυγατρική(ές) ετικέτα(ες) που θα μετακινηθούν στο \"%(dest)s\"."
+
+#: taguette/static/js/taguette.js:671
 msgid "Couldn't merge tags!"
 msgstr "Αδυναμία συγχώνευσης ετικετών!"
 
-#: taguette/static/js/taguette.js:776
+#: taguette/static/js/taguette.js:866
 msgid "Full permissions"
 msgstr "Πλήρεις άδειες"
 
-#: taguette/static/js/taguette.js:777
+#: taguette/static/js/taguette.js:867
 msgid "Can't change collaborators / delete project"
 msgstr "Αδύνατη η αλλαγή συνεργατών / διαγραφή έργου"
 
-#: taguette/static/js/taguette.js:778
+#: taguette/static/js/taguette.js:868
 msgid "View & make changes"
 msgstr "Προβολή & αλλαγές"
 
-#: taguette/static/js/taguette.js:779
+#: taguette/static/js/taguette.js:869
 msgid "View only"
 msgstr "Μόνο προβολή"
 
-#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:851
+#: taguette/static/js/permissions.js:83 taguette/static/js/taguette.js:943
 msgid "Already a member!"
 msgstr "Ήδη μέλος!"
 
-#: taguette/static/js/taguette.js:866
+#: taguette/static/js/taguette.js:958
 msgid "This user doesn't exist!"
 msgstr "Αυτός ο χρήστης δεν υπάρχει!"
 
-#: taguette/static/js/taguette.js:1192
-msgid "No highlights with this tag yet."
-msgstr "Δεν υπάρχουν ακόμη επισημάνσεις με αυτήν την ετικέτα."
-
-#: taguette/static/js/taguette.js:1335
+#: taguette/static/js/taguette.js:1215
 msgid "No document or collection found"
 msgstr "Δεν βρέθηκε έγγραφο ή συλλογή"
 
-#: taguette/static/js/taguette.js:1374
+#: taguette/static/js/taguette.js:1254
 msgid "No tag found"
 msgstr "Δεν βρέθηκε ετικέτα"
 
-#: taguette/static/js/taguette.js:1589 taguette/static/js/taguette.js:1811
+#: taguette/static/js/taguette.js:1469 taguette/static/js/taguette.js:1691
 #, python-format
 msgid ""
 "Are you sure you want to delete the collection '%(name)s'? Its documents "
@@ -229,17 +237,17 @@ msgstr ""
 "Είστε σίγουροι ότι θέλετε να διαγράψετε τη συλλογή '%(name)s'; Τα έγγραφά"
 " της θα μετακινηθούν."
 
-#: taguette/static/js/taguette.js:1595 taguette/static/js/taguette.js:1638
-#: taguette/static/js/taguette.js:1654 taguette/static/js/taguette.js:1819
+#: taguette/static/js/taguette.js:1475 taguette/static/js/taguette.js:1518
+#: taguette/static/js/taguette.js:1534 taguette/static/js/taguette.js:1699
 msgid "Error deleting collection: "
 msgstr "Σφάλμα κατά τη διαγραφή της συλλογής: "
 
-#: taguette/static/js/taguette.js:1602
+#: taguette/static/js/taguette.js:1482
 #, python-format
 msgid "The collection '%(name)s' has subcollections. How do you want to proceed?"
 msgstr "Η συλλογή '%(name)s' έχει υπο-συλλογές. Πώς θέλετε να συνεχίσετε;"
 
-#: taguette/static/js/taguette.js:1680
+#: taguette/static/js/taguette.js:1560
 #, python-format
 msgid ""
 "Are you sure you want to remove collection '%(name)s' from parent "
@@ -248,27 +256,27 @@ msgstr ""
 "Είστε σίγουροι ότι θέλετε να αφαιρέσετε τη συλλογή '%(name)s' από το "
 "γονικό '%(parent)s';"
 
-#: taguette/static/js/taguette.js:1696
+#: taguette/static/js/taguette.js:1576
 msgid "Error removing collection parent: "
 msgstr "Σφάλμα κατά την αφαίρεση του γονικού στοιχείου της συλλογής: "
 
-#: taguette/static/js/taguette.js:1755
+#: taguette/static/js/taguette.js:1635
 msgid "Collection name is required"
 msgstr "Απαιτείται όνομα συλλογής"
 
-#: taguette/static/js/taguette.js:1760
+#: taguette/static/js/taguette.js:1640
 msgid "A collection cannot be its own parent."
 msgstr "Μια συλλογή δεν μπορεί να είναι ο δικός της γονέας."
 
-#: taguette/static/js/taguette.js:1789
+#: taguette/static/js/taguette.js:1669
 msgid "Error updating collection: "
 msgstr "Σφάλμα κατά την ενημέρωση της συλλογής: "
 
-#: taguette/static/js/taguette.js:1790
+#: taguette/static/js/taguette.js:1670
 msgid "Error creating collection: "
 msgstr "Σφάλμα κατά τη δημιουργία της συλλογής: "
 
-#: taguette/static/js/taguette.js:1808 taguette/static/js/taguette.js:1816
+#: taguette/static/js/taguette.js:1688 taguette/static/js/taguette.js:1696
 msgid "Collection deleted!"
 msgstr "Η συλλογή διαγράφηκε!"
 
@@ -291,56 +299,56 @@ msgstr ""
 "υποστηριζόμενος</li><li>Ο ρόλος του χρήστη δεν μπορεί να "
 "αλλάξει</li></ul>"
 
-#: taguette/static/js/document/treeview.js:119
+#: taguette/static/js/document/treeview.js:115
 msgid "Without collection"
 msgstr "Χωρίς συλλογή"
 
-#: taguette/static/js/document/treeview.js:151
+#: taguette/static/js/document/treeview.js:147
 #, python-format
 msgid "Click to open • %(key)s+Click to select • Right-click for options"
 msgstr "Κλικ για άνοιγμα • %(key)s+Κλικ για επιλογή • Δεξί κλικ για επιλογές"
 
-#: taguette/static/js/document/treeview.js:198
+#: taguette/static/js/document/treeview.js:188
 msgid "Documents count"
 msgstr "Αριθμός εγγράφων"
 
-#: taguette/static/js/document/treeview.js:391
+#: taguette/static/js/document/treeview.js:376
 #, python-format
 msgid "You can drag and drop %s documents to a collection"
 msgstr "Μπορείτε να σύρετε και να αποθέσετε %s έγγραφα σε μια συλλογή"
 
-#: taguette/static/js/document/treeview.js:539
+#: taguette/static/js/document/treeview.js:524
 msgid "Right-click on a collection:"
 msgstr "Δεξί κλικ σε μια συλλογή:"
 
-#: taguette/static/js/document/treeview.js:548
+#: taguette/static/js/document/treeview.js:533
 msgid "Right-click on a document:"
 msgstr "Δεξί κλικ σε ένα έγγραφο:"
 
 #: taguette/static/js/document/context-menu.js:30
-#: taguette/static/js/document/treeview.js:550
+#: taguette/static/js/document/treeview.js:535
 msgid "Edit document"
 msgstr "Επεξεργασία εγγράφου"
 
-#: taguette/static/js/document/treeview.js:551
+#: taguette/static/js/document/treeview.js:536
 msgid "Toggle bookmark"
 msgstr "Εναλλαγή σελιδοδείκτη"
 
 #: taguette/static/js/document/context-menu.js:41
-#: taguette/static/js/document/treeview.js:552
+#: taguette/static/js/document/treeview.js:537
 msgid "Delete document"
 msgstr "Διαγραφή εγγράφου"
 
-#: taguette/static/js/document/treeview.js:556
+#: taguette/static/js/document/treeview.js:541
 msgid "Select multiple documents:"
 msgstr "Επιλογή πολλαπλών εγγράφων:"
 
-#: taguette/static/js/document/treeview.js:558
+#: taguette/static/js/document/treeview.js:543
 #, python-format
 msgid "Hold %(key)s and click documents"
 msgstr "Κρατήστε %(key)s και κάντε κλικ στα έγγραφα"
 
-#: taguette/static/js/document/treeview.js:559
+#: taguette/static/js/document/treeview.js:544
 msgid "Drag selected documents to a collection"
 msgstr "Σύρετε τα επιλεγμένα έγγραφα σε μια συλλογή"
 
@@ -358,24 +366,20 @@ msgstr "Προσθήκη στους Σελιδοδείκτες"
 msgid "There are no documents in this project yet."
 msgstr "Δεν υπάρχουν ακόμη έγγραφα σε αυτό το έργο."
 
-#: taguette/static/js/document/manager.js:127
-msgid "Import new document"
-msgstr "Εισαγωγή νέου εγγράφου"
-
-#: taguette/static/js/document/manager.js:314
+#: taguette/static/js/document/manager.js:311
 msgid " = Documents without collection"
 msgstr " = Έγγραφα χωρίς συλλογή"
 
-#: taguette/static/js/document/manager.js:315
+#: taguette/static/js/document/manager.js:312
 msgid " = Documents currently assigned to a collection"
 msgstr " = Έγγραφα που έχουν ανατεθεί σε μια συλλογή"
 
-#: taguette/static/js/document/manager.js:386
-#: taguette/static/js/document/manager.js:488
+#: taguette/static/js/document/manager.js:383
+#: taguette/static/js/document/manager.js:485
 msgid "Currently in"
 msgstr "Τρέχουσα θέση"
 
-#: taguette/static/js/document/manager.js:413
+#: taguette/static/js/document/manager.js:410
 msgid "No documents available"
 msgstr "Δεν υπάρχουν διαθέσιμα έγγραφα"
 
@@ -415,12 +419,12 @@ msgid "<p>A demo project has been added to your home page.</p>"
 msgstr "<p>Ένα έργο επίδειξης προστέθηκε στην αρχική σας σελίδα.</p>"
 
 #: taguette/static/js/project/intro.js:31
-#: taguette/static/js/project/intro.js:176
+#: taguette/static/js/project/intro.js:177
 msgid "Next"
 msgstr "Επόμενο"
 
 #: taguette/static/js/project/intro.js:32
-#: taguette/static/js/project/intro.js:177
+#: taguette/static/js/project/intro.js:178
 msgid "Back"
 msgstr "Πίσω"
 
@@ -482,11 +486,11 @@ msgstr ""
 "<p>Κάντε κλικ σε ένα έγγραφο για να δείτε το περιεχόμενό του. "
 "Χρησιμοποιήστε το αστέρι για να αποθηκεύσετε τους σελιδοδείκτες σας.</p>"
 
-#: taguette/static/js/project/intro.js:102
+#: taguette/static/js/project/intro.js:103
 msgid "Coding"
 msgstr "Κωδικοποίηση"
 
-#: taguette/static/js/project/intro.js:103
+#: taguette/static/js/project/intro.js:104
 msgid ""
 "<p>Select a portion of text with your cursor. Two buttons will appear to "
 "assign a code to the selection.</p>"
@@ -494,11 +498,11 @@ msgstr ""
 "<p>Επιλέξτε ένα τμήμα κειμένου με τον δρομέα σας. Θα εμφανιστούν δύο "
 "κουμπιά για να αναθέσετε έναν κωδικό στην επιλογή.</p>"
 
-#: taguette/static/js/project/intro.js:112
+#: taguette/static/js/project/intro.js:113
 msgid "Selecting a code"
 msgstr "Επιλογή κωδικού"
 
-#: taguette/static/js/project/intro.js:113
+#: taguette/static/js/project/intro.js:114
 msgid ""
 "<p>From the menu, select one or more codes that correspond to the content"
 " of the selection and save the changes. In this case, the selection "
@@ -508,11 +512,11 @@ msgstr ""
 "στο περιεχόμενο της επιλογής και αποθηκεύστε τις αλλαγές. Σε αυτήν την "
 "περίπτωση, η επιλογή αναφέρεται στην ενίσχυση των κοινωνικών σχέσεων.</p>"
 
-#: taguette/static/js/project/intro.js:120
+#: taguette/static/js/project/intro.js:121
 msgid "Exploring the codes"
 msgstr "Εξερεύνηση των κωδικών"
 
-#: taguette/static/js/project/intro.js:121
+#: taguette/static/js/project/intro.js:122
 msgid ""
 "<p>You can explore the text selections tagged with each code at any time "
 "during or after the coding process.</p><br><p> Show all of the selections"
@@ -523,11 +527,11 @@ msgstr ""
 "κωδικοποίησης.</p><br><p>Εμφάνιση όλων των επιλογών που έχουν επισημανθεί"
 " με έναν κωδικό από το κωδικοβιβλίο κάνοντας κλικ σε αυτόν.</p>"
 
-#: taguette/static/js/project/intro.js:126
+#: taguette/static/js/project/intro.js:127
 msgid "Narrowing your search"
 msgstr "Περιορισμός της αναζήτησής σας"
 
-#: taguette/static/js/project/intro.js:127
+#: taguette/static/js/project/intro.js:128
 msgid ""
 "<p>If there are a large number of selections shown, you can refine the "
 "results with an advanced search.</p>"
@@ -535,11 +539,11 @@ msgstr ""
 "<p>Εάν εμφανίζεται μεγάλος αριθμός επιλογών, μπορείτε να βελτιώσετε τα "
 "αποτελέσματα με μια σύνθετη αναζήτηση.</p>"
 
-#: taguette/static/js/project/intro.js:133
+#: taguette/static/js/project/intro.js:134
 msgid "Conditional selections"
 msgstr "Επιλογές με συνθήκες"
 
-#: taguette/static/js/project/intro.js:134
+#: taguette/static/js/project/intro.js:135
 msgid ""
 "<p>By right-clicking, you can specify conditions to either add or exclude"
 " additional codes.</p>"
@@ -547,11 +551,11 @@ msgstr ""
 "<p>Με δεξί κλικ, μπορείτε να καθορίσετε συνθήκες για να προσθέσετε ή να "
 "εξαιρέσετε επιπλέον κωδικούς.</p>"
 
-#: taguette/static/js/project/intro.js:141
+#: taguette/static/js/project/intro.js:142
 msgid "Exploring the list"
 msgstr "Εξερεύνηση της λίστας"
 
-#: taguette/static/js/project/intro.js:142
+#: taguette/static/js/project/intro.js:143
 msgid ""
 "<p>The labels shown with this query indicate that the selections must "
 "necessarily include the codes <i>barriers</i> and <i>skills "
@@ -561,11 +565,11 @@ msgstr ""
 "επιλογές πρέπει απαραίτητα να περιλαμβάνουν τους κωδικούς <i>εμπόδια</i> "
 "και <i>ανάπτυξη δεξιοτήτων</i>.</p>"
 
-#: taguette/static/js/project/intro.js:148
+#: taguette/static/js/project/intro.js:149
 msgid "Navigating to documents"
 msgstr "Πλοήγηση σε έγγραφα"
 
-#: taguette/static/js/project/intro.js:149
+#: taguette/static/js/project/intro.js:150
 msgid ""
 "<p>By clicking on the name of the document, you can return to the "
 "context.</p>"
@@ -573,11 +577,11 @@ msgstr ""
 "<p>Κάνοντας κλικ στο όνομα του εγγράφου, μπορείτε να επιστρέψετε στο "
 "πλαίσιο.</p>"
 
-#: taguette/static/js/project/intro.js:155
+#: taguette/static/js/project/intro.js:156
 msgid "Returning to the selections"
 msgstr "Επιστροφή στις επιλογές"
 
-#: taguette/static/js/project/intro.js:156
+#: taguette/static/js/project/intro.js:157
 msgid ""
 "<p>After consulting the context, you can return to the list of selections"
 " previously identified using the advanced search.</p>"
@@ -586,11 +590,11 @@ msgstr ""
 "επιλογών που είχαν προηγουμένως αναγνωριστεί χρησιμοποιώντας την σύνθετη "
 "αναζήτηση.</p>"
 
-#: taguette/static/js/project/intro.js:162
+#: taguette/static/js/project/intro.js:163
 msgid "Exporting"
 msgstr "Εξαγωγή"
 
-#: taguette/static/js/project/intro.js:163
+#: taguette/static/js/project/intro.js:164
 msgid ""
 "<p>You can choose to download these selections to your computer, as "
 "needed.</p>"
@@ -598,11 +602,11 @@ msgstr ""
 "<p>Μπορείτε να επιλέξετε να κατεβάσετε αυτές τις επιλογές στον υπολογιστή"
 " σας, όπως απαιτείται.</p>"
 
-#: taguette/static/js/project/intro.js:167
+#: taguette/static/js/project/intro.js:168
 msgid "Time to code!"
 msgstr "Ώρα για κωδικοποίηση!"
 
-#: taguette/static/js/project/intro.js:168
+#: taguette/static/js/project/intro.js:169
 msgid ""
 "<p>Use LibreQDA however you wish, knowing that your data is always saved "
 "to your personal account. Feel free to further familiarize yourself with "
@@ -615,7 +619,10 @@ msgstr ""
 "κωδικοποίηση και την εξερεύνηση αυτών των φανταστικών συνεντεύξεων "
 "σχετικά με τα επιτραπέζια παιχνίδια.</p>"
 
-#: taguette/static/js/project/intro.js:178
+#: taguette/static/js/project/intro.js:179
 msgid "Done"
 msgstr "Τέλος"
+
+#~ msgid "Import new document"
+#~ msgstr "Εισαγωγή νέου εγγράφου"
 

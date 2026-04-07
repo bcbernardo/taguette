@@ -61,7 +61,7 @@ class TestMultiUserExport(TestMultiUser):
                 .order_by(database.Project.__table__.c.id)
             ),
             [
-                (1, 'db1project2', '', datetime.utcnow()),
+                (1, 'db1project2', '', datetime.utcnow(), False),
             ],
         )
         self.assertRowsEqualsExceptDates(

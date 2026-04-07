@@ -46,6 +46,7 @@ def copy_project(
     validate.description(project['description'])
     project = dict(project)
     project.pop('id')
+    project['is_archived'] = False
     new_project_id, = insert(Project.__table__, project).inserted_primary_key
     mapping_project = {project_id: new_project_id}
 
