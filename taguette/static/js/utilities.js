@@ -617,15 +617,29 @@ function hasVerticalScrollbar() {
  */
 
 window.addEventListener('load', function() {
-    let scrollPos = 0;
+    let lastScrollY = 0;
+    let scrollUpDistance = 0;
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
     window.addEventListener('scroll', function() {
-        let isScrollUp = scrollPos > document.documentElement.scrollTop;
-        if(document.documentElement.scrollTop < 50 || isScrollUp) {
-            document.body.classList.remove('scrolled');
-        } else if(hasVerticalScrollbar() && !document.body.classList.contains('scrolled')) {
-            document.body.classList.add('scrolled');
+        const currentY = window.scrollY;
+
+        if (currentY < 50) {
+            navbar.style.transform = '';
+            scrollUpDistance = 0;
+        } else if (currentY > lastScrollY) {
+            // Scrolling down — hide navbar
+            scrollUpDistance = 0;
+            navbar.style.transform = 'translateY(-200%)';
+        } else {
+            // Scrolling up — show after 80px
+            scrollUpDistance += lastScrollY - currentY;
+            if (scrollUpDistance > 80) {
+                navbar.style.transform = '';
+            }
         }
-        scrollPos = document.documentElement.scrollTop;
+        lastScrollY = currentY;
     });
 });
 function initHelpPopover(elementId, sections) {
