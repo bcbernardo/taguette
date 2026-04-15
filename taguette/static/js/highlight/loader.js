@@ -78,12 +78,17 @@ function loadDocumentHighlights(document_id, highlight_id, splitParagraphs, sear
                 });
             });
 
+            let _resizeTimeout = null;
             highlightResizeObserver = new ResizeObserver(() => {
-                try {
-                    renderHighlights(Object.values(highlights));
-                } catch (error) {
-                    log("Error re-rendering on resize", 'error', error);
-                }
+                if (_renderingInProgress) return;
+                if (_resizeTimeout) clearTimeout(_resizeTimeout);
+                _resizeTimeout = setTimeout(() => {
+                    try {
+                        renderHighlights(Object.values(highlights));
+                    } catch (error) {
+                        log("Error re-rendering on resize", 'error', error);
+                    }
+                }, 300);
             });
             highlightResizeObserver.observe(contentDiv);
 

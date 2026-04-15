@@ -2,15 +2,24 @@ const LINE_HEIGHT = 3;
 const LINE_GAP = 2;
 const BASE_OFFSET = 2;
 
+let _renderingInProgress = false;
+
 function renderHighlights(hlList) {
     const container = document.getElementById('highlight-content');
     const svg = document.getElementById('highlights-overlay');
     if (!svg || !container) return;
 
+    _renderingInProgress = true;
+
     const targets = getBlockTargets(container);
     targets.forEach(el => { el.style.lineHeight = ''; });
 
-    const targetMaxLanes = estimateMaxLanesPerTarget(hlList, targets, container);
+    // Pre-compute shared data once
+    const textNodes = collectTextNodes(container);
+    const { fullText, charMap } = buildCharMap(textNodes);
+    const utf8Map = buildUTF8ToCharMap(fullText);
+
+    const targetMaxLanes = estimateMaxLanesPerTarget(hlList, targets, container, textNodes, fullText, utf8Map);
 
     let layoutChanged = false;
     targetMaxLanes.forEach((maxLanes, el) => {
@@ -23,18 +32,19 @@ function renderHighlights(hlList) {
 
     if (layoutChanged) {
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => drawHighlights(hlList, container, svg));
+            requestAnimationFrame(() => {
+                drawHighlights(hlList, container, svg, charMap, fullText, utf8Map);
+                _renderingInProgress = false;
+            });
         });
     } else {
-        drawHighlights(hlList, container, svg);
+        drawHighlights(hlList, container, svg, charMap, fullText, utf8Map);
+        _renderingInProgress = false;
     }
 }
 
-function estimateMaxLanesPerTarget(hlList, targets, container) {
+function estimateMaxLanesPerTarget(hlList, targets, container, textNodes, fullText, utf8Map) {
     if (hlList.length === 0) return new Map();
-
-    const textNodes = collectTextNodes(container);
-    const { fullText } = buildCharMap(textNodes);
 
     const nodeToTarget = new Map();
     textNodes.forEach(node => {
@@ -58,8 +68,8 @@ function estimateMaxLanesPerTarget(hlList, targets, container) {
 
     const targetHighlights = new Map();
     hlList.forEach(hl => {
-        const startChar = getCharIndexFromUTF8Index(fullText, hl.start_offset);
-        const endChar = getCharIndexFromUTF8Index(fullText, hl.end_offset);
+        const startChar = getCharIndexFromUTF8Index(fullText, hl.start_offset, utf8Map);
+        const endChar = getCharIndexFromUTF8Index(fullText, hl.end_offset, utf8Map);
         const midChar = Math.max(0, Math.min(charToTarget.length - 1, Math.floor((startChar + endChar) / 2)));
         const target = charToTarget[midChar];
         if (target) {
@@ -107,23 +117,66 @@ function getBlockTargets(container) {
     return targets;
 }
 
-function drawHighlights(hlList, container, svg) {
+function drawHighlights(hlList, container, svg, charMap, fullText, utf8Map) {
     const startTime = performance.now();
     const svgNS = "http://www.w3.org/2000/svg";
     svg.innerHTML = '';
 
-    const textNodes = collectTextNodes(container);
-    const { fullText, charMap } = buildCharMap(textNodes);
+    // If called without pre-computed data, compute it
+    if (!charMap) {
+        const textNodes = collectTextNodes(container);
+        const built = buildCharMap(textNodes);
+        fullText = built.fullText;
+        charMap = built.charMap;
+        utf8Map = buildUTF8ToCharMap(fullText);
+    }
+
     const containerRect = container.getBoundingClientRect();
 
+    // Batch: create all ranges and read all rects in one pass (single reflow)
+    const hlRanges = [];
+    for (const hl of hlList) {
+        if (hl.start_offset === undefined || hl.end_offset === undefined) continue;
+        const startChar = getCharIndexFromUTF8Index(fullText, hl.start_offset, utf8Map);
+        const endChar = getCharIndexFromUTF8Index(fullText, hl.end_offset, utf8Map);
+        if (startChar >= charMap.length || endChar <= 0 || startChar >= endChar) continue;
+
+        const clampedStart = Math.max(0, startChar);
+        const clampedEnd = Math.min(charMap.length, endChar);
+        const startEntry = charMap[clampedStart];
+        const endEntry = charMap[clampedEnd - 1];
+        if (!startEntry || !endEntry) continue;
+
+        try {
+            const range = document.createRange();
+            range.setStart(startEntry.node, startEntry.offset);
+            range.setEnd(endEntry.node, endEntry.offset + 1);
+            hlRanges.push({ highlight: hl, range });
+        } catch (e) {
+            // skip invalid ranges
+        }
+    }
+
+    // Single reflow: read all client rects
     const allRects = [];
-    hlList.forEach(hl => {
-        const rects = highlightToRects(hl, fullText, charMap, containerRect);
-        if (!rects || rects.length === 0) return;
-        rects.forEach(rect => {
-            allRects.push({ highlight: hl, rect, stackIndex: 0 });
-        });
-    });
+    for (const { highlight, range } of hlRanges) {
+        const clientRects = range.getClientRects();
+        const raw = [];
+        for (const r of clientRects) {
+            if (r.width > 0 && r.height > 0) {
+                raw.push({
+                    x: r.left - containerRect.left,
+                    y: r.top - containerRect.top,
+                    width: r.width,
+                    height: r.height
+                });
+            }
+        }
+        const rects = deduplicateRects(raw);
+        for (const rect of rects) {
+            allRects.push({ highlight, rect, stackIndex: 0 });
+        }
+    }
 
     const lineGroups = new Map();
     allRects.forEach(item => {
@@ -134,6 +187,8 @@ function drawHighlights(hlList, container, svg) {
 
     lineGroups.forEach(rectsInLine => assignSmartLanes(rectsInLine));
 
+    // Batch DOM writes: build fragment then append once
+    const fragment = document.createDocumentFragment();
     let lineCount = 0;
     let gradientCount = 0;
 
@@ -146,7 +201,7 @@ function drawHighlights(hlList, container, svg) {
         if (colors.length === 1) {
             const line = createSVGLine(rect.x, lineY, rect.x + rect.width, colors[0], highlight, false);
             line.setAttribute("opacity", 0.9);
-            svg.appendChild(line);
+            fragment.appendChild(line);
         } else {
             const group = document.createElementNS(svgNS, "g");
             const gradientId = `gradient-${lineCount}-${gradientCount++}`;
@@ -155,11 +210,12 @@ function drawHighlights(hlList, container, svg) {
             const line = createSVGLine(rect.x, lineY, rect.x + rect.width, `url(#${gradientId})`, highlight, true);
             line.setAttribute("opacity", 0.9);
             group.appendChild(line);
-            svg.appendChild(group);
+            fragment.appendChild(group);
         }
         lineCount++;
     });
 
+    svg.appendChild(fragment);
     svg.setAttribute('height', container.scrollHeight);
     svg.style.height = container.scrollHeight + 'px';
     log(`renderHighlights: ${((performance.now() - startTime) / 1000).toFixed(3)}s, ${lineCount} lines`);
@@ -184,43 +240,6 @@ function buildCharMap(textNodes) {
         fullText += text;
     });
     return { fullText, charMap };
-}
-
-function highlightToRects(highlight, fullText, charMap, containerRect) {
-    if (highlight.start_offset === undefined || highlight.end_offset === undefined) return null;
-
-    const startChar = getCharIndexFromUTF8Index(fullText, highlight.start_offset);
-    const endChar = getCharIndexFromUTF8Index(fullText, highlight.end_offset);
-    if (startChar >= charMap.length || endChar <= 0 || startChar >= endChar) return null;
-
-    const clampedStart = Math.max(0, startChar);
-    const clampedEnd = Math.min(charMap.length, endChar);
-    const startEntry = charMap[clampedStart];
-    const endEntry = charMap[clampedEnd - 1];
-    if (!startEntry || !endEntry) return null;
-
-    try {
-        const range = document.createRange();
-        range.setStart(startEntry.node, startEntry.offset);
-        range.setEnd(endEntry.node, endEntry.offset + 1);
-
-        const clientRects = range.getClientRects();
-        const raw = [];
-        for (const r of clientRects) {
-            if (r.width > 0 && r.height > 0) {
-                raw.push({
-                    x: r.left - containerRect.left,
-                    y: r.top - containerRect.top,
-                    width: r.width,
-                    height: r.height
-                });
-            }
-        }
-        return deduplicateRects(raw);
-    } catch (e) {
-        log(`Error creating range for highlight ${highlight.id}: ${e.message}`, 'error');
-        return null;
-    }
 }
 
 function deduplicateRects(rects) {

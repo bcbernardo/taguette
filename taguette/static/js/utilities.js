@@ -245,9 +245,32 @@ function patchJSON(url = '', data = {}, args) {
     });
 }
 
+// Build a lookup table mapping UTF-8 byte offset -> char index for a string.
+function buildUTF8ToCharMap(str) {
+    const map = [];
+    let byteOffset = 0;
+    for (let i = 0; i < str.length; i++) {
+        const code = str.codePointAt(i);
+        let byteLen;
+        if (code <= 0x7f) byteLen = 1;
+        else if (code <= 0x7ff) byteLen = 2;
+        else if (code <= 0xffff) byteLen = 3;
+        else { byteLen = 4; i++; } // skip surrogate pair
+        for (let b = 0; b < byteLen; b++) {
+            map[byteOffset + b] = i;
+        }
+        byteOffset += byteLen;
+    }
+    map[byteOffset] = str.length; // sentinel for end offset
+    return map;
+}
+
 // Returns the byte length of a string encoded in UTF-8
 // https://stackoverflow.com/q/5515869/711380
-function getCharIndexFromUTF8Index(str, utf8Index) {
+function getCharIndexFromUTF8Index(str, utf8Index, utf8ToCharMap) {
+    if (utf8ToCharMap) {
+        return utf8ToCharMap[utf8Index] !== undefined ? utf8ToCharMap[utf8Index] : str.length;
+    }
     let charIndex = 0;
     let currentUTF8Index = 0;
     while (currentUTF8Index < utf8Index && charIndex < str.length) {
@@ -257,9 +280,11 @@ function getCharIndexFromUTF8Index(str, utf8Index) {
     return charIndex;
 }
 
+const _utf8Encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+
 function lengthUTF8(s) {
-    if (window.TextEncoder) {
-        return (new TextEncoder('utf-8').encode(s)).length;
+    if (_utf8Encoder) {
+        return _utf8Encoder.encode(s).length;
     } else {
         let l = s.length;
         for (let i = s.length - 1; i >= 0; --i) {
