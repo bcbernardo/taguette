@@ -77,11 +77,12 @@ function applyTagUnderlines(contentDiv, tagRanges, principalTagIds) {
     }
 
     // Convert UTF-8 byte offsets to char indices
+    const utf8Map = buildUTF8ToCharMap(fullText);
     const ranges = tagRanges.map(tr => ({
         tag_id: tr.tag_id,
         color: tr.color,
-        startChar: getCharIndexFromUTF8Index(fullText, tr.start),
-        endChar: getCharIndexFromUTF8Index(fullText, tr.end),
+        startChar: getCharIndexFromUTF8Index(fullText, tr.start, utf8Map),
+        endChar: getCharIndexFromUTF8Index(fullText, tr.end, utf8Map),
     }));
 
     // Sort by start, then larger ranges first
