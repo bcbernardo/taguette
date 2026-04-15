@@ -1408,16 +1408,7 @@ window.addEventListener('resize', debounce(() => {
     // loadDocument(current_document);
 }, 250));
 
-let scrollPos = 0;
-window.addEventListener('scroll', function() {
-    let isScrollUp = scrollPos > document.documentElement.scrollTop;
-    if(document.documentElement.scrollTop < 150 || isScrollUp) {
-        $('body').removeClass('scrolled');
-    } else if(!$('body').hasClass('scrolled')) {
-        $('body').addClass('scrolled');
-    }
-    scrollPos = document.documentElement.scrollTop;
-});
+/* Scroll hide/show navbar handled by utilities.js */
 
 
 

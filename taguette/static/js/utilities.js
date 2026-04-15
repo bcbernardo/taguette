@@ -245,9 +245,32 @@ function patchJSON(url = '', data = {}, args) {
     });
 }
 
+// Build a lookup table mapping UTF-8 byte offset -> char index for a string.
+function buildUTF8ToCharMap(str) {
+    const map = [];
+    let byteOffset = 0;
+    for (let i = 0; i < str.length; i++) {
+        const code = str.codePointAt(i);
+        let byteLen;
+        if (code <= 0x7f) byteLen = 1;
+        else if (code <= 0x7ff) byteLen = 2;
+        else if (code <= 0xffff) byteLen = 3;
+        else { byteLen = 4; i++; } // skip surrogate pair
+        for (let b = 0; b < byteLen; b++) {
+            map[byteOffset + b] = i;
+        }
+        byteOffset += byteLen;
+    }
+    map[byteOffset] = str.length; // sentinel for end offset
+    return map;
+}
+
 // Returns the byte length of a string encoded in UTF-8
 // https://stackoverflow.com/q/5515869/711380
-function getCharIndexFromUTF8Index(str, utf8Index) {
+function getCharIndexFromUTF8Index(str, utf8Index, utf8ToCharMap) {
+    if (utf8ToCharMap) {
+        return utf8ToCharMap[utf8Index] !== undefined ? utf8ToCharMap[utf8Index] : str.length;
+    }
     let charIndex = 0;
     let currentUTF8Index = 0;
     while (currentUTF8Index < utf8Index && charIndex < str.length) {
@@ -257,9 +280,11 @@ function getCharIndexFromUTF8Index(str, utf8Index) {
     return charIndex;
 }
 
+const _utf8Encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+
 function lengthUTF8(s) {
-    if (window.TextEncoder) {
-        return (new TextEncoder('utf-8').encode(s)).length;
+    if (_utf8Encoder) {
+        return _utf8Encoder.encode(s).length;
     } else {
         let l = s.length;
         for (let i = s.length - 1; i >= 0; --i) {
@@ -592,15 +617,29 @@ function hasVerticalScrollbar() {
  */
 
 window.addEventListener('load', function() {
-    let scrollPos = 0;
+    let lastScrollY = 0;
+    let scrollUpDistance = 0;
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
     window.addEventListener('scroll', function() {
-        let isScrollUp = scrollPos > document.documentElement.scrollTop;
-        if(document.documentElement.scrollTop < 50 || isScrollUp) {
-            document.body.classList.remove('scrolled');
-        } else if(hasVerticalScrollbar() && !document.body.classList.contains('scrolled')) {
-            document.body.classList.add('scrolled');
+        const currentY = window.scrollY;
+
+        if (currentY < 50) {
+            navbar.style.transform = '';
+            scrollUpDistance = 0;
+        } else if (currentY > lastScrollY) {
+            // Scrolling down — hide navbar
+            scrollUpDistance = 0;
+            navbar.style.transform = 'translateY(-200%)';
+        } else {
+            // Scrolling up — show after 80px
+            scrollUpDistance += lastScrollY - currentY;
+            if (scrollUpDistance > 80) {
+                navbar.style.transform = '';
+            }
         }
-        scrollPos = document.documentElement.scrollTop;
+        lastScrollY = currentY;
     });
 });
 function initHelpPopover(elementId, sections) {
