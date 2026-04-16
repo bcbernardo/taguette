@@ -88,14 +88,12 @@ def setup_loki_logging(loki_url: str):
         logger.warning(message)
 
     loki_handler = LokiHandler(loki_url)
+    loki_handler.setLevel(logging.WARNING)
     formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
     loki_handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
     root_logger.addHandler(loki_handler)
-
-    tornado_logger = logging.getLogger("tornado.access")
-    tornado_logger.addHandler(loki_handler)
 
     # Test log
     logger.info("Loki test log - %s", loki_url)
