@@ -1,6 +1,26 @@
 LibreQDA Changelog
 ==================
 
+1.1.1 (2026-04-15)
+------------------
+- Optimize highlight rendering performance
+- Update translations
+- Bugfixes:
+  - Fix NOT filter exclusion and badge rendering with operators
+  - Fix navbar scroll glitch and overflow
+  - Fix double underlines on multi-line highlights
+  - Fix AND operator to use spatial overlap
+  - Fix Dockerfile build and MySQL support for group_array
+  - Fix document search hiding uncategorized documents
+  - Fix archived project access
+- UI improvements:
+  - Overlapping tags clarity (dashed badges, hover to show)
+  - Project cards with pagination and search
+  - Archive/unarchive projects
+  - Compact layout toggle
+  - Text preview when clicking on existing codes
+  - Show real count in tooltip when badge displays 100+
+
 1.1.0 (2026-01-07)
 ------------------
 - Document collections
