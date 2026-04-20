@@ -1,0 +1,26 @@
+{
+    "whitelist": [
+        {
+            "type": "domain",
+            "pattern": "@usherbrooke.ca",
+            "description": "UdeS"
+        },
+        {
+            "type": "email",
+            "pattern": "msattoure@gmail.com",
+            "description": "Specific user"
+        }
+    ],
+    "blacklist": [
+        {
+            "type": "regex",
+            "pattern": "test.*@usherbrooke.ca",
+            "description": "Block test accounts"
+        },
+        {
+            "type": "wildcard",
+            "pattern": "*@spam.com",
+            "description": "Block spam domain"
+        }
+    ]
+}

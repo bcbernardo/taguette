@@ -528,15 +528,34 @@ class CilogonCallback(BaseHandler):
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
 
-        if not user_from_caf and not user_from_google:
-            error_msg = url_escape(
-                "Restricted access. Users must comes from "
-                "Canadian Access Federation (CAF)."
-            )
-            return self.redirect(
-                self.reverse_url("login")
-                + f"?error=error&error_msg={error_msg}"
-            )
+        # Check access rules (whitelist/blacklist) if configured
+        access_rules = self.application.config.get('_access_rules')
+        if access_rules:
+            from ..access_control import check_access
+            email = cil_user_infos.get('email', '')
+            result = check_access(access_rules, email)
+            if not result['allowed']:
+                logger.warning(
+                    "Access denied for %s: %s", email, result['reason']
+                )
+                error_msg = url_escape(
+                    "Restricted access. Your email is not authorized."
+                )
+                return self.redirect(
+                    self.reverse_url("login")
+                    + f"?error=error&error_msg={error_msg}"
+                )
+        else:
+            # Fallback: original CAF/Google check
+            if not user_from_caf and not user_from_google:
+                error_msg = url_escape(
+                    "Restricted access. Users must comes from "
+                    "Canadian Access Federation (CAF)."
+                )
+                return self.redirect(
+                    self.reverse_url("login")
+                    + f"?error=error&error_msg={error_msg}"
+                )
 
         if "email" in cil_user_infos.keys():
             logger.info("OK CILogon provided email")
