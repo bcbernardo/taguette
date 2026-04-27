@@ -5,6 +5,7 @@ import prometheus_client
 import shutil
 import string
 import tempfile
+from urllib.parse import quote
 from tornado.web import authenticated
 
 from .. import convert
@@ -14,6 +15,16 @@ from .base import BaseHandler
 
 
 logger = logging.getLogger(__name__)
+
+
+def _content_disposition(filename):
+    # RFC 5987 encoding for non-ASCII filenames in HTTP headers
+    ascii_fallback = filename.encode('ascii', 'replace').decode('ascii')
+    encoded = quote(filename, safe='')
+    return (
+        'attachment; filename="%s"; filename*=UTF-8\'\'%s'
+        % (ascii_fallback, encoded)
+    )
 
 
 class WriteAdapter(object):
@@ -57,7 +68,7 @@ def return_doc(wrapped):
         self.set_header('Content-Type', mimetype)
         if name:
             self.set_header('Content-Disposition',
-                            'attachment; filename="%s.%s"' % (name, ext))
+                            _content_disposition('%s.%s' % (name, ext)))
         else:
             self.set_header('Content-Disposition', 'attachment')
 
@@ -81,7 +92,7 @@ class ExportHighlightsCsv(BaseHandler):
         self.set_header('Content-Type', 'text/csv; charset=utf-8')
         if name:
             self.set_header('Content-Disposition',
-                            'attachment; filename="%s.csv"' % name)
+                            _content_disposition('%s.csv' % name))
         else:
             self.set_header('Content-Disposition', 'attachment')
 
@@ -109,7 +120,7 @@ class ExportHighlightsXlsx(BaseHandler):
                          'spreadsheetml.sheet'))
         if name:
             self.set_header('Content-Disposition',
-                            'attachment; filename="%s.xlsx"' % name)
+                            _content_disposition('%s.xlsx' % name))
         else:
             self.set_header('Content-Disposition', 'attachment')
 
@@ -316,7 +327,7 @@ class ExportSqlite(BaseHandler):
             # Send the file
             self.set_header('Content-Type', 'application/vnd.sqlite3')
             self.set_header('Content-Disposition',
-                            'attachment; filename="%s"' % export_name)
+                            _content_disposition(export_name))
             with open(filename, 'rb') as fp:
                 while True:
                     chunk = fp.read(4096)

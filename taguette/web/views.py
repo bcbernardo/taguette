@@ -505,40 +505,31 @@ class CilogonCallback(BaseHandler):
             .filter(database.EdugainIdps.entityid == cil_user_infos["idp"])
             .first()
         )
+        cil_user_infos["edugain.code"] = edugain_idp.code \
+            if edugain_idp is not None else ''
+        email = cil_user_infos.get('email', '')
 
-        # From Canadian Access Federation
-        if edugain_idp is not None:
-            if edugain_idp.code == "CAF":
-                user_from_caf = True
-            else:
-                user_from_caf = False
-        else:
-            user_from_caf = False
+        # Check access rules (whitelist/blacklist) if configured
+        access_rules = self.application.config.get('_access_rules')
+        cil_user_infos["force_role"] = None
+        if access_rules:
+            from ..access_control import check_access, get_role_from_rule
+            result = check_access(access_rules, cil_user_infos)
+            cil_user_infos["force_role"] = (
+                get_role_from_rule(result['matched_rule']))
+            if not result['allowed']:
+                logger.warning(
+                    "Access denied for %s: %s", email, result['reason']
+                )
+                error_msg = url_escape(
+                    "Restricted access. Your email is not authorized."
+                )
+                return self.redirect(
+                    self.reverse_url("login")
+                    + f"?error=error&error_msg={error_msg}"
+                )
 
-        # From Google
-        if cil_user_infos["idp_name"] == "Google":
-            user_from_google = True
-        else:
-            user_from_google = False
-
-        cil_user_infos["user_from_google"] = user_from_google
-        cil_user_infos["user_from_caf"] = user_from_caf
-
-        # For testing
-        logger.info("Dump CILogon information for testing period")
-        logger.info(json.dumps(cil_user_infos, indent=3))
-
-        if not user_from_caf and not user_from_google:
-            error_msg = url_escape(
-                "Restricted access. Users must comes from "
-                "Canadian Access Federation (CAF)."
-            )
-            return self.redirect(
-                self.reverse_url("login")
-                + f"?error=error&error_msg={error_msg}"
-            )
-
-        if "email" in cil_user_infos.keys():
+        if email:
             logger.info("OK CILogon provided email")
         else:
             logger.error(
@@ -595,9 +586,10 @@ class CilogonCallback(BaseHandler):
             user.email = login
             user.external = True
             user.disabled = False
-            user.role = "PROJECT_ADMIN"
-            if user_info["user_from_google"]:
-                user.role = "TEAM_MEMBER"
+            user.role = user_info["force_role"] \
+                if ("force_role" in user_info
+                    and user_info["force_role"] is not None) \
+                else "PROJECT_ADMIN"
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie("user", login)

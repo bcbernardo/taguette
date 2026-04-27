@@ -1,0 +1,34 @@
+{
+    "whitelist": [
+        {
+            "type": "domain",
+            "pattern": "@usherbrooke.ca",
+            "role": "PROJECT_ADMIN",
+            "description": "UdeS"
+        },
+        {
+            "type": "email",
+            "pattern": "msattoure@gmail.com",
+            "role": "TEAM_MEMBER",
+            "description": "Specific user"
+        },
+        {
+            "type": "edugain.code",
+            "pattern": "CAF",
+            "role": "PROJECT_ADMIN",
+            "description": "Filter edugain code"
+        }
+    ],
+    "blacklist": [
+        {
+            "type": "regex",
+            "pattern": "test.*@usherbrooke.ca",
+            "description": "Block test accounts"
+        },
+        {
+            "type": "wildcard",
+            "pattern": "*@spam.com",
+            "description": "Block spam domain"
+        }
+    ]
+}

@@ -92,6 +92,12 @@ def setup_loki_logging(loki_url: str):
     formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
     loki_handler.setFormatter(formatter)
 
+    # Filter out tornado.access logs from Loki
+    class ExcludeTornadoAccess(logging.Filter):
+        def filter(self, record):
+            return not record.name.startswith("tornado.access")
+    loki_handler.addFilter(ExcludeTornadoAccess())
+
     root_logger = logging.getLogger()
     root_logger.addHandler(loki_handler)
 

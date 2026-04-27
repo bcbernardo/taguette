@@ -3,6 +3,7 @@
 
 # Configuration file
 taguette.conf
+access_rules.json
 
 # alternate template
 /taguette/templates/alt_templates/*
