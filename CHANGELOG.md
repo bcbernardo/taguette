@@ -1,6 +1,10 @@
 LibreQDA Changelog
 ==================
 
+1.1.2 (2026-04-28)
+------------------
+- Replace login flow with access rules
+
 1.1.1 (2026-04-15)
 ------------------
 - Optimize highlight rendering performance
