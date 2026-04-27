@@ -60,7 +60,8 @@ def get_idps(db):
             "name": "Google"
         },
         {
-            "entityid": "http://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            "entityid": "http://login.microsoftonline.com/"
+                        "common/oauth2/v2.0/authorize",
             "name": "Microsoft"
         }
     ]
