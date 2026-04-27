@@ -724,27 +724,6 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
                 return None
         return None
 
-    def get_idps(self, db):
-        idps = [{"entityid": "http://google.com/accounts/o8/id", "name": "Google"}]
-
-        idps_query = db.query(database.EdugainIdps)
-        if self.application.config["ACCESS_ALLOW_CAF"]:
-            idps_query = (idps_query
-                          .filter(database.EdugainIdps.code == "CAF"))
-        idps_query = (idps_query
-                      .order_by(database.EdugainIdps.e_displayname)
-                      ).all()
-        for idp in idps_query:
-            displayname = idp.e_displayname.split(";")
-            if len(displayname) > 1:
-                displayname = displayname[1]
-            else:
-                displayname = displayname[0]
-            displayname = re.sub(r"==[a-z]{2}$", "", displayname)
-            idps.append({"entityid": idp.entityid, "name": displayname})
-
-        return idps
-
 
 class PromMeasureRequest(object):
     def __init__(self, count, time):

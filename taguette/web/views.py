@@ -53,6 +53,26 @@ PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
 )
 
 
+def get_idps(db):
+    idps = [{"entityid": "http://google.com/accounts/o8/id", "name": "Google"}]
+
+    idps_query = (
+        db.query(database.EdugainIdps)
+        .filter(database.EdugainIdps.code == "CAF")
+        .order_by(database.EdugainIdps.e_displayname)
+    ).all()
+    for idp in idps_query:
+        displayname = idp.e_displayname.split(";")
+        if len(displayname) > 1:
+            displayname = displayname[1]
+        else:
+            displayname = displayname[0]
+        displayname = re.sub(r"==[a-z]{2}$", "", displayname)
+        idps.append({"entityid": idp.entityid, "name": displayname})
+
+    return idps
+
+
 class Index(BaseHandler):
     """Index page, shows welcome message and user's projects."""
 
@@ -178,7 +198,7 @@ class Login(BaseHandler):
                     next=self.get_argument("next", ""),
                     error=error,
                     error_msg=error_msg,
-                    idps=self.get_idps(self.db),
+                    idps=get_idps(self.db),
                     entity_id=self.get_cookie("entity_id", None),
                     languages=get_languages(),
                     current_language=self.language
@@ -255,7 +275,7 @@ class Register(BaseHandler):
             else:
                 return self.render(
                     "auth/cilogon.login.html",
-                    idps=self.get_idps(self.db),
+                    idps=get_idps(self.db),
                     entity_id=self.get_cookie("entity_id", None),
                 )
 
@@ -485,27 +505,15 @@ class CilogonCallback(BaseHandler):
             .filter(database.EdugainIdps.entityid == cil_user_infos["idp"])
             .first()
         )
-
-        # From Canadian Access Federation
-        cil_user_infos["user_from_caf"] = (edugain_idp is not None
-                                           and edugain_idp.code == "CAF")
-
-        # For testing
-        logger.info("Dump CILogon information for testing period")
-        logger.info(json.dumps(cil_user_infos, indent=3))
-
-        # !check CAF pas access rule : fait rien
-        # !check CAF avec access rule : regarde access rule seulement
-        # Check CAF && CAF pas access rule : regarde caf seulement
-        # Check CAF && CAF avec access rule :
+        cil_user_infos["edugain.code"] = edugain_idp.code if edugain_idp is not None else ''
+        email = cil_user_infos.get('email', '')
 
         # Check access rules (whitelist/blacklist) if configured
         access_rules = self.application.config.get('_access_rules')
         cil_user_infos["force_role"] = None
         if access_rules:
             from ..access_control import check_access, get_role_from_rule
-            email = cil_user_infos.get('email', '')
-            result = check_access(access_rules, email)
+            result = check_access(access_rules, cil_user_infos)
             cil_user_infos["force_role"] = get_role_from_rule(result['matched_rule'])
             #TODO trouver comment faire prévaloir CAF même si refusé accès
             if not result['allowed']:
@@ -519,20 +527,8 @@ class CilogonCallback(BaseHandler):
                     self.reverse_url("login")
                     + f"?error=error&error_msg={error_msg}"
                 )
-        # TODO: ajouter ACCESS_ALLOW_CAF dans conf et faire verif avec access_rule mettre google dans access_rule avec TEAM_MEMBER
-        # Fallback: original CAF
-        # elif (self.application.config["ACCESS_ALLOW_CAF"]
-        #       and not cil_user_infos["user_from_caf"]):
-        #     error_msg = url_escape(
-        #         "Restricted access. Users must comes from "
-        #         "Canadian Access Federation (CAF)."
-        #     )
-        #     return self.redirect(
-        #         self.reverse_url("login")
-        #         + f"?error=error&error_msg={error_msg}"
-        #     )
 
-        if "email" in cil_user_infos.keys():
+        if email:
             logger.info("OK CILogon provided email")
         else:
             logger.error(

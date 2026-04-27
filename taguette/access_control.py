@@ -6,7 +6,7 @@ import re
 logger = logging.getLogger(__name__)
 
 VALID_LIST_TYPES = ('whitelist', 'blacklist')
-VALID_RULE_TYPES = ('email', 'domain', 'wildcard', 'regex')
+VALID_RULE_TYPES = ('email', 'domain', 'wildcard', 'regex', 'edugain.code')
 
 
 def load_rules(filepath):
@@ -25,7 +25,8 @@ def load_rules(filepath):
         return {'whitelist': [], 'blacklist': []}
 
 
-def _matches_pattern(email, rule):
+def _matches_pattern(cil_user_infos, rule):
+    email = _get_email(cil_user_infos)
     pattern = rule['pattern'].lower().strip()
     rule_type = rule['type']
     try:
@@ -37,18 +38,30 @@ def _matches_pattern(email, rule):
             return bool(re.fullmatch(pattern, email))
         elif rule_type == 'email':
             return email == pattern
+        elif rule_type == 'edugain.code':
+            return (cil_user_infos["edugain.code"].lower() ==
+                    rule['pattern'].lower())
     except re.error:
         logger.error("Invalid regex in access rule: '%s'", rule['pattern'])
     return False
 
 
-def check_access(rules, email):
+def _matches_exact(cil_user_infos, rule):
+    email = _get_email(cil_user_infos)
+    return rule['type'] == 'email' and rule['pattern'].lower() == email
+
+
+def _get_email(cil_user_infos):
+    return cil_user_infos.get('email', '').lower().strip()
+
+
+def check_access(rules, cil_user_infos):
+    email = _get_email(cil_user_infos)
     # Priority: exact whitelist > exact blacklist
     # > pattern (whitelist wins on conflict)
     if not email:
         return {'allowed': False, 'reason': 'no_email', 'matched_rule': None}
 
-    email = email.lower().strip()
     whitelist = rules.get('whitelist', [])
     blacklist = rules.get('blacklist', [])
 
@@ -61,17 +74,15 @@ def check_access(rules, email):
     pattern_blacklist = []
 
     for rule in whitelist:
-        is_exact = rule['type'] == 'email' and rule['pattern'].lower() == email
-        if is_exact:
+        if _matches_exact(cil_user_infos, rule):
             exact_whitelist.append(rule)
-        elif _matches_pattern(email, rule):
+        elif _matches_pattern(cil_user_infos, rule):
             pattern_whitelist.append(rule)
 
     for rule in blacklist:
-        is_exact = rule['type'] == 'email' and rule['pattern'].lower() == email
-        if is_exact:
+        if _matches_exact(cil_user_infos, rule):
             exact_blacklist.append(rule)
-        elif _matches_pattern(email, rule):
+        elif _matches_pattern(cil_user_infos, rule):
             pattern_blacklist.append(rule)
 
     # 1. Exact whitelist wins over everything

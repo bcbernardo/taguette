@@ -238,7 +238,6 @@ DEFAULT_CONFIG = {
     'LOKI_URL': 'http://localhost:3100',
     'UNIX_SOCKET': None,
     'ACCESS_RULES_FILE': None,
-    'ACCESS_ALLOW_CAF': True
 }
 
 REQUIRED_CONFIG = [
