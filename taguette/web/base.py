@@ -9,7 +9,6 @@ import hmac
 import json
 import logging
 import jinja2
-import re
 from markupsafe import Markup
 import opentelemetry.trace
 import os

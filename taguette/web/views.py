@@ -505,7 +505,8 @@ class CilogonCallback(BaseHandler):
             .filter(database.EdugainIdps.entityid == cil_user_infos["idp"])
             .first()
         )
-        cil_user_infos["edugain.code"] = edugain_idp.code if edugain_idp is not None else ''
+        cil_user_infos["edugain.code"] = edugain_idp.code \
+            if edugain_idp is not None else ''
         email = cil_user_infos.get('email', '')
 
         # Check access rules (whitelist/blacklist) if configured
@@ -514,8 +515,8 @@ class CilogonCallback(BaseHandler):
         if access_rules:
             from ..access_control import check_access, get_role_from_rule
             result = check_access(access_rules, cil_user_infos)
-            cil_user_infos["force_role"] = get_role_from_rule(result['matched_rule'])
-            #TODO trouver comment faire prévaloir CAF même si refusé accès
+            cil_user_infos["force_role"] = (
+                get_role_from_rule(result['matched_rule']))
             if not result['allowed']:
                 logger.warning(
                     "Access denied for %s: %s", email, result['reason']

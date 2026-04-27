@@ -128,6 +128,7 @@ def check_access(rules, cil_user_infos):
     logger.info("Access ALLOWED for %s: no matching rule", email)
     return {'allowed': True, 'reason': 'default', 'matched_rule': None}
 
+
 def get_role_from_rule(rule):
     if rule is not None and 'role' in rule:
         role = rule['role']
