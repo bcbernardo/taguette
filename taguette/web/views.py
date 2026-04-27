@@ -53,26 +53,6 @@ PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
 )
 
 
-def get_idps(db):
-    idps = [{"entityid": "http://google.com/accounts/o8/id", "name": "Google"}]
-
-    idps_query = (
-        db.query(database.EdugainIdps)
-        .filter(database.EdugainIdps.code == "CAF")
-        .order_by(database.EdugainIdps.e_displayname)
-    ).all()
-    for idp in idps_query:
-        displayname = idp.e_displayname.split(";")
-        if len(displayname) > 1:
-            displayname = displayname[1]
-        else:
-            displayname = displayname[0]
-        displayname = re.sub(r"==[a-z]{2}$", "", displayname)
-        idps.append({"entityid": idp.entityid, "name": displayname})
-
-    return idps
-
-
 class Index(BaseHandler):
     """Index page, shows welcome message and user's projects."""
 
@@ -198,7 +178,7 @@ class Login(BaseHandler):
                     next=self.get_argument("next", ""),
                     error=error,
                     error_msg=error_msg,
-                    idps=get_idps(self.db),
+                    idps=self.get_idps(self.db),
                     entity_id=self.get_cookie("entity_id", None),
                     languages=get_languages(),
                     current_language=self.language
@@ -275,7 +255,7 @@ class Register(BaseHandler):
             else:
                 return self.render(
                     "auth/cilogon.login.html",
-                    idps=get_idps(self.db),
+                    idps=self.get_idps(self.db),
                     entity_id=self.get_cookie("entity_id", None),
                 )
 
@@ -507,33 +487,27 @@ class CilogonCallback(BaseHandler):
         )
 
         # From Canadian Access Federation
-        if edugain_idp is not None:
-            if edugain_idp.code == "CAF":
-                user_from_caf = True
-            else:
-                user_from_caf = False
-        else:
-            user_from_caf = False
-
-        # From Google
-        if cil_user_infos["idp_name"] == "Google":
-            user_from_google = True
-        else:
-            user_from_google = False
-
-        cil_user_infos["user_from_google"] = user_from_google
-        cil_user_infos["user_from_caf"] = user_from_caf
+        cil_user_infos["user_from_caf"] = (edugain_idp is not None
+                                           and edugain_idp.code == "CAF")
 
         # For testing
         logger.info("Dump CILogon information for testing period")
         logger.info(json.dumps(cil_user_infos, indent=3))
 
+        # !check CAF pas access rule : fait rien
+        # !check CAF avec access rule : regarde access rule seulement
+        # Check CAF && CAF pas access rule : regarde caf seulement
+        # Check CAF && CAF avec access rule :
+
         # Check access rules (whitelist/blacklist) if configured
         access_rules = self.application.config.get('_access_rules')
+        cil_user_infos["force_role"] = None
         if access_rules:
-            from ..access_control import check_access
+            from ..access_control import check_access, get_role_from_rule
             email = cil_user_infos.get('email', '')
             result = check_access(access_rules, email)
+            cil_user_infos["force_role"] = get_role_from_rule(result['matched_rule'])
+            #TODO trouver comment faire prévaloir CAF même si refusé accès
             if not result['allowed']:
                 logger.warning(
                     "Access denied for %s: %s", email, result['reason']
@@ -545,17 +519,18 @@ class CilogonCallback(BaseHandler):
                     self.reverse_url("login")
                     + f"?error=error&error_msg={error_msg}"
                 )
-        else:
-            # Fallback: original CAF/Google check
-            if not user_from_caf and not user_from_google:
-                error_msg = url_escape(
-                    "Restricted access. Users must comes from "
-                    "Canadian Access Federation (CAF)."
-                )
-                return self.redirect(
-                    self.reverse_url("login")
-                    + f"?error=error&error_msg={error_msg}"
-                )
+        # TODO: ajouter ACCESS_ALLOW_CAF dans conf et faire verif avec access_rule mettre google dans access_rule avec TEAM_MEMBER
+        # Fallback: original CAF
+        # elif (self.application.config["ACCESS_ALLOW_CAF"]
+        #       and not cil_user_infos["user_from_caf"]):
+        #     error_msg = url_escape(
+        #         "Restricted access. Users must comes from "
+        #         "Canadian Access Federation (CAF)."
+        #     )
+        #     return self.redirect(
+        #         self.reverse_url("login")
+        #         + f"?error=error&error_msg={error_msg}"
+        #     )
 
         if "email" in cil_user_infos.keys():
             logger.info("OK CILogon provided email")
@@ -614,9 +589,10 @@ class CilogonCallback(BaseHandler):
             user.email = login
             user.external = True
             user.disabled = False
-            user.role = "PROJECT_ADMIN"
-            if user_info["user_from_google"]:
-                user.role = "TEAM_MEMBER"
+            user.role = user_info["force_role"] \
+                if ("force_role" in user_info
+                    and user_info["force_role"] is not None) \
+                else "PROJECT_ADMIN"
             self.db.add(user)
             self.db.commit()
             self.set_secure_cookie("user", login)

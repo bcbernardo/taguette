@@ -191,6 +191,9 @@ ALLOW_EXTERNAL_LOGIN = False
 # URLs are : /login?bypass=true or /register?bypass=true
 ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
+# Whitelist and Blacklist rules file location (see access_rules.example.json)
+# ACCESS_RULES_FILE=None
+
 # Replace current authentication with OAUTH
 # OAUTH_AUTH_URI=""
 # OAUTH_TOKEN_URI=""
@@ -235,6 +238,7 @@ DEFAULT_CONFIG = {
     'LOKI_URL': 'http://localhost:3100',
     'UNIX_SOCKET': None,
     'ACCESS_RULES_FILE': None,
+    'ACCESS_ALLOW_CAF': True
 }
 
 REQUIRED_CONFIG = [
