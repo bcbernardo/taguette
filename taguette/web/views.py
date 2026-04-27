@@ -54,7 +54,16 @@ PROM_ACTIVE_SESSIONS = prometheus_client.Gauge(
 
 
 def get_idps(db):
-    idps = [{"entityid": "http://google.com/accounts/o8/id", "name": "Google"}]
+    idps = [
+        {
+            "entityid": "http://google.com/accounts/o8/id",
+            "name": "Google"
+        },
+        {
+            "entityid": "http://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            "name": "Microsoft"
+        }
+    ]
 
     idps_query = (
         db.query(database.EdugainIdps)
