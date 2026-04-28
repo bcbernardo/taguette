@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "taguette"
-version = "1.0.1"
+version = "1.1.2"
 description = "Free and open source qualitative research tool"
 packages = [
     { include = "taguette" },

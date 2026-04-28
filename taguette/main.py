@@ -191,6 +191,9 @@ ALLOW_EXTERNAL_LOGIN = False
 # URLs are : /login?bypass=true or /register?bypass=true
 ALLOW_EXTERNAL_LOGIN_BYPASS = False
 
+# Whitelist and Blacklist rules file location (see access_rules.example.json)
+# ACCESS_RULES_FILE=None
+
 # Replace current authentication with OAUTH
 # OAUTH_AUTH_URI=""
 # OAUTH_TOKEN_URI=""
@@ -233,7 +236,8 @@ DEFAULT_CONFIG = {
     "OPF_OUT_SIZE_LIMIT": 5000000,  # 5 MB
     "HTML_OUT_SIZE_LIMIT": 2000000,  # 2 MB
     'LOKI_URL': 'http://localhost:3100',
-    'UNIX_SOCKET': None
+    'UNIX_SOCKET': None,
+    'ACCESS_RULES_FILE': None,
 }
 
 REQUIRED_CONFIG = [
@@ -524,6 +528,15 @@ def main():
             UNIX_SOCKET=args.unix_socket,
         )
 
+    # Access rules
+    access_rules_file = config.get('ACCESS_RULES_FILE')
+    if access_rules_file:
+        from taguette.access_control import load_rules
+        config['_access_rules'] = load_rules(access_rules_file)
+        logger.info("Access rules loaded from %s", access_rules_file)
+    else:
+        config['_access_rules'] = None
+
     # Loki integration
     try:
         from taguette.loki_handler import setup_loki_logging
@@ -588,13 +601,13 @@ def main():
         db.commit()
     db.close()
 
-    if config['THEME']:
-        logger.info("Recompiling SCSS!")
-        compile_scss(config['THEME'])
-
     if args.debug:
         logger.warning("Debug mode is ON")
         asyncio.get_event_loop().set_debug(True)
+
+        if config['THEME']:
+            logger.info("Recompiling SCSS!")
+            compile_scss(config['THEME'])
 
     if args.unix_socket:
         print(
