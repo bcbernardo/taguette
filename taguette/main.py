@@ -601,13 +601,13 @@ def main():
         db.commit()
     db.close()
 
-    if config['THEME']:
-        logger.info("Recompiling SCSS!")
-        compile_scss(config['THEME'])
-
     if args.debug:
         logger.warning("Debug mode is ON")
         asyncio.get_event_loop().set_debug(True)
+
+        if config['THEME']:
+            logger.info("Recompiling SCSS!")
+            compile_scss(config['THEME'])
 
     if args.unix_socket:
         print(

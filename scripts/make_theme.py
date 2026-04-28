@@ -54,6 +54,9 @@ def compile_scss(theme_name):
         print(f"SCSS compilation error: {e}")
         sys.exit(1)
 
+    except Exception as e:
+        print(f"SCSS can't write {e}")
+
 
 def copy_default_theme(destination_theme_name):
     from_theme_dir = get_theme_dir("default")
