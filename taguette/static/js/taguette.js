@@ -622,6 +622,103 @@ function createDocument() {
   $(document_add_modal).modal();
 }
 
+// Let a File object be dropped into a file input, as though it had been
+// picked via the Browse button
+function setInputFile(input, file) {
+  var transfer = new DataTransfer();
+  transfer.items.add(file);
+  input.files = transfer.files;
+}
+
+// Recursively walk a dropped directory entry, listing every file it
+// contains. Falls back to treating dropped items as flat files if the
+// (non-standard, but widely supported) webkitGetAsEntry() API is missing.
+function walkEntry(entry) {
+  return new Promise(function(resolve) {
+    if(entry.isFile) {
+      entry.file(function(file) { resolve([file]); }, function() { resolve([]); });
+    } else if(entry.isDirectory) {
+      var reader = entry.createReader();
+      var entries = [];
+      function readMore() {
+        reader.readEntries(function(batch) {
+          if(batch.length === 0) {
+            Promise.all(entries.map(walkEntry)).then(function(lists) {
+              resolve([].concat.apply([], lists));
+            });
+          } else {
+            entries = entries.concat(batch);
+            readMore();
+          }
+        }, function() { resolve([]); });
+      }
+      readMore();
+    } else {
+      resolve([]);
+    }
+  });
+}
+
+// Get every file dropped onto a dropzone, including those inside dropped
+// folders, and pass the resulting flat array to the callback
+function getFilesFromDataTransfer(dataTransfer, callback) {
+  var items = dataTransfer.items;
+  if(items && items.length > 0 && items[0].webkitGetAsEntry) {
+    var entries = [];
+    var direct_files = [];
+    for(var i = 0; i < items.length; ++i) {
+      var entry = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+      if(entry) {
+        entries.push(entry);
+      } else if(items[i].kind === 'file') {
+        // Not backed by a filesystem entry (e.g. dropped from outside the
+        // OS's file manager); fall back to the File object directly
+        var file = items[i].getAsFile();
+        if(file) {
+          direct_files.push(file);
+        }
+      }
+    }
+    Promise.all(entries.map(walkEntry)).then(function(lists) {
+      callback(direct_files.concat([].concat.apply([], lists)));
+    });
+  } else {
+    callback(Array.prototype.slice.call(dataTransfer.files));
+  }
+}
+
+// Wire drag-and-drop highlighting and file gathering on a dropzone element.
+// `callback` is called with an array of File objects once a drop has been
+// fully processed (folders included)
+function setupDropzone(dropzone, callback) {
+  ['dragenter', 'dragover'].forEach(function(evtName) {
+    dropzone.addEventListener(evtName, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dropzone-active');
+    });
+  });
+  ['dragleave', 'dragend', 'drop'].forEach(function(evtName) {
+    dropzone.addEventListener(evtName, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dropzone-active');
+    });
+  });
+  dropzone.addEventListener('drop', function(e) {
+    getFilesFromDataTransfer(e.dataTransfer, callback);
+  });
+}
+
+var document_add_dropzone = document.getElementById('document-add-dropzone');
+var document_add_file_input = document.getElementById('document-add-file');
+setupDropzone(document_add_dropzone, function(files) {
+  // This modal only handles a single file; bulk add handles multiple
+  if(files.length > 0) {
+    setInputFile(document_add_file_input, files[0]);
+  }
+});
+
 function basename(filename) {
   if(filename) {
     var idx = Math.max(filename.lastIndexOf('/'), filename.lastIndexOf('\\'));
@@ -684,6 +781,259 @@ document.getElementById('document-add-form').addEventListener('submit', function
     hideSpinner();
   }
   xhr.send(form_data);
+});
+
+
+/*
+ * Bulk add documents
+ */
+
+var document_bulk_add_modal = document.getElementById('document-bulk-add-modal');
+var document_bulk_add_dropzone = document.getElementById('document-bulk-add-dropzone');
+var document_bulk_add_tbody = document.getElementById('document-bulk-add-tbody');
+var document_bulk_add_count = document.getElementById('document-bulk-add-count');
+var document_bulk_add_submit = document.getElementById('document-bulk-add-submit');
+var document_bulk_add_files = []; // {key, file, name, direction, description, status, error}
+var document_bulk_add_key = 0;
+
+function createBulkDocument() {
+  document_bulk_add_files = [];
+  renderBulkAddTable();
+  $(document_bulk_add_modal).modal();
+}
+
+function bulkAddDefaultName(filename) {
+  // Matches the default used by the single-document "Add a document" modal
+  return basename(filename).substring(0, 50);
+}
+
+function addBulkAddFiles(files) {
+  for(var i = 0; i < files.length; ++i) {
+    var file = files[i];
+    document_bulk_add_files.push({
+      key: ++document_bulk_add_key,
+      file: file,
+      name: bulkAddDefaultName(file.name),
+      direction: 'LEFT_TO_RIGHT',
+      description: '',
+      status: 'pending', // 'pending' | 'uploading' | 'done' | 'error'
+      error: null
+    });
+  }
+  renderBulkAddTable();
+}
+
+function removeBulkAddFile(key) {
+  document_bulk_add_files = document_bulk_add_files.filter(function(e) { return e.key !== key; });
+  renderBulkAddTable();
+}
+
+function renderBulkAddTable() {
+  document_bulk_add_tbody.innerHTML = '';
+
+  if(document_bulk_add_files.length === 0) {
+    var empty_tr = document.createElement('tr');
+    var empty_td = document.createElement('td');
+    empty_td.colSpan = 5;
+    empty_td.className = 'text-muted text-center';
+    empty_td.textContent = gettext("No files selected yet.");
+    empty_tr.appendChild(empty_td);
+    document_bulk_add_tbody.appendChild(empty_tr);
+  }
+
+  document_bulk_add_files.forEach(function(entry) {
+    var tr = document.createElement('tr');
+
+    var td_file = document.createElement('td');
+    td_file.className = 'align-middle';
+    td_file.textContent = entry.file.name;
+    tr.appendChild(td_file);
+
+    var td_name = document.createElement('td');
+    var input_name = document.createElement('input');
+    input_name.type = 'text';
+    input_name.className = 'form-control';
+    input_name.maxLength = 50;
+    input_name.value = entry.name;
+    input_name.disabled = entry.status === 'uploading';
+    input_name.addEventListener('input', function() { entry.name = input_name.value; });
+    td_name.appendChild(input_name);
+    tr.appendChild(td_name);
+
+    var td_direction = document.createElement('td');
+    var select_direction = document.createElement('select');
+    select_direction.className = 'form-control';
+    select_direction.disabled = entry.status === 'uploading';
+    [['LEFT_TO_RIGHT', gettext("Left to right")],
+     ['RIGHT_TO_LEFT', gettext("Right to left")]].forEach(function(pair) {
+      var option = document.createElement('option');
+      option.value = pair[0];
+      option.textContent = pair[1];
+      option.selected = pair[0] === entry.direction;
+      select_direction.appendChild(option);
+    });
+    select_direction.addEventListener('change', function() { entry.direction = select_direction.value; });
+    td_direction.appendChild(select_direction);
+    tr.appendChild(td_direction);
+
+    var td_description = document.createElement('td');
+    var input_description = document.createElement('input');
+    input_description.type = 'text';
+    input_description.className = 'form-control';
+    input_description.placeholder = gettext("Description");
+    input_description.value = entry.description;
+    input_description.disabled = entry.status === 'uploading';
+    input_description.addEventListener('input', function() { entry.description = input_description.value; });
+    td_description.appendChild(input_description);
+    tr.appendChild(td_description);
+
+    var td_status = document.createElement('td');
+    td_status.className = 'align-middle';
+    if(entry.status === 'uploading') {
+      var uploading_span = document.createElement('span');
+      uploading_span.textContent = gettext("Uploading...");
+      td_status.appendChild(uploading_span);
+    } else {
+      var btn_remove = document.createElement('button');
+      btn_remove.type = 'button';
+      btn_remove.className = 'btn btn-sm btn-outline-danger';
+      btn_remove.innerHTML = '&times;';
+      btn_remove.title = gettext("Remove from list");
+      btn_remove.addEventListener('click', function() { removeBulkAddFile(entry.key); });
+      td_status.appendChild(btn_remove);
+    }
+    if(entry.status === 'error') {
+      var error_div = document.createElement('div');
+      error_div.className = 'document-bulk-status-error';
+      error_div.textContent = entry.error;
+      td_status.appendChild(error_div);
+    }
+    tr.appendChild(td_status);
+
+    document_bulk_add_tbody.appendChild(tr);
+  });
+
+  document_bulk_add_count.textContent = '' + document_bulk_add_files.length;
+  document_bulk_add_submit.disabled = document_bulk_add_files.length === 0;
+}
+
+setupDropzone(document_bulk_add_dropzone, addBulkAddFiles);
+
+var document_bulk_add_input_files = document.getElementById('document-bulk-add-input-files');
+document.getElementById('document-bulk-add-browse-files').addEventListener('click', function() {
+  document_bulk_add_input_files.click();
+});
+document_bulk_add_input_files.addEventListener('change', function() {
+  addBulkAddFiles(Array.prototype.slice.call(this.files));
+  this.value = ''; // Allow selecting the same files again later
+});
+
+var document_bulk_add_input_folder = document.getElementById('document-bulk-add-input-folder');
+document.getElementById('document-bulk-add-browse-folder').addEventListener('click', function() {
+  document_bulk_add_input_folder.click();
+});
+document_bulk_add_input_folder.addEventListener('change', function() {
+  addBulkAddFiles(Array.prototype.slice.call(this.files));
+  this.value = '';
+});
+
+function uploadBulkDocument(entry) {
+  var form_data = new FormData();
+  form_data.append('name', entry.name || bulkAddDefaultName(entry.file.name));
+  form_data.append('description', entry.description);
+  form_data.append('file', entry.file);
+  form_data.append('text_direction', entry.direction);
+  form_data.append('_xsrf', getCookie('_xsrf'));
+
+  return fetch(
+    base_path + '/api/project/' + project_id + '/document/new',
+    {
+      credentials: 'same-origin',
+      mode: 'same-origin',
+      cache: 'no-cache',
+      redirect: 'error',
+      method: 'POST',
+      body: form_data
+    }
+  ).then(function(response) {
+    if(response.status != 200) {
+      return response.json().then(
+        function(json) { throw new ApiError(response, json.error); },
+        function() { throw new ApiError(response); }
+      );
+    }
+    return response.json();
+  });
+}
+
+// Upload files with limited concurrency, so a bulk import of many files
+// doesn't open dozens of connections at once
+var BULK_ADD_CONCURRENCY = 3;
+var document_bulk_add_uploading = false;
+
+function runBulkAddUploads() {
+  if(document_bulk_add_uploading) {
+    return;
+  }
+  document_bulk_add_uploading = true;
+  document_bulk_add_submit.disabled = true;
+  document_bulk_add_submit.textContent = gettext("Importing...");
+
+  // Retry previously-failed entries on this run, but only once each: a
+  // worker picks up 'pending' entries only, so a failure isn't immediately
+  // retried in a loop, it waits for the user to click Import again
+  document_bulk_add_files.forEach(function(e) {
+    if(e.status === 'error') {
+      e.status = 'pending';
+      e.error = null;
+    }
+  });
+
+  function worker() {
+    var entry = document_bulk_add_files.find(function(e) {
+      return e.status === 'pending';
+    });
+    if(!entry) {
+      return Promise.resolve();
+    }
+    entry.status = 'uploading';
+    entry.error = null;
+    renderBulkAddTable();
+    return uploadBulkDocument(entry).then(function() {
+      entry.status = 'done';
+    }, function(error) {
+      entry.status = 'error';
+      entry.error = '' + error;
+    }).then(function() {
+      renderBulkAddTable();
+      return worker();
+    });
+  }
+
+  var workers = [];
+  for(var i = 0; i < BULK_ADD_CONCURRENCY; ++i) {
+    workers.push(worker());
+  }
+
+  return Promise.all(workers).then(function() {
+    document_bulk_add_uploading = false;
+    document_bulk_add_files = document_bulk_add_files.filter(function(e) { return e.status !== 'done'; });
+    renderBulkAddTable();
+    document_bulk_add_submit.textContent = gettext("Import all");
+    document_bulk_add_submit.disabled = document_bulk_add_files.length === 0;
+    if(document_bulk_add_files.length === 0) {
+      $(document_bulk_add_modal).modal('hide');
+    } else {
+      alert(gettext("Some documents could not be imported. Please check the error messages and try again."));
+    }
+  });
+}
+
+document_bulk_add_submit.addEventListener('click', function() {
+  if(document_bulk_add_files.length === 0) {
+    return;
+  }
+  runBulkAddUploads();
 });
 
 
