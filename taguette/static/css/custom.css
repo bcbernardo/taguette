@@ -297,6 +297,10 @@ a.dropdown-item:hover {
   color: black;
 }
 
+#document-view.condense-whitespace .blank-paragraph {
+  display: none;
+}
+
 #hlinfo {
   display: none;
   position: absolute;
