@@ -343,6 +343,18 @@ a.dropdown-item:hover {
   padding: 1rem 0.6rem 1rem 0.6rem;
 }
 
+.highlight-tag-remove {
+  color: #dc3545;
+  text-decoration: none;
+  margin-left: -0.35em;
+  font-weight: bold;
+}
+
+.highlight-tag-remove:hover {
+  color: #a71d2a;
+  text-decoration: none;
+}
+
 /* Spinner animation */
 #spinner {
   border: 3vh solid #dcdcdc;

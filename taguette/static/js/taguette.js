@@ -343,7 +343,13 @@ function describePos(node, offset) {
   if(node.id.substring(0, 11) != 'doc-offset-') {
     return null;
   }
-  return parseInt(node.id.substring(11)) + offset;
+  // Highlight-tab snippets carry their own document id (a single tag's
+  // matches can span many documents); the main document view doesn't need
+  // to (there's only one document there), so fall back to current_document
+  var document_id = node.hasAttribute('data-document-id')
+    ? parseInt(node.getAttribute('data-document-id'))
+    : current_document;
+  return {offset: parseInt(node.id.substring(11)) + offset, document_id: document_id};
 }
 
 // Find a position from the document offset
@@ -375,7 +381,7 @@ function locatePos(pos) {
 
 var current_selection = null;
 
-// Describe the selection e.g. [14, 56]
+// Describe the selection e.g. [14, 56, document_id]
 function describeSelection() {
   var sel = window.getSelection();
   if(sel.rangeCount != 0) {
@@ -383,8 +389,8 @@ function describeSelection() {
     if(!range.collapsed) {
       var start = describePos(range.startContainer, range.startOffset);
       var end = describePos(range.endContainer, range.endOffset);
-      if(start !== null && end !== null) {
-        return [start, end];
+      if(start !== null && end !== null && start.document_id === end.document_id) {
+        return [start.offset, end.offset, start.document_id];
       }
     }
   }
@@ -532,6 +538,7 @@ project_description_input.addEventListener('blur', projectMetadataChanged);
 
 var current_document = null;
 var current_tag = null;
+var current_page = 1;
 var last_added_tag = null;
 var documents_list = document.getElementById('documents-list');
 
@@ -1285,6 +1292,7 @@ document.addEventListener('selectionchange', selectionChanged);
 
 function createHighlight(selection) {
   document.getElementById('highlight-add-id').value = '';
+  document.getElementById('highlight-add-document').value = selection[2];
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
   highlightModalReset();
@@ -1305,6 +1313,7 @@ function editHighlight() {
   highlightModalReset();
   var id = this.getAttribute('data-highlight-id');
   document.getElementById('highlight-add-id').value = id;
+  document.getElementById('highlight-add-document').value = current_document;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
   var hl_tags = highlights['' + id].tags;
@@ -1315,10 +1324,22 @@ function editHighlight() {
   document.getElementById('highlight-search').focus();
 }
 
+// After creating/editing/deleting a highlight, if we're looking at a tag's
+// highlight list rather than a single document, refresh it -- there's no
+// live-update path for that view (the long-poll handler only patches the
+// currently open document), and the edit may have changed which highlights
+// belong here or what they overlap with
+function refreshHighlightsViewIfNeeded() {
+  if(current_document === null && current_tag !== null) {
+    loadTag(current_tag, current_page);
+  }
+}
+
 // Save highlight button
 document.getElementById('highlight-add-form').addEventListener('submit', function(e) {
   e.preventDefault();
   var highlight_id = document.getElementById('highlight-add-id').value;
+  var document_id = document.getElementById('highlight-add-document').value;
   var selection = [
     parseInt(document.getElementById('highlight-add-start').value),
     parseInt(document.getElementById('highlight-add-end').value)
@@ -1335,7 +1356,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
   if(highlight_id) {
     console.log("Posting update for highlight " + highlight_id);
     req = postJSON(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id,
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/' + highlight_id,
       {start_offset: selection[0],
        end_offset: selection[1],
        tags: hl_tags}
@@ -1343,7 +1364,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
   } else {
     console.log("Posting new highlight");
     req = postJSON(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/new',
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/new',
       {start_offset: selection[0],
        end_offset: selection[1],
        tags: hl_tags}
@@ -1354,6 +1375,7 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     console.log("Highlight posted");
     $(highlight_add_modal).modal('hide');
     highlightModalReset();
+    refreshHighlightsViewIfNeeded();
   })
   .catch(function(error) {
     console.error("Failed to create highlight:", error);
@@ -1365,15 +1387,17 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
 // Delete highlight button
 document.getElementById('highlight-delete').addEventListener('click', function() {
   var highlight_id = document.getElementById('highlight-add-id').value;
+  var document_id = document.getElementById('highlight-add-document').value;
   if(highlight_id) {
     highlight_id = parseInt(highlight_id);
     console.log("Posting highlight " + highlight_id + " deletion");
     deleteURL(
-      '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + highlight_id
+      '/api/project/' + project_id + '/document/' + document_id + '/highlight/' + highlight_id
     )
     .then(function() {
       $(highlight_add_modal).modal('hide');
       highlightModalReset();
+      refreshHighlightsViewIfNeeded();
     })
     .catch(function(error) {
       console.error("Failed to delete highlight:", error);
@@ -1662,6 +1686,7 @@ function loadTag(tag_path, page) {
     console.log("Loaded highlights for tag", tag_path || "''");
     document_contents.style.direction = 'ltr';
     current_tag = tag_path;
+    current_page = page;
     current_document = null;
     var document_links = document.getElementsByClassName('document-link-current');
     for(var i = document_links.length - 1; i >= 0; --i) {
@@ -1671,41 +1696,86 @@ function loadTag(tag_path, page) {
     document_contents.innerHTML = '';
     highlights = {};
     for(var i = 0; i < result.highlights.length; ++i) {
-      var hl = result.highlights[i];
-      var content = document.createElement('div');
-      if(hl.text_direction === 'RIGHT_TO_LEFT') {
-        content.style.direction = 'rtl';
-      } else {
-        content.style.direction = 'ltr';
-      }
-      content.innerHTML = result.highlights[i].content;
-      var elem = document.createElement('div');
-      elem.className = 'highlight-entry';
-      elem.setAttribute('id', 'highlight-entry-' + hl.id);
-      elem.appendChild(content);
-      elem.appendChild(document.createTextNode(' '));
+      (function(hl) {
+        var content = document.createElement('div');
+        if(hl.text_direction === 'RIGHT_TO_LEFT') {
+          content.style.direction = 'rtl';
+        } else {
+          content.style.direction = 'ltr';
+        }
+        content.innerHTML = hl.content;
+        // Give this snippet the same 'doc-offset-<offset>' marker used by
+        // the full document view, and note which document it's from, so
+        // that selecting text inside it and pressing 'n' can create a new,
+        // more specific highlight nested inside this one (describePos()
+        // walks up looking for exactly this id)
+        content.setAttribute('id', 'doc-offset-' + hl.start_offset);
+        content.setAttribute('data-document-id', '' + hl.document_id);
 
-      var doclink = document.createElement('a');
-      doclink.className = 'badge badge-light';
-      doclink.textContent = documents['' + hl.document_id].name;
-      linkDocument(doclink, hl.document_id);
-      elem.appendChild(doclink);
-      elem.appendChild(document.createTextNode(' '));
+        var elem = document.createElement('div');
+        elem.className = 'highlight-entry';
+        elem.setAttribute('id', 'highlight-entry-' + hl.id);
+        elem.appendChild(content);
+        elem.appendChild(document.createTextNode(' '));
 
-      var tag_names = hl.tags.map(function(tag) { return tags['' + tag].path; });
-      tag_names.sort();
-      for(var j = 0; j < tag_names.length; ++j) {
-        if(j > 0) {
+        var doclink = document.createElement('a');
+        doclink.className = 'badge badge-light';
+        doclink.textContent = documents['' + hl.document_id].name;
+        linkDocument(doclink, hl.document_id);
+        elem.appendChild(doclink);
+        elem.appendChild(document.createTextNode(' '));
+
+        // This highlight's own tags, each removable; removing the last one
+        // deletes the highlight entirely
+        var own_tags = hl.tags.map(function(id) { return tags['' + id]; });
+        sortByKey(own_tags, function(tag) { return tag.path; });
+        for(var j = 0; j < own_tags.length; ++j) {
+          var taglink = document.createElement('a');
+          taglink.className = 'badge badge-dark';
+          taglink.textContent = own_tags[j].path;
+          linkTag(taglink, taglink.textContent);
+          elem.appendChild(taglink);
+
+          (function(tag_id) {
+            var remove = document.createElement('a');
+            remove.className = 'highlight-tag-remove';
+            remove.setAttribute('href', 'javascript:void(0)');
+            remove.setAttribute('title', gettext("Remove this tag"));
+            remove.textContent = '×';
+            remove.addEventListener('click', function() {
+              removeHighlightTag(hl, tag_id);
+            });
+            elem.appendChild(remove);
+          })(own_tags[j].id);
           elem.appendChild(document.createTextNode(' '));
         }
-        var taglink = document.createElement('a');
-        taglink.className = 'badge badge-dark';
-        taglink.textContent = tag_names[j];
-        linkTag(taglink, taglink.textContent);
-        elem.appendChild(taglink);
-      }
 
-      document_contents.appendChild(elem);
+        // Tags from *other* highlights overlapping this same passage
+        // (fully enclosing, enclosed, or partially overlapping), shown for
+        // context but not removable from here
+        if(hl.overlapping_tags.length > 0) {
+          var overlap_label = document.createElement('span');
+          overlap_label.className = 'text-muted small';
+          overlap_label.textContent = gettext("Also tagged:");
+          elem.appendChild(overlap_label);
+          elem.appendChild(document.createTextNode(' '));
+
+          var overlap_names = hl.overlapping_tags.map(function(id) { return tags['' + id]; });
+          sortByKey(overlap_names, function(tag) { return tag.path; });
+          for(var k = 0; k < overlap_names.length; ++k) {
+            if(k > 0) {
+              elem.appendChild(document.createTextNode(' '));
+            }
+            var overlaplink = document.createElement('a');
+            overlaplink.className = 'badge badge-secondary';
+            overlaplink.textContent = overlap_names[k].path;
+            linkTag(overlaplink, overlaplink.textContent);
+            elem.appendChild(overlaplink);
+          }
+        }
+
+        document_contents.appendChild(elem);
+      })(result.highlights[i]);
     }
     if(result.highlights.length == 0) {
       document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
@@ -1797,6 +1867,36 @@ function loadTag(tag_path, page) {
   .catch(function(error) {
     console.error("Failed to load tag highlights:", error);
     alert(gettext("Error loading tag highlights!") + "\n\n" + error);
+  })
+  .then(hideSpinner);
+}
+
+// Remove a single tag from a highlight, from within the Highlights tab.
+// If that was the highlight's only tag, delete the highlight entirely
+// rather than leave a dangling untagged highlight behind.
+function removeHighlightTag(hl, tag_id) {
+  var remaining = hl.tags.filter(function(id) { return id !== tag_id; });
+  var req;
+  if(remaining.length === 0) {
+    if(!window.confirm(gettext("This is the only tag on this highlight. Delete the highlight entirely?"))) {
+      return;
+    }
+    req = deleteURL(
+      '/api/project/' + project_id + '/document/' + hl.document_id + '/highlight/' + hl.id
+    );
+  } else {
+    req = postJSON(
+      '/api/project/' + project_id + '/document/' + hl.document_id + '/highlight/' + hl.id,
+      {tags: remaining}
+    );
+  }
+  showSpinner();
+  req.then(function() {
+    loadTag(current_tag, current_page);
+  })
+  .catch(function(error) {
+    console.error("Failed to update highlight:", error);
+    alert(gettext("Couldn't update highlight!") + "\n\n" + error);
   })
   .then(hideSpinner);
 }
