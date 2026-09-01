@@ -1726,27 +1726,34 @@ function loadTag(tag_path, page) {
         elem.appendChild(document.createTextNode(' '));
 
         // This highlight's own tags, each removable; removing the last one
-        // deletes the highlight entirely
+        // deletes the highlight entirely. The tag badge and its remove
+        // button are two elements styled to look like one joined "chip",
+        // since an <a> can't contain another <a> or a <button>
         var own_tags = hl.tags.map(function(id) { return tags['' + id]; });
         sortByKey(own_tags, function(tag) { return tag.path; });
         for(var j = 0; j < own_tags.length; ++j) {
+          var tag_group = document.createElement('span');
+          tag_group.className = 'highlight-tag-group';
+
           var taglink = document.createElement('a');
-          taglink.className = 'badge badge-dark';
+          taglink.className = 'badge badge-dark highlight-tag-badge';
           taglink.textContent = own_tags[j].path;
           linkTag(taglink, taglink.textContent);
-          elem.appendChild(taglink);
+          tag_group.appendChild(taglink);
 
           (function(tag_id) {
-            var remove = document.createElement('a');
+            var remove = document.createElement('button');
+            remove.setAttribute('type', 'button');
             remove.className = 'highlight-tag-remove';
-            remove.setAttribute('href', 'javascript:void(0)');
             remove.setAttribute('title', gettext("Remove this tag"));
             remove.textContent = '×';
             remove.addEventListener('click', function() {
               removeHighlightTag(hl, tag_id);
             });
-            elem.appendChild(remove);
+            tag_group.appendChild(remove);
           })(own_tags[j].id);
+
+          elem.appendChild(tag_group);
           elem.appendChild(document.createTextNode(' '));
         }
 

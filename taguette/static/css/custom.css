@@ -343,16 +343,40 @@ a.dropdown-item:hover {
   padding: 1rem 0.6rem 1rem 0.6rem;
 }
 
-.highlight-tag-remove {
-  color: #dc3545;
-  text-decoration: none;
-  margin-left: -0.35em;
-  font-weight: bold;
+/* Tag badge + its remove button, styled as one joined "chip" so the
+   button always has its own solid, high-contrast background rather than
+   depending on (and blending into) whatever it's sitting on top of */
+.highlight-tag-group {
+  display: inline-flex;
+  align-items: stretch;
+  vertical-align: middle;
 }
 
-.highlight-tag-remove:hover {
-  color: #a71d2a;
-  text-decoration: none;
+.highlight-tag-group .highlight-tag-badge {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
+}
+
+.highlight-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+  padding: 0 0.5em;
+  margin: 0;
+  font-weight: bold;
+  font-size: 0.875em;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.highlight-tag-remove:hover,
+.highlight-tag-remove:focus {
+  background-color: #a71d2a;
 }
 
 /* Spinner animation */
