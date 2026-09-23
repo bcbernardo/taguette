@@ -265,7 +265,7 @@
 
 <!-- Add/change highlight modal -->
 <div class="modal" id="highlight-add-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <form id="highlight-add-form" class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">{% trans "modal window title" %}Highlight{% endtrans %}</h5>
@@ -277,14 +277,44 @@
         <input type="hidden" id="highlight-add-id" />
         <input type="hidden" id="highlight-add-start" />
         <input type="hidden" id="highlight-add-end" />
-        <div>
-          Find tags: <input id="highlight-search" />
+
+        <!-- Busca de tags -->
+        <div class="input-group mb-2">
+          <div class="input-group-prepend">
+            <span class="input-group-text"><i class="fa fa-search"></i></span>
+          </div>
+          <input type="text" class="form-control" id="highlight-search" placeholder="{% trans %}Find tags...{% endtrans %}" />
         </div>
-        <div class="container">
-          <ul class="list-unstyled" id="highlight-add-tags">
+
+        <!-- Trilha de navegação Breadcrumbs -->
+        <nav aria-label="breadcrumb" id="highlight-breadcrumbs-nav" style="display: none;">
+          <ol class="breadcrumb py-1 px-2 mb-2 bg-light" id="highlight-breadcrumbs">
+          </ol>
+        </nav>
+
+        <!-- Barra de tags selecionadas com estado duplo (clique simples desmarca/recupera; duplo clique salta para a pasta) -->
+        <div id="highlight-selected-tags-container" class="mb-3 p-2 border rounded bg-light" style="display: none;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small font-weight-bold text-muted">{% trans %}Tags selecionadas para este trecho:{% endtrans %}</span>
+            <span class="small text-muted" style="font-size: 0.75rem;">(1 clique: desmarcar/recuperar | 2 cliques: ir até pasta)</span>
+          </div>
+          <div id="highlight-selected-tags-bar" class="d-flex flex-wrap" style="max-height: 80px; overflow-y: auto; gap: 4px; scroll-behavior: smooth;">
+          </div>
+        </div>
+
+        <!-- Lista / Árvore de tags -->
+        <div class="container p-0">
+          <ul class="list-unstyled mb-2" id="highlight-add-tags">
             <li>{% trans %}Loading...{% endtrans %}</li>
-            <li class="special-item-button"><a href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a></li>
           </ul>
+        </div>
+
+        <!-- Criação contextual de subtag -->
+        <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+          <a id="highlight-contextual-create" href="javascript:createTagInCurrentLevel()" class="btn btn-sm btn-outline-primary">
+            <i class="fa fa-plus-circle"></i> <span id="highlight-contextual-label">{% trans %}Create a tag{% endtrans %}</span>
+          </a>
+          <small class="text-muted" id="highlight-level-indicator"></small>
         </div>
       </div>
       <div class="modal-footer">
@@ -308,16 +338,29 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="tag-add-id" />
-        <div class="container">
-          <input type="text" class="form-group" id="tag-add-path" name="tag-add-path" placeholder="{% trans "tag change form placeholder" %}Name{% endtrans %}" required />
-          <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans "tag change form placeholder" %}Description{% endtrans %}"></textarea>
+        <div class="container p-0">
+          <div class="form-group mb-2">
+            <label for="tag-add-path" class="small font-weight-bold mb-1">{% trans %}Tag Name{% endtrans %}</label>
+            <input type="text" class="form-control" id="tag-add-path" name="tag-add-path" placeholder="{% trans "tag change form placeholder" %}Name{% endtrans %}" required />
+            <small class="form-text text-muted">O caractere '|' não é permitido no nome.</small>
+          </div>
+          <div class="form-group mb-2">
+            <label for="tag-add-parent" class="small font-weight-bold mb-1">{% trans %}Parent Tag (Category){% endtrans %}</label>
+            <select class="form-control" id="tag-add-parent">
+              <option value="">{% trans %}(None - Root Tag){% endtrans %}</option>
+            </select>
+          </div>
+          <div class="form-group mb-0">
+            <label for="tag-add-description" class="small font-weight-bold mb-1">{% trans %}Description (Comment / Note){% endtrans %}</label>
+            <textarea class="form-control" id="tag-add-description" name="tag-add-description" rows="3" placeholder="{% trans "tag change form placeholder" %}Description{% endtrans %}"></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-info" data-dismiss="modal" id="tag-add-merge">{% trans "button in tag change modal window" %}Merge...{% endtrans %}</button>
+        <button type="button" class="btn btn-info" id="tag-add-merge">{% trans "button in tag change modal window" %}Merge...{% endtrans %}</button>
         <button type="submit" class="btn btn-primary">{% trans %}Save & Close{% endtrans %}</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal" id="tag-add-cancel">{% trans %}Cancel{% endtrans %}</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal" id="tag-add-delete">{% trans %}Delete tag{% endtrans %}</button>
+        <button type="button" class="btn btn-danger" id="tag-add-delete">{% trans %}Delete tag{% endtrans %}</button>
       </div>
     </form>
   </div>
@@ -328,35 +371,116 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <form id="tag-merge-form" class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Merge tags</h5>
+        <h5 class="modal-title">{% trans %}Merge tags{% endtrans %}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-5 form-group">
-              <input type="hidden" id="tag-merge-src-id" />
-              <input type="text" class="form-control" id="tag-merge-src-name" disabled />
+        <div class="container p-0">
+          <div class="form-group">
+            <label class="small font-weight-bold">{% trans %}Tag de Origem (será mesclada e removida):{% endtrans %}</label>
+            <input type="hidden" id="tag-merge-src-id" />
+            <input type="text" class="form-control" id="tag-merge-src-name" disabled />
+          </div>
+          <div class="form-group">
+            <label for="tag-merge-dest" class="small font-weight-bold">{% trans %}Mesclar dentro de (Tag Receptora):{% endtrans %}</label>
+            <select class="form-control" id="tag-merge-dest">
+            </select>
+          </div>
+          <div class="form-check mt-3 mb-2">
+            <input class="form-check-input" type="checkbox" id="tag-merge-preserve-description" checked />
+            <label class="form-check-label small" for="tag-merge-preserve-description">
+              {% trans %}Preservar e concatenar descrições/anotações (separadas por '; '){% endtrans %}
+            </label>
+          </div>
+          <div class="alert alert-info py-2 small mb-0">
+            <i class="fa fa-info-circle"></i> {% trans %}Todos os destaques e a subárvore de descendentes serão transferidos para a tag receptora.{% endtrans %}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">{% trans %}Confirmar Mesclagem{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm tag deletion modal (promote vs cascade) -->
+<div class="modal" id="tag-delete-confirm-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fa fa-exclamation-triangle"></i> {% trans %}Excluir Tag com Subtags{% endtrans %}</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong id="tag-delete-confirm-name"></strong> possui <span id="tag-delete-children-count" class="badge badge-warning"></span> subtags descendentes.</p>
+        <p class="small text-muted mb-3">Escolha como deseja tratar os descendentes associados a esta tag:</p>
+        
+        <div class="list-group">
+          <button type="button" id="btn-delete-promote" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1 text-primary"><i class="fa fa-level-up"></i> {% trans %}Promover subtags (+1 nível){% endtrans %}</h6>
+              <small class="badge badge-primary">Recomendado</small>
             </div>
-            <div class="col-md-2 form-group">
-              <label for="tag-merge-dest">into</label>
+            <p class="mb-1 small text-muted">Apenas esta tag é excluída. Toda a cascata de subtags sobe uma geração na árvore, assumindo o pai desta tag.</p>
+          </button>
+          <button type="button" id="btn-delete-cascade" class="list-group-item list-group-item-action list-group-item-danger">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1 text-danger"><i class="fa fa-trash"></i> {% trans %}Excluir em Cascata{% endtrans %}</h6>
             </div>
-            <div class="col-md-5 form-group">
-              <select class="form-control-file" id="tag-merge-dest">
-              </select>
+            <p class="mb-1 small text-muted">Exclui permanentemente esta tag e TODOS os seus descendentes (filhas, netas, etc.) e remove suas marcações.</p>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancelar{% endtrans %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm branch reparenting modal (Antes e Depois) -->
+<div class="modal" id="tag-reparent-confirm-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-sitemap"></i> {% trans %}Confirmar Reorganização de Galho{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">Você está alterando a categoria pai de <strong id="reparent-tag-name"></strong>. Esta tag e todas as suas subtags serão movidas conforme a pré-visualização abaixo:</p>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card border-secondary mb-2">
+              <div class="card-header py-1 font-weight-bold small text-muted">Estrutura Atual (Antes)</div>
+              <div class="card-body py-2 px-3 small font-monospace" id="reparent-preview-before" style="background:#f8f9fa; max-height: 180px; overflow-y: auto;">
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-primary mb-2">
+              <div class="card-header py-1 font-weight-bold small text-primary">Nova Estrutura (Depois)</div>
+              <div class="card-body py-2 px-3 small font-monospace" id="reparent-preview-after" style="background:#eef7ff; max-height: 180px; overflow-y: auto;">
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Merge tags</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" id="btn-reparent-confirm" class="btn btn-primary">{% trans %}Confirmar Mudança{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Voltar{% endtrans %}</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
+
 
 <!-- Spinner modal -->
 <div id="spinner-modal" class="modal bd-example-modal-lg" data-backdrop="static" data-keyboard="false" tabindex="-1">

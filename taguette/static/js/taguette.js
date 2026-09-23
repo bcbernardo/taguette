@@ -756,13 +756,62 @@ document.getElementById('document-change-delete').addEventListener('click', func
 
 
 /*
- * Tags list
+ * Tags list & Hierarchical Navigation
  */
 
 var tags_sorter = document.getElementById('tag-sortby');
 var sortTags = ['path', 'asc'];
 var tags_list = document.getElementById('tags-list');
 var tags_modal_list = document.getElementById('highlight-add-tags');
+
+var expandedTagNodes = new Set();
+var highlightNavFolder = null;
+var highlightSelectedTags = {};
+var pendingReparentData = null;
+
+function getTagFullPath(tag_id) {
+  var tag = tags['' + tag_id];
+  if(!tag) return '';
+  var parts = [];
+  var curr = tag;
+  var visited = {};
+  while(curr && !visited[curr.id]) {
+    visited[curr.id] = true;
+    parts.unshift(curr.path);
+    if(curr.parent_id && tags['' + curr.parent_id]) {
+      curr = tags['' + curr.parent_id];
+    } else {
+      break;
+    }
+  }
+  return parts.join(' | ');
+}
+
+function getTagChildren(tag_id) {
+  var res = [];
+  for(var id in tags) {
+    if(tag_id === null || tag_id === undefined) {
+      if(!tags[id].parent_id) res.push(tags[id]);
+    } else {
+      if(tags[id].parent_id == tag_id) res.push(tags[id]);
+    }
+  }
+  return res;
+}
+
+function getTagDescendants(tag_id) {
+  var descendants = [];
+  var queue = getTagChildren(tag_id);
+  while(queue.length > 0) {
+    var curr = queue.shift();
+    descendants.push(curr);
+    var children = getTagChildren(curr.id);
+    for(var i = 0; i < children.length; ++i) {
+      queue.push(children[i]);
+    }
+  }
+  return descendants;
+}
 
 function sortTagsBy(field, dir) {
   sortTags = [field, dir];
@@ -799,21 +848,22 @@ function addTag(tag) {
   if(!('count' in tag) && tag.id in tags) {
     tag.count = tags[tag.id].count;
   } else if(!('count' in tag)) {
-    tag = Object.assign({'count': 0}, tag)
+    tag = Object.assign({'count': 0}, tag);
   }
   tags[tag.id] = tag;
+  if(tag.parent_id && !expandedTagNodes.has(tag.parent_id)) {
+    expandedTagNodes.add(tag.parent_id);
+  }
   updateTagsList();
 
-  // This is the last tag we created, check it
-  if(tag.id == last_added_tag){
-    document.getElementById('highlight-add-tags-' + tag.id).checked = true;
+  if(tag.id == last_added_tag) {
+    toggleHighlightSelectedTag(tag.id, true);
   }
 }
 
 function removeTag(tag_id) {
-  // Remove from list of tags
   delete tags['' + tag_id];
-  // Remove from all highlights
+  delete highlightSelectedTags['' + tag_id];
   var hl_entries = Object.entries(highlights);
   for(var i = 0; i < hl_entries.length; ++i) {
     var hl = hl_entries[i][1];
@@ -825,192 +875,164 @@ function removeTag(tag_id) {
 function mergeTags(tag_src, tag_dest) {
   for(var id in highlights) {
     var hl_tags = highlights[id].tags;
-
     if(hl_tags.includes(tag_src)) {
-      // Remove src tag
       var idx = hl_tags.indexOf(tag_src);
       hl_tags.splice(idx, 1);
-
       if(!hl_tags.includes(tag_dest)) {
-        // Add new tag
         hl_tags.push(tag_dest);
       }
     }
   }
+  for(var tid in tags) {
+    if(tags[tid].parent_id == tag_src) {
+      tags[tid].parent_id = tag_dest;
+    }
+  }
   delete tags['' + tag_src];
+  delete highlightSelectedTags['' + tag_src];
   updateTagsList();
 }
 
 function updateTagsList() {
-  var entries = Object.entries(tags);
-  var isReverse = sortTags[1] == 'desc';
-  sortByKey(entries, function(e) { return e[1][sortTags[0]]; }, isReverse);
+  var stickyPane = document.querySelector('div.sticky-top');
+  var prevPaneScroll = stickyPane ? stickyPane.scrollTop : 0;
+  var prevWindowScroll = window.scrollY || document.documentElement.scrollTop;
 
-  // The list in the left panel
-
-  // Empty the list
   while(tags_list.firstChild) {
     var first = tags_list.firstChild;
-    if(first.classList
-     && first.classList.contains('special-item-button')) {
+    if(first.classList && first.classList.contains('special-item-button')) {
       break;
     }
     tags_list.removeChild(first);
   }
-  // Fill up the list again
-  // TODO: Show this as a tree
-  var tree = {};
-  var before = tags_list.firstChild;
-  for(var i = 0; i < entries.length; ++i) {
-    var tag = entries[i][1];
-    var elem = document.createElement('li');
-    elem.className = 'list-group-item';
-    if(current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag) {
-      elem.classList.add('tag-current');
+
+  var isReverse = sortTags[1] == 'desc';
+
+  function renderTreeNode(tag, depth, container) {
+    var children = getTagChildren(tag.id);
+    sortByKey(children, function(c) { return c[sortTags[0]]; }, isReverse);
+
+    var li = document.createElement('li');
+    li.className = 'list-group-item p-1 border-0';
+    li.id = 'tag-item-' + tag.id;
+
+    var isCurrent = current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag;
+    if(isCurrent) {
+      li.classList.add('tag-current');
     }
-    elem.innerHTML =
-      '<div class="d-flex justify-content-between align-items-center">' +
-      '  <div class="tag-name">' +
-      '    <a id="tag-link-' + tag.id + '">' + escapeHtml(tag.path) + '</a>' +
-      '  </div>' +
-      '  <div style="white-space: nowrap;">' +
-      '    <span class="badge badge-secondary badge-pill" id="tag-' + tag.id + '-count">' + tag.count + '</span>' +
-      '    <a href="javascript:editTag(' + tag.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' +
-      '  </div>' +
-      '</div>';
-    tags_list.insertBefore(elem, before);
-    linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
+
+    var row = document.createElement('div');
+    row.className = 'd-flex justify-content-between align-items-center py-1';
+    row.style.paddingLeft = (depth * 18) + 'px';
+
+    var left = document.createElement('div');
+    left.className = 'tag-name d-flex align-items-center text-truncate mr-1';
+
+    if(children.length > 0) {
+      var toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-sm btn-link p-0 mr-1 text-secondary';
+      toggleBtn.style.textDecoration = 'none';
+      toggleBtn.style.width = '16px';
+      var isExpanded = expandedTagNodes.has(tag.id);
+      toggleBtn.innerHTML = isExpanded ? '<i class="fa fa-caret-down"></i>' : '<i class="fa fa-caret-right"></i>';
+      toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var childUl = li.querySelector(':scope > ul');
+        if(expandedTagNodes.has(tag.id)) {
+          expandedTagNodes.delete(tag.id);
+          toggleBtn.innerHTML = '<i class="fa fa-caret-right"></i>';
+          if(childUl) {
+            childUl.style.display = 'none';
+          }
+        } else {
+          expandedTagNodes.add(tag.id);
+          toggleBtn.innerHTML = '<i class="fa fa-caret-down"></i>';
+          if(childUl) {
+            childUl.style.display = 'block';
+          }
+          li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      left.appendChild(toggleBtn);
+    } else {
+      var spacer = document.createElement('span');
+      spacer.style.display = 'inline-block';
+      spacer.style.width = '16px';
+      spacer.className = 'mr-1';
+      left.appendChild(spacer);
+    }
+
+    var a = document.createElement('a');
+    a.id = 'tag-link-' + tag.id;
+    a.className = 'text-dark text-truncate';
+    a.textContent = tag.path;
+    a.title = getTagFullPath(tag.id) + (tag.description ? '\n' + tag.description : '');
+    left.appendChild(a);
+    row.appendChild(left);
+
+    var right = document.createElement('div');
+    right.className = 'd-flex align-items-center flex-shrink-0';
+    right.innerHTML =
+      '<span class="badge badge-secondary badge-pill mr-1" id="tag-' + tag.id + '-count">' + tag.count + '</span>' +
+      '<button type="button" class="btn btn-outline-success btn-xs mr-1 p-0 px-1" title="' + gettext("Criar subtag nesta categoria") + '" onclick="createSubtag(' + tag.id + ')"><i class="fa fa-plus"></i></button>' +
+      '<a href="javascript:editTag(' + tag.id + ');" class="btn btn-primary btn-sm py-0 px-1">' + gettext("Edit") + '</a>';
+    row.appendChild(right);
+
+    li.appendChild(row);
+    container.appendChild(li);
+    linkTag(a, tag.path);
+
+    if(children.length > 0) {
+      var childUl = document.createElement('ul');
+      childUl.className = 'list-unstyled mb-0';
+      if(!expandedTagNodes.has(tag.id)) {
+        childUl.style.display = 'none';
+      }
+      for(var i = 0; i < children.length; ++i) {
+        renderTreeNode(children[i], depth + 1, childUl);
+      }
+      li.appendChild(childUl);
+    }
   }
-  if(entries.length == 0) {
+
+  var rootTags = getTagChildren(null);
+  sortByKey(rootTags, function(t) { return t[sortTags[0]]; }, isReverse);
+
+  if(rootTags.length === 0 && Object.keys(tags).length === 0) {
     var elem = document.createElement('div');
     elem.className = 'list-group-item disabled';
     elem.textContent = gettext("There are no tags in this project yet.");
-    tags_list.insertBefore(elem, before);
+    tags_list.appendChild(elem);
+  } else {
+    for(var i = 0; i < rootTags.length; ++i) {
+      renderTreeNode(rootTags[i], 0, tags_list);
+    }
   }
 
-  // The list in the highlight modal
+  if(stickyPane) {
+    stickyPane.scrollTop = prevPaneScroll;
+  }
+  window.scrollTo(0, prevWindowScroll);
+
   updateModalTagsList();
 
-  // Re-set all highlights, to update titles
   var hl_entries = Object.entries(highlights);
   for(var i = 0; i < hl_entries.length; ++i) {
     setHighlight(hl_entries[i][1]);
   }
-
-  console.log("Highlights updated");
-}
-
-function updateModalTagsList() {
-  var entries = Object.entries(tags);
-  // Save previous checked statuses
-  var checked_tags = [];
-  for(var i = 0; i < entries.length; ++i) {
-    var id = entries[i][1].id;
-    var checkbox = document.getElementById('highlight-add-tags-' + id);
-    if(checkbox && checkbox.checked) {
-      checked_tags.push(id);
-    }
-  }
-
-  // Empty the list
-  while(tags_modal_list.firstChild) {
-    var first = tags_modal_list.firstChild;
-    if(first.classList
-     && first.classList.contains('special-item-button')) {
-      break;
-    }
-    tags_modal_list.removeChild(first);
-  }
-
-  // Apply search
-  var searchFor = document.getElementById('highlight-search').value;
-  if(searchFor.length > 0) {
-    entries.forEach(function(e) {
-      if(e[1].path.indexOf(searchFor) > -1) {
-        e[1].searchGroup = '0';
-      } else {
-        e[1].searchGroup = '1';
-      }
-    });
-  } else {
-    entries.forEach(function(e) {
-      delete e[1].searchGroup;
-    });
-  }
-
-  sortByKey(entries, function(e) { return e[1].searchGroup + e[1].path; });
-
-  // Fill up the list again
-  // TODO: Show this as a tree
-  var tree = {};
-  var before = tags_modal_list.firstChild;
-  for(var i = 0; i < entries.length; ++i) {
-    var tag = entries[i][1];
-    var elem = document.createElement('li');
-    var searchHitClass = '';
-    if(searchFor.length > 0) {
-      if(tag.searchGroup == '0') {
-        searchHitClass = 'font-weight-bold';
-      } else {
-        searchHitClass = 'text-muted';
-      }
-    }
-    elem.className = 'tag-name form-check ' + searchHitClass;
-    elem.innerHTML =
-      '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
-      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' + escapeHtml(tag.path) + '</label>';
-    tags_modal_list.insertBefore(elem, before);
-  }
-  if(entries.length == 0) {
-    var elem = document.createElement('li');
-    elem.textContent = gettext("no tags");
-    tags_modal_list.insertBefore(elem, before);
-  }
-
-  // Re-check checkboxes
-  for(var i = 0; i < checked_tags.length; ++i) {
-    document.getElementById('highlight-add-tags-' + checked_tags[i]).checked = true;
-  }
-
-  console.log("Tags list updated");
-}
-
-var highlightSearch = document.getElementById('highlight-search');
-highlightSearch.addEventListener('input', function(e) {
-  updateModalTagsList();
-});
-highlightSearch.addEventListener('keypress', function(e) {
-  if(e.key === 'Enter') {
-    // If search is empty, don't prevent form submission, otherwise...
-    if(highlightSearch.value.length > 0) {
-      // Prevent submission
-      e.preventDefault();
-
-      // Toggle the first match
-      var checkbox = document.getElementById('highlight-add-tags').querySelector('.form-check.font-weight-bold input');
-      if(checkbox) {
-        checkbox.checked = !checkbox.checked;
-
-        // Reset the search
-        highlightSearch.value = '';
-        updateModalTagsList();
-      }
-    }
-  }
-});
-
-function highlightModalReset() {
-  document.getElementById('highlight-add-form').reset();
-  updateModalTagsList();
 }
 
 updateTagsList();
 
 function updateTagCount(id, delta) {
   var tag = tags['' + id];
-  tag.count += delta;
-  var elem = document.getElementById('tag-' + id + '-count');
-  elem.textContent = tag.count;
+  if(tag) {
+    tag.count += delta;
+    var elem = document.getElementById('tag-' + id + '-count');
+    if(elem) elem.textContent = tag.count;
+  }
 }
 
 var tag_add_modal = document.getElementById('tag-add-modal');
@@ -1019,9 +1041,55 @@ $(tag_add_modal).on('shown.bs.modal', function() {
   document.getElementById('tag-add-path').focus();
 });
 
+$(tag_add_modal).on('hidden.bs.modal', function() {
+  if($('#highlight-add-modal').hasClass('show')) {
+    $('body').addClass('modal-open');
+  }
+});
+
+function populateTagParentSelect(selectedParentId, disabledTagId) {
+  var select = document.getElementById('tag-add-parent');
+  select.innerHTML = '<option value="">' + gettext("(None - Root Tag)") + '</option>';
+
+  var disabledIds = new Set();
+  if(disabledTagId) {
+    disabledIds.add(disabledTagId);
+    var desc = getTagDescendants(disabledTagId);
+    for(var d = 0; d < desc.length; ++d) {
+      disabledIds.add(desc[d].id);
+    }
+  }
+
+  function addOption(tag, prefix) {
+    var opt = document.createElement('option');
+    opt.value = tag.id;
+    opt.textContent = prefix + tag.path;
+    if(disabledIds.has(tag.id)) {
+      opt.disabled = true;
+    }
+    if(selectedParentId && tag.id == selectedParentId) {
+      opt.selected = true;
+    }
+    select.appendChild(opt);
+
+    var children = getTagChildren(tag.id);
+    sortByKey(children, function(c) { return c.path.toLowerCase(); }, false);
+    for(var i = 0; i < children.length; ++i) {
+      addOption(children[i], prefix + '— ');
+    }
+  }
+
+  var roots = getTagChildren(null);
+  sortByKey(roots, function(r) { return r.path.toLowerCase(); }, false);
+  for(var r = 0; r < roots.length; ++r) {
+    addOption(roots[r], '');
+  }
+}
+
 function createTag() {
   document.getElementById('tag-add-form').reset();
   document.getElementById('tag-add-id').value = '';
+  populateTagParentSelect(null, null);
   document.getElementById('tag-add-label-new').style.display = '';
   document.getElementById('tag-add-label-change').style.display = 'none';
   document.getElementById('tag-add-cancel').style.display = '';
@@ -1030,11 +1098,29 @@ function createTag() {
   $(tag_add_modal).modal();
 }
 
+function createSubtag(parentId) {
+  document.getElementById('tag-add-form').reset();
+  document.getElementById('tag-add-id').value = '';
+  populateTagParentSelect(parentId, null);
+  document.getElementById('tag-add-label-new').style.display = '';
+  document.getElementById('tag-add-label-change').style.display = 'none';
+  document.getElementById('tag-add-cancel').style.display = '';
+  document.getElementById('tag-add-delete').style.display = 'none';
+  document.getElementById('tag-add-merge').style.display = 'none';
+  $(tag_add_modal).modal();
+}
+
+function createTagInCurrentLevel() {
+  createSubtag(highlightNavFolder);
+}
+
 function editTag(tag_id) {
   document.getElementById('tag-add-form').reset();
+  var tag = tags['' + tag_id];
   document.getElementById('tag-add-id').value = '' + tag_id;
-  document.getElementById('tag-add-path').value = tags['' + tag_id].path;
-  document.getElementById('tag-add-description').value = tags['' + tag_id].description;
+  document.getElementById('tag-add-path').value = tag.path;
+  document.getElementById('tag-add-description').value = tag.description;
+  populateTagParentSelect(tag.parent_id, tag.id);
   document.getElementById('tag-add-label-new').style.display = 'none';
   document.getElementById('tag-add-label-change').style.display = '';
   document.getElementById('tag-add-cancel').style.display = 'none';
@@ -1043,142 +1129,211 @@ function editTag(tag_id) {
   $(tag_add_modal).modal();
 }
 
-// Save tag button
+// Salvar tag
 document.getElementById('tag-add-form').addEventListener('submit', function(e) {
   e.preventDefault();
 
   var tag_id = document.getElementById('tag-add-id').value;
-  if(tag_id) {
-    tag_id = parseInt(tag_id);
-  } else {
-    tag_id = null;
-  }
-  var tag_path = document.getElementById('tag-add-path').value;
+  tag_id = tag_id ? parseInt(tag_id) : null;
+  var tag_path = document.getElementById('tag-add-path').value.trim();
   if(!tag_path) {
     alert(gettext("Invalid tag name"));
     return;
   }
-  var req;
-  if(tag_id !== null) {
-    console.log("Posting update for tag " + tag_id);
-    req = postJSON(
-      '/api/project/' + project_id + '/tag/' + tag_id,
-      {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
-    );
-  } else {
-    console.log("Posting new tag");
-    req = postJSON(
-      '/api/project/' + project_id + '/tag/new',
-      {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
-    );
+  if(tag_path.indexOf('|') !== -1) {
+    alert(gettext("O caractere '|' não é permitido no nome da tag."));
+    return;
   }
+  var parent_val = document.getElementById('tag-add-parent').value;
+  var parent_id = parent_val ? parseInt(parent_val) : null;
+  var description = document.getElementById('tag-add-description').value;
+
+  // Se o pai foi alterado e a tag possui descendentes, abre confirmação de reorganização Antes/Depois
+  if(tag_id !== null) {
+    var oldTag = tags['' + tag_id];
+    var oldParentId = oldTag.parent_id ? parseInt(oldTag.parent_id) : null;
+    var descendants = getTagDescendants(tag_id);
+
+    if(oldParentId !== parent_id && descendants.length > 0) {
+      pendingReparentData = {
+        id: tag_id,
+        path: tag_path,
+        parent_id: parent_id,
+        description: description
+      };
+      showReparentConfirmModal(tag_id, oldParentId, parent_id, descendants);
+      return;
+    }
+  }
+
+  executeSaveTag(tag_id, tag_path, parent_id, description);
+});
+
+function executeSaveTag(tag_id, tag_path, parent_id, description) {
+  var payload = {
+    path: tag_path,
+    parent_id: parent_id,
+    description: description
+  };
+  var req = tag_id !== null
+    ? postJSON('/api/project/' + project_id + '/tag/' + tag_id, payload)
+    : postJSON('/api/project/' + project_id + '/tag/new', payload);
+
   showSpinner();
   req.then(function(reply) {
-    console.log("Tag posted");
-
-    // Check this tag in the list, or remember to check it once it appears
-    var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
-    if(tag_checkbox) {
-      tag_checkbox.checked = true;
+    if(parent_id && !expandedTagNodes.has(parent_id)) {
+      expandedTagNodes.add(parent_id);
     }
     last_added_tag = reply.id;
-
+    if(tags[reply.id] || reply.id) {
+      toggleHighlightSelectedTag(reply.id, true);
+    }
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
   })
   .catch(function(error) {
-    console.error("Failed to create tag:", error);
-    alert(gettext("Couldn't create tag!") + "\n\n" + error);
+    console.error("Failed to save tag:", error);
+    alert(gettext("Erro ao salvar tag!") + "\n\n" + error);
   })
   .then(hideSpinner);
+}
+
+function showReparentConfirmModal(tag_id, oldParentId, newParentId, descendants) {
+  var tag = tags['' + tag_id];
+  document.getElementById('reparent-tag-name').textContent = tag.path;
+
+  var oldParentName = oldParentId && tags['' + oldParentId] ? tags['' + oldParentId].path : gettext("Raiz do Projeto");
+  var newParentName = newParentId && tags['' + newParentId] ? tags['' + newParentId].path : gettext("Raiz do Projeto");
+
+  var beforeHtml = '<div>📁 <strong>' + escapeHtml(oldParentName) + '</strong></div>' +
+                   '<div style="padding-left:16px;">└─ 🏷️ <strong>' + escapeHtml(tag.path) + '</strong>';
+  for(var i = 0; i < descendants.length; ++i) {
+    beforeHtml += '<div style="padding-left:16px;">└─ 🏷️ ' + escapeHtml(descendants[i].path) + '</div>';
+  }
+  beforeHtml += '</div>';
+  document.getElementById('reparent-preview-before').innerHTML = beforeHtml;
+
+  var afterHtml = '<div>📁 <strong>' + escapeHtml(newParentName) + '</strong></div>' +
+                  '<div style="padding-left:16px;">└─ 🏷️ <strong class="text-primary">' + escapeHtml(tag.path) + '</strong>';
+  for(var j = 0; j < descendants.length; ++j) {
+    afterHtml += '<div style="padding-left:16px;">└─ 🏷️ ' + escapeHtml(descendants[j].path) + '</div>';
+  }
+  afterHtml += '</div>';
+  document.getElementById('reparent-preview-after').innerHTML = afterHtml;
+
+  $(tag_add_modal).modal('hide');
+  $('#tag-reparent-confirm-modal').modal();
+}
+
+document.getElementById('btn-reparent-confirm').addEventListener('click', function() {
+  if(!pendingReparentData) return;
+  $('#tag-reparent-confirm-modal').modal('hide');
+  executeSaveTag(
+    pendingReparentData.id,
+    pendingReparentData.path,
+    pendingReparentData.parent_id,
+    pendingReparentData.description
+  );
+  pendingReparentData = null;
 });
 
-// Delete tag button
+// Exclusão de tag
 document.getElementById('tag-add-delete').addEventListener('click', function(e) {
   var tag_id = document.getElementById('tag-add-id').value;
-  if(tag_id) {
-    if(!window.confirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tags[tag_id].path}))) {
-      e.preventDefault();
+  if(!tag_id) return;
+  tag_id = parseInt(tag_id);
+  var tag = tags['' + tag_id];
+  var descendants = getTagDescendants(tag_id);
+
+  if(descendants.length > 0) {
+    document.getElementById('tag-delete-confirm-name').textContent = tag.path;
+    document.getElementById('tag-delete-children-count').textContent = descendants.length;
+    $(tag_add_modal).modal('hide');
+    $('#tag-delete-confirm-modal').modal();
+  } else {
+    if(!window.confirm(gettext("Are you sure you want to delete the tag '%(tag)s'?", {tag: tag.path}))) {
       return;
     }
-    tag_id = parseInt(tag_id);
-    console.log("Posting tag " + tag_id + " deletion");
-    deleteURL(
-      '/api/project/' + project_id + '/tag/' + tag_id
-    )
-    .then(function() {
-      $(tag_add_modal).modal('hide');
-      document.getElementById('tag-add-form').reset();
-    })
-    .catch(function(error) {
-      console.error("Failed to delete tag:", error);
-      alert(gettext("Couldn't delete tag!") + "\n\n" + error);
-    });
+    executeDeleteTag(tag_id, 'promote');
   }
 });
 
-// Merge tags button in tag edit modal: shows merge modal
+function executeDeleteTag(tag_id, action) {
+  showSpinner();
+  deleteURL('/api/project/' + project_id + '/tag/' + tag_id + '?action=' + action)
+  .then(function() {
+    $(tag_add_modal).modal('hide');
+    $('#tag-delete-confirm-modal').modal('hide');
+    document.getElementById('tag-add-form').reset();
+  })
+  .catch(function(error) {
+    console.error("Failed to delete tag:", error);
+    alert(gettext("Couldn't delete tag!") + "\n\n" + error);
+  })
+  .then(hideSpinner);
+}
+
+document.getElementById('btn-delete-promote').addEventListener('click', function() {
+  var tag_id = parseInt(document.getElementById('tag-add-id').value);
+  executeDeleteTag(tag_id, 'promote');
+});
+
+document.getElementById('btn-delete-cascade').addEventListener('click', function() {
+  var tag_id = parseInt(document.getElementById('tag-add-id').value);
+  executeDeleteTag(tag_id, 'cascade');
+});
+
+// Botão de merge no modal de edição
 document.getElementById('tag-add-merge').addEventListener('click', function(e) {
   e.preventDefault();
 
   var tag_id = document.getElementById('tag-add-id').value;
-  if(!tag_id)
-    return;
+  if(!tag_id) return;
   tag_id = parseInt(tag_id);
 
   document.getElementById('tag-merge-form').reset();
-
-  // Set source tag
   document.getElementById('tag-merge-src-id').value = '' + tag_id;
   document.getElementById('tag-merge-src-name').value = tags['' + tag_id].path;
 
-  // Empty target tag <select>
   var target = document.getElementById('tag-merge-dest');
   target.innerHTML = '';
 
-  // Fill target tag <select>
   var entries = Object.entries(tags);
-  sortByKey(entries, function(e) { return e[1].path; });
+  sortByKey(entries, function(e) { return e[1].path.toLowerCase(); }, false);
   for(var i = 0; i < entries.length; ++i) {
     if(entries[i][0] == '' + tag_id) {
-      // Can't merge into itself
       continue;
     }
     var option = document.createElement('option');
     option.setAttribute('value', entries[i][0]);
-    option.innerText = entries[i][1].path;
+    option.innerText = getTagFullPath(entries[i][0]);
     target.appendChild(option);
   }
 
+  $(tag_add_modal).modal('hide');
   $(document.getElementById('tag-merge-modal')).modal();
 });
 
-// Merge modal submit button
+// Submissão de merge
 document.getElementById('tag-merge-form').addEventListener('submit', function(e) {
   e.preventDefault();
 
   var tag_src = document.getElementById('tag-merge-src-id').value;
-  if(!tag_src)
-    return;
+  if(!tag_src) return;
   tag_src = parseInt(tag_src);
 
   var tag_dest = document.getElementById('tag-merge-dest').value;
-  if(!tag_dest)
-    return;
+  if(!tag_dest) return;
   tag_dest = parseInt(tag_dest);
 
-  console.log(
-    "Merging tag " + tag_src + " (" + tags['' + tag_src].path +
-    ") into tag " + tag_dest + " (" + tags['' + tag_dest].path + ")");
+  var preserve = document.getElementById('tag-merge-preserve-description').checked;
+
   showSpinner();
   postJSON(
     '/api/project/' + project_id + '/tag/merge',
-    {src: tag_src, dest: tag_dest}
+    {src: tag_src, dest: tag_dest, preserve_description: preserve}
   )
   .then(function() {
-    console.log("Tag merge posted");
     $(document.getElementById('tag-merge-modal')).modal('hide');
   })
   .catch(function(error) {
@@ -1283,6 +1438,337 @@ function selectionChanged() {
 }
 document.addEventListener('selectionchange', selectionChanged);
 
+function renderHighlightSelectedChips() {
+  var container = document.getElementById('highlight-selected-tags-container');
+  var bar = document.getElementById('highlight-selected-tags-bar');
+  if(!container || !bar) return;
+  bar.innerHTML = '';
+
+  var ids = Object.keys(highlightSelectedTags);
+  if(ids.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  for(var i = 0; i < ids.length; ++i) {
+    var tagId = ids[i];
+    var item = highlightSelectedTags[tagId];
+    var tag = item.tag;
+    var isExcluded = item.excluded;
+
+    var chip = document.createElement('span');
+    chip.className = isExcluded ? 'badge badge-danger p-2 mr-1 mb-1' : 'badge badge-primary p-2 mr-1 mb-1';
+    chip.style.cursor = 'pointer';
+    chip.style.userSelect = 'none';
+    chip.style.transition = 'all 0.15s ease';
+    chip.setAttribute('data-tag-id', tagId);
+    chip.title = gettext("1 clique: desmarcar/recuperar | Duplo clique: navegar até pasta");
+
+    if(isExcluded) {
+      chip.style.textDecoration = 'line-through';
+      chip.style.opacity = '0.75';
+      chip.innerHTML = '<span class="mr-1"><s>' + escapeHtml(tag.path) + '</s></span> <i class="fa fa-undo" title="Recuperar"></i>';
+    } else {
+      chip.innerHTML = '<span class="mr-1">' + escapeHtml(tag.path) + '</span> <i class="fa fa-times-circle" title="Desmarcar"></i>';
+    }
+
+    // 1 clique: desmarca ou recupera a tag sem fechar o modal
+    chip.addEventListener('click', (function(id) {
+      return function(e) {
+        e.preventDefault();
+        highlightSelectedTags[id].excluded = !highlightSelectedTags[id].excluded;
+        var cb = document.getElementById('highlight-add-tags-' + id);
+        if(cb) {
+          cb.checked = !highlightSelectedTags[id].excluded;
+        }
+        renderHighlightSelectedChips();
+      };
+    })(tagId));
+
+    // 2 cliques: salta para a pasta da tag e exibe seus irmãos
+    chip.addEventListener('dblclick', (function(itemTag) {
+      return function(e) {
+        e.preventDefault();
+        highlightNavFolder = itemTag.parent_id ? itemTag.parent_id : null;
+        document.getElementById('highlight-search').value = '';
+        updateModalTagsList();
+      };
+    })(tag));
+
+    bar.appendChild(chip);
+  }
+
+  // Rolagem suave
+  bar.scrollLeft = bar.scrollWidth;
+}
+
+function toggleHighlightSelectedTag(tagId, isChecked) {
+  var tag = tags['' + tagId];
+  if(!tag) return;
+  if(isChecked) {
+    highlightSelectedTags[tagId] = { tag: tag, excluded: false };
+  } else {
+    delete highlightSelectedTags[tagId];
+  }
+  renderHighlightSelectedChips();
+}
+
+function updateModalBreadcrumbs() {
+  var nav = document.getElementById('highlight-breadcrumbs-nav');
+  var ol = document.getElementById('highlight-breadcrumbs');
+  if(!nav || !ol) return;
+  ol.innerHTML = '';
+
+  if(highlightNavFolder === null) {
+    nav.style.display = 'none';
+    var labelElem = document.getElementById('highlight-contextual-label');
+    if(labelElem) labelElem.textContent = gettext("Create a tag");
+    var indElem = document.getElementById('highlight-level-indicator');
+    if(indElem) indElem.textContent = gettext("Nível: Raiz");
+    return;
+  }
+
+  nav.style.display = 'block';
+  var trail = [];
+  var curr = tags['' + highlightNavFolder];
+  var visited = {};
+  while(curr && !visited[curr.id]) {
+    visited[curr.id] = true;
+    trail.unshift(curr);
+    curr = curr.parent_id && tags['' + curr.parent_id] ? tags['' + curr.parent_id] : null;
+  }
+
+  var rootLi = document.createElement('li');
+  rootLi.className = 'breadcrumb-item';
+  rootLi.innerHTML = '<a href="javascript:void(0)" class="text-primary"><i class="fa fa-folder-open"></i> Raiz</a>';
+  rootLi.addEventListener('click', function() {
+    highlightNavFolder = null;
+    document.getElementById('highlight-search').value = '';
+    updateModalTagsList();
+  });
+  ol.appendChild(rootLi);
+
+  for(var i = 0; i < trail.length; ++i) {
+    var t = trail[i];
+    var li = document.createElement('li');
+    if(i === trail.length - 1) {
+      li.className = 'breadcrumb-item active font-weight-bold text-dark';
+      li.textContent = t.path;
+      var labelElem = document.getElementById('highlight-contextual-label');
+      if(labelElem) labelElem.textContent = gettext("Create a subtag in '%(folder)s'", {folder: t.path});
+      var indElem = document.getElementById('highlight-level-indicator');
+      if(indElem) indElem.textContent = gettext("Pasta: ") + t.path;
+    } else {
+      li.className = 'breadcrumb-item';
+      li.innerHTML = '<a href="javascript:void(0)" class="text-primary">' + escapeHtml(t.path) + '</a>';
+      li.addEventListener('click', (function(folderId) {
+        return function() {
+          highlightNavFolder = folderId;
+          document.getElementById('highlight-search').value = '';
+          updateModalTagsList();
+        };
+      })(t.id));
+    }
+    ol.appendChild(li);
+  }
+}
+
+function updateModalTagsList() {
+  updateModalBreadcrumbs();
+  renderHighlightSelectedChips();
+
+  if(!tags_modal_list) return;
+
+  while(tags_modal_list.firstChild) {
+    tags_modal_list.removeChild(tags_modal_list.firstChild);
+  }
+
+  var searchFor = document.getElementById('highlight-search').value.toLowerCase().trim();
+  var entries = Object.entries(tags);
+
+  if(searchFor.length > 0) {
+    var matches = [];
+    for(var i = 0; i < entries.length; ++i) {
+      var tag = entries[i][1];
+      var full = getTagFullPath(tag.id);
+      if(tag.path.toLowerCase().indexOf(searchFor) > -1 || full.toLowerCase().indexOf(searchFor) > -1) {
+        matches.push(tag);
+      }
+    }
+    sortByKey(matches, function(m) { return m.path.toLowerCase(); }, false);
+
+    if(matches.length === 0) {
+      var emptyLi = document.createElement('li');
+      emptyLi.className = 'text-muted small py-2';
+      emptyLi.textContent = gettext("Nenhuma tag encontrada para '%(query)s'", {query: searchFor});
+      tags_modal_list.appendChild(emptyLi);
+      return;
+    }
+
+    for(var m = 0; m < matches.length; ++m) {
+      var matchTag = matches[m];
+      var isChecked = highlightSelectedTags[matchTag.id] && !highlightSelectedTags[matchTag.id].excluded;
+      var matchChildren = getTagChildren(matchTag.id);
+
+      var li = document.createElement('li');
+      li.className = 'tag-name form-check py-1 border-bottom d-flex align-items-center justify-content-between';
+
+      var leftDiv = document.createElement('div');
+      leftDiv.className = 'd-flex align-items-center flex-grow-1 text-truncate';
+      leftDiv.innerHTML =
+        '<input type="checkbox" class="form-check-input" value="' + matchTag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + matchTag.id + '" ' + (isChecked ? 'checked' : '') + ' />' +
+        '<label for="highlight-add-tags-' + matchTag.id + '" class="form-check-label text-truncate mb-0 ml-1">' +
+        '  <span><strong>' + escapeHtml(matchTag.path) + '</strong> <small class="text-muted ml-1">(' + escapeHtml(getTagFullPath(matchTag.id)) + ')</small></span>' +
+        '</label>';
+
+      (function(t) {
+        var cb = leftDiv.querySelector('input');
+        cb.addEventListener('change', function() {
+          toggleHighlightSelectedTag(t.id, this.checked);
+        });
+      })(matchTag);
+
+      li.appendChild(leftDiv);
+
+      var actionsDiv = document.createElement('div');
+      actionsDiv.className = 'd-flex align-items-center flex-shrink-0 ml-2';
+
+      var addSubBtn = document.createElement('button');
+      addSubBtn.type = 'button';
+      addSubBtn.className = 'btn btn-xs btn-outline-success py-0 px-2 mr-1';
+      addSubBtn.title = gettext("Criar subtag nesta categoria");
+      addSubBtn.innerHTML = '<i class="fa fa-plus"></i>';
+      (function(tid) {
+        addSubBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          createSubtag(tid);
+        });
+      })(matchTag.id);
+      actionsDiv.appendChild(addSubBtn);
+
+      var folderBtn = document.createElement('button');
+      folderBtn.type = 'button';
+      folderBtn.className = matchChildren.length > 0
+        ? 'btn btn-sm btn-outline-info py-0 px-2'
+        : 'btn btn-sm btn-outline-secondary py-0 px-2';
+      folderBtn.innerHTML = matchChildren.length > 0
+        ? '<i class="fa fa-folder-open"></i> ' + matchChildren.length + ' subtags'
+        : '<i class="fa fa-folder"></i> 0 subtags';
+      folderBtn.title = matchChildren.length > 0
+        ? gettext("Entrar na pasta de subtags")
+        : gettext("Entrar na pasta desta tag (vazia)");
+      (function(folderId) {
+        folderBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          highlightNavFolder = folderId;
+          document.getElementById('highlight-search').value = '';
+          updateModalTagsList();
+        });
+      })(matchTag.id);
+      actionsDiv.appendChild(folderBtn);
+
+      li.appendChild(actionsDiv);
+      tags_modal_list.appendChild(li);
+    }
+    return;
+  }
+
+  var currentLevelTags = getTagChildren(highlightNavFolder);
+  sortByKey(currentLevelTags, function(t) { return t.path.toLowerCase(); }, false);
+
+  if(currentLevelTags.length === 0) {
+    var liEmpty = document.createElement('li');
+    liEmpty.className = 'text-muted small py-2';
+    liEmpty.textContent = highlightNavFolder === null
+      ? gettext("Não há tags cadastradas no projeto ainda.")
+      : gettext("Esta categoria não possui subtags.");
+    tags_modal_list.appendChild(liEmpty);
+    return;
+  }
+
+  for(var c = 0; c < currentLevelTags.length; ++c) {
+    var tagItem = currentLevelTags[c];
+    var children = getTagChildren(tagItem.id);
+    var isTagChecked = highlightSelectedTags[tagItem.id] && !highlightSelectedTags[tagItem.id].excluded;
+
+    var rowLi = document.createElement('li');
+    rowLi.className = 'tag-name form-check py-1 border-bottom d-flex align-items-center justify-content-between';
+
+    var leftDiv = document.createElement('div');
+    leftDiv.className = 'd-flex align-items-center flex-grow-1 text-truncate';
+    leftDiv.innerHTML =
+      '<input type="checkbox" class="form-check-input" value="' + tagItem.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tagItem.id + '" ' + (isTagChecked ? 'checked' : '') + ' />' +
+      '<label for="highlight-add-tags-' + tagItem.id + '" class="form-check-label text-truncate mb-0 ml-1" title="' + (tagItem.description || '') + '">' +
+      '  <strong>' + escapeHtml(tagItem.path) + '</strong>' +
+      '</label>';
+
+    (function(t) {
+      var chk = leftDiv.querySelector('input');
+      chk.addEventListener('change', function() {
+        toggleHighlightSelectedTag(t.id, this.checked);
+      });
+    })(tagItem);
+
+    rowLi.appendChild(leftDiv);
+
+    var actionsDiv = document.createElement('div');
+    actionsDiv.className = 'd-flex align-items-center flex-shrink-0 ml-2';
+
+    var addSubBtn = document.createElement('button');
+    addSubBtn.type = 'button';
+    addSubBtn.className = 'btn btn-xs btn-outline-success py-0 px-2 mr-1';
+    addSubBtn.title = gettext("Criar subtag nesta categoria");
+    addSubBtn.innerHTML = '<i class="fa fa-plus"></i>';
+    (function(tid) {
+      addSubBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        createSubtag(tid);
+      });
+    })(tagItem.id);
+    actionsDiv.appendChild(addSubBtn);
+
+    var folderBtn = document.createElement('button');
+    folderBtn.type = 'button';
+    folderBtn.className = children.length > 0
+      ? 'btn btn-sm btn-outline-info py-0 px-2'
+      : 'btn btn-sm btn-outline-secondary py-0 px-2';
+    folderBtn.innerHTML = children.length > 0
+      ? '<i class="fa fa-folder-open"></i> ' + children.length + ' subtags'
+      : '<i class="fa fa-folder"></i> 0 subtags';
+    folderBtn.title = children.length > 0
+      ? gettext("Entrar na pasta de subtags")
+      : gettext("Entrar na pasta desta tag (vazia)");
+    (function(folderId) {
+      folderBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        highlightNavFolder = folderId;
+        document.getElementById('highlight-search').value = '';
+        updateModalTagsList();
+      });
+    })(tagItem.id);
+    actionsDiv.appendChild(folderBtn);
+
+    rowLi.appendChild(actionsDiv);
+    tags_modal_list.appendChild(rowLi);
+  }
+}
+
+var highlightSearch = document.getElementById('highlight-search');
+if(highlightSearch) {
+  highlightSearch.addEventListener('input', function() {
+    updateModalTagsList();
+  });
+}
+
+function highlightModalReset() {
+  document.getElementById('highlight-add-form').reset();
+  highlightNavFolder = null;
+  highlightSelectedTags = {};
+  if(highlightSearch) highlightSearch.value = '';
+  updateModalTagsList();
+}
+
 function createHighlight(selection) {
   document.getElementById('highlight-add-id').value = '';
   document.getElementById('highlight-add-start').value = selection[0];
@@ -1307,15 +1793,21 @@ function editHighlight() {
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
+
   var hl_tags = highlights['' + id].tags;
   for(var i = 0; i < hl_tags.length; ++i) {
-    document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
+    var tid = hl_tags[i];
+    if(tags['' + tid]) {
+      highlightSelectedTags[tid] = { tag: tags['' + tid], excluded: false };
+    }
   }
+
+  updateModalTagsList();
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
   document.getElementById('highlight-search').focus();
 }
 
-// Save highlight button
+// Salvar highlight salvando somente as tags marcadas (sem x)
 document.getElementById('highlight-add-form').addEventListener('submit', function(e) {
   e.preventDefault();
   var highlight_id = document.getElementById('highlight-add-id').value;
@@ -1323,14 +1815,14 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     parseInt(document.getElementById('highlight-add-start').value),
     parseInt(document.getElementById('highlight-add-end').value)
   ];
+
   var hl_tags = [];
-  var entries = Object.entries(tags);
-  for(var i = 0; i < entries.length; ++i) {
-    var id = entries[i][1].id;
-    if(document.getElementById('highlight-add-tags-' + id).checked) {
-      hl_tags.push(id);
+  for(var id in highlightSelectedTags) {
+    if(!highlightSelectedTags[id].excluded) {
+      hl_tags.push(parseInt(id));
     }
   }
+
   var req;
   if(highlight_id) {
     console.log("Posting update for highlight " + highlight_id);
@@ -1356,8 +1848,8 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     highlightModalReset();
   })
   .catch(function(error) {
-    console.error("Failed to create highlight:", error);
-    alert(gettext("Couldn't create highlight!") + "\n\n" + error);
+    console.error("Failed to save highlight:", error);
+    alert(gettext("Não foi possível salvar o destaque!") + "\n\n" + error);
   })
   .then(hideSpinner);
 });
@@ -1626,8 +2118,18 @@ function loadDocument(document_id) {
 
     // Update export button
     export_button.style.display = '';
+    var btnExport = document.getElementById('dropdown-export');
+    if(btnExport) {
+      btnExport.innerText = gettext("Export document");
+    }
+    var btnConfigHighlights = document.getElementById('btn-open-export-highlights-modal');
+    if(btnConfigHighlights) btnConfigHighlights.style.display = 'none';
+    var divConfigHighlights = document.getElementById('dropdown-export-divider');
+    if(divConfigHighlights) divConfigHighlights.style.display = 'none';
+
     var items = export_button.getElementsByClassName('dropdown-item');
     for(var i = 0; i < items.length; ++i) {
+      if(items[i].id === 'btn-open-export-highlights-modal') continue;
       var ext = items[i].getAttribute('data-extension');
       if(items[i].getAttribute('data-document') !== 'false') {
         items[i].setAttribute(
@@ -1669,6 +2171,75 @@ function loadTag(tag_path, page) {
     }
     // No need to clear the 'tag-current', we are calling updateTagsList() below
     document_contents.innerHTML = '';
+
+    // Encontra o objeto da tag atual se for visualização de uma tag específica
+    var currentTagObj = null;
+    if(tag_path) {
+      for(var tid in tags) {
+        if(tags[tid].path === tag_path || getTagFullPath(tags[tid].id) === tag_path) {
+          currentTagObj = tags[tid];
+          break;
+        }
+      }
+    }
+
+    if(currentTagObj) {
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'card mb-3 border-info';
+      var headerBody = document.createElement('div');
+      headerBody.className = 'card-body py-2 px-3';
+
+      var titleH5 = document.createElement('h5');
+      titleH5.className = 'card-title mb-1 text-info';
+      titleH5.innerHTML = '<i class="fa fa-tag mr-1"></i> ' + escapeHtml(currentTagObj.path);
+
+      var fullPathSmall = document.createElement('div');
+      fullPathSmall.className = 'text-muted small mb-2';
+      fullPathSmall.textContent = getTagFullPath(currentTagObj.id);
+      headerBody.appendChild(titleH5);
+      headerBody.appendChild(fullPathSmall);
+
+      if(currentTagObj.description) {
+        var descP = document.createElement('p');
+        descP.className = 'card-text small mb-2 text-secondary';
+        descP.textContent = currentTagObj.description;
+        headerBody.appendChild(descP);
+      }
+
+      var subChildren = getTagChildren(currentTagObj.id);
+      if(subChildren.length > 0) {
+        var subDiv = document.createElement('div');
+        subDiv.className = 'mt-2 pt-2 border-top';
+        var subLabel = document.createElement('strong');
+        subLabel.className = 'small text-muted d-block mb-1';
+        subLabel.textContent = gettext("Subtags:") + " ";
+        subDiv.appendChild(subLabel);
+
+        sortByKey(subChildren, function(c) { return c.path.toLowerCase(); }, false);
+        for(var s = 0; s < subChildren.length; ++s) {
+          var ch = subChildren[s];
+          var chLink = document.createElement('a');
+          chLink.className = 'badge badge-info p-2 mr-1 mb-1';
+          chLink.style.fontSize = '0.85rem';
+          chLink.style.cursor = 'pointer';
+          chLink.innerHTML = '<i class="fa fa-folder-open-o mr-1"></i>' + escapeHtml(ch.path) + ' <span class="badge badge-light ml-1">' + (ch.count || 0) + '</span>';
+          (function(childTag) {
+            chLink.addEventListener('click', function(e) {
+              e.preventDefault();
+              var url = base_path + '/project/' + project_id + '/highlights/' + encodeURIComponent(childTag.path);
+              window.history.pushState({tag_path: childTag.path}, "Tag " + childTag.path, url);
+              loadTag(childTag.path);
+            });
+          })(ch);
+          subDiv.appendChild(chLink);
+        }
+        headerBody.appendChild(subDiv);
+      }
+
+      headerDiv.appendChild(headerBody);
+      document_contents.appendChild(headerDiv);
+    }
+
     highlights = {};
     for(var i = 0; i < result.highlights.length; ++i) {
       var hl = result.highlights[i];
@@ -1708,7 +2279,11 @@ function loadTag(tag_path, page) {
       document_contents.appendChild(elem);
     }
     if(result.highlights.length == 0) {
-      document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
+      var emptyP = document.createElement('p');
+      emptyP.style.fontStyle = 'oblique';
+      emptyP.style.textAlign = 'center';
+      emptyP.textContent = gettext("No highlights with this tag yet.");
+      document_contents.appendChild(emptyP);
     }
 
     // Pagination controls
@@ -1777,8 +2352,18 @@ function loadTag(tag_path, page) {
 
     // Update export button
     export_button.style.display = '';
+    var btnExport = document.getElementById('dropdown-export');
+    if(btnExport) {
+      btnExport.innerText = gettext("Export highlights");
+    }
+    var btnConfigHighlights = document.getElementById('btn-open-export-highlights-modal');
+    if(btnConfigHighlights) btnConfigHighlights.style.display = '';
+    var divConfigHighlights = document.getElementById('dropdown-export-divider');
+    if(divConfigHighlights) divConfigHighlights.style.display = '';
+
     var items = export_button.getElementsByClassName('dropdown-item');
     for(var i = 0; i < items.length; ++i) {
+      if(items[i].id === 'btn-open-export-highlights-modal') continue;
       var ext = items[i].getAttribute('data-extension');
       if(items[i].getAttribute('data-highlights') !== 'false') {
         items[i].setAttribute(
@@ -1925,6 +2510,7 @@ function longPollForEvents() {
         addTag({
           id: event.tag_id,
           path: event.tag_path,
+          parent_id: event.parent_id,
           description: event.description
         });
       } else if(event.type === 'tag_delete') {
@@ -1965,3 +2551,4 @@ function longPollForEvents() {
   });
 }
 longPollForEvents();
+
