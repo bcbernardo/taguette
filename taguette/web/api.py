@@ -314,8 +314,20 @@ class TagAdd(BaseHandler):
             obj = self.get_json()
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
+            parent_id = obj.get('parent_id')
+            if parent_id is not None and parent_id != "":
+                try:
+                    parent_id = int(parent_id)
+                except (ValueError, TypeError):
+                    return self.send_error_json(400, self.gettext("Invalid parent tag"))
+                parent = self.db.query(database.Tag).get(parent_id)
+                if parent is None or parent.project_id != project.id:
+                    return self.send_error_json(400, self.gettext("Parent tag not found in project"))
+            else:
+                parent_id = None
             tag = database.Tag(project=project,
                                path=obj['path'],
+                               parent_id=parent_id,
                                description=obj['description'])
             try:
                 self.db.add(tag)
@@ -357,6 +369,27 @@ class TagUpdate(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     tag.description = obj['description']
+                if 'parent_id' in obj:
+                    new_parent_id = obj['parent_id']
+                    if new_parent_id is not None and new_parent_id != "":
+                        try:
+                            new_parent_id = int(new_parent_id)
+                        except (ValueError, TypeError):
+                            return self.send_error_json(400, self.gettext("Invalid parent tag"))
+                        if new_parent_id == tag.id:
+                            return self.send_error_json(400, self.gettext("Tag cannot be its own parent"))
+                        parent = self.db.query(database.Tag).get(new_parent_id)
+                        if parent is None or parent.project_id != project.id:
+                            return self.send_error_json(400, self.gettext("Parent tag not found in project"))
+                        # Checagem de ciclos: subindo a partir do novo pai
+                        curr = parent
+                        while curr is not None:
+                            if curr.id == tag.id:
+                                return self.send_error_json(400, self.gettext("Tag cannot be a child of its own descendant"))
+                            curr = curr.parent
+                        tag.parent_id = new_parent_id
+                    else:
+                        tag.parent_id = None
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,
@@ -384,16 +417,85 @@ class TagUpdate(BaseHandler):
         tag = self.db.query(database.Tag).get(int(tag_id))
         if tag is None or tag.project_id != project.id:
             return self.send_error_json(404, self.gettext("No such tag"))
-        self.db.delete(tag)
-        cmd = database.Command.tag_delete(
-            self.current_user,
-            project.id,
-            tag.id,
-        )
-        self.db.add(cmd)
-        self.db.commit()
-        self.db.refresh(cmd)
-        self.application.notify_project(project.id, cmd)
+
+        action = self.get_argument('action', None)
+        if not action:
+            try:
+                body = self.get_json()
+                if body:
+                    action = body.get('action')
+            except Exception:
+                pass
+        if not action:
+            action = 'promote'
+
+        if action == 'cascade':
+            # Exclusão em cascata: coletar descendentes em pós-ordem
+            def collect_descendants(t):
+                res = []
+                for child in t.children:
+                    res.extend(collect_descendants(child))
+                    res.append(child)
+                return res
+
+            descendants = collect_descendants(tag)
+            for d in descendants:
+                self.db.execute(
+                    database.highlight_tags.delete().where(
+                        database.highlight_tags.c.tag_id == d.id
+                    )
+                )
+                self.db.delete(d)
+                cmd_d = database.Command.tag_delete(
+                    self.current_user,
+                    project.id,
+                    d.id,
+                )
+                self.db.add(cmd_d)
+                self.application.notify_project(project.id, cmd_d)
+
+            self.db.execute(
+                database.highlight_tags.delete().where(
+                    database.highlight_tags.c.tag_id == tag.id
+                )
+            )
+            self.db.delete(tag)
+            cmd = database.Command.tag_delete(
+                self.current_user,
+                project.id,
+                tag.id,
+            )
+            self.db.add(cmd)
+            self.db.commit()
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
+        else:
+            # action == 'promote': os filhos diretos sobem uma geração
+            new_parent = tag.parent
+            for child in list(tag.children):
+                child.parent = new_parent
+                cmd_child = database.Command.tag_add(
+                    self.current_user,
+                    child,
+                )
+                self.db.add(cmd_child)
+                self.application.notify_project(project.id, cmd_child)
+
+            self.db.execute(
+                database.highlight_tags.delete().where(
+                    database.highlight_tags.c.tag_id == tag.id
+                )
+            )
+            self.db.delete(tag)
+            cmd = database.Command.tag_delete(
+                self.current_user,
+                project.id,
+                tag.id,
+            )
+            self.db.add(cmd)
+            self.db.commit()
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
 
         self.set_status(204)
         return self.finish()
@@ -417,13 +519,40 @@ class TagMerge(BaseHandler):
         ):
             return self.send_error_json(404, self.gettext("No such tag"))
 
+        # Preservação e concatenação de descrições
+        preserve_description = obj.get('preserve_description', False)
+        if preserve_description and tag_src.description:
+            if tag_dest.description:
+                tag_dest.description = f"{tag_dest.description}; {tag_src.description}"
+            else:
+                tag_dest.description = tag_src.description
+            cmd_update_dest = database.Command.tag_add(
+                self.current_user,
+                tag_dest,
+            )
+            self.db.add(cmd_update_dest)
+            self.application.notify_project(project.id, cmd_update_dest)
+
+        # Reparentar todos os filhos de tag_src para tag_dest
+        for child in list(tag_src.children):
+            if child.id != tag_dest.id:
+                child.parent = tag_dest
+                cmd_child = database.Command.tag_add(
+                    self.current_user,
+                    child,
+                )
+                self.db.add(cmd_child)
+                self.application.notify_project(project.id, cmd_child)
+            else:
+                child.parent = tag_src.parent
+
         # Remove tag from tag_src if it's already in tag_dest
         highlights_in_dest = (
             self.db.query(database.highlight_tags.c.highlight_id)
             .filter(database.highlight_tags.c.tag_id == tag_dest.id)
         )
         self.db.execute(
-            database.highlight_tags.delete(
+            database.highlight_tags.delete().where(
                 and_(
                     database.highlight_tags.c.tag_id == tag_src.id,
                     database.highlight_tags.c.highlight_id.in_(
