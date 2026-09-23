@@ -12,7 +12,7 @@ from sqlalchemy import Column, ForeignKey, Index, TypeDecorator, MetaData, \
     Table, UniqueConstraint, select
 from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import column_property, deferred, relationship
+from sqlalchemy.orm import backref, column_property, deferred, relationship
 from sqlalchemy.sql import expression, functions
 from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text
 
@@ -473,7 +473,7 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id'],
-        payload_fields=['tag_id', 'tag_path', 'description'],
+        payload_fields=['tag_id', 'tag_path', 'description', 'parent_id'],
     )
     def tag_add(cls, user_login, tag):
         assert isinstance(tag, Tag)
@@ -484,7 +484,8 @@ class Command(Base):
             payload={'type': 'tag_add',  # keep in sync above
                      'tag_id': tag.id,
                      'tag_path': tag.path,
-                     'description': tag.description},
+                     'description': tag.description,
+                     'parent_id': tag.parent_id},
         )
 
     @classmethod
@@ -623,6 +624,11 @@ class Tag(Base):
                         nullable=False, index=True)
     project = relationship('Project', back_populates='tags')
 
+    parent_id = Column(Integer, ForeignKey('tags.id', ondelete='RESTRICT'),
+                       nullable=True, index=True)
+    parent = relationship('Tag', remote_side=[id],
+                          backref=backref('children', passive_deletes=True))
+
     path = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
 
@@ -635,13 +641,25 @@ class Tag(Base):
         back_populates='tags',
     )
 
+    def full_path(self, delimiter=' | '):
+        names = []
+        curr = self
+        visited = set()
+        while curr is not None and curr.id not in visited:
+            visited.add(curr.id)
+            names.append(curr.path)
+            curr = curr.parent
+        names.reverse()
+        return delimiter.join(names)
+
     def __repr__(self):
-        return '<%s.%s %r %r project_id=%r>' % (
+        return '<%s.%s %r %r project_id=%r parent_id=%r>' % (
             self.__class__.__module__,
             self.__class__.__name__,
             self.id,
             self.path,
             self.project_id,
+            self.parent_id,
         )
 
 
