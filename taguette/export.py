@@ -72,7 +72,7 @@ class _Translator(object):
 
 
 class TagExportInfo(str):
-    """String subclass that carries hierarchy metadata for export formatting."""
+    """String subclass that carries hierarchy metadata for exports."""
     def __new__(cls, path, parent, full_path, description, tag_id=None):
         obj = str.__new__(cls, path)
         obj.path = path
@@ -90,7 +90,11 @@ def _get_highlights_for_export(db, project_id, path):
     # Fetch all project tags to resolve parents and full paths efficiently
     tag_dict = {
         t.id: t
-        for t in db.query(database.Tag).filter(database.Tag.project_id == project_id).all()
+        for t in (
+            db.query(database.Tag)
+            .filter(database.Tag.project_id == project_id)
+            .all()
+        )
     }
 
     t_highlight = database.Highlight.__table__
@@ -101,7 +105,11 @@ def _get_highlights_for_export(db, project_id, path):
     if path:
         matching_tag_ids = set()
         for t in tag_dict.values():
-            if t.path == path or t.path.startswith(path) or t.full_path().startswith(path):
+            if (
+                t.path == path
+                or t.path.startswith(path)
+                or t.full_path().startswith(path)
+            ):
                 def collect_descendant_ids(node):
                     matching_tag_ids.add(node.id)
                     for child in node.children:
@@ -144,7 +152,7 @@ def _get_highlights_for_export(db, project_id, path):
             )
         )
     else:
-        # Special case to select all highlights: select highlights even if untagged
+        # Special case: select all highlights even if untagged
         query = (
             sqlalchemy.select([
                 t_highlight.c.id,

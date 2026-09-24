@@ -319,10 +319,14 @@ class TagAdd(BaseHandler):
                 try:
                     parent_id = int(parent_id)
                 except (ValueError, TypeError):
-                    return self.send_error_json(400, self.gettext("Invalid parent tag"))
+                    return self.send_error_json(
+                        400, self.gettext("Invalid parent tag"),
+                    )
                 parent = self.db.query(database.Tag).get(parent_id)
                 if parent is None or parent.project_id != project.id:
-                    return self.send_error_json(400, self.gettext("Parent tag not found in project"))
+                    return self.send_error_json(
+                        400, self.gettext("Parent tag not found in project"),
+                    )
             else:
                 parent_id = None
             tag = database.Tag(project=project,
@@ -375,17 +379,33 @@ class TagUpdate(BaseHandler):
                         try:
                             new_parent_id = int(new_parent_id)
                         except (ValueError, TypeError):
-                            return self.send_error_json(400, self.gettext("Invalid parent tag"))
+                            return self.send_error_json(
+                                400, self.gettext("Invalid parent tag"),
+                            )
                         if new_parent_id == tag.id:
-                            return self.send_error_json(400, self.gettext("Tag cannot be its own parent"))
+                            return self.send_error_json(
+                                400,
+                                self.gettext("Tag cannot be its own parent"),
+                            )
                         parent = self.db.query(database.Tag).get(new_parent_id)
                         if parent is None or parent.project_id != project.id:
-                            return self.send_error_json(400, self.gettext("Parent tag not found in project"))
+                            return self.send_error_json(
+                                400,
+                                self.gettext(
+                                    "Parent tag not found in project"
+                                ),
+                            )
                         # Checagem de ciclos: subindo a partir do novo pai
                         curr = parent
                         while curr is not None:
                             if curr.id == tag.id:
-                                return self.send_error_json(400, self.gettext("Tag cannot be a child of its own descendant"))
+                                return self.send_error_json(
+                                    400,
+                                    self.gettext(
+                                        "Tag cannot be a child of its "
+                                        "own descendant"
+                                    ),
+                                )
                             curr = curr.parent
                         tag.parent_id = new_parent_id
                     else:
@@ -523,7 +543,10 @@ class TagMerge(BaseHandler):
         preserve_description = obj.get('preserve_description', False)
         if preserve_description and tag_src.description:
             if tag_dest.description:
-                tag_dest.description = f"{tag_dest.description}; {tag_src.description}"
+                tag_dest.description = "%s; %s" % (
+                    tag_dest.description,
+                    tag_src.description,
+                )
             else:
                 tag_dest.description = tag_src.description
             cmd_update_dest = database.Command.tag_add(

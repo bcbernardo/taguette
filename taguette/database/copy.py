@@ -74,7 +74,10 @@ def copy_project(
 
     # Copy tags
     mapping_tags = {}
-    parent_map = DefaultMap(lambda k: None if k is None else mapping_tags.get(k), {})
+    parent_map = DefaultMap(
+        lambda k: None if k is None else mapping_tags.get(k),
+        {},
+    )
     mapping_tags = copy(
         Tag.__table__, 'id',
         dict(project_id=mapping_project, parent_id=parent_map),
@@ -87,12 +90,14 @@ def copy_project(
         ),
     )
     # Update parent_id for any tags whose parent was copied in a later batch
-    for old_tag in src_db.execute(Tag.__table__.select().where(Tag.project_id == project_id)).fetchall():
-        if old_tag['parent_id'] is not None and old_tag['parent_id'] in mapping_tags:
+    tags_query = Tag.__table__.select().where(Tag.project_id == project_id)
+    for old_tag in src_db.execute(tags_query).fetchall():
+        old_pid = old_tag['parent_id']
+        if old_pid is not None and old_pid in mapping_tags:
             dest_db.execute(
                 Tag.__table__.update()
                 .where(Tag.id == mapping_tags[old_tag['id']])
-                .values(parent_id=mapping_tags[old_tag['parent_id']])
+                .values(parent_id=mapping_tags[old_pid])
             )
 
     # Copy highlights
@@ -141,8 +146,12 @@ def copy_project(
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
-        # Backward-compatibility for legacy projects where parent_id was not yet in tag_add
-        if 'parent_id' not in payload and 'parent_id' in expected_payload_fields:
+        # Backward-compatibility for legacy projects
+        # where parent_id was not yet in tag_add
+        if (
+            'parent_id' not in payload
+            and 'parent_id' in expected_payload_fields
+        ):
             payload['parent_id'] = None
 
         # Check that the right JSON fields are set
