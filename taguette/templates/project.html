@@ -101,9 +101,11 @@
               <a class="btn btn-sm btn-primary float-right" href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a>
             </div>
           </div>
-          <ul class="list-group list-group-flush" id="tags-list">
-            <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
-          </ul>
+          <div class="tags-tree-container" id="tags-tree-container">
+            <ul class="list-group list-group-flush tag-tree-list" id="tags-list">
+              <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
+            </ul>
+          </div>
         </div>
 
       </div>

@@ -413,3 +413,125 @@ a.dropdown-item:hover {
     line-height: 1.0;
   }
 }
+
+/* -------------------- TAG TREE & HORIZONTAL SCROLL -------------------- */
+
+.tags-tree-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #b0c4de #f8f9fa;
+}
+
+.tags-tree-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tags-tree-container::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 3px;
+}
+
+.tags-tree-container::-webkit-scrollbar-thumb {
+  background: #b0c4de;
+  border-radius: 3px;
+}
+
+.tags-tree-container::-webkit-scrollbar-thumb:hover {
+  background: #85c1e9;
+}
+
+/* Tag tree list element and sublists */
+.tag-tree-list,
+.tag-tree-list ul,
+.tag-tree-sublist {
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+  min-width: 100%;
+  width: max-content;
+}
+
+.tag-tree-list li,
+.tag-tree-sublist li {
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Each tag row */
+.tag-item-row {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 100%;
+  width: max-content;
+  min-height: 32px;
+  padding: 3px 0;
+  border-bottom: 1px solid #edf2f7;
+  transition: background-color 0.12s ease-in-out;
+  position: relative;
+}
+
+.tag-item-row:hover {
+  background-color: #f4f8fb;
+}
+
+/* Highlighted current tag row */
+.tag-item-row.tag-current {
+  background-color: #e7f2ff !important;
+  border-left: 3px solid #125368;
+}
+
+/* Left part: label + indentation */
+.tag-item-label {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: 18px;
+}
+
+.tag-item-label a {
+  color: #212529;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tag-item-label a:hover {
+  color: #125368;
+  text-decoration: underline;
+}
+
+/* Right part: action buttons stuck to the right edge */
+.tag-item-actions {
+  position: sticky;
+  right: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  background-color: #fff;
+  padding-left: 8px;
+  padding-right: 4px;
+  z-index: 2;
+  box-shadow: -6px 0 6px -4px rgba(0, 0, 0, 0.12);
+}
+
+.tag-item-row:hover .tag-item-actions {
+  background-color: #f4f8fb;
+}
+
+.tag-item-row.tag-current .tag-item-actions {
+  background-color: #e7f2ff !important;
+}
+
+.tag-item-row.tag-current:hover .tag-item-actions {
+  background-color: #e7f2ff !important;
+}

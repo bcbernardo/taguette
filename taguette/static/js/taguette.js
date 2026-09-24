@@ -894,6 +894,8 @@ function mergeTags(tag_src, tag_dest) {
 }
 
 function updateTagsList() {
+  var tagsContainer = document.getElementById('tags-tree-container');
+  var prevTagsScrollLeft = tagsContainer ? tagsContainer.scrollLeft : 0;
   var stickyPane = document.querySelector('div.sticky-top');
   var prevPaneScroll = stickyPane ? stickyPane.scrollTop : 0;
   var prevWindowScroll = window.scrollY || document.documentElement.scrollTop;
@@ -913,20 +915,26 @@ function updateTagsList() {
     sortByKey(children, function(c) { return c[sortTags[0]]; }, isReverse);
 
     var li = document.createElement('li');
-    li.className = 'list-group-item p-1 border-0';
     li.id = 'tag-item-' + tag.id;
 
-    var isCurrent = current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag;
-    if(isCurrent) {
-      li.classList.add('tag-current');
-    }
+    var isCurrent = current_tag !== null && (tag.path === current_tag || getTagFullPath(tag.id) === current_tag);
 
     var row = document.createElement('div');
-    row.className = 'd-flex justify-content-between align-items-center py-1';
-    row.style.paddingLeft = (depth * 18) + 'px';
+    row.className = 'tag-item-row';
+    if(isCurrent) {
+      row.classList.add('tag-current');
+    }
 
     var left = document.createElement('div');
-    left.className = 'tag-name d-flex align-items-center text-truncate mr-1';
+    left.className = 'tag-item-label';
+
+    if(depth > 0) {
+      var indent = document.createElement('span');
+      indent.style.display = 'inline-block';
+      indent.style.width = (depth * 16) + 'px';
+      indent.style.flexShrink = '0';
+      left.appendChild(indent);
+    }
 
     if(children.length > 0) {
       var toggleBtn = document.createElement('button');
@@ -934,6 +942,7 @@ function updateTagsList() {
       toggleBtn.className = 'btn btn-sm btn-link p-0 mr-1 text-secondary';
       toggleBtn.style.textDecoration = 'none';
       toggleBtn.style.width = '16px';
+      toggleBtn.style.flexShrink = '0';
       var isExpanded = expandedTagNodes.has(tag.id);
       toggleBtn.innerHTML = isExpanded ? '<i class="fa fa-caret-down"></i>' : '<i class="fa fa-caret-right"></i>';
       toggleBtn.addEventListener('click', function(e) {
@@ -960,20 +969,20 @@ function updateTagsList() {
       var spacer = document.createElement('span');
       spacer.style.display = 'inline-block';
       spacer.style.width = '16px';
+      spacer.style.flexShrink = '0';
       spacer.className = 'mr-1';
       left.appendChild(spacer);
     }
 
     var a = document.createElement('a');
     a.id = 'tag-link-' + tag.id;
-    a.className = 'text-dark text-truncate';
     a.textContent = tag.path;
     a.title = getTagFullPath(tag.id) + (tag.description ? '\n' + tag.description : '');
     left.appendChild(a);
     row.appendChild(left);
 
     var right = document.createElement('div');
-    right.className = 'd-flex align-items-center flex-shrink-0';
+    right.className = 'tag-item-actions';
     right.innerHTML =
       '<span class="badge badge-secondary badge-pill mr-1" id="tag-' + tag.id + '-count">' + tag.count + '</span>' +
       '<button type="button" class="btn btn-outline-success btn-xs mr-1 p-0 px-1" title="' + gettext("Criar subtag nesta categoria") + '" onclick="createSubtag(' + tag.id + ')"><i class="fa fa-plus"></i></button>' +
@@ -986,7 +995,7 @@ function updateTagsList() {
 
     if(children.length > 0) {
       var childUl = document.createElement('ul');
-      childUl.className = 'list-unstyled mb-0';
+      childUl.className = 'tag-tree-sublist';
       if(!expandedTagNodes.has(tag.id)) {
         childUl.style.display = 'none';
       }
@@ -1011,6 +1020,9 @@ function updateTagsList() {
     }
   }
 
+  if(tagsContainer) {
+    tagsContainer.scrollLeft = prevTagsScrollLeft;
+  }
   if(stickyPane) {
     stickyPane.scrollTop = prevPaneScroll;
   }
