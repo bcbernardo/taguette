@@ -1304,10 +1304,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                id,document,tag,content
-                2,otherdoc,interesting\\places,diff
-                3,otherdoc,interesting,tent
-                3,otherdoc,people,tent
+                id,document,tag,tag_parent,tag_full_path,tag_description,content
+                2,otherdoc,interesting\\places,,interesting\\places,,diff
+                3,otherdoc,interesting,,interesting,Further review required,tent
+                3,otherdoc,people,,people,People of interest,tent
                 ''').replace('\n', '\r\n'),
             )
 
@@ -1319,8 +1319,8 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                id,document,tag,content
-                2,otherdoc,interesting\\places,diff
+                id,document,tag,tag_parent,tag_full_path,tag_description,content
+                2,otherdoc,interesting\\places,,interesting\\places,,diff
                 ''').replace('\n', '\r\n'),
             )
 
@@ -1334,10 +1334,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights,number of documents
-                    interesting,Further review required,1,1
-                    people,People of interest,2,2
-                    interesting\\places,,1,1
+                    tag,tag_parent,tag_full_path,description,number of highlights,number of documents
+                    interesting,,interesting,Further review required,1,1
+                    people,,people,People of interest,2,2
+                    interesting\\places,,interesting\\places,,1,1
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2248,9 +2248,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights,number of documents
-                    interesting,Further review required,0,0
-                    people,new,0,0
+                    tag,tag_parent,tag_full_path,description,number of highlights,number of documents
+                    interesting,,interesting,Further review required,0,0
+                    people,,people,new,0,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2303,9 +2303,9 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(
                 await response.text(),
                 textwrap.dedent('''\
-                    tag,description,number of highlights,number of documents
-                    interesting,yes replace,0,0
-                    people,new,0,0
+                    tag,tag_parent,tag_full_path,description,number of highlights,number of documents
+                    interesting,,interesting,yes replace,0,0
+                    people,,people,new,0,0
                     ''').replace('\n', '\r\n'),
             )
 
@@ -2547,6 +2547,80 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(child.parent_id, dest_id)
         self.assertEqual(child.full_path(), 'Dest | ChildOfSrc')
         db.close()
+
+    @gen_test
+    async def test_tag_hierarchy_export(self):
+        await self.do_login('admin', 'hackme')
+
+        async with self.apost(
+            '/project/new',
+            data=dict(name='Export Test', description='Test hierarchy export'),
+        ) as response:
+            self.assertEqual(response.status, 303)
+            proj_id = 1
+
+        # Create Root tag
+        async with self.apost(
+            f'/api/project/{proj_id}/tag/new',
+            json=dict(path='Animals', description='All animals'),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            tag_root = (await response.json())['id']
+
+        # Create Child tag
+        async with self.apost(
+            f'/api/project/{proj_id}/tag/new',
+            json=dict(path='Mammals', parent_id=tag_root, description='Warm-blooded vertebrates'),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            tag_child = (await response.json())['id']
+
+        # Create document
+        async with self.apost(
+            f'/api/project/{proj_id}/document/new',
+            data=dict(name='doc1', description=''),
+            files=dict(file=('doc.txt', 'text/plain', b'Whales are marine mammals.')),
+        ) as response:
+            self.assertEqual(response.status, 200)
+
+        # Create highlight tagged with child tag
+        async with self.apost(
+            f'/api/project/{proj_id}/document/1/highlight/new',
+            json=dict(start_offset=0, end_offset=6, tags=[tag_child]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+
+        # 1. Export highlights to CSV
+        async with self.aget(f'/project/{proj_id}/export/highlights/.csv') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                await response.text(),
+                textwrap.dedent('''\
+                id,document,tag,tag_parent,tag_full_path,tag_description,content
+                1,doc1,Mammals,Animals,Animals | Mammals,Warm-blooded vertebrates,Whales
+                ''').replace('\n', '\r\n'),
+            )
+
+        # 2. Export codebook to CSV
+        async with self.aget(f'/project/{proj_id}/export/codebook.csv') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                await response.text(),
+                textwrap.dedent('''\
+                tag,tag_parent,tag_full_path,description,number of highlights,number of documents
+                interesting,,interesting,Further review required,0,0
+                Animals,,Animals,All animals,0,0
+                Mammals,Animals,Animals | Mammals,Warm-blooded vertebrates,1,1
+                ''').replace('\n', '\r\n'),
+            )
+
+        # 3. Export codebook to HTML
+        async with self.aget(f'/project/{proj_id}/export/codebook.html') as response:
+            self.assertEqual(response.status, 200)
+            text = await response.text()
+            self.assertIn('<h2>Animals</h2>', text)
+            self.assertIn('<h2>Animals | Mammals</h2>', text)
+
 
 
 class TestSingleuser(MyHTTPTestCase):

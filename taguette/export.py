@@ -71,22 +71,50 @@ class _Translator(object):
         return trans
 
 
+class TagExportInfo(str):
+    """String subclass that carries hierarchy metadata for export formatting."""
+    def __new__(cls, path, parent, full_path, description, tag_id=None):
+        obj = str.__new__(cls, path)
+        obj.path = path
+        obj.parent = parent
+        obj.full_path = full_path
+        obj.description = description
+        obj.tag_id = tag_id
+        return obj
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
 def _get_highlights_for_export(db, project_id, path):
+    # Fetch all project tags to resolve parents and full paths efficiently
+    tag_dict = {
+        t.id: t
+        for t in db.query(database.Tag).filter(database.Tag.project_id == project_id).all()
+    }
+
+    t_highlight = database.Highlight.__table__
+    t_highlight_tag = database.highlight_tags
+    t_tag = database.Tag.__table__
+    t_document = database.Document.__table__
+
     if path:
-        t_highlight = database.Highlight.__table__
-        t_highlight_tag = database.highlight_tags
-        t_tag = database.Tag.__table__
-        t_document = database.Document.__table__
-        # Join with tags a second time to find highlights that match the
-        # given path, while returning all tags for those highlights
+        matching_tag_ids = set()
+        for t in tag_dict.values():
+            if t.path == path or t.path.startswith(path) or t.full_path().startswith(path):
+                def collect_descendant_ids(node):
+                    matching_tag_ids.add(node.id)
+                    for child in node.children:
+                        collect_descendant_ids(child)
+                collect_descendant_ids(t)
+
         t_highlight_tag_m = database.highlight_tags.alias()
-        t_tag_m = database.Tag.__table__.alias()
         query = (
             sqlalchemy.select([
                 t_highlight.c.id,
                 t_highlight.c.snippet,
                 t_document.c.name,
-                t_tag.c.path,
+                t_tag.c.id,
             ])
             .select_from(
                 t_highlight
@@ -103,15 +131,11 @@ def _get_highlights_for_export(db, project_id, path):
                     t_highlight.c.id == t_highlight_tag_m.c.highlight_id,
                 )
                 .join(
-                    t_tag_m,
-                    t_tag_m.c.id == t_highlight_tag_m.c.tag_id,
-                )
-                .join(
                     t_document,
                     t_document.c.id == t_highlight.c.document_id,
                 )
             )
-            .where(t_tag_m.c.path.startswith(path, autoescape=True))
+            .where(t_highlight_tag_m.c.tag_id.in_(matching_tag_ids))
             .where(t_document.c.project_id == project_id)
             .order_by(
                 t_highlight.c.document_id,
@@ -120,27 +144,21 @@ def _get_highlights_for_export(db, project_id, path):
             )
         )
     else:
-        # Special case to select all highlights: we also need to select
-        # highlights that have no tag at all, so the startswith() condition
-        # would not work
-        t_highlight = database.Highlight.__table__
-        t_highlight_tag = database.highlight_tags
-        t_tag = database.Tag.__table__
-        t_document = database.Document.__table__
+        # Special case to select all highlights: select highlights even if untagged
         query = (
             sqlalchemy.select([
                 t_highlight.c.id,
                 t_highlight.c.snippet,
                 t_document.c.name,
-                t_tag.c.path,
+                t_tag.c.id,
             ])
             .select_from(
                 t_highlight
-                .join(
+                .outerjoin(
                     t_highlight_tag,
                     t_highlight.c.id == t_highlight_tag.c.highlight_id,
                 )
-                .join(
+                .outerjoin(
                     t_tag,
                     t_tag.c.id == t_highlight_tag.c.tag_id,
                 )
@@ -159,15 +177,29 @@ def _get_highlights_for_export(db, project_id, path):
 
     highlights = []
     for row in db.execute(query).fetchall():
-        highlight_id, snippet, document, tag_path = row
+        highlight_id, snippet, document, tag_id = row
+        tag_obj = tag_dict.get(tag_id)
+        if tag_obj:
+            parent_name = tag_obj.parent.path if tag_obj.parent else ''
+            tag_info = TagExportInfo(
+                tag_obj.path,
+                parent_name,
+                tag_obj.full_path(),
+                tag_obj.description,
+                tag_obj.id,
+            )
+        else:
+            tag_info = None
+
         if highlights and highlights[-1][0] == highlight_id:
-            highlights[-1][3].append(tag_path)
+            if tag_info is not None:
+                highlights[-1][3].append(tag_info)
         else:
             highlights.append((
                 highlight_id,
                 snippet,
                 document,
-                [] if tag_path is None else [tag_path],
+                [] if tag_info is None else [tag_info],
             ))
 
     return highlights
@@ -188,15 +220,23 @@ def highlights_csv(db, project_id, path, file):
     """
     highlights = _get_highlights_for_export(db, project_id, path)
     writer = csv.writer(file)
-    writer.writerow(['id', 'document', 'tag', 'content'])
+    writer.writerow([
+        'id', 'document', 'tag', 'tag_parent', 'tag_full_path',
+        'tag_description', 'content',
+    ])
     for id, snippet, document, tags in highlights:
+        text = convert.html_to_plaintext(snippet)
         if not tags:
-            tags = ['']
-        for tag_path in tags:
             writer.writerow([
-                id, document, tag_path,
-                convert.html_to_plaintext(snippet),
+                id, document, '', '', '', '', text,
             ])
+        else:
+            for tag in tags:
+                writer.writerow([
+                    id, document,
+                    tag.path, tag.parent, tag.full_path, tag.description,
+                    text,
+                ])
 
 
 @tracer.start_as_current_span('taguette/export/highlights_xlsx')
@@ -213,21 +253,39 @@ def highlights_xslx(db, project_id, path, filename):
     sheet.write(0, 0, 'id', header)
     sheet.write(0, 1, 'document', header)
     sheet.write(0, 2, 'tag', header)
-    sheet.write(0, 3, 'content', header)
-    sheet.set_column(0, 0, 5.0)
-    sheet.set_column(1, 1, 15.0)
-    sheet.set_column(2, 2, 15.0)
-    sheet.set_column(3, 3, 80.0)
+    sheet.write(0, 3, 'tag_parent', header)
+    sheet.write(0, 4, 'tag_full_path', header)
+    sheet.write(0, 5, 'tag_description', header)
+    sheet.write(0, 6, 'content', header)
+    sheet.set_column(0, 0, 8.0)
+    sheet.set_column(1, 1, 20.0)
+    sheet.set_column(2, 2, 25.0)
+    sheet.set_column(3, 3, 25.0)
+    sheet.set_column(4, 4, 45.0)
+    sheet.set_column(5, 5, 35.0)
+    sheet.set_column(6, 6, 80.0)
     row = 1
     for id, snippet, document, tags in highlights:
+        text = convert.html_to_plaintext(snippet)
         if not tags:
-            tags = ['']
-        for tag_path in tags:
             sheet.write(row, 0, str(id))
             sheet.write(row, 1, document)
-            sheet.write(row, 2, tag_path)
-            sheet.write(row, 3, convert.html_to_plaintext(snippet))
+            sheet.write(row, 2, '')
+            sheet.write(row, 3, '')
+            sheet.write(row, 4, '')
+            sheet.write(row, 5, '')
+            sheet.write(row, 6, text)
             row += 1
+        else:
+            for tag in tags:
+                sheet.write(row, 0, str(id))
+                sheet.write(row, 1, document)
+                sheet.write(row, 2, tag.path)
+                sheet.write(row, 3, tag.parent)
+                sheet.write(row, 4, tag.full_path)
+                sheet.write(row, 5, tag.description)
+                sheet.write(row, 6, text)
+                row += 1
     workbook.close()
 
 
@@ -354,13 +412,18 @@ def codebook_csv(tags, file):
         writer = csv.writer(file)
         writer.writerow([
             'tag',
+            'tag_parent',
+            'tag_full_path',
             'description',
             'number of highlights',
             'number of documents',
         ])
         for tag in tags:
+            parent_name = tag.parent.path if tag.parent else ''
             writer.writerow([
                 tag.path,
+                parent_name,
+                tag.full_path(),
                 tag.description,
                 tag.highlights_count,
                 tag.documents_count,
@@ -377,16 +440,25 @@ def codebook_xlsx(tags, filename):
     header = workbook.add_format({'bold': True})
 
     sheet.write(0, 0, 'tag', header)
-    sheet.write(0, 1, 'description', header)
-    sheet.write(0, 2, 'number of highlights', header)
-    sheet.write(0, 3, 'number of documents', header)
-    sheet.set_column(0, 0, 30.0)
-    sheet.set_column(1, 1, 80.0)
+    sheet.write(0, 1, 'tag_parent', header)
+    sheet.write(0, 2, 'tag_full_path', header)
+    sheet.write(0, 3, 'description', header)
+    sheet.write(0, 4, 'number of highlights', header)
+    sheet.write(0, 5, 'number of documents', header)
+    sheet.set_column(0, 0, 25.0)
+    sheet.set_column(1, 1, 25.0)
+    sheet.set_column(2, 2, 45.0)
+    sheet.set_column(3, 3, 60.0)
+    sheet.set_column(4, 4, 20.0)
+    sheet.set_column(5, 5, 20.0)
     for row, tag in enumerate(tags, start=1):
+        parent_name = tag.parent.path if tag.parent else ''
         sheet.write(row, 0, tag.path)
-        sheet.write(row, 1, tag.description)
-        sheet.write(row, 2, tag.highlights_count)
-        sheet.write(row, 3, tag.documents_count)
+        sheet.write(row, 1, parent_name)
+        sheet.write(row, 2, tag.full_path())
+        sheet.write(row, 3, tag.description)
+        sheet.write(row, 4, tag.highlights_count)
+        sheet.write(row, 5, tag.documents_count)
     workbook.close()
 
 

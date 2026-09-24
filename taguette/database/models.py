@@ -648,6 +648,8 @@ class Tag(Base):
         while curr is not None and curr.id not in visited:
             visited.add(curr.id)
             names.append(curr.path)
+            if curr.parent_id is None:
+                break
             curr = curr.parent
         names.reverse()
         return delimiter.join(names)
