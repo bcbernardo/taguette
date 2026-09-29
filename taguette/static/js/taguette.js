@@ -535,13 +535,13 @@ var current_tag = null;
 var last_added_tag = null;
 var documents_list = document.getElementById('documents-list');
 
-function linkDocument(elem, doc_id) {
+function linkDocument(elem, doc_id, highlight_id) {
   var url = base_path + '/project/' + project_id + '/document/' + doc_id;
   elem.setAttribute('href', url);
   elem.addEventListener('click', function(e) {
     e.preventDefault();
-    window.history.pushState({document_id: doc_id}, "Document " + doc_id, url);
-    loadDocument(doc_id);
+    window.history.pushState({document_id: doc_id, highlight_id: highlight_id}, "Document " + doc_id, url);
+    loadDocument(doc_id, highlight_id);
   });
 }
 
@@ -1568,7 +1568,7 @@ document.getElementById('members-current').addEventListener('submit', function(e
 var document_contents = document.getElementById('document-contents');
 var export_button = document.getElementById('export-button');
 
-function loadDocument(document_id) {
+function loadDocument(document_id, highlight_id) {
   if(document_id === null) {
     document_contents.style.direction = 'ltr';
     document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
@@ -1640,8 +1640,15 @@ function loadDocument(document_id) {
       }
     }
 
-    // Scroll up
-    window.setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    // Scroll to the right location
+    if (highlight_id) {
+      window.scrollTo({
+        top: $(`[data-highlight-id="${highlight_id}"]`).offset().top - 20,
+        behavior: "smooth",
+      });
+    } else {
+      window.setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    }
   })
   .catch(function(error) {
     console.error("Failed to load document:", error);
@@ -1688,7 +1695,7 @@ function loadTag(tag_path, page) {
       var doclink = document.createElement('a');
       doclink.className = 'badge badge-light';
       doclink.textContent = documents['' + hl.document_id].name;
-      linkDocument(doclink, hl.document_id);
+      linkDocument(doclink, hl.document_id, hl.id);
       elem.appendChild(doclink);
       elem.appendChild(document.createTextNode(' '));
 
@@ -1825,7 +1832,7 @@ setTimeout(
 window.onpopstate = function(e) {
   if(e.state) {
     if(e.state.document_id !== undefined) {
-      loadDocument(e.state.document_id);
+      loadDocument(e.state.document_id, e.state.highlight_id);
     } else if(e.state.tag_path !== undefined) {
       loadTag(e.state.tag_path);
     } else {
