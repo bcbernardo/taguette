@@ -195,7 +195,8 @@ class Document(BaseHandler):
                 {'id': hl.id,
                  'start_offset': hl.start_offset,
                  'end_offset': hl.end_offset,
-                 'tags': [t.id for t in hl.tags]}
+                 'tags': [t.id for t in hl.tags],
+                 'tag_colors': [t.color for t in hl.tags]}
                 for hl in highlights
             ],
         })
@@ -314,9 +315,15 @@ class TagAdd(BaseHandler):
             obj = self.get_json()
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
+            tag_color = obj.get('color', 'ffff00')
+            if not validate.validate_color(tag_color):
+                return self.send_error_json(
+                    400,
+                    self.gettext("Invalid color format"))
             tag = database.Tag(project=project,
                                path=obj['path'],
-                               description=obj['description'])
+                               description=obj['description'],
+                               color=tag_color)
             try:
                 self.db.add(tag)
                 self.db.flush()  # Need to flush to get tag.id
@@ -332,7 +339,7 @@ class TagAdd(BaseHandler):
             self.db.refresh(cmd)
             self.application.notify_project(project.id, cmd)
 
-            return self.send_json({'id': tag.id})
+            return self.send_json({'id': tag.id, 'color': tag.color})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagAdd: %r", e)
             return self.send_error_json(400, self.gettext(e.message))
@@ -357,6 +364,13 @@ class TagUpdate(BaseHandler):
                 if 'description' in obj:
                     validate.description(obj['description'])
                     tag.description = obj['description']
+                if 'color' in obj:
+                    color = obj['color']
+                    if not validate.validate_color(color):
+                        return self.send_error_json(
+                            400,
+                            self.gettext("Invalid color format"))
+                    tag.color = color
                 cmd = database.Command.tag_add(
                     self.current_user,
                     tag,
@@ -370,7 +384,7 @@ class TagUpdate(BaseHandler):
                 self.db.refresh(cmd)
                 self.application.notify_project(project.id, cmd)
 
-            return self.send_json({'id': tag.id})
+            return self.send_json({'id': tag.id, 'color': tag.color})
         except validate.InvalidFormat as e:
             logger.info("Error validating TagUpdate: %r", e)
             return self.send_error_json(400, self.gettext(e.message))

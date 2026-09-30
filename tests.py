@@ -804,6 +804,7 @@ class TestMultiuser(MyHTTPTestCase):
                         "1": {
                             "count": 0, "id": 1, "path": "interesting",
                             "description": "Further review required",
+                            "color": "ffff00",
                         },
                     },
                     sort_keys=True),
@@ -836,7 +837,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 1, 'tag_id': 3,
-             'tag_path': 'people', 'description': "People of interest"})
+             'tag_path': 'people', 'description': "People of interest",
+             'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
@@ -847,7 +849,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 2, 'tag_id': 4,
-             'tag_path': 'interesting\\places', 'description': ''})
+             'tag_path': 'interesting\\places', 'description': '',
+             'color': 'ffff00'})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -907,7 +910,7 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 5, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 5,
-             'tags': [], 'tag_count_changes': {}})
+             'tags': [], 'tag_count_changes': {}, 'tag_colors': []})
         poll_proj1 = await self.poll_event(1, 5)
 
         # Update highlight 1 in document 1: change position
@@ -921,7 +924,7 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 6, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [], 'tag_count_changes': {}})
+             'tags': [], 'tag_count_changes': {}, 'tag_colors': []})
         poll_proj1 = await self.poll_event(1, 6)
 
         # Update highlight 1 in document 1: change tags
@@ -935,7 +938,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj1,
             {'type': 'highlight_add', 'id': 7, 'highlight_id': 1,
              'document_id': 1, 'start_offset': 3, 'end_offset': 7,
-             'tags': [1], 'tag_count_changes': {'1': 1}})
+             'tags': [1], 'tag_count_changes': {'1': 1},
+             'tag_colors': ['ffff00']})
         poll_proj1 = await self.poll_event(1, 7)
 
         # Change project 2 metadata (invalid)
@@ -1018,7 +1022,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 10, 'highlight_id': 2,
              'document_id': 2, 'start_offset': 0, 'end_offset': 4,
-             'tags': [4], 'tag_count_changes': {'4': 1}})
+             'tags': [4], 'tag_count_changes': {'4': 1},
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 10)
 
         # Create highlight 3 in document 2
@@ -1032,7 +1037,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 11, 'highlight_id': 3,
              'document_id': 2, 'start_offset': 13, 'end_offset': 17,
-             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1}})
+             'tags': [2, 3], 'tag_count_changes': {'2': 1, '3': 1},
+             'tag_colors': ['ffff00', 'ffff00']})
         poll_proj2 = await self.poll_event(2, 11)
 
         # Create highlight 4 in document 2
@@ -1046,7 +1052,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 12, 'highlight_id': 4,
              'document_id': 2, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': 1},
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 12)
 
         # Delete highlight 4 in document 2
@@ -1071,7 +1078,8 @@ class TestMultiuser(MyHTTPTestCase):
             await poll_proj2,
             {'type': 'highlight_add', 'id': 14, 'highlight_id': 5,
              'document_id': 3, 'start_offset': 0, 'end_offset': 7,
-             'tags': [3], 'tag_count_changes': {'3': 1}})
+             'tags': [3], 'tag_count_changes': {'3': 1},
+             'tag_colors': ['ffff00']})
         poll_proj2 = await self.poll_event(2, 14)
 
         # List highlights in project 2 under 'people'
@@ -1137,9 +1145,10 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {
                 'highlights': [
-                    {'id': 2, 'start_offset': 0, 'end_offset': 4,
-                     'tags': [4]},
-                    {'id': 3, 'start_offset': 13, 'end_offset': 17,
+                    {'id': 2, 'start_offset': 0, 'tag_colors': ['ffff00'],
+                     'end_offset': 4, 'tags': [4]},
+                    {'id': 3, 'start_offset': 13,
+                     'tag_colors': ['ffff00', 'ffff00'], 'end_offset': 17,
                      'tags': [2, 3]},
                 ],
                 'text_direction': 'LEFT_TO_RIGHT',
@@ -1617,12 +1626,14 @@ class TestMultiuser(MyHTTPTestCase):
             project=project1,
             path='db%dtag%d1' % (db_num, project_num),
             description='',
+            color='ffff00',
         )
         db.add(tag1)
         tag2 = database.Tag(
             project=project1,
             path='db%dtag%d2' % (db_num, project_num),
             description='',
+            color='ff00ff',
         )
         db.add(tag2)
         db.flush()
@@ -1815,26 +1826,30 @@ class TestMultiuser(MyHTTPTestCase):
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 7,
-                  'tag_path': 'db2tag11'}),
+                  'tag_path': 'db2tag11', 'color': 'ffff00'}),
                 (32, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': -3,
-                  'tag_path': 'db2tagF'}),
+                  'tag_path': 'db2tagF', 'color': 'ffff00'}),
                 (33, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 8,
-                  'tag_path': 'db2tag12'}),
+                  'tag_path': 'db2tag12', 'color': 'ff00ff'}),
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
-                  'start_offset': 3, 'end_offset': 6, 'tags': []}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [],
+                  'tag_colors': []}),
                 (36, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [8]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [8],
+                  'tag_colors': ['ff00ff']}),
                 (37, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': -3,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [7],
+                  'tag_colors': ['ffff00']}),
                 (38, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 8,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [7]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [7],
+                  'tag_colors': ['ffff00']}),
                 (39, 'db1user', 3, 7,
                  {'type': 'highlight_delete', 'highlight_id': -3}),
                 (40, 'db1user', 3, None, {'type': 'project_import'}),
@@ -1853,12 +1868,12 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertRowsEqualsExceptDates(
             db1.execute(database.Tag.__table__.select()),
             [
-                (1, 1, 'db1tag11', ''),
-                (2, 1, 'db1tag12', ''),
-                (4, 2, 'db1tag21', ''),
-                (5, 2, 'db1tag22', ''),
-                (7, 3, 'db2tag11', ''),
-                (8, 3, 'db2tag12', ''),
+                (1, 1, 'db1tag11', '', 'ffff00'),
+                (2, 1, 'db1tag12', '', 'ff00ff'),
+                (4, 2, 'db1tag21', '', 'ffff00'),
+                (5, 2, 'db1tag22', '', 'ff00ff'),
+                (7, 3, 'db2tag11', '', 'ffff00'),
+                (8, 3, 'db2tag12', '', 'ff00ff'),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1970,27 +1985,31 @@ class TestMultiuser(MyHTTPTestCase):
                 (4, 'admin', 1, -6, {'type': 'document_delete'}),
                 (5, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 1,
-                  'tag_path': 'db1tag21'}),
+                  'tag_path': 'db1tag21', 'color': 'ffff00'}),
                 (6, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': -6,
-                  'tag_path': 'db1tagF'}),
+                  'tag_path': 'db1tagF', 'color': 'ffff00'}),
                 (7, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 2,
-                  'tag_path': 'db1tag22'}),
+                  'tag_path': 'db1tag22', 'color': 'ff00ff'}),
                 (8, 'admin', 1, None,
                  {'type': 'tag_delete', 'tag_id': -6}),
                 (9, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 1,
-                  'start_offset': 3, 'end_offset': 6, 'tags': []}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [],
+                  'tag_colors': []}),
                 (10, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 1,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [2]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [2],
+                  'tag_colors': ['ff00ff']}),
                 (11, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': -6,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [1]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [1],
+                  'tag_colors': ['ffff00']}),
                 (12, 'admin', 1, 1,
                  {'type': 'highlight_add', 'highlight_id': 2,
-                  'start_offset': 3, 'end_offset': 6, 'tags': [1]}),
+                  'start_offset': 3, 'end_offset': 6, 'tags': [1],
+                  'tag_colors': ['ffff00']}),
                 (13, 'admin', 1, 1,
                  {'type': 'highlight_delete', 'highlight_id': -6}),
             ],
@@ -2011,8 +2030,8 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Tag.__table__.c.id)
             ),
             [
-                (1, 1, 'db1tag21', ''),
-                (2, 1, 'db1tag22', ''),
+                (1, 1, 'db1tag21', '', 'ffff00'),
+                (2, 1, 'db1tag22', '', 'ff00ff'),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -2259,6 +2278,7 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'description': 'new',
+                    'color': 'ffff00',
                 }),
             ],
         )
@@ -2313,10 +2333,12 @@ class TestMultiuser(MyHTTPTestCase):
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 1,
                     'tag_path': 'interesting', 'description': 'yes replace',
+                    'color': 'ffff00',
                 }),
                 ('admin', 1, None, {
                     'type': 'tag_add', 'tag_id': 2,
                     'tag_path': 'people', 'description': 'new',
+                    'color': 'ffff00',
                 }),
             ],
         )

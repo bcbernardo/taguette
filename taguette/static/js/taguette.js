@@ -311,6 +311,20 @@ window.addEventListener('load', function() {
       });
     }
   })(jQuery);
+
+  // Add event listeners for color buttons
+  document.querySelectorAll('.tag-color-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      document.querySelectorAll('.tag-color-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+      
+      this.classList.add('active');
+      
+      var color = this.dataset.color;
+      document.getElementById('tag-add-color').value = color;
+    });
+  });
 });
 
 function showSpinner() {
@@ -868,10 +882,19 @@ function updateTagsList() {
     if(current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag) {
       elem.classList.add('tag-current');
     }
+    // Create a colored badge for the tag
+    var colorStyle = '';
+    if (tag.color) {
+      colorStyle = 'background-color: #' + tag.color + ';';
+    } else {
+      // Default color
+      colorStyle = 'background-color: #ffff00;';
+    }
+    
     elem.innerHTML =
       '<div class="d-flex justify-content-between align-items-center">' +
       '  <div class="tag-name">' +
-      '    <a id="tag-link-' + tag.id + '">' + escapeHtml(tag.path) + '</a>' +
+      '    <a id="tag-link-' + tag.id + '" style="' + colorStyle + '">' + escapeHtml(tag.path) + '</a>' +
       '  </div>' +
       '  <div style="white-space: nowrap;">' +
       '    <span class="badge badge-secondary badge-pill" id="tag-' + tag.id + '-count">' + tag.count + '</span>' +
@@ -956,9 +979,21 @@ function updateModalTagsList() {
       }
     }
     elem.className = 'tag-name form-check ' + searchHitClass;
+    
+    // Create a colored badge for the tag in highlight form
+    var colorStyle = '';
+    if (tag.color) {
+      colorStyle = 'background-color: #' + tag.color + ';';
+    } else {
+      // Default color
+      colorStyle = 'background-color: #ffff00;';
+    }
+    
     elem.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
-      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' + escapeHtml(tag.path) + '</label>';
+      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' +
+      '<span style="' + colorStyle + ' padding: 2px 6px; border-radius: 3px; color: black;">' + escapeHtml(tag.path) + '</span>' +
+      '</label>';
     tags_modal_list.insertBefore(elem, before);
   }
   if(entries.length == 0) {
@@ -1027,6 +1062,8 @@ function createTag() {
   document.getElementById('tag-add-cancel').style.display = '';
   document.getElementById('tag-add-delete').style.display = 'none';
   document.getElementById('tag-add-merge').style.display = 'none';
+  // Reset color to default
+  document.getElementById('tag-add-color').value = 'ffff00';
   $(tag_add_modal).modal();
 }
 
@@ -1035,6 +1072,17 @@ function editTag(tag_id) {
   document.getElementById('tag-add-id').value = '' + tag_id;
   document.getElementById('tag-add-path').value = tags['' + tag_id].path;
   document.getElementById('tag-add-description').value = tags['' + tag_id].description;
+  // Set the color
+  var color = tags['' + tag_id].color || 'ffff00';
+  document.getElementById('tag-add-color').value = color;
+  // Update the selected color button
+  var colorButtons = document.querySelectorAll('.tag-color-btn');
+  colorButtons.forEach(function(button) {
+    button.classList.remove('active');
+    if (button.dataset.color === color) {
+      button.classList.add('active');
+    }
+  });
   document.getElementById('tag-add-label-new').style.display = 'none';
   document.getElementById('tag-add-label-change').style.display = '';
   document.getElementById('tag-add-cancel').style.display = 'none';
@@ -1058,36 +1106,46 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     alert(gettext("Invalid tag name"));
     return;
   }
+  var tag_color = document.getElementById('tag-add-color').value;
   var req;
   if(tag_id !== null) {
     console.log("Posting update for tag " + tag_id);
     req = postJSON(
       '/api/project/' + project_id + '/tag/' + tag_id,
       {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
+       description: document.getElementById('tag-add-description').value,
+       color: tag_color}
     );
   } else {
     console.log("Posting new tag");
     req = postJSON(
       '/api/project/' + project_id + '/tag/new',
       {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
+       description: document.getElementById('tag-add-description').value,
+       color: tag_color}
     );
   }
   showSpinner();
-  req.then(function(reply) {
-    console.log("Tag posted");
+   req.then(function(reply) {
+     console.log("Tag posted");
 
-    // Check this tag in the list, or remember to check it once it appears
-    var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
-    if(tag_checkbox) {
-      tag_checkbox.checked = true;
-    }
-    last_added_tag = reply.id;
+     // Store the tag in local tags object with color
+     var tag = {id: reply.id, path: tag_path, description: document.getElementById('tag-add-description').value};
+     if ('color' in reply) {
+       tag.color = reply.color;
+     }
+     addTag(tag);
 
-    $(tag_add_modal).modal('hide');
-    document.getElementById('tag-add-form').reset();
-  })
+     // Check this tag in the list, or remember to check it once it appears
+     var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
+     if(tag_checkbox) {
+       tag_checkbox.checked = true;
+     }
+     last_added_tag = reply.id;
+
+     $(tag_add_modal).modal('hide');
+     document.getElementById('tag-add-form').reset();
+   })
   .catch(function(error) {
     console.error("Failed to create tag:", error);
     alert(gettext("Couldn't create tag!") + "\n\n" + error);
@@ -1205,6 +1263,17 @@ function setHighlight(highlight) {
   tag_names = tag_names.join(", ");
   try {
     highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
+    var color = '#ffff00';
+    if (highlight.tag_colors && highlight.tag_colors.length > 0) {
+      var apiColor = highlight.tag_colors[0];
+      if (apiColor) {
+        color = '#' + apiColor;
+      }
+    }
+    var highlightElements = document.querySelectorAll('.highlight-' + id);
+    for (var i = 0; i < highlightElements.length; i++) {
+      highlightElements[i].style.backgroundColor = color;
+    }
     console.log("Highlight set:", highlight);
   } catch(error) {
     console.error(
@@ -1916,17 +1985,22 @@ function longPollForEvents() {
             id: event.highlight_id,
             start_offset: event.start_offset,
             end_offset: event.end_offset,
-            tags: event.tags
+            tags: event.tags,
+            tag_colors: event.tag_colors
           });
         }
       } else if(event.type === 'highlight_delete') {
         removeHighlight(event.highlight_id);
       } else if(event.type === 'tag_add') {
-        addTag({
+        var tag = {
           id: event.tag_id,
           path: event.tag_path,
           description: event.description
-        });
+        };
+        if ('color' in event) {
+          tag.color = event.color;
+        }
+        addTag(tag);
       } else if(event.type === 'tag_delete') {
         removeTag(event.tag_id);
       } else if(event.type === 'tag_merge') {

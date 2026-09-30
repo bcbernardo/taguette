@@ -230,6 +230,11 @@ textarea.form-control {
   word-break: break-all;
 }
 
+/* Tag color styling */
+.tag-color-btn.active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+}
+
 a.document-link-a {
   word-break: break-all;
 }
@@ -293,7 +298,6 @@ a.dropdown-item:hover {
 }
 
 #document-view .highlight {
-  background-color: #ff0;
   color: black;
 }
 

@@ -672,6 +672,7 @@ class ImportCodebook(BaseHandler):
                         project_id=project.id,
                         path=tag_insert['path'],
                         description=tag_insert['description'],
+                        color='ffff00',  # Default color
                     )
                     self.db.add(tag)
                     changed_tags.append(tag)
@@ -734,7 +735,8 @@ class Project(BaseHandler):
             str(tag.id): {'id': tag.id,
                           'path': tag.path,
                           'description': tag.description,
-                          'count': tag.highlights_count}
+                          'count': tag.highlights_count,
+                          'color': tag.color}
             for tag in project.tags
         })
         members = (
