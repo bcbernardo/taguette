@@ -343,6 +343,13 @@ a.dropdown-item:hover {
   padding: 1rem 0.6rem 1rem 0.6rem;
 }
 
+/* --------------------TAG HOTKEY HINTS--------------------------------------*/
+.hotkey-hint {
+  font-size: 0.75em;
+  color: #999;
+  margin-left: 0.5em;
+}
+
 /* Spinner animation */
 #spinner {
   border: 3vh solid #dcdcdc;

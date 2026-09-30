@@ -956,9 +956,11 @@ function updateModalTagsList() {
       }
     }
     elem.className = 'tag-name form-check ' + searchHitClass;
+    var hotkeyHint = i < 9 ? '<span class="hotkey-hint">Alt+' + (i + 1) + '</span>' : '';
     elem.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
-      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' + escapeHtml(tag.path) + '</label>';
+      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label ">' + escapeHtml(tag.path) + '</label>' +
+      hotkeyHint;
     tags_modal_list.insertBefore(elem, before);
   }
   if(entries.length == 0) {
@@ -996,6 +998,29 @@ highlightSearch.addEventListener('keypress', function(e) {
         updateModalTagsList();
       }
     }
+  }
+});
+
+// Alt+1 through Alt+9 toggle the 1st through 9th currently-visible tag in
+// the list, so a highlight can be tagged without touching the mouse. Alt is
+// used (rather than Ctrl) because Ctrl+1-9 is reserved by both Chrome and
+// Firefox for switching browser tabs and can't be overridden from a page.
+document.addEventListener('keydown', function(e) {
+  if(!highlight_add_modal.classList.contains('show')) {
+    return;
+  }
+  if(!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+    return;
+  }
+  var match = /^Digit([1-9])$/.exec(e.code);
+  if(!match) {
+    return;
+  }
+  var index = parseInt(match[1], 10) - 1;
+  var checkboxes = tags_modal_list.querySelectorAll('.tag-name input[type=checkbox]');
+  if(index < checkboxes.length) {
+    e.preventDefault();
+    checkboxes[index].checked = !checkboxes[index].checked;
   }
 });
 
