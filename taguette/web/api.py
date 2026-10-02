@@ -691,6 +691,8 @@ class Highlights(BaseHandler):
                     'content': hl.snippet,
                     'tags': [t.id for t in hl.tags],
                     'text_direction': direction.name,
+                    'start_offset': hl.start_offset,
+                    'end_offset': hl.end_offset
                 }
                 for hl, direction in highlights
             ],

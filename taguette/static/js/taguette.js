@@ -1202,16 +1202,44 @@ function setHighlight(highlight) {
   highlights[id] = highlight;
   var tag_names = highlight.tags.map(function(id) { return tags[id].path; });
   sortByKey(tag_names, function(path) { return path; });
-  tag_names = tag_names.join(", ");
-  try {
-    highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
-    console.log("Highlight set:", highlight);
-  } catch(error) {
-    console.error(
-      "Error setting highlight ", highlight.id, " ", [highlight.start_offset, highlight.end_offset],
-      ":", error,
-    );
+  var tag_names_display = tag_names.join(", ");
+  if(!highlight.document_id){ //only highlights from loadTag have a document_id (tag can be on multiple docs)
+    try {
+      highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names_display);
+      console.log("Highlight set:", highlight);
+    } catch(error) {
+      console.error(
+        "Error setting highlight ", highlight.id, " ", [highlight.start_offset, highlight.end_offset],
+        ":", error,
+      );
+    }
   }
+
+  //update highlights page
+  var hlEntry = document.getElementById('highlight-entry-' + id);
+  if(hlEntry){
+    hlTags = hlEntry.getElementsByClassName('hltag');
+    while(hlTags.length > 0){
+      hlEntry.removeChild(hlTags[0]);
+    }
+
+    addTagsToHighlight(hlEntry, tag_names);
+  }
+
+}
+
+function addTagsToHighlight(elem, tag_names){
+  tag_names.sort();
+  for(var j = 0; j < tag_names.length; ++j) {
+    if(j > 0) {
+      elem.appendChild(document.createTextNode(' '));
+    }
+    var taglink = document.createElement('a');
+    taglink.className = 'badge badge-dark hltag';
+    taglink.textContent = tag_names[j];
+    linkTag(taglink, taglink.textContent);
+    elem.appendChild(taglink);
+  }  
 }
 
 // Remove a highlight
@@ -1672,6 +1700,7 @@ function loadTag(tag_path, page) {
     highlights = {};
     for(var i = 0; i < result.highlights.length; ++i) {
       var hl = result.highlights[i];
+      highlights[hl.id] = hl;
       var content = document.createElement('div');
       if(hl.text_direction === 'RIGHT_TO_LEFT') {
         content.style.direction = 'rtl';
@@ -1692,18 +1721,21 @@ function loadTag(tag_path, page) {
       elem.appendChild(doclink);
       elem.appendChild(document.createTextNode(' '));
 
+      var editHighlightLink = document.createElement('a');
+      editHighlightLink.textContent = 'edit tags';
+      editHighlightLink.setAttribute('data-highlight-id', '' + hl.id);
+      editHighlightLink.setAttribute('data-document-id', '' + hl.document_id);
+      editHighlightLink.className = 'badge badge-info';
+      editHighlightLink.addEventListener('click', function(e){
+        var hlid = this.getAttribute('data-highlight-id');
+        current_document = this.getAttribute('data-document-id');
+        editHighlight.call(this);
+      });
+      elem.appendChild(editHighlightLink);
+
+      elem.appendChild(document.createTextNode(' '));
       var tag_names = hl.tags.map(function(tag) { return tags['' + tag].path; });
-      tag_names.sort();
-      for(var j = 0; j < tag_names.length; ++j) {
-        if(j > 0) {
-          elem.appendChild(document.createTextNode(' '));
-        }
-        var taglink = document.createElement('a');
-        taglink.className = 'badge badge-dark';
-        taglink.textContent = tag_names[j];
-        linkTag(taglink, taglink.textContent);
-        elem.appendChild(taglink);
-      }
+      addTagsToHighlight(elem, hl.tags)
 
       document_contents.appendChild(elem);
     }
