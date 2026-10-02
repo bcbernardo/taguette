@@ -272,43 +272,35 @@ function escapeRegExp(string) {
 }
 
 window.addEventListener('load', function() {
-  // https://css-tricks.com/snippets/jquery/draggable-without-jquery-ui/
   (function($) {
-    $.fn.drags = function(opt) {
-      opt = $.extend({handle:"",cursor:"move"}, opt);
-      if(opt.handle === "") {
-          var $el = this;
-      } else {
-          var $el = this.find(opt.handle);
+    $.fn.drags = function(options) {
+      const $draggable = this;
+      let $handle = this;
+
+      if (options.handleSelector) {
+        $handle = $(this).find(options.handleSelector);
       }
 
-      return $el.css('cursor', opt.cursor).on("mousedown", function(e) {
-        if(opt.handle === "") {
-          var $drag = $(this).addClass('draggable');
-        } else {
-          var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
-        }
-        var z_idx = $drag.css('z-index'),
-            drg_h = $drag.outerHeight(),
-            drg_w = $drag.outerWidth(),
-            pos_y = $drag.offset().top + drg_h - e.pageY,
-            pos_x = $drag.offset().left + drg_w - e.pageX;
-        $drag.css('z-index', 1000).parents().on("mousemove", function(e) {
-          $('.draggable').offset({
-            top:e.pageY + pos_y - drg_h,
-            left:e.pageX + pos_x - drg_w
-          }).on("mouseup", function() {
-            $(this).removeClass('draggable').css('z-index', z_idx);
+      $handle.css({'cursor': 'move', 'user-select': 'none'});
+      $handle.on('mousedown', function(e) {
+        const startX = $draggable.offset().left;
+        const startY = $draggable.offset().top;
+        const mouseStartX = e.pageX;
+        const mouseStartY = e.pageY;
+
+        $(document.documentElement)
+          .on('mousemove.drag', function(e) {
+            $draggable.offset({
+              left: startX + (e.pageX - mouseStartX),
+              top: startY + (e.pageY - mouseStartY),
+            });
+          })
+          .one('mouseup', function() {
+            $(this).off('mousemove.drag');
           });
-        });
-        e.preventDefault(); // disable selection
-      }).on("mouseup", function() {
-        if(opt.handle === "") {
-          $(this).removeClass('draggable');
-        } else {
-          $(this).removeClass('active-handle').parent().removeClass('draggable');
-        }
       });
+
+      return this;
     }
   })(jQuery);
 });
@@ -1288,7 +1280,7 @@ function createHighlight(selection) {
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
   highlightModalReset();
-  $(highlight_add_modal).modal().drags({handle: '.modal-header'});
+  $(highlight_add_modal).modal().find('form').drags({handleSelector: '.modal-header'});
   document.getElementById('highlight-search').focus();
 }
 
@@ -1311,7 +1303,7 @@ function editHighlight() {
   for(var i = 0; i < hl_tags.length; ++i) {
     document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
   }
-  $(highlight_add_modal).modal().drags({handle: '.modal-header'});
+  $(highlight_add_modal).modal().find('form').drags({handleSelector: '.modal-header'});
   document.getElementById('highlight-search').focus();
 }
 
