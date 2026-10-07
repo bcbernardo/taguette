@@ -433,6 +433,33 @@ function splitAtPos(pos, after) {
   }
 }
 
+// Given a highlight <a> element, walk up through any highlights it is
+// nested inside (overlapping highlights nest in the DOM, innermost first)
+// and return the id of the shortest one covering that spot. The innermost
+// DOM element isn't necessarily the right one to edit: if a broad highlight
+// was created first and a narrower one added on top of part of it, a click
+// on plain (non-overlapping) text of the broad highlight is only wrapped by
+// that one highlight, but a click in the overlap needs to resolve to the
+// narrower, more specific highlight rather than whichever happens to be
+// outermost.
+function shortestHighlightAt(node) {
+  var best_id = null;
+  var best_length = Infinity;
+  while(node && node.classList && node.classList.contains('highlight')) {
+    var id = node.getAttribute('data-highlight-id');
+    var hl = highlights[id];
+    if(hl) {
+      var length = hl.end_offset - hl.start_offset;
+      if(length < best_length) {
+        best_length = length;
+        best_id = id;
+      }
+    }
+    node = node.parentElement;
+  }
+  return best_id;
+}
+
 // Highlight a described selection
 function highlightSelection(saved, id, clickedCallback, title) {
   console.log("Highlighting", saved);
@@ -454,7 +481,16 @@ function highlightSelection(saved, id, clickedCallback, title) {
       span.className = 'highlight highlight-' + id;
       span.setAttribute('data-highlight-id', '' + id);
       span.setAttribute('title', title);
-      span.addEventListener('click', clickedCallback);
+      span.addEventListener('click', function(e) {
+        // Overlapping highlights are nested, so this fires once per
+        // ancestor as the event bubbles; only resolve and act on it once,
+        // from the innermost element (the actual click target)
+        e.stopPropagation();
+        var winner_id = shortestHighlightAt(e.currentTarget);
+        if(winner_id !== null) {
+          clickedCallback(winner_id);
+        }
+      });
       node.parentNode.insertBefore(span, node);
       span.appendChild(node);
     }
@@ -1301,9 +1337,8 @@ document.addEventListener('keyup', function(e) {
   }
 });
 
-function editHighlight() {
+function editHighlight(id) {
   highlightModalReset();
-  var id = this.getAttribute('data-highlight-id');
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
