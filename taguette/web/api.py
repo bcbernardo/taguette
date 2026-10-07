@@ -683,13 +683,52 @@ class Highlights(BaseHandler):
             .all()
         )
 
+        # For every highlight on this page, find tags from *other* highlights
+        # overlapping the same span of the same document (fully enclosing,
+        # enclosed, or partially overlapping -- any shared characters count).
+        # This is a single extra query for the whole page rather than one
+        # per highlight: a self-join on Highlight, restricted to the ids
+        # we're about to return.
+        overlapping_tags = {}
+        hl_ids = [hl.id for hl, _ in highlights]
+        if hl_ids:
+            other_hl = aliased(database.Highlight)
+            other_tag = aliased(database.Tag)
+            overlap_rows = (
+                self.db.query(database.Highlight.id, other_tag.id)
+                .join(
+                    other_hl,
+                    and_(
+                        other_hl.document_id == database.Highlight.document_id,
+                        other_hl.id != database.Highlight.id,
+                        other_hl.start_offset < database.Highlight.end_offset,
+                        other_hl.end_offset > database.Highlight.start_offset,
+                    ),
+                )
+                .join(
+                    database.highlight_tags,
+                    database.highlight_tags.c.highlight_id == other_hl.id,
+                )
+                .join(other_tag,
+                      other_tag.id == database.highlight_tags.c.tag_id)
+                .filter(database.Highlight.id.in_(hl_ids))
+                .all()
+            )
+            for hl_id, tag_id in overlap_rows:
+                overlapping_tags.setdefault(hl_id, set()).add(tag_id)
+
         return self.send_json({
             'highlights': [
                 {
                     'id': hl.id,
                     'document_id': hl.document_id,
+                    'start_offset': hl.start_offset,
+                    'end_offset': hl.end_offset,
                     'content': hl.snippet,
                     'tags': [t.id for t in hl.tags],
+                    'overlapping_tags': sorted(
+                        overlapping_tags.get(hl.id, ()),
+                    ),
                     'text_direction': direction.name,
                 }
                 for hl, direction in highlights
