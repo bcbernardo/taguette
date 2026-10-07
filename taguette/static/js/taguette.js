@@ -1249,6 +1249,53 @@ backlight_checkbox.addEventListener('change', function() {
   }
 });
 
+// Condense whitespace: hide paragraphs that are empty or only contain
+// whitespace, which Calibre produces for blank lines in imported plain-text
+// documents. This is a personal display preference (stored in the browser,
+// not on the project) and only ever hides elements visually; it never
+// changes the stored document, so it can't affect highlight offsets.
+var condense_whitespace_checkbox = document.getElementById('condense-whitespace');
+
+function setCondenseWhitespace(enabled) {
+  var classes = document.getElementById('document-view').classList;
+  if(enabled) {
+    classes.add('condense-whitespace');
+  } else {
+    classes.remove('condense-whitespace');
+  }
+  condense_whitespace_checkbox.checked = enabled;
+}
+
+(function() {
+  var stored = null;
+  try {
+    stored = window.localStorage.getItem('condense-whitespace');
+  } catch(e) {
+    // localStorage unavailable (private browsing, etc); use the default
+  }
+  setCondenseWhitespace(stored === null ? true : stored === 'true');
+})();
+
+condense_whitespace_checkbox.addEventListener('change', function() {
+  setCondenseWhitespace(condense_whitespace_checkbox.checked);
+  try {
+    window.localStorage.setItem('condense-whitespace', '' + condense_whitespace_checkbox.checked);
+  } catch(e) {
+    // localStorage unavailable; the preference just won't persist
+  }
+});
+
+// Mark <p> elements that are empty or only contain whitespace, so the
+// "Condense whitespace" CSS class above can hide them
+function markBlankParagraphs(container) {
+  var paragraphs = container.querySelectorAll('p');
+  for(var i = 0; i < paragraphs.length; ++i) {
+    if(paragraphs[i].textContent.trim() === '') {
+      paragraphs[i].classList.add('blank-paragraph');
+    }
+  }
+}
+
 
 /*
  * Add highlight
@@ -1596,6 +1643,7 @@ function loadDocument(document_id) {
       document_contents.appendChild(elem);
       chunk_offsets.push(chunk.offset);
     }
+    markBlankParagraphs(document_contents);
     if(info.text_direction === 'RIGHT_TO_LEFT') {
       document_contents.style.direction = 'rtl';
     } else {
@@ -1679,6 +1727,7 @@ function loadTag(tag_path, page) {
         content.style.direction = 'ltr';
       }
       content.innerHTML = result.highlights[i].content;
+      markBlankParagraphs(content);
       var elem = document.createElement('div');
       elem.className = 'highlight-entry';
       elem.setAttribute('id', 'highlight-entry-' + hl.id);
