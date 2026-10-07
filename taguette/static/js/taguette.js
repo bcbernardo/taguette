@@ -1185,7 +1185,12 @@ document.getElementById('tag-merge-form').addEventListener('submit', function(e)
     console.error("Failed to merge tags:", error);
     alert(gettext("Couldn't merge tags!") + "\n\n" + error);
   })
-  .then(hideSpinner);
+  .then(function() {
+    updateTagCount(tags['' + tag_dest].id, tags['' + tag_src].count);
+    tags['' + tag_dest].description += tags['' + tag_dest].description + "\ntag merged with " + tags['' + tag_src].path;
+    updateTagsList();
+    hideSpinner();
+  });
 });
 
 
