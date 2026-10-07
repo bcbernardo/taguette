@@ -378,6 +378,45 @@ a.dropdown-item:hover {
   overflow-y: auto;
 }
 
+/* --------------------DOCUMENT IMPORT DROPZONES-----------------------------*/
+.dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 0.5em;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.dropzone-active {
+  border-color: #3498DB;
+  background-color: #eef7fd;
+}
+.dropzone-hint {
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 0.25em;
+}
+#document-bulk-add-dropzone {
+  padding: 1.5em;
+  margin-bottom: 1em;
+}
+#document-bulk-add-dropzone .dropzone-hint {
+  font-size: 1em;
+  margin: 0.5em 0;
+}
+#document-bulk-add-table input.form-control,
+#document-bulk-add-table select.form-control {
+  font-size: 0.9em;
+  padding: 0.25em 0.5em;
+  height: auto;
+}
+.document-bulk-status-error {
+  color: #dc3545;
+  font-size: 0.85em;
+}
+.document-bulk-status-done {
+  color: #28a745;
+}
+
 /* --------------------RESPONSIVE DISPLAY HEADINGS--------------------------*/
 @media (max-width: 575.98px) {
   .display-1 {
