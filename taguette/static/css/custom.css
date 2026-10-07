@@ -277,14 +277,26 @@ li.tag-current {
   color: #bbb;
 }
 
-#export-button {
+#command-bar {
   position: absolute;
   top: .1em;
   right: .5em;
+  display: flex;
+  width: 100%;
+  padding-left: 20px;
+  justify-content: space-between;
 }
 
 #export-button .dropdown-toggle {
   padding: 0.125rem 0.25rem;
+}
+
+#menu-toggle.collapsed > .fa-angle-double-left {
+  display:none;
+}
+
+#menu-toggle:not(.collapsed) > .fa-angle-double-right {
+  display:none;
 }
 
 a.dropdown-item:hover {
