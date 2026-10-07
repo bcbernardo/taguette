@@ -45,7 +45,6 @@ body {
 div.sticky-top {
   overflow-x: hidden;
   overflow-y: auto;
-  height: 100vh;
 }
 
 /* Footer */
@@ -400,4 +399,31 @@ a.dropdown-item:hover {
     font-weight: 300;
     line-height: 1.0;
   }
+}
+/* Resizable split panel layout */
+#main-content-container {
+    display: flex; 
+    height: 100vh; 
+}
+
+#left-panel {
+  width: 25%; 
+  min-width: 250px; 
+  max-width: 60%; 
+  flex-shrink: 0;
+  overflow-y: auto;
+
+}
+
+#right-panel {
+  flex-grow: 1; 
+  overflow-y: auto;
+}
+
+#dragbar {
+  width: 10px;
+  cursor: ew-resize;
+  background-color: #fff; 
+  z-index: 10;
+  flex-shrink: 0; 
 }

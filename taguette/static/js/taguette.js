@@ -12,6 +12,7 @@
  * - Members
  * - Load contents
  * - Long polling
+ * - Resizable split panel
  */
 
 
@@ -1965,3 +1966,50 @@ function longPollForEvents() {
   });
 }
 longPollForEvents();
+
+/*
+ * Resizable split panel
+ */
+ 
+var dragbar = document.getElementById('dragbar');
+var leftPanel = document.getElementById('left-panel');
+var mainContentContainer = document.getElementById('main-content-container');
+
+var isDragging = false;
+
+dragbar.addEventListener('mousedown', function(e) {
+    e.preventDefault(); 
+    isDragging = true;
+    
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+
+function onMouseMove(e) {
+    if (!isDragging) return;
+
+    var containerRect = mainContentContainer.getBoundingClientRect();
+    var newLeftPanelWidth = e.clientX - containerRect.left;
+ 
+    var minWidth = 200; // minimum width for left panel
+    var maxWidth = containerRect.width * 0.5; // Maximum 50% of the container width
+
+    if (newLeftPanelWidth >= minWidth && newLeftPanelWidth <= maxWidth) {
+        leftPanel.style.width = newLeftPanelWidth + 'px';
+    }
+}
+
+function onMouseUp() {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+}

@@ -6,9 +6,9 @@
 {% block containerclass %}container-fluid{% endblock %}
 
 {% block contents %}
-<div class="row">
+<div id="main-content-container"> 
   <!-- Left panel -->
-  <div class="col-md-3">
+  <div id="left-panel">
     <div class="sticky-top">
       <!-- Tab selector -->
       <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -110,8 +110,11 @@
     </div>
   </div>
 
+  <!-- Dragbar -->
+  <div id="dragbar"></div> 
+
   <!-- Right panel -->
-  <div class="col-md-9">
+  <div id="right-panel">
 
     <div id="document-view" class="document-view">
       <div id="export-button" class="dropdown" style="display: none;">
