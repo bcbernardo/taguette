@@ -96,6 +96,8 @@ def tag_path(path):
         raise InvalidFormat(_f("Tag path cannot be empty"))
     if len(path) > 200:
         raise InvalidFormat(_f("Tag path is too long"))
+    if '|' in path:
+        raise InvalidFormat(_f("Tag path cannot contain '|'"))
     return True
 
 

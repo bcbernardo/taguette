@@ -262,6 +262,8 @@ class ExportCodebookDoc(BaseHandler):
         PROM_EXPORT.labels('codebook', ext).inc()
         project, _ = self.get_project(project_id)
         tags = list(project.tags)
+        for t in tags:
+            t.full_path()
 
         # Close DB connection to not overflow the connection pool
         self.close_db_connection()

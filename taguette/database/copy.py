@@ -73,16 +73,32 @@ def copy_project(
     )
 
     # Copy tags
+    mapping_tags = {}
+    parent_map = DefaultMap(
+        lambda k: None if k is None else mapping_tags.get(k),
+        {},
+    )
     mapping_tags = copy(
         Tag.__table__, 'id',
-        dict(project_id=mapping_project),
+        dict(project_id=mapping_project, parent_id=parent_map),
         50,
         condition=Tag.project_id == project_id,
         validators=dict(
             path=validate.tag_path,
             description=validate.description,
+            parent_id=lambda v: v is None or isinstance(v, int),
         ),
     )
+    # Update parent_id for any tags whose parent was copied in a later batch
+    tags_query = Tag.__table__.select().where(Tag.project_id == project_id)
+    for old_tag in src_db.execute(tags_query).fetchall():
+        old_pid = old_tag['parent_id']
+        if old_pid is not None and old_pid in mapping_tags:
+            dest_db.execute(
+                Tag.__table__.update()
+                .where(Tag.id == mapping_tags[old_tag['id']])
+                .values(parent_id=mapping_tags[old_pid])
+            )
 
     # Copy highlights
     mapping_highlights = copy(
@@ -130,6 +146,14 @@ def copy_project(
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
+        # Backward-compatibility for legacy projects
+        # where parent_id was not yet in tag_add
+        if (
+            'parent_id' not in payload
+            and 'parent_id' in expected_payload_fields
+        ):
+            payload['parent_id'] = None
+
         # Check that the right JSON fields are set
         if payload.keys() != expected_payload_fields:
             raise ValueError("Command doesn't have expected fields")
@@ -153,6 +177,7 @@ def copy_project(
             ),
             tag_id=lambda v: isinstance(v, int),
             tag_path=validate.tag_path,
+            parent_id=lambda v: v is None or isinstance(v, int),
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
             member=validate.user_login,
@@ -162,6 +187,7 @@ def copy_project(
         field_transformers = dict(
             highlight_id=lambda v: mv(mapping_highlights, v),
             tag_id=lambda v: mv(mapping_tags, v),
+            parent_id=lambda v: None if v is None else mv(mapping_tags, v),
             src_tag_id=lambda v: mv(mapping_tags, v),
             tags=lambda tags: [mv(mapping_tags, t) for t in tags],
         )
