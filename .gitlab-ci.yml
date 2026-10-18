@@ -164,7 +164,7 @@ sqlite3_pypy:
     - pypy3 -m venv /tmp/venv
     - . /tmp/venv/bin/activate
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
-    - pip --disable-pip-version-check --no-cache-dir install --only-binary=:all: "bcrypt==5.0.0" || true
+    - 'pip --disable-pip-version-check --no-cache-dir install --only-binary=:all: "bcrypt==5.0.0" || true'
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -Wd tests.py -v
