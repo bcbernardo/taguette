@@ -926,7 +926,7 @@ function updateTagsList() {
     }
 
     var left = document.createElement('div');
-    left.className = 'tag-item-label';
+    left.className = 'tag-item-label tag-name';
 
     if(depth > 0) {
       var indent = document.createElement('span');

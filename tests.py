@@ -2616,7 +2616,7 @@ class TestMultiuser(MyHTTPTestCase):
             f'/api/project/{proj_id}/document/new',
             data=dict(name='doc1', description=''),
             files=dict(
-                file=('doc.txt', 'text/plain', b'Whales are marine mammals.')
+                file=('doc.html', 'text/html', b'Whales are marine mammals.')
             ),
         ) as response:
             self.assertEqual(response.status, 200)
@@ -3126,6 +3126,7 @@ class TestSeleniumMultiuser(SeleniumTest):
                         "1": {
                             "count": 0, "id": 1, "path": "interesting",
                             "description": "Further review required",
+                            "parent_id": None,
                         },
                     },
                     sort_keys=True,
