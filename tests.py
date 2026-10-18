@@ -2812,6 +2812,11 @@ class SeleniumTest(MyHTTPTestCase):
             options.add_argument('--disable-gpu')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--no-sandbox')
+            options.add_argument('--lang=en-US')
+            options.add_experimental_option(
+                'prefs',
+                {'intl.accept_languages': 'en-US,en'},
+            )
             self.driver = webdriver.Chrome(options=options)
         else:
             raise EnvironmentError
@@ -3163,19 +3168,26 @@ class TestSeleniumMultiuser(SeleniumTest):
         await self.s_click_button('Add a document', tag='a')
         elem = self.driver.find_element(By.ID, 'document-add-name')
         elem.send_keys('otherdoc')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
-        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
+        tmp = tempfile.NamedTemporaryFile('wb', suffix='.html', delete=False)
+        try:
             tmp.write(b'different content')
-            tmp.flush()
+            tmp.close()
+            elem = self.driver.find_element(By.ID, 'document-add-file')
             elem.send_keys(tmp.name)
             await self.s_click_button('Import')
-        db = self.application.DBSession()
-        doc = db.query(database.Document).get(1)
-        self.assertEqual(doc.name, 'otherdoc')
-        self.assertEqual(doc.description, '')
-        self.assertEqual(doc.text_direction,
-                         database.TextDirection.LEFT_TO_RIGHT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+            await asyncio.sleep(1)
+            db = self.application.DBSession()
+            doc = db.query(database.Document).get(1)
+            self.assertEqual(doc.name, 'otherdoc')
+            self.assertEqual(doc.description, '')
+            self.assertEqual(doc.text_direction,
+                             database.TextDirection.LEFT_TO_RIGHT)
+            self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        finally:
+            try:
+                os.remove(tmp.name)
+            except OSError:
+                pass
 
         # Change project 2 metadata
         self.assertEqual(
@@ -3222,19 +3234,26 @@ class TestSeleniumMultiuser(SeleniumTest):
         elem = self.driver.find_element(By.ID, 'document-add-description')
         elem.send_keys('Last one')
         await self.s_click_button('Right to left', tag='label')
-        elem = self.driver.find_element(By.ID, 'document-add-file')
-        with tempfile.NamedTemporaryFile('wb', suffix='.html') as tmp:
+        tmp = tempfile.NamedTemporaryFile('wb', suffix='.html', delete=False)
+        try:
             tmp.write(b'<strong>Opinions</strong> and <em>facts</em>!')
-            tmp.flush()
+            tmp.close()
+            elem = self.driver.find_element(By.ID, 'document-add-file')
             elem.send_keys(tmp.name)
             await self.s_click_button('Import')
-        db = self.application.DBSession()
-        doc = db.query(database.Document).get(2)
-        self.assertEqual(doc.name, 'third')
-        self.assertEqual(doc.description, 'Last one')
-        self.assertEqual(doc.text_direction,
-                         database.TextDirection.RIGHT_TO_LEFT)
-        self.assertTrue(doc.filename, os.path.basename(tmp.name))
+            await asyncio.sleep(1)
+            db = self.application.DBSession()
+            doc = db.query(database.Document).get(2)
+            self.assertEqual(doc.name, 'third')
+            self.assertEqual(doc.description, 'Last one')
+            self.assertEqual(doc.text_direction,
+                             database.TextDirection.RIGHT_TO_LEFT)
+            self.assertTrue(doc.filename, os.path.basename(tmp.name))
+        finally:
+            try:
+                os.remove(tmp.name)
+            except OSError:
+                pass
 
         # Create highlight 1 in document 1
         await self.s_click(

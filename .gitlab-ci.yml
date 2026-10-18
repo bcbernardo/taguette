@@ -158,11 +158,14 @@ sqlite3_pypy:
   allow_failure: true
   image: pypy:latest
   script:
+    - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yy cargo rustc
     - curl -sSL https://install.python-poetry.org | python3 -
     - $HOME/.local/bin/poetry config virtualenvs.create false
     - pypy3 -m venv /tmp/venv
     - . /tmp/venv/bin/activate
     - pip --disable-pip-version-check --no-cache-dir install --upgrade pip
+    - pip --disable-pip-version-check --no-cache-dir install --only-binary=:all: "bcrypt==5.0.0" || true
     - $HOME/.local/bin/poetry install --no-interaction
     - scripts/update_translations.sh
     - python -Wd tests.py -v
+

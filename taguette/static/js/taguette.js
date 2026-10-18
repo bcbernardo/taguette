@@ -854,10 +854,16 @@ function addTag(tag) {
   if(tag.parent_id && !expandedTagNodes.has(tag.parent_id)) {
     expandedTagNodes.add(tag.parent_id);
   }
-  updateTagsList();
 
   if(tag.id == last_added_tag) {
-    toggleHighlightSelectedTag(tag.id, true);
+    toggleHighlightSelectedTag(tag.id, true, tag);
+  }
+
+  updateTagsList();
+
+  var tag_cb = document.getElementById('highlight-add-tags-' + tag.id);
+  if(tag.id == last_added_tag && tag_cb) {
+    tag_cb.checked = true;
   }
 }
 
@@ -1196,9 +1202,23 @@ function executeSaveTag(tag_id, tag_path, parent_id, description) {
     if(parent_id && !expandedTagNodes.has(parent_id)) {
       expandedTagNodes.add(parent_id);
     }
-    last_added_tag = reply.id;
-    if(tags[reply.id] || reply.id) {
-      toggleHighlightSelectedTag(reply.id, true);
+    if(tag_id === null) {
+      last_added_tag = reply.id;
+      var newTag = {
+        id: reply.id,
+        path: tag_path,
+        parent_id: parent_id,
+        description: description,
+        count: 0
+      };
+      if(!tags['' + reply.id] || !tags['' + reply.id].path) {
+        tags['' + reply.id] = newTag;
+      }
+      toggleHighlightSelectedTag(reply.id, true, newTag);
+      var tag_checkbox = document.getElementById('highlight-add-tags-' + reply.id);
+      if(tag_checkbox) {
+        tag_checkbox.checked = true;
+      }
     }
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
@@ -1477,12 +1497,13 @@ function renderHighlightSelectedChips() {
     chip.setAttribute('data-tag-id', tagId);
     chip.title = gettext("1 clique: desmarcar/recuperar | Duplo clique: navegar até pasta");
 
+    var tagPath = (tag && tag.path) ? tag.path : '';
     if(isExcluded) {
       chip.style.textDecoration = 'line-through';
       chip.style.opacity = '0.75';
-      chip.innerHTML = '<span class="mr-1"><s>' + escapeHtml(tag.path) + '</s></span> <i class="fa fa-undo" title="Recuperar"></i>';
+      chip.innerHTML = '<span class="mr-1"><s>' + escapeHtml(tagPath) + '</s></span> <i class="fa fa-undo" title="Recuperar"></i>';
     } else {
-      chip.innerHTML = '<span class="mr-1">' + escapeHtml(tag.path) + '</span> <i class="fa fa-times-circle" title="Desmarcar"></i>';
+      chip.innerHTML = '<span class="mr-1">' + escapeHtml(tagPath) + '</span> <i class="fa fa-times-circle" title="Desmarcar"></i>';
     }
 
     // 1 clique: desmarca ou recupera a tag sem fechar o modal
@@ -1502,7 +1523,7 @@ function renderHighlightSelectedChips() {
     chip.addEventListener('dblclick', (function(itemTag) {
       return function(e) {
         e.preventDefault();
-        highlightNavFolder = itemTag.parent_id ? itemTag.parent_id : null;
+        highlightNavFolder = itemTag && itemTag.parent_id ? itemTag.parent_id : null;
         document.getElementById('highlight-search').value = '';
         updateModalTagsList();
       };
@@ -1515,13 +1536,22 @@ function renderHighlightSelectedChips() {
   bar.scrollLeft = bar.scrollWidth;
 }
 
-function toggleHighlightSelectedTag(tagId, isChecked) {
-  var tag = tags['' + tagId];
-  if(!tag) return;
+function toggleHighlightSelectedTag(tagId, isChecked, tagObj) {
+  var tag = tags['' + tagId] || tagObj;
+  if(!tag && isChecked) {
+    tag = { id: tagId, path: '' };
+  }
+  if(tagObj && (!tags['' + tagId] || !tags['' + tagId].path)) {
+    tags['' + tagId] = tagObj;
+  }
   if(isChecked) {
     highlightSelectedTags[tagId] = { tag: tag, excluded: false };
   } else {
     delete highlightSelectedTags[tagId];
+  }
+  var cb = document.getElementById('highlight-add-tags-' + tagId);
+  if(cb) {
+    cb.checked = isChecked;
   }
   renderHighlightSelectedChips();
 }
@@ -2090,6 +2120,10 @@ function loadDocument(document_id) {
     var info = results[0];
     var contents = results[1];
     document_contents.innerHTML = '';
+    var tagHeader = document.getElementById('tag-info-header');
+    if(tagHeader) {
+      tagHeader.innerHTML = '';
+    }
     highlights = {};
     chunk_offsets = [];
     for(var i = 0; i < contents.contents.length; ++i) {
@@ -2132,7 +2166,7 @@ function loadDocument(document_id) {
     export_button.style.display = '';
     var btnExport = document.getElementById('dropdown-export');
     if(btnExport) {
-      btnExport.innerText = gettext("Export document");
+      btnExport.innerText = gettext("Export this view");
     }
     var btnConfigHighlights = document.getElementById('btn-open-export-highlights-modal');
     if(btnConfigHighlights) btnConfigHighlights.style.display = 'none';
@@ -2183,6 +2217,10 @@ function loadTag(tag_path, page) {
     }
     // No need to clear the 'tag-current', we are calling updateTagsList() below
     document_contents.innerHTML = '';
+    var tagHeader = document.getElementById('tag-info-header');
+    if(tagHeader) {
+      tagHeader.innerHTML = '';
+    }
 
     // Encontra o objeto da tag atual se for visualização de uma tag específica
     var currentTagObj = null;
@@ -2249,7 +2287,11 @@ function loadTag(tag_path, page) {
       }
 
       headerDiv.appendChild(headerBody);
-      document_contents.appendChild(headerDiv);
+      if(tagHeader) {
+        tagHeader.appendChild(headerDiv);
+      } else {
+        document_contents.appendChild(headerDiv);
+      }
     }
 
     highlights = {};
@@ -2366,7 +2408,7 @@ function loadTag(tag_path, page) {
     export_button.style.display = '';
     var btnExport = document.getElementById('dropdown-export');
     if(btnExport) {
-      btnExport.innerText = gettext("Export highlights");
+      btnExport.innerText = gettext("Export this view");
     }
     var btnConfigHighlights = document.getElementById('btn-open-export-highlights-modal');
     if(btnConfigHighlights) btnConfigHighlights.style.display = '';
