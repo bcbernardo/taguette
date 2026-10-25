@@ -627,6 +627,16 @@ class TestMultiuser(MyHTTPTestCase):
         ) as response:
             self.assertEqual(response.status, 303)
             self.assertEqual(response.headers['Location'], '/')
+            self.assertEqual(response.headers['X-Content-Type-Options'],
+                             'nosniff')
+            self.assertEqual(response.headers['Referrer-Policy'],
+                             'same-origin')
+            # Plain HTTP here, so no HSTS and no Secure flag
+            self.assertNotIn('Strict-Transport-Security', response.headers)
+            cookie = response.cookies['user']
+            self.assertTrue(cookie['httponly'])
+            self.assertEqual(cookie['samesite'], 'Lax')
+            self.assertFalse(cookie['secure'])
 
         # User exists in database
         db = self.application.DBSession()

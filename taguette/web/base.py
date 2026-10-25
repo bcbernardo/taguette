@@ -420,6 +420,10 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
         self.set_header('Server', 'Taguette/%s' % exact_version())
         self.set_header('X-Frame-Options', 'DENY')
         self.set_header('Content-Security-Policy', "frame-ancestors 'none';")
+        self.set_header('X-Content-Type-Options', 'nosniff')
+        self.set_header('Referrer-Policy', 'same-origin')
+        if self.request.protocol == 'https':
+            self.set_header('Strict-Transport-Security', 'max-age=31536000')
 
     @property
     def db(self):
@@ -472,6 +476,13 @@ class BaseHandler(HandleStreamClosed, RequestHandler):
             or self.get_cookie('cookies_accepted')
             or self.get_cookie('user')
         ):
+            # The XSRF cookie has to stay readable from JavaScript, the
+            # session cookie does not
+            if name == 'user':
+                kwargs.setdefault('httponly', True)
+            kwargs.setdefault('samesite', 'Lax')
+            if self.request.protocol == 'https':
+                kwargs.setdefault('secure', True)
             return super(BaseHandler, self).set_cookie(name, value, **kwargs)
         else:
             self.redirect(

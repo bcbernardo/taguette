@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM python:3.10 AS build
+FROM --platform=$BUILDPLATFORM python:3.12 AS build
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - && /root/.local/bin/poetry config virtualenvs.create false && \
@@ -21,15 +21,11 @@ RUN scripts/update_translations.sh
 RUN /root/.local/bin/poetry export -o requirements.txt --without=dev -E postgres
 
 
-FROM python:3.10
+FROM python:3.12
 
-ENV TINI_VERSION=v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-
-# Install Calibre from Ubuntu distro
+# Install Calibre and tini from the distro (apt verifies package signatures)
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends calibre wv && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends calibre wv tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
@@ -50,5 +46,5 @@ COPY --from=build /usr/src/app/taguette/l10n taguette/l10n
 VOLUME /data
 ENV HOME=/data
 EXPOSE 7465
-ENTRYPOINT ["/tini", "--", "taguette", "--no-browser", "--bind=0.0.0.0"]
+ENTRYPOINT ["/usr/bin/tini", "--", "taguette", "--no-browser", "--bind=0.0.0.0"]
 CMD []
