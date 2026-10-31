@@ -61,3 +61,6 @@ desktop.ini
 
 # Vagrant
 .vagrant
+
+# graphify extraction cache (machine-specific)
+graphify-out/cache/

@@ -1,0 +1,452 @@
+{
+  ".gitlab-ci.yml": {
+    "mtime": 1793365124.20699,
+    "seen": 1793485658.3799217,
+    "ast_hash": "2d2473c70ac3bc3591cacf5fb6deec90",
+    "semantic_hash": "2d2473c70ac3bc3591cacf5fb6deec90"
+  },
+  "pyproject.toml": {
+    "mtime": 1793365124.2129729,
+    "seen": 1793485658.3799376,
+    "ast_hash": "d6d4acbc9afb6a8cc4ecbee3ccd94880",
+    "semantic_hash": "d6d4acbc9afb6a8cc4ecbee3ccd94880"
+  },
+  "scripts/make_password_reset_link.py": {
+    "mtime": 1793365124.2149103,
+    "seen": 1793485658.379944,
+    "ast_hash": "fa133a911d89ca3abb683383a0f0d94a",
+    "semantic_hash": "fa133a911d89ca3abb683383a0f0d94a"
+  },
+  "scripts/new_db_revision.sh": {
+    "mtime": 1793365124.2149103,
+    "seen": 1793485658.3799477,
+    "ast_hash": "36b20a67e6f660867281b905525b93d6",
+    "semantic_hash": "36b20a67e6f660867281b905525b93d6"
+  },
+  "scripts/update_pot.sh": {
+    "mtime": 1793365124.2149103,
+    "seen": 1793485658.3799505,
+    "ast_hash": "d904d3310f0e100e849e5741880497d8",
+    "semantic_hash": "d904d3310f0e100e849e5741880497d8"
+  },
+  "scripts/update_translations.sh": {
+    "mtime": 1793365124.2149103,
+    "seen": 1793485658.379953,
+    "ast_hash": "e97723bb0dcb7338c6aad801307472c4",
+    "semantic_hash": "e97723bb0dcb7338c6aad801307472c4"
+  },
+  "taguette/__init__.py": {
+    "mtime": 1793365124.2149103,
+    "seen": 1793485658.3799558,
+    "ast_hash": "fb92ba4d349f4ace91fa978206e210e7",
+    "semantic_hash": "fb92ba4d349f4ace91fa978206e210e7"
+  },
+  "taguette/convert.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.3799577,
+    "ast_hash": "0bac7e56c1830b3625ad8d47cda4977c",
+    "semantic_hash": "0bac7e56c1830b3625ad8d47cda4977c"
+  },
+  "taguette/database.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.37996,
+    "ast_hash": "20e36370830cb0c5eac63197ed9c3de3",
+    "semantic_hash": "20e36370830cb0c5eac63197ed9c3de3"
+  },
+  "taguette/export.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.3799622,
+    "ast_hash": "582ab5f50052dad59d61e429c0700126",
+    "semantic_hash": "582ab5f50052dad59d61e429c0700126"
+  },
+  "taguette/extract.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.3799644,
+    "ast_hash": "7b0476c6c7ebf0aab8b3c9b742af295c",
+    "semantic_hash": "7b0476c6c7ebf0aab8b3c9b742af295c"
+  },
+  "taguette/main.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.379967,
+    "ast_hash": "b2b0de58b354cdf4c0e254a42264f234",
+    "semantic_hash": "b2b0de58b354cdf4c0e254a42264f234"
+  },
+  "taguette/migrations/env.py": {
+    "mtime": 1793365124.2153187,
+    "seen": 1793485658.3799698,
+    "ast_hash": "bc4a636fc2f1d3408cbefda6057b7bca",
+    "semantic_hash": "bc4a636fc2f1d3408cbefda6057b7bca"
+  },
+  "taguette/migrations/versions/43d6c240309d_remove_document_groups.py": {
+    "mtime": 1793365124.2158535,
+    "seen": 1793485658.3799717,
+    "ast_hash": "f6b9c2e1aa5087af429f884e063fd875",
+    "semantic_hash": "f6b9c2e1aa5087af429f884e063fd875"
+  },
+  "taguette/migrations/versions/447d636f72c5_cascades.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799741,
+    "ast_hash": "7486c4d26d030916115337d8714ad8c4",
+    "semantic_hash": "7486c4d26d030916115337d8714ad8c4"
+  },
+  "taguette/migrations/versions/679f625e6e6a_fix_unique_tags.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799763,
+    "ast_hash": "83c97632603a0bfa8d2135a1f21a876b",
+    "semantic_hash": "83c97632603a0bfa8d2135a1f21a876b"
+  },
+  "taguette/migrations/versions/807c0cc0ecf6_remove_invalid_hltags.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799782,
+    "ast_hash": "ef2cd23b8fdf3528f958f69da99960c5",
+    "semantic_hash": "ef2cd23b8fdf3528f958f69da99960c5"
+  },
+  "taguette/migrations/versions/80b1cc9d4c22_add_user_email.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799806,
+    "ast_hash": "d13bfcaaaa61859911324c5723c28c00",
+    "semantic_hash": "d13bfcaaaa61859911324c5723c28c00"
+  },
+  "taguette/migrations/versions/91ade71ccf4d_add_user_language.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799832,
+    "ast_hash": "a99a5b34d59caf1132e06bbc59384664",
+    "semantic_hash": "a99a5b34d59caf1132e06bbc59384664"
+  },
+  "taguette/migrations/versions/b23f3b7a638e_add_user_password_change_date.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799853,
+    "ast_hash": "2edc9883278d7b6bebdd6ea9eea97b0a",
+    "semantic_hash": "2edc9883278d7b6bebdd6ea9eea97b0a"
+  },
+  "taguette/migrations/versions/bc8e0e0677e9_rename_command_fields.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799877,
+    "ast_hash": "331fe2620b921d0dc0153af3a26b6bfa",
+    "semantic_hash": "331fe2620b921d0dc0153af3a26b6bfa"
+  },
+  "taguette/migrations/versions/bce44849c2f2_lowercase_logins.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799899,
+    "ast_hash": "18f8336f009079c98eb7c68fdcf059a5",
+    "semantic_hash": "18f8336f009079c98eb7c68fdcf059a5"
+  },
+  "taguette/migrations/versions/dd37d9027a24_unique_tags.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799925,
+    "ast_hash": "3dfdb6fde5a61a06d7814cf71815294e",
+    "semantic_hash": "3dfdb6fde5a61a06d7814cf71815294e"
+  },
+  "taguette/migrations/versions/e4e090a5b511_remove_commands_document_id_fk.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.3799949,
+    "ast_hash": "54b60fb2ca5e5516e991c1688058c746",
+    "semantic_hash": "54b60fb2ca5e5516e991c1688058c746"
+  },
+  "taguette/migrations/versions/ecb4065de575_don_t_use_server_default_now_timezone_.py": {
+    "mtime": 1793365124.2159522,
+    "seen": 1793485658.379997,
+    "ast_hash": "bda6d2e25080abde8fbb1484231d313f",
+    "semantic_hash": "bda6d2e25080abde8fbb1484231d313f"
+  },
+  "taguette/static/js/bootstrap.bundle.min.js": {
+    "mtime": 1793365124.2171843,
+    "seen": 1793485658.3799992,
+    "ast_hash": "ef58fee438cd2da2c3b33ff6f1cfeebf",
+    "semantic_hash": "ef58fee438cd2da2c3b33ff6f1cfeebf"
+  },
+  "taguette/static/js/jquery-3.3.1.min.js": {
+    "mtime": 1793365124.217651,
+    "seen": 1793485658.3800018,
+    "ast_hash": "a09e13ee94d51c524b7e2a728c7d4039",
+    "semantic_hash": "a09e13ee94d51c524b7e2a728c7d4039"
+  },
+  "taguette/static/js/taguette.js": {
+    "mtime": 1793365124.2191203,
+    "seen": 1793485658.380004,
+    "ast_hash": "07e00a17a042dcfe6df041d66163dd96",
+    "semantic_hash": "07e00a17a042dcfe6df041d66163dd96"
+  },
+  "taguette/templates/messages.js": {
+    "mtime": 1793365124.2309742,
+    "seen": 1793485658.3800063,
+    "ast_hash": "7a656ee83ab8c2d720c2bb3ba1d3f94d",
+    "semantic_hash": "7a656ee83ab8c2d720c2bb3ba1d3f94d"
+  },
+  "taguette/templates/trans.js": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800085,
+    "ast_hash": "470d0af0573b700acb1c4aef30125440",
+    "semantic_hash": "470d0af0573b700acb1c4aef30125440"
+  },
+  "taguette/validate.py": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800108,
+    "ast_hash": "0c889d7029fc1e1d5ade89b5b7521a7e",
+    "semantic_hash": "0c889d7029fc1e1d5ade89b5b7521a7e"
+  },
+  "taguette/web/__init__.py": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.380013,
+    "ast_hash": "a5a9f35b14a9ac294fb51b3d7b357198",
+    "semantic_hash": "a5a9f35b14a9ac294fb51b3d7b357198"
+  },
+  "taguette/web/api.py": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.3800154,
+    "ast_hash": "03684c4deeeb243df8d26d9901a1eb36",
+    "semantic_hash": "03684c4deeeb243df8d26d9901a1eb36"
+  },
+  "taguette/web/base.py": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.3800178,
+    "ast_hash": "a804be5262448cd095c37a0ee13b77bf",
+    "semantic_hash": "a804be5262448cd095c37a0ee13b77bf"
+  },
+  "taguette/web/export.py": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.38002,
+    "ast_hash": "ac3722f267af06f410b12de4b0891c1a",
+    "semantic_hash": "ac3722f267af06f410b12de4b0891c1a"
+  },
+  "taguette/web/views.py": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.380022,
+    "ast_hash": "88ef647938efd3f4d5f361b6220bc5aa",
+    "semantic_hash": "88ef647938efd3f4d5f361b6220bc5aa"
+  },
+  "tests.py": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.3800244,
+    "ast_hash": "69cbbf5c63f0f3f865e031a494c9d4d0",
+    "semantic_hash": "69cbbf5c63f0f3f865e031a494c9d4d0"
+  },
+  "ARCHITECTURE.md": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800263,
+    "ast_hash": "35e6e1a417e2a31cd0ac2508456acc8b",
+    "semantic_hash": "35e6e1a417e2a31cd0ac2508456acc8b"
+  },
+  "CHANGELOG.md": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800285,
+    "ast_hash": "9b442b4ece312253756167406ed2a0c8",
+    "semantic_hash": "9b442b4ece312253756167406ed2a0c8"
+  },
+  "CITATION.txt": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800306,
+    "ast_hash": "1af47d1a6237cac2da29481b0362ae0d",
+    "semantic_hash": "1af47d1a6237cac2da29481b0362ae0d"
+  },
+  "CODE_OF_CONDUCT.md": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.380033,
+    "ast_hash": "3a16b095f9d334ee7f78bc27afd9266c",
+    "semantic_hash": "3a16b095f9d334ee7f78bc27afd9266c"
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800354,
+    "ast_hash": "9a562de6f3082203f06464165d49db6f",
+    "semantic_hash": "9a562de6f3082203f06464165d49db6f"
+  },
+  "LICENSE.txt": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800375,
+    "ast_hash": "b8657257903a4107f339c7280a033848",
+    "semantic_hash": "b8657257903a4107f339c7280a033848"
+  },
+  "README.rst": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3800414,
+    "ast_hash": "c8866e06fc18d7134a338afa3cc730b1",
+    "semantic_hash": "c8866e06fc18d7134a338afa3cc730b1"
+  },
+  "paper.md": {
+    "mtime": 1793365124.2113943,
+    "seen": 1793485658.380044,
+    "ast_hash": "eb63f15c180644f9acdf3eea7dd318b8",
+    "semantic_hash": "eb63f15c180644f9acdf3eea7dd318b8"
+  },
+  "po/README.md": {
+    "mtime": 1793365124.2113943,
+    "seen": 1793485658.3800461,
+    "ast_hash": "861dad3425747a51b54d2db815e00afa",
+    "semantic_hash": "861dad3425747a51b54d2db815e00afa"
+  },
+  "taguette/static/robots.txt": {
+    "mtime": 1793365124.2191203,
+    "seen": 1793485658.380048,
+    "ast_hash": "193590dc1d76b26db6412552b52a7060",
+    "semantic_hash": "193590dc1d76b26db6412552b52a7060"
+  },
+  "taguette/static/webfonts/BadScript-OFL.txt": {
+    "mtime": 1793365124.2191203,
+    "seen": 1793485658.3800504,
+    "ast_hash": "b75cc190ccceaf6d8574b5b4999fec98",
+    "semantic_hash": "b75cc190ccceaf6d8574b5b4999fec98"
+  },
+  "taguette/static/webfonts/Montserrat-OFL.txt": {
+    "mtime": 1793365124.2206469,
+    "seen": 1793485658.3800528,
+    "ast_hash": "5da468cc0e208e63aa009460017f214a",
+    "semantic_hash": "5da468cc0e208e63aa009460017f214a"
+  },
+  "taguette/templates/account.html": {
+    "mtime": 1793365124.2305539,
+    "seen": 1793485658.380055,
+    "ast_hash": "a66f35ac88b91e8017b08890ca710622",
+    "semantic_hash": "a66f35ac88b91e8017b08890ca710622"
+  },
+  "taguette/templates/base.html": {
+    "mtime": 1793365124.2306027,
+    "seen": 1793485658.3800573,
+    "ast_hash": "c46dd3d7a7a133d12188ac0316747536",
+    "semantic_hash": "c46dd3d7a7a133d12188ac0316747536"
+  },
+  "taguette/templates/cookies_prompt.html": {
+    "mtime": 1793365124.2306027,
+    "seen": 1793485658.3800597,
+    "ast_hash": "893b3a26d1d4f4007fe0c324ba3a7545",
+    "semantic_hash": "893b3a26d1d4f4007fe0c324ba3a7545"
+  },
+  "taguette/templates/error.html": {
+    "mtime": 1793365124.2306027,
+    "seen": 1793485658.3800619,
+    "ast_hash": "2e570e52204405d20c8197ba02893ec4",
+    "semantic_hash": "2e570e52204405d20c8197ba02893ec4"
+  },
+  "taguette/templates/export_codebook.html": {
+    "mtime": 1793365124.2306027,
+    "seen": 1793485658.3800642,
+    "ast_hash": "c1212440915c46a0ddb321e5ea24f95f",
+    "semantic_hash": "c1212440915c46a0ddb321e5ea24f95f"
+  },
+  "taguette/templates/export_document.html": {
+    "mtime": 1793365124.2306027,
+    "seen": 1793485658.3800664,
+    "ast_hash": "82bb428b8548730fc66c6cd878ef74b5",
+    "semantic_hash": "82bb428b8548730fc66c6cd878ef74b5"
+  },
+  "taguette/templates/export_highlights.html": {
+    "mtime": 1793365124.2308333,
+    "seen": 1793485658.3800685,
+    "ast_hash": "e0905d59d5538cddcb42550a7703f04b",
+    "semantic_hash": "e0905d59d5538cddcb42550a7703f04b"
+  },
+  "taguette/templates/index.html": {
+    "mtime": 1793365124.2308333,
+    "seen": 1793485658.3800707,
+    "ast_hash": "65f9d07a36f74914197c6180a8dd285a",
+    "semantic_hash": "65f9d07a36f74914197c6180a8dd285a"
+  },
+  "taguette/templates/login.html": {
+    "mtime": 1793365124.2308333,
+    "seen": 1793485658.380073,
+    "ast_hash": "f70e9eafec7fb33fe81785755265ab96",
+    "semantic_hash": "f70e9eafec7fb33fe81785755265ab96"
+  },
+  "taguette/templates/project.html": {
+    "mtime": 1793365124.2310848,
+    "seen": 1793485658.3800755,
+    "ast_hash": "83549c00bf37080bd70968cf559b5c36",
+    "semantic_hash": "83549c00bf37080bd70968cf559b5c36"
+  },
+  "taguette/templates/project_delete.html": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800778,
+    "ast_hash": "2c5ac1b29f237c2424623aa63230b7b4",
+    "semantic_hash": "2c5ac1b29f237c2424623aa63230b7b4"
+  },
+  "taguette/templates/project_import.html": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800802,
+    "ast_hash": "b2a13495bff8154f0a959a04207a4a58",
+    "semantic_hash": "b2a13495bff8154f0a959a04207a4a58"
+  },
+  "taguette/templates/project_new.html": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800824,
+    "ast_hash": "1d632035590028a2607858d0b0d526d9",
+    "semantic_hash": "1d632035590028a2607858d0b0d526d9"
+  },
+  "taguette/templates/tos.html": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.3800845,
+    "ast_hash": "3b661f49d99a120a67dea79ca793c07e",
+    "semantic_hash": "3b661f49d99a120a67dea79ca793c07e"
+  },
+  "taguette/templates/welcome.html": {
+    "mtime": 1793365124.2311502,
+    "seen": 1793485658.380087,
+    "ast_hash": "861257e11f0cf4b15967dfc0b8c6f9ba",
+    "semantic_hash": "861257e11f0cf4b15967dfc0b8c6f9ba"
+  },
+  "tos.html": {
+    "mtime": 1793365124.231568,
+    "seen": 1793485658.380089,
+    "ast_hash": "a1fc7123a37e2ab6c073708f936f0584",
+    "semantic_hash": "a1fc7123a37e2ab6c073708f936f0584"
+  },
+  "01-document.png": {
+    "mtime": 1793365124.2092397,
+    "seen": 1793485658.3800912,
+    "ast_hash": "dec6908a8edaf0bdbf46eefe8bab99b2",
+    "semantic_hash": "dec6908a8edaf0bdbf46eefe8bab99b2"
+  },
+  "02-view-tag.png": {
+    "mtime": 1793365124.2099638,
+    "seen": 1793485658.3800933,
+    "ast_hash": "829f395b939e517b4e51016494f3de36",
+    "semantic_hash": "829f395b939e517b4e51016494f3de36"
+  },
+  "03-collabs.png": {
+    "mtime": 1793365124.2102954,
+    "seen": 1793485658.3800957,
+    "ast_hash": "a82f04efed20ea8c5075be0050470514",
+    "semantic_hash": "a82f04efed20ea8c5075be0050470514"
+  },
+  "04-export.png": {
+    "mtime": 1793365124.2107594,
+    "seen": 1793485658.3800979,
+    "ast_hash": "ad17e017594cfd35f908b9c0b1f8809b",
+    "semantic_hash": "ad17e017594cfd35f908b9c0b1f8809b"
+  },
+  "architecture.svg": {
+    "mtime": 1793365124.2108421,
+    "seen": 1793485658.3801,
+    "ast_hash": "48eede24b3ed59be5bea39e232a091e7",
+    "semantic_hash": "48eede24b3ed59be5bea39e232a091e7"
+  },
+  "erd.svg": {
+    "mtime": 1793365124.2113943,
+    "seen": 1793485658.3801022,
+    "ast_hash": "98ca4fadb9e7960878a0e7b3b4165f67",
+    "semantic_hash": "98ca4fadb9e7960878a0e7b3b4165f67"
+  },
+  "taguette/static/missing.png": {
+    "mtime": 1793365124.2191203,
+    "seen": 1793485658.3801045,
+    "ast_hash": "6c5a5679187d4eb87cb003b361bde42d",
+    "semantic_hash": "6c5a5679187d4eb87cb003b361bde42d"
+  },
+  "taguette/static/webfonts/fa-brands-400.svg": {
+    "mtime": 1793365124.221973,
+    "seen": 1793485658.3801064,
+    "ast_hash": "42f9fd6acee87559ac0d6a33488db65e",
+    "semantic_hash": "42f9fd6acee87559ac0d6a33488db65e"
+  },
+  "taguette/static/webfonts/fa-regular-400.svg": {
+    "mtime": 1793365124.225297,
+    "seen": 1793485658.3801086,
+    "ast_hash": "0c41971339b9fc5b1cefb0abad1e2e69",
+    "semantic_hash": "0c41971339b9fc5b1cefb0abad1e2e69"
+  },
+  "taguette/static/webfonts/fa-solid-900.svg": {
+    "mtime": 1793365124.227973,
+    "seen": 1793485658.3801112,
+    "ast_hash": "4478b4d7022cad174e4c04246fe622ef",
+    "semantic_hash": "4478b4d7022cad174e4c04246fe622ef"
+  }
+}
