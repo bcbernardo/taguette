@@ -1,6 +1,22 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Enhancements (Highlights panel):
+* The left panel now scrolls when its contents are taller than the window
+* Tag names in the list wrap at whitespace instead of mid-word
+* Each tag in the list has a collapsible box showing its definition
+* New search bar above the tags list: searches tag names and definitions, and
+  performs a semantic search too when an embedding endpoint is configured
+  (tag embeddings are cached locally in the browser; immediate-run and
+  clear buttons next to the field; only clearly similar tags are returned,
+  via an adaptive similarity cutoff)
+* ✎ buttons next to tag names and definitions for quick edits
+* Clicking a tag name or its highlight count shows the tag name as a title and
+  its definition above the highlights on the right, both editable in place
+
 0.11 (2021-07-06)
 -----------------
 

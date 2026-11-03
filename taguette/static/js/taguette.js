@@ -7,6 +7,8 @@
  * - Documents list
  * - Add document
  * - Tags list
+ * - Tag search
+ * - Tag view header
  * - Highlights
  * - Add highlight
  * - Members
@@ -759,6 +761,193 @@ function linkTag(elem, tag_path) {
 
 linkTag(document.getElementById('load-all-tags'), '');
 
+/*
+ * Tag search (top of the Highlights panel)
+ *
+ * Lexical: case-insensitive substring match over tag name + description,
+ * applied immediately. If an embedding endpoint is configured (see the
+ * "Embeddings" settings from suggest.js), a semantic search runs on top:
+ * the query and every tag (name + description) are embedded and tags with
+ * cosine similarity >= TAG_SEARCH_SEMANTIC_MIN are added to the results.
+ * sugEmbed() keeps vectors in IndexedDB keyed by text, so each tag is
+ * embedded once and cached; follow-up searches only embed the query.
+ */
+
+// Description boxes expanded (tag id -> true), kept across re-renders
+var tag_desc_open = {};
+
+var tag_search_input = document.getElementById('tag-search');
+var tag_search_status = document.getElementById('tag-search-status');
+var tag_search_state = {
+  query: '',     // normalized: lowercased, trimmed
+  matches: null, // null: no search active; else {tag_id: true}
+  seq: 0,        // guards against out-of-order semantic results
+};
+var tag_search_timer = null;
+// Semantic matches must clear an ADAPTIVE cutoff, not just a fixed number:
+// embedding models give mildly positive cosine scores to almost any pair of
+// short texts (a loose 0.30 floor matched 60 of 64 tags for "funding"), and
+// the score scale differs between models. A tag is kept only if it beats
+// BOTH the hard floor below AND the crowd (median + margin), so only clear
+// standouts are surfaced, whatever the model's score distribution.
+var TAG_SEARCH_SEMANTIC_FLOOR = 0.55;
+var TAG_SEARCH_SEMANTIC_MARGIN = 0.15;
+
+function tagSearchMedian(values) {
+  if(!values.length) {
+    return 0;
+  }
+  var sorted = values.slice().sort(function(a, b) { return a - b; });
+  var mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function tagSearchText(tag) {
+  return tag.path + '\n' + (tag.description || '');
+}
+
+function tagSearchCount() {
+  var n = 0;
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    if(!tag_search_state.matches || tag_search_state.matches[entries[i][1].id]) {
+      n++;
+    }
+  }
+  return n;
+}
+
+function tagSearchStatusText(extra) {
+  var text = gettext("%(n)s tags match", {n: tagSearchCount()});
+  if(extra) {
+    text += ' · ' + extra;
+  }
+  return text;
+}
+
+function tagSearchRun() {
+  var q = tag_search_input.value.trim().toLowerCase();
+  tag_search_state.query = q;
+  var seq = ++tag_search_state.seq;
+
+  if(!q) {
+    tag_search_state.matches = null;
+    tag_search_status.textContent = '';
+    updateTagsList();
+    return;
+  }
+
+  // Lexical search over tag name and description, applied immediately
+  var matches = {};
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    var tag = entries[i][1];
+    if(tagSearchText(tag).toLowerCase().indexOf(q) !== -1) {
+      matches[tag.id] = true;
+    }
+  }
+  tag_search_state.matches = matches;
+  updateTagsList();
+
+  // Semantic search, when an embedding endpoint is available
+  var cfg = (typeof sugLoadConfig === 'function') ? sugLoadConfig() : null;
+  if(cfg && cfg.url && entries.length > 0
+     && typeof sugEmbed === 'function' && typeof sugCosine === 'function') {
+    tag_search_status.textContent = gettext("Searching…");
+    var texts = entries.map(function(e) { return tagSearchText(e[1]); });
+    sugEmbed([q].concat(texts), cfg)
+    .then(function(vecs) {
+      if(seq !== tag_search_state.seq || tag_search_state.query !== q) {
+        return; // a newer search has started
+      }
+      // Score every tag that the lexical search didn't already match
+      var scored = [];
+      for(var i = 0; i < entries.length; ++i) {
+        var tag = entries[i][1];
+        if(matches[tag.id]) {
+          continue;
+        }
+        scored.push({tag: tag, score: sugCosine(vecs[0], vecs[i + 1])});
+      }
+      // Adaptive cutoff: at least the hard floor, and also a clear
+      // standout above the median of the other candidates
+      var cutoff = Math.max(
+        TAG_SEARCH_SEMANTIC_FLOOR,
+        tagSearchMedian(scored.map(function(s) { return s.score; }))
+          + TAG_SEARCH_SEMANTIC_MARGIN);
+      var semantic_added = 0;
+      for(var j = 0; j < scored.length; ++j) {
+        if(scored[j].score >= cutoff) {
+          matches[scored[j].tag.id] = true;
+          semantic_added++;
+        }
+      }
+      tag_search_state.matches = matches;
+      updateTagsList();
+      tag_search_status.textContent = semantic_added > 0
+        ? tagSearchStatusText(gettext("%(n)s by semantic similarity", {n: semantic_added}))
+        : tagSearchStatusText(gettext("semantic"));
+    })
+    .catch(function(error) {
+      if(seq !== tag_search_state.seq) {
+        return;
+      }
+      console.log("Semantic tag search unavailable:", error);
+      tag_search_status.textContent = tagSearchStatusText();
+    });
+  } else {
+    tag_search_status.textContent = tagSearchStatusText();
+  }
+}
+
+if(tag_search_input) {
+  tag_search_input.addEventListener('input', function(e) {
+    window.clearTimeout(tag_search_timer);
+    tag_search_timer = window.setTimeout(tagSearchRun, 300);
+  });
+  // Enter runs the search immediately, without waiting for the debounce
+  tag_search_input.addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') {
+      e.preventDefault();
+      tagSearchRunNow();
+    }
+  });
+}
+
+// Magnifying glass button: run the search immediately
+var tag_search_run = document.getElementById('tag-search-run');
+if(tag_search_run) {
+  tag_search_run.addEventListener('click', function(e) {
+    tagSearchRunNow();
+  });
+}
+
+// Cross button: clear the search and show all tags again
+var tag_search_clear = document.getElementById('tag-search-clear');
+if(tag_search_clear) {
+  tag_search_clear.addEventListener('click', function(e) {
+    window.clearTimeout(tag_search_timer);
+    tag_search_input.value = '';
+    tag_search_state.query = '';
+    ++tag_search_state.seq; // make any in-flight semantic result stale
+    tag_search_state.matches = null;
+    tag_search_status.textContent = '';
+    updateTagsList();
+    tag_search_input.focus();
+  });
+}
+
+function tagSearchRunNow() {
+  window.clearTimeout(tag_search_timer);
+  tagSearchRun();
+}
+
+function tagSearchRefresh() {
+  if(tag_search_state.query) {
+    tagSearchRun();
+  }
+}
+
 function addTag(tag) {
   if(!('count' in tag) && tag.id in tags) {
     tag.count = tags[tag.id].count;
@@ -767,6 +956,7 @@ function addTag(tag) {
   }
   tags[tag.id] = tag;
   updateTagsList();
+  tagSearchRefresh();
 }
 
 function removeTag(tag_id) {
@@ -779,6 +969,7 @@ function removeTag(tag_id) {
     hl.tags = hl.tags.filter(function(v) { return v != tag_id; });
   }
   updateTagsList();
+  tagSearchRefresh();
 }
 
 function mergeTags(tag_src, tag_dest) {
@@ -798,6 +989,7 @@ function mergeTags(tag_src, tag_dest) {
   }
   delete tags['' + tag_src];
   updateTagsList();
+  tagSearchRefresh();
 }
 
 function updateTagsList() {
@@ -817,8 +1009,8 @@ function updateTagsList() {
   }
   // Fill up the list again
   // TODO: Show this as a tree
-  var tree = {};
   var before = tags_list.firstChild;
+  var shown = 0;
   for(var i = 0; i < entries.length; ++i) {
     var tag = entries[i][1];
     var elem = document.createElement('li');
@@ -826,23 +1018,60 @@ function updateTagsList() {
     if(current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag) {
       elem.classList.add('tag-current');
     }
+    // Hide tags that don't match the current search, if one is active
+    if(tag_search_state.matches && !tag_search_state.matches[tag.id]) {
+      elem.style.display = 'none';
+    } else {
+      shown++;
+    }
+    var open = !!tag_desc_open[tag.id];
+    var has_desc = !!tag.description;
     elem.innerHTML =
-      '<div class="d-flex justify-content-between align-items-center">' +
+      '<div class="d-flex justify-content-between align-items-start">' +
       '  <div class="tag-name">' +
+      '    <a href="javascript:void(0)" class="tag-desc-toggle' + (has_desc ? '' : ' tag-desc-toggle-empty') + '" id="tag-desc-toggle-' + tag.id + '" title="' + gettext("Show or hide the tag definition") + '">' + (open ? '&#9662;' : '&#9656;') + '</a>' +
       '    <a id="tag-link-' + tag.id + '">' + escapeHtml(tag.path) + '</a>' +
+      '    <a href="javascript:void(0)" class="tag-pencil" id="tag-edit-' + tag.id + '" title="' + gettext("Edit tag name") + '">&#9998;</a>' +
       '  </div>' +
       '  <div style="white-space: nowrap;">' +
-      '    <span class="badge badge-secondary badge-pill" id="tag-' + tag.id + '-count">' + tag.count + '</span>' +
-      '    <a href="javascript:editTag(' + tag.id + ');" class="btn btn-primary btn-sm">' + gettext("Edit") + '</a>' +
+      '    <a class="badge badge-secondary badge-pill" id="tag-' + tag.id + '-count" title="' + gettext("See highlights") + '">' + tag.count + '</a>' +
       '  </div>' +
+      '</div>' +
+      '<div class="tag-desc-box" id="tag-desc-' + tag.id + '"' + (open ? '' : ' style="display: none;"') + '>' +
+      '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(has_desc ? tag.description : gettext("(no definition)")) + '</span>' +
+      '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>' +
       '</div>';
     tags_list.insertBefore(elem, before);
     linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
+    // Clicking the highlight count opens the tag view as well
+    linkTag(document.getElementById('tag-' + tag.id + '-count'), tag.path);
+    // Expand/collapse the definition box (state survives re-renders)
+    document.getElementById('tag-desc-toggle-' + tag.id).addEventListener('click', (function(tag_id) {
+      return function(e) {
+        e.preventDefault();
+        tag_desc_open[tag_id] = !tag_desc_open[tag_id];
+        var open_now = tag_desc_open[tag_id];
+        document.getElementById('tag-desc-' + tag_id).style.display = open_now ? '' : 'none';
+        this.innerHTML = open_now ? '&#9662;' : '&#9656;';
+      };
+    })(tag.id));
+    // Pencils: quick edit of name / definition
+    document.getElementById('tag-edit-' + tag.id).addEventListener('click', (function(tag_id) {
+      return function(e) { e.preventDefault(); editTag(tag_id); };
+    })(tag.id));
+    document.getElementById('tag-desc-edit-' + tag.id).addEventListener('click', (function(tag_id) {
+      return function(e) { e.preventDefault(); editTag(tag_id); };
+    })(tag.id));
   }
   if(entries.length == 0) {
     var elem = document.createElement('div');
     elem.className = 'list-group-item disabled';
     elem.textContent = gettext("There are no tags in this project yet.");
+    tags_list.insertBefore(elem, before);
+  } else if(tag_search_state.matches && shown == 0) {
+    var elem = document.createElement('div');
+    elem.className = 'list-group-item disabled';
+    elem.textContent = gettext("No tags match your search.");
     tags_list.insertBefore(elem, before);
   }
 
@@ -906,6 +1135,7 @@ function createTag() {
   document.getElementById('tag-add-cancel').style.display = '';
   document.getElementById('tag-add-delete').style.display = 'none';
   document.getElementById('tag-add-merge').style.display = 'none';
+  tagAddPathFit();
   $(tag_add_modal).modal();
 }
 
@@ -919,8 +1149,17 @@ function editTag(tag_id) {
   document.getElementById('tag-add-cancel').style.display = 'none';
   document.getElementById('tag-add-delete').style.display = '';
   document.getElementById('tag-add-merge').style.display = '';
+  tagAddPathFit();
   $(tag_add_modal).modal();
 }
+
+// Make the tag name input wide enough to show its whole content: it is
+// sized through the "size" attribute (grows with the text, capped by CSS)
+var tag_add_path_input = document.getElementById('tag-add-path');
+function tagAddPathFit() {
+  tag_add_path_input.size = Math.max(30, tag_add_path_input.value.length + 2);
+}
+tag_add_path_input.addEventListener('input', tagAddPathFit);
 
 // Save tag button
 document.getElementById('tag-add-form').addEventListener('submit', function(e) {
@@ -1490,6 +1729,222 @@ function loadDocument(document_id, keep_scroll) {
   .then(hideSpinner);
 }
 
+/*
+ * Tag view header (right panel): when a tag is selected, show its name as
+ * a title and its definition below it, above the list of highlights.
+ * Both are editable in place (✎ or click on the text).
+ */
+
+function tagByPath(path) {
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    if(entries[i][1].path == path) {
+      return entries[i][1];
+    }
+  }
+  return null;
+}
+
+function saveTagField(tag_id, patch) {
+  return postJSON(
+    '/api/project/' + project_id + '/tag/' + tag_id,
+    patch
+  );
+}
+
+function tagHeaderRefreshInPlace() {
+  var header = document.getElementById('tag-view-header');
+  if(header && header.parentNode) {
+    header.parentNode.replaceChild(renderTagHeader(current_tag), header);
+  }
+}
+
+// Replace one row's contents (title or description) with an inline editor;
+// the other row stays visible and untouched
+function tagHeaderEditField(row, tag, field, on_done) {
+  while(row.firstChild) {
+    row.removeChild(row.firstChild);
+  }
+  var is_desc = field == 'description';
+  var editor = document.createElement(is_desc ? 'textarea' : 'input');
+  editor.className = 'form-control';
+  if(is_desc) {
+    editor.rows = 3;
+  }
+  editor.value = is_desc ? (tag.description || '') : tag.path;
+
+  var save = document.createElement('button');
+  save.className = 'btn btn-primary btn-sm mr-1 mt-1';
+  save.textContent = gettext("Save");
+  var cancel = document.createElement('button');
+  cancel.className = 'btn btn-secondary btn-sm mt-1';
+  cancel.textContent = gettext("Cancel");
+
+  row.appendChild(editor);
+  row.appendChild(save);
+  row.appendChild(cancel);
+  editor.focus();
+
+  function restore() {
+    var cur = tags['' + tag.id];
+    var fresh = is_desc ? tagHeaderBuildDescRow(cur) : tagHeaderBuildTitleRow(cur);
+    row.parentNode.replaceChild(fresh, row);
+  }
+  cancel.addEventListener('click', function(e) {
+    e.preventDefault();
+    restore();
+  });
+  editor.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') {
+      restore();
+    }
+  });
+  save.addEventListener('click', function(e) {
+    e.preventDefault();
+    var value = editor.value;
+    if(!is_desc && !value.trim()) {
+      alert(gettext("Invalid tag name"));
+      return;
+    }
+    if(value == tag[field]) {
+      restore();
+      return;
+    }
+    var patch = {};
+    patch[field] = value;
+    showSpinner();
+    saveTagField(tag.id, patch)
+    .then(function() {
+      console.log("Tag field updated:", field);
+      tags['' + tag.id][field] = value;
+      updateTagsList();
+      on_done();
+    })
+    .catch(function(error) {
+      console.error("Failed to update tag:", error);
+      alert(gettext("Couldn't update the tag!") + "\n\n" + error);
+    })
+    .then(hideSpinner);
+  });
+}
+
+function tagHeaderBuildTitleRow(tag) {
+  var title = document.createElement('div');
+  title.className = 'd-flex align-items-center flex-wrap';
+  title.setAttribute('id', 'tag-view-title-row');
+  var title_h = document.createElement('h2');
+  title_h.textContent = tag.path;
+  title_h.title = gettext("Edit tag name");
+  var title_pencil = document.createElement('a');
+  title_pencil.href = 'javascript:void(0)';
+  title_pencil.className = 'tag-view-pencil';
+  title_pencil.title = gettext("Edit tag name");
+  title_pencil.innerHTML = '&#9998;';
+  title.appendChild(title_h);
+  title.appendChild(title_pencil);
+
+  var edit_path = function(e) {
+    e.preventDefault();
+    tagHeaderEditField(title, tag, 'path', function() {
+      // The rename changes which highlights match: reload the tag view
+      var new_path = tags['' + tag.id].path;
+      var url = '/project/' + project_id + '/highlights/' + encodeURIComponent(new_path);
+      window.history.replaceState({tag_path: new_path}, 'Tag ' + new_path, url);
+      loadTag(new_path);
+    });
+  };
+  title_h.addEventListener('click', edit_path);
+  title_pencil.addEventListener('click', edit_path);
+  return title;
+}
+
+function tagHeaderBuildDescRow(tag) {
+  var desc = document.createElement('div');
+  desc.className = 'd-flex align-items-start flex-wrap';
+  desc.setAttribute('id', 'tag-view-desc-row');
+  var desc_p = document.createElement('p');
+  desc_p.className = 'tag-view-desc';
+  desc_p.title = gettext("Edit tag description");
+  if(tag.description) {
+    desc_p.textContent = tag.description;
+  } else {
+    desc_p.classList.add('tag-view-desc-empty');
+    desc_p.textContent = gettext("(no definition)");
+  }
+  var desc_pencil = document.createElement('a');
+  desc_pencil.href = 'javascript:void(0)';
+  desc_pencil.className = 'tag-view-pencil';
+  desc_pencil.title = gettext("Edit tag description");
+  desc_pencil.innerHTML = '&#9998;';
+  desc.appendChild(desc_p);
+  desc.appendChild(desc_pencil);
+
+  var edit_desc = function(e) {
+    e.preventDefault();
+    tagHeaderEditField(desc, tag, 'description', function() {
+      // Only this row is replaced; the title row (even mid-edit) is kept
+      var cur = tags['' + tag.id];
+      desc.parentNode.replaceChild(tagHeaderBuildDescRow(cur), desc);
+    });
+  };
+  desc_p.addEventListener('click', edit_desc);
+  desc_pencil.addEventListener('click', edit_desc);
+  return desc;
+}
+
+function renderTagHeader(tag_path) {
+  if(tag_path === '') {
+    // "All highlights" view: no header
+    return null;
+  }
+  var header = document.createElement('div');
+  header.className = 'tag-view-header';
+  header.setAttribute('id', 'tag-view-header');
+
+  var tag = tagByPath(tag_path);
+  if(!tag) {
+    // No exact match: a path that is a common prefix of several tags
+    var prefix_h = document.createElement('h2');
+    prefix_h.textContent = tag_path;
+    header.appendChild(prefix_h);
+    var prefix_p = document.createElement('p');
+    prefix_p.className = 'tag-view-desc tag-view-desc-empty';
+    prefix_p.textContent = gettext("Common prefix of several tags");
+    header.appendChild(prefix_p);
+    return header;
+  }
+  header.setAttribute('data-tag-id', '' + tag.id);
+
+  header.appendChild(tagHeaderBuildTitleRow(tag));
+  header.appendChild(tagHeaderBuildDescRow(tag));
+
+  return header;
+}
+
+// A tag changed (possibly by a collaborator): refresh the header if it
+// displays that tag, following a rename if needed
+function refreshTagViewHeader(tag_id) {
+  var header = document.getElementById('tag-view-header');
+  if(!header || current_tag === null) {
+    return;
+  }
+  var stored = header.getAttribute('data-tag-id');
+  if(stored === null || parseInt(stored) !== parseInt(tag_id)) {
+    return;
+  }
+  var tag = tags['' + tag_id];
+  if(!tag) {
+    return;
+  }
+  if(tag.path == current_tag) {
+    tagHeaderRefreshInPlace();
+  } else {
+    var url = '/project/' + project_id + '/highlights/' + encodeURIComponent(tag.path);
+    window.history.replaceState({tag_path: tag.path}, 'Tag ' + tag.path, url);
+    loadTag(tag.path);
+  }
+}
+
 function loadTag(tag_path, page) {
   if(page === undefined) {
     page = 1;
@@ -1509,6 +1964,11 @@ function loadTag(tag_path, page) {
     // No need to clear the 'tag-current', we are calling updateTagsList() below
     document_contents.innerHTML = '';
     highlights = {};
+    // Tag header: name as title, definition below, above the highlights
+    var tag_header = renderTagHeader(tag_path);
+    if(tag_header) {
+      document_contents.appendChild(tag_header);
+    }
     for(var i = 0; i < result.highlights.length; ++i) {
       var hl = result.highlights[i];
       var elem = document.createElement('div');
@@ -1539,7 +1999,11 @@ function loadTag(tag_path, page) {
       document_contents.appendChild(elem);
     }
     if(result.highlights.length == 0) {
-      document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("No highlights with this tag yet.") + '</p>';
+      var no_hl = document.createElement('p');
+      no_hl.style.fontStyle = 'oblique';
+      no_hl.style.textAlign = 'center';
+      no_hl.textContent = gettext("No highlights with this tag yet.");
+      document_contents.appendChild(no_hl);
     }
 
     // Pagination controls
@@ -1755,6 +2219,7 @@ function longPollForEvents() {
           path: event.tag_path,
           description: event.description
         });
+        refreshTagViewHeader(event.tag_id);
       } else if(event.type === 'tag_delete') {
         removeTag(event.tag_id);
       } else if(event.type === 'tag_merge') {

@@ -201,9 +201,24 @@ textarea.form-control {
   resize: none;
 }
 
-/* Wrap long tag names and long doc names */
+/* Left panel: keep its own scrollbar when contents are taller than the
+ * window. Tabs stay visible at the top of the scroll area. */
+.left-panel-scroll {
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
+}
+
+.left-panel-scroll .nav-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+}
+
+/* Wrap tag/doc names at whitespace; only an unbroken word longer than the
+ * column itself would break mid-word (rather than overflow sideways). */
 .tag-name {
-  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 a.document-link-a {
@@ -242,6 +257,83 @@ li.document-link-current a.document-link-a {
   border: 2px solid #dee2e6;
   padding: 2.2em 0.3em 1.2em 0.3em;
   position: relative;
+}
+
+/* Tag row: definition toggle, collapsible description, edit pencils */
+.tag-desc-toggle, .tag-pencil, .tag-view-pencil {
+  text-decoration: none;
+  padding: 0 0.15em;
+  font-size: 0.85em;
+}
+
+.tag-desc-toggle {
+  display: inline-block;
+  width: 1em;
+}
+
+/* Gray toggle when the tag has no definition */
+.tag-desc-toggle-empty {
+  color: #868e96;
+}
+
+.tag-desc-box {
+  margin-top: 0.25em;
+  padding: 0.3em 0.5em;
+  font-size: 0.9em;
+  color: #495057;
+  background-color: #f8f9fa;
+  border-left: 3px solid #dee2e6;
+}
+
+.tag-desc-box .tag-desc-empty {
+  font-style: oblique;
+  color: #868e96;
+}
+
+/* Search bar on top of the highlights (tags) panel */
+#tag-search-group {
+  position: sticky;
+  top: 43px; /* below the sticky nav-tabs inside .left-panel-scroll */
+  z-index: 2;
+  background: #fff;
+}
+
+#tag-search-status {
+  min-height: 1.2em;
+}
+
+/* Tag header shown at the top of the right panel when viewing a tag */
+.tag-view-header {
+  padding: 0 1em 0.8em 1em;
+  margin-bottom: 1em;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tag-view-header h2 {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.tag-view-header .tag-view-desc {
+  margin: 0.4em 0 0 0;
+  overflow-wrap: break-word;
+}
+
+.tag-view-header .tag-view-desc-empty {
+  font-style: oblique;
+  color: #868e96;
+}
+
+.tag-view-header .tag-view-edit-title,
+.tag-view-header .tag-view-edit-desc {
+  width: 100%;
+}
+
+/* Tag name input in the tag modal: grows with its content (see
+ * tagAddPathFit), never wider than the modal */
+.tag-path-input {
+  width: auto;
+  max-width: 100%;
 }
 
 li.tag-current {

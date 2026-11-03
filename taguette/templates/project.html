@@ -9,7 +9,7 @@
 <div class="row">
   <!-- Left panel -->
   <div class="col-md-3">
-    <div class="sticky-top">
+    <div class="sticky-top left-panel-scroll">
       <!-- Tab selector -->
       <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
@@ -86,6 +86,16 @@
               <a class="btn btn-primary float-right" href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a>
             </div>
           </div>
+          <div class="input-group mb-1" id="tag-search-group">
+            <div class="input-group-prepend">
+              <button class="btn btn-outline-secondary" type="button" id="tag-search-run" title="{% trans %}Search{% endtrans %}"><i class="fas fa-search"></i></button>
+            </div>
+            <input type="text" class="form-control" id="tag-search" placeholder="{% trans %}Search tags and definitions{% endtrans %}" aria-label="{% trans %}Search tags{% endtrans %}" autocomplete="off" />
+            <div class="input-group-append">
+              <button class="btn btn-outline-secondary" type="button" id="tag-search-clear" title="{% trans %}Clear search, show all tags{% endtrans %}"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          <div id="tag-search-status" class="small text-muted mb-1"></div>
           <ul class="list-group list-group-flush" id="tags-list">
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
@@ -313,7 +323,7 @@
       <div class="modal-body">
         <input type="hidden" id="tag-add-id" />
         <div class="container">
-          <input type="text" class="form-group" id="tag-add-path" name="tag-add-path" placeholder="{# TRANSLATORS: Tag change form #}{% trans %}Name{% endtrans %}" required />
+          <input type="text" class="form-control mb-3 tag-path-input" id="tag-add-path" name="tag-add-path" placeholder="{# TRANSLATORS: Tag change form #}{% trans %}Name{% endtrans %}" required />
           <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans %}Description{% endtrans %}"></textarea>
         </div>
       </div>
