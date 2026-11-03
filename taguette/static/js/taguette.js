@@ -1424,7 +1424,7 @@ document.getElementById('members-current').addEventListener('submit', function(e
 var document_contents = document.getElementById('document-contents');
 var export_button = document.getElementById('export-button');
 
-function loadDocument(document_id) {
+function loadDocument(document_id, keep_scroll) {
   if(document_id === null) {
     document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
     return;
@@ -1478,8 +1478,10 @@ function loadDocument(document_id) {
       }
     }
 
-    // Scroll up
-    window.setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    // Scroll up (unless the caller keeps the position, e.g. after an edit)
+    if(keep_scroll !== true) {
+      window.setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    }
   })
   .catch(function(error) {
     console.error("Failed to load document:", error);

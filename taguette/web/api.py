@@ -4,6 +4,8 @@ import json
 import logging
 import math
 import prometheus_client
+from bs4 import BeautifulSoup
+from difflib import SequenceMatcher
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import aliased, defer, joinedload
 import tempfile
@@ -233,6 +235,116 @@ class DocumentContents(BaseHandler):
                 for hl in highlights
             ],
         })
+
+
+def _migrate_highlights(db, document, start, end, delta,
+                        old_text, new_text, new_contents):
+    """Move a document's highlights across an edit of [start, end).
+
+    Positions before the edit are untouched, positions after it shift by
+    the delta. A position inside the edited range is mapped through a
+    diff of the old and new text, so a highlight over text that did not
+    change keeps its exact bounds; one over changed text shrinks to the
+    nearest unchanged boundary. Highlights that collapse to nothing
+    (all their text was removed) are deleted.
+    """
+    a = old_text.encode('utf-8')
+    b = new_text.encode('utf-8')
+    matches = SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks()
+
+    def map_rel(rel):
+        # Position relative to the start of the edited range, in bytes
+        if rel >= len(a):
+            return len(b)
+        last = 0
+        for i, j, size in matches:
+            if i <= rel < i + size:
+                return j + (rel - i)  # unchanged text: exact position
+            if i + size <= rel:
+                last = j + size  # left-sticky through changed text
+        return last
+
+    def map_pos(pos):
+        if pos <= start:
+            return pos
+        if pos >= end:
+            return pos + delta
+        return start + map_rel(pos - start)
+
+    highlights = (
+        db.query(database.Highlight)
+        .filter(database.Highlight.document_id == document.id)
+    ).all()
+    deleted_highlights = []
+    for hl in highlights:
+        if hl.end_offset <= start:
+            continue
+        new_start = map_pos(hl.start_offset)
+        new_end = map_pos(hl.end_offset)
+        if new_end <= new_start:
+            deleted_highlights.append(hl.id)
+            db.delete(hl)
+            continue
+        hl.start_offset = new_start
+        hl.end_offset = new_end
+        hl.snippet = extract.extract(new_contents, new_start, new_end)
+    return deleted_highlights
+
+
+class DocumentEdit(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('document_edit')
+    def post(self, project_id, document_id):
+        if self.application.config['MULTIUSER']:
+            return self.send_error_json(
+                403, "Editing documents is disabled in multi-user mode")
+        document, privileges = self.get_document(project_id, document_id,
+                                                 contents=True)
+        if not privileges.can_edit_document():
+            return self.send_error_json(403, "Unauthorized")
+        obj = self.get_json()
+        start = obj.get('start_offset')
+        end = obj.get('end_offset')
+        text = obj.get('text', '')
+        paragraphs = obj.get('paragraphs', False)
+        if (not isinstance(start, int) or not isinstance(end, int)
+                or not isinstance(text, str)
+                or not isinstance(paragraphs, bool)
+                or not 0 <= start < end
+                or len(text.encode('utf-8')) > 100 * 1024):
+            return self.send_error_json(400, "Invalid edit")
+
+        new_contents = extract.edit(document.contents, start, end, text,
+                                    paragraphs=paragraphs)
+        if new_contents is None:
+            return self.send_error_json(400, "Invalid edit range")
+        if extract.text_length(new_contents) == 0:
+            return self.send_error_json(400, "A document cannot be emptied")
+        # Newlines turned into paragraph breaks carry no bytes, so the
+        # effective replacement text is `text` without them
+        plain_text = text.replace('\n', '') if paragraphs else text
+        delta = len(plain_text.encode('utf-8')) - (end - start)
+
+        old_text = BeautifulSoup(
+            extract.extract(document.contents, start, end),
+            'html5lib').get_text()
+        deleted_highlights = _migrate_highlights(
+            self.db, document, start, end, delta,
+            old_text, plain_text, new_contents)
+
+        document.contents = new_contents
+        cmd = database.Command.document_edit(
+            self.current_user, document, len(deleted_highlights))
+        self.db.add(cmd)
+        self.db.commit()
+        self.db.refresh(cmd)
+        self.application.notify_project(document.project_id, cmd)
+        logger.info("Document %r edited: bytes [%d, %d) -> %d bytes, "
+                    "%d highlight(s) deleted",
+                    document.id, start, end, len(text.encode('utf-8')),
+                    len(deleted_highlights))
+        return self.send_json({'delta': delta,
+                               'deleted_highlights': deleted_highlights})
 
 
 class TagAdd(BaseHandler):

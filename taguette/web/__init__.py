@@ -122,6 +122,8 @@ def make_app(config, debug=False, xsrf_cookies=True):
                     api.DocumentUpdate),
             URLSpec('/api/project/([0-9]+)/document/([0-9]+)/content',
                     api.DocumentContents),
+            URLSpec('/api/project/([0-9]+)/document/([0-9]+)/edit',
+                    api.DocumentEdit),
             URLSpec('/api/project/([0-9]+)/document/([0-9]+)/highlight/new',
                     api.HighlightAdd),
             URLSpec(

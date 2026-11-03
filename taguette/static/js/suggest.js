@@ -1898,6 +1898,9 @@ function sugRemoveSuggestionDom(sid) {
 
 // Render (or re-render) one pane's suggestion spans + brackets
 function sugRenderPane(pkey) {
+  if(SUG_EDIT) {
+    return; // DOM is being edited; reload re-renders after commit
+  }
   var pane = sug_session.panes[pkey];
   // Clear this pane's previous rendering
   sugUnwrapClass('sug-span sug-p-' + pkey);
@@ -1936,6 +1939,9 @@ function sugRenderPane(pkey) {
 
 // Staged (accepted) highlights are rendered in every pane
 function sugRenderStaged(st) {
+  if(SUG_EDIT) {
+    return; // DOM is being edited; reload re-renders after commit
+  }
   sugRemoveStagedDom(st.aid);
   sugPaneKeys().forEach(function(pkey) {
     sugWrapRange(pkey, st.start, st.end, function() {
@@ -2529,6 +2535,528 @@ function sugSetSplit(on) {
 }
 
 
+/*
+ * Transcript edit mode
+ *
+ * Automated transcripts routinely misattribute turns. Double-click a
+ * paragraph to fix its text in place: the edit is committed to the
+ * SERVER (single-user deployments only), so the corrected transcript is
+ * the shared source of truth for highlights, exports and every other
+ * client. On commit the document is reloaded from the server; if a
+ * suggest session is running, its state is remapped and recomputed on
+ * the corrected text.
+ */
+
+var SUG_EDIT = null; // live edit: {el, para, oldHTML, segs, scrollY}
+
+var SUG_BLOCK_RE = /^(P|LI|H1|H2|H3|H4|H5|H6|BLOCKQUOTE|PRE|DIV|TD|TH|DT|DD|FIGCAPTION|SECTION|ARTICLE|ASIDE|MAIN)$/;
+
+// Split a chunk's text into block segments (paragraph-level units), each
+// with its byte range in server coordinates (chunk base + text walk) and
+// the block element it belongs to. Inline markup stays inside the current
+// segment; block elements cut it.
+function sugEditSegments(root, base) {
+  var segs = [], cur = null, byte = 0;
+  function push(node, levelEl) {
+    var t = node.nodeValue;
+    if(!t) {
+      return;
+    }
+    if(!cur || cur.el !== levelEl) {
+      cur = {el: levelEl, text: '', byteStart: base + byte};
+      segs.push(cur);
+    }
+    cur.text += t;
+    byte += lengthUTF8(t);
+  }
+  function walk(node, levelEl) {
+    for(var c = node.firstChild; c; c = c.nextSibling) {
+      if(c.nodeType === 3) {
+        push(c, levelEl);
+      } else if(c.nodeType === 1) {
+        if(c.classList && c.classList.contains('sug-qa-badge')) {
+          continue; // textless UI chrome
+        }
+        if(SUG_BLOCK_RE.test(c.tagName)) {
+          cur = null;
+          walk(c, c);
+          cur = null;
+        } else {
+          walk(c, levelEl); // inline: stays in the current segment
+        }
+      }
+    }
+  }
+  walk(root, root);
+  for(var i = 0; i < segs.length; ++i) {
+    segs[i].byteEnd = segs[i].byteStart + lengthUTF8(segs[i].text);
+    // filler whitespace between blocks: counts toward the byte offsets,
+    // but is never an editable block (it belongs to no element of its
+    // own, so treating it as one corrupts the op generation)
+    segs[i].ws = !/[^\u0009\u000a\u000d\u0020]/.test(segs[i].text);
+  }
+  return segs;
+}
+
+// Text directly inside a block element: its own text nodes and inline
+// markup, excluding nested blocks (those are segments of their own)
+function sugEditTextAtLevel(el) {
+  var out = '';
+  function walk(node) {
+    for(var c = node.firstChild; c; c = c.nextSibling) {
+      if(c.nodeType === 3) {
+        out += c.nodeValue;
+      } else if(c.nodeType === 1) {
+        if(c.classList && c.classList.contains('sug-qa-badge')) {
+          continue;
+        }
+        if(!SUG_BLOCK_RE.test(c.tagName)) {
+          walk(c);
+        }
+      }
+    }
+  }
+  walk(el);
+  return out;
+}
+
+// Turn an editing session into edit ops by matching block elements:
+// the browser keeps a paragraph's DOM node when its text is edited or
+// another paragraph is merged into it, and drops the node of a paragraph
+// that was merged away or deleted. So: a surviving element with changed
+// text becomes a replacement, a dropped element a deletion, and
+// brand-new elements (Shift+Enter splits, new paragraphs) fold into the
+// op of the old block they sit next to, joined with '\n' -- which the
+// server turns into paragraph breaks. Ops are ascending and
+// non-overlapping, ready to be applied one after another.
+function sugEditOps(chunkEl, oldSegs, newSegs) {
+  var ops = [];
+  var alive = [];
+  var i, j;
+  for(i = 0; i < oldSegs.length; ++i) {
+    oldSegs[i].alive = chunkEl.contains(oldSegs[i].el);
+    if(oldSegs[i].alive) {
+      alive.push(oldSegs[i]);
+    }
+  }
+  // New blocks: either inside a surviving element (nested blocks join
+  // its replacement text, separated by '\n') or standalone, where they
+  // anchor to the nearest old block before/after them and join its op
+  // text with a '\n' paragraph break
+  function segOfEl(el) {
+    for(var k = 0; k < oldSegs.length; ++k) {
+      if(oldSegs[k].el === el) {
+        return oldSegs[k];
+      }
+    }
+    return null;
+  }
+  function anchorOf(el) {
+    for(var s = el.previousElementSibling; s; s = s.previousElementSibling) {
+      if(SUG_BLOCK_RE.test(s.tagName)) {
+        var seg = segOfEl(s);
+        if(seg) {
+          return {seg: seg, after: true};
+        }
+      }
+    }
+    for(var s = el.nextElementSibling; s; s = s.nextElementSibling) {
+      if(SUG_BLOCK_RE.test(s.tagName)) {
+        var seg = segOfEl(s);
+        if(seg) {
+          return {seg: seg, after: false};
+        }
+      }
+    }
+    return null;
+  }
+  for(i = 0; i < newSegs.length; ++i) {
+    var ns = newSegs[i], host = null;
+    if(ns.ws) {
+      continue; // filler between blocks, not an editable block
+    }
+    for(j = 0; j < oldSegs.length; ++j) {
+      // ws segments belong to the chunk itself: everything is "inside"
+      // them, so they must not host anything
+      if(oldSegs[j].alive && !oldSegs[j].ws && oldSegs[j].el !== ns.el
+          && oldSegs[j].el.contains(ns.el)) {
+        host = oldSegs[j];
+        break;
+      }
+    }
+    if(host) {
+      host.extra = host.extra ? host.extra + '\n' + ns.text : ns.text;
+      continue;
+    }
+    if(alive.some(function(s) { return s.el === ns.el; })) {
+      continue; // unchanged survivor, not new
+    }
+    var anchor = anchorOf(ns.el)
+      || (oldSegs.length ? {seg: oldSegs[oldSegs.length - 1], after: true}
+                         : null);
+    if(anchor) {
+      if(anchor.after) {
+        anchor.seg.post = anchor.seg.post !== undefined
+          ? anchor.seg.post + '\n' + ns.text : ns.text;
+      } else {
+        anchor.seg.pre = anchor.seg.pre !== undefined
+          ? ns.text + '\n' + anchor.seg.pre : ns.text;
+      }
+    }
+  }
+  var lastEnd = null, emitted = [], lastOp = null, lastIdx = -1;
+  function emit(op, idx) {
+    // A pure deletion right after another op, with only filler between,
+    // is a paragraph merged into the previous one: fold it into that op
+    // so the server's diff maps the merged paragraph's highlights onto
+    // the surviving text instead of deleting them with the emptied range
+    if(lastOp && op.text === '') {
+      var gapWs = true;
+      for(var g = lastIdx + 1; g < idx; ++g) {
+        if(!oldSegs[g].ws) {
+          gapWs = false;
+          break;
+        }
+      }
+      if(gapWs) {
+        lastOp.bEnd = op.bEnd;
+        lastIdx = idx;
+        return;
+      }
+    }
+    ops.push(op);
+    lastOp = op;
+    lastIdx = idx;
+  }
+  for(i = 0; i < oldSegs.length; ++i) {
+    var o = oldSegs[i];
+    if(o.ws) {
+      lastEnd = o.byteEnd;
+      continue; // filler between blocks, not an editable block
+    }
+    if(o.alive) {
+      if(emitted.indexOf(o.el) === -1) {
+        emitted.push(o.el); // mixed-level DOMs: one op per element
+        var text = sugEditTextAtLevel(o.el);
+        if(o.extra !== undefined) {
+          text += (text ? '\n' : '') + o.extra;
+        }
+        if(o.post !== undefined) {
+          text += '\n' + o.post;
+        }
+        if(o.pre !== undefined) {
+          text = o.pre + '\n' + text;
+        }
+        if(text !== o.text) {
+          emit({bStart: o.byteStart, bEnd: o.byteEnd, text: text}, i);
+        } else {
+          lastOp = null; // untouched block: never fold across it
+        }
+      }
+    } else {
+      var dtext = (o.pre || '') + (o.post || '');
+      emit({bStart: o.byteStart, bEnd: o.byteEnd, text: dtext}, i);
+    }
+    lastEnd = o.byteEnd;
+  }
+  return ops;
+}
+
+// Shift span lists past an edit; drop spans overlapping the edited text
+function sugRemapSpans(list, a, b, delta, tlen) {
+  // Same semantics as the server: before the edit unchanged, after it
+  // shifted, overlapping it resized to cover the new text (a..a+tlen);
+  // dropped only if the edit removed all of the span's text
+  for(var i = list.length - 1; i >= 0; --i) {
+    var s = list[i];
+    if(s.end <= a) {
+      ; // before the edit: unchanged
+    } else if(s.start >= b) {
+      s.start += delta;
+      s.end += delta;
+    } else {
+      var ns = s.start <= a ? s.start : a + tlen;
+      var ne = s.end >= b ? s.end + delta : a + tlen;
+      if(ne <= ns) {
+        list.splice(i, 1); // no text left
+      } else {
+        s.start = ns;
+        s.end = ne;
+      }
+    }
+  }
+}
+
+function sugMaybeEdit(e) {
+  if(!window.tagu_edit_documents || !current_document || SUG_EDIT) {
+    return;
+  }
+  var contents = document.getElementById('document-contents');
+  var target = e.target;
+  if(!contents || !target || !contents.contains(target)) {
+    return;
+  }
+  if(target.closest('.sug-menu') || target.closest('.sug-qa-badge')) {
+    return; // controls, not text
+  }
+  var chunk = target.closest('[id^="doc-offset-"]');
+  if(!chunk || chunk.id.indexOf('doc-offset-R') === 0) {
+    return; // only the main pane is editable
+  }
+  var para = target.closest('p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, div, td');
+  if(!para || para === contents || !para.textContent) {
+    return;
+  }
+  // The whole chunk is editable, so Backspace merges paragraphs and
+  // selecting + deleting removes them; the outline marks the target
+  SUG_EDIT = {el: chunk, para: para, oldHTML: chunk.innerHTML,
+              segs: sugEditSegments(chunk, parseInt(chunk.id.substring(11)) || 0),
+              scrollY: window.pageYOffset || 0};
+  chunk.setAttribute('contenteditable', 'true');
+  para.classList.add('sug-editing');
+  chunk.addEventListener('keydown', sugEditKey);
+  chunk.addEventListener('blur', sugEditBlur);
+  chunk.focus();
+}
+
+function sugEditKey(e) {
+  if(!SUG_EDIT) {
+    return;
+  }
+  if(e.keyCode === 27) { // Esc
+    e.preventDefault();
+    sugExitEdit(true);
+  } else if(e.keyCode === 13 && e.shiftKey) { // Shift+Enter: new paragraph
+    e.preventDefault();
+    sugSplitParagraph();
+  } else if(e.keyCode === 13) { // Enter
+    e.preventDefault();
+    sugExitEdit(false);
+  }
+}
+
+// Split the paragraph at the caret: everything after the caret moves
+// into a new block of the same kind after it, and the caret moves to
+// the start of that block (the commit diff sees a brand-new block and
+// folds it into the previous block's op with a '\n')
+function sugSplitParagraph() {
+  var ed = SUG_EDIT;
+  var sel = window.getSelection();
+  if(!ed || !sel || !sel.rangeCount) {
+    return;
+  }
+  var range = sel.getRangeAt(0);
+  if(!ed.el.contains(range.startContainer)) {
+    return;
+  }
+  var node = range.startContainer;
+  var blk = node.nodeType === 1 ? node : node.parentNode;
+  while(blk && blk !== ed.el && !SUG_BLOCK_RE.test(blk.tagName)) {
+    blk = blk.parentNode;
+  }
+  if(!blk || blk === ed.el) {
+    return; // caret not inside a block (empty chunk?)
+  }
+  var tail = document.createRange();
+  tail.selectNodeContents(blk);
+  tail.setStart(range.startContainer, range.startOffset);
+  var freshEl = document.createElement(blk.tagName);
+  freshEl.appendChild(tail.extractContents());
+  blk.parentNode.insertBefore(freshEl, blk.nextSibling);
+  // Empty blocks need a <br> to stay visible and caret-able
+  if(!freshEl.textContent) {
+    freshEl.appendChild(document.createElement('br'));
+  }
+  if(!blk.textContent) {
+    blk.appendChild(document.createElement('br'));
+  }
+  var caret = document.createRange();
+  caret.setStart(freshEl.firstChild || freshEl, 0);
+  caret.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(caret);
+}
+
+function sugEditBlur() {
+  if(SUG_EDIT) {
+    sugExitEdit(false);
+  }
+}
+
+function sugExitEdit(cancel) {
+  var ed = SUG_EDIT;
+  if(!ed) {
+    return;
+  }
+  SUG_EDIT = null; // clear first: our own DOM changes must not re-trigger
+  ed.el.removeEventListener('keydown', sugEditKey);
+  ed.el.removeEventListener('blur', sugEditBlur);
+  ed.el.removeAttribute('contenteditable');
+  if(ed.para && ed.para.parentNode) {
+    ed.para.classList.remove('sug-editing');
+  }
+  if(cancel) {
+    ed.el.innerHTML = ed.oldHTML; // restore nested markup untouched
+    return;
+  }
+  sugCommitEdit(ed);
+}
+
+// POST the edits to the server, then reload the document from the truth.
+// Several paragraphs may have changed (or merged/deleted) in one editing
+// session, so ops are applied one after another, each shifting the next.
+function sugCommitEdit(ed) {
+  var ops = sugEditOps(ed.el, ed.segs, sugEditSegments(ed.el, 0));
+  if(!ops.length) {
+    return; // nothing changed
+  }
+  var deleted = 0;
+  function run(idx) {
+    if(idx >= ops.length) {
+      return Promise.resolve();
+    }
+    var op = ops[idx];
+    return postJSON(
+      '/api/project/' + project_id + '/document/' + current_document + '/edit',
+      {start_offset: op.bStart, end_offset: op.bEnd, text: op.text,
+       paragraphs: true}
+    )
+    .then(function(resp) {
+      deleted += (resp.deleted_highlights || []).length;
+      for(var k = idx + 1; k < ops.length; ++k) {
+        ops[k].bStart += resp.delta;
+        ops[k].bEnd += resp.delta;
+      }
+      if(sug_session) {
+        // Keep client-side spans in step with the new server offsets
+        // (newlines became paragraph breaks: they carry no bytes)
+        var tlen = lengthUTF8(op.text.replace(/\n/g, ''));
+        sugRemapSpans(sug_session.staged, op.bStart, op.bEnd, resp.delta,
+                      tlen);
+        var panes = sug_session.panes;
+        for(var pk in panes) {
+          if(panes[pk].savedSuggestions) {
+            for(var ak in panes[pk].savedSuggestions) {
+              sugRemapSpans(panes[pk].savedSuggestions[ak],
+                            op.bStart, op.bEnd, resp.delta,
+                            tlen);
+            }
+          }
+        }
+      }
+    })
+    .then(function() { return run(idx + 1); });
+  }
+  run(0)
+  .then(function() {
+    if(deleted) {
+      alert(gettext(
+        'Text updated. %(n)s highlight(s) overlapped the edit and were removed.',
+        {n: deleted}));
+    }
+    if(sug_session) {
+      sug_session.editGen += 1;
+    }
+    // Detach the comparison pane: loadDocument refreshes the main pane,
+    // and highlightSelection would wrap into stale clones otherwise
+    var paneB = document.getElementById('document-contents-b');
+    if(paneB && paneB.parentNode) {
+      paneB.parentNode.removeChild(paneB);
+    }
+    chunk_offsets_b = [];
+    return loadDocument(current_document, true); // keep the scroll position
+  })
+  .then(function() {
+    window.scrollTo(0, ed.scrollY);
+    if(!sug_session) {
+      return;
+    }
+    sugSyncPaneB();
+    sugRebuildAfterReload();
+  })
+  .catch(function(error) {
+    console.error('Failed to edit document:', error);
+    alert(gettext("Couldn't edit the document!") + '\n\n' + error);
+    loadDocument(current_document, true).then(function() {
+      window.scrollTo(0, ed.scrollY);
+      if(sug_session) {
+        sugSyncPaneB();
+        sugRebuildAfterReload();
+      }
+    });
+  });
+}
+
+// Rebuild the comparison pane from the freshly loaded main pane
+function sugSyncPaneB() {
+  if(!sug_session || !sug_session.split) {
+    return;
+  }
+  var view = document.getElementById('document-view');
+  var contents = document.getElementById('document-contents');
+  var paneB = document.getElementById('document-contents-b');
+  if(!paneB) {
+    paneB = document.createElement('div');
+    paneB.id = 'document-contents-b';
+    view.appendChild(paneB);
+  }
+  paneB.innerHTML = '';
+  chunk_offsets_b = chunk_offsets.slice();
+  var chunks = contents.querySelectorAll('[id^="doc-offset-"]');
+  for(var i = 0; i < chunks.length; ++i) {
+    var clone = chunks[i].cloneNode(true);
+    clone.id = 'doc-offset-R' + chunks[i].id.substring(11);
+    paneB.appendChild(clone);
+  }
+  // Unwrap and re-wrap the real highlights so both panes carry them
+  var ids = Object.keys(highlights);
+  ids.forEach(removeHighlight);
+  ids.forEach(function(id) { setHighlight(highlights[id]); });
+}
+
+// Recompute the session state after the document changed underneath it
+function sugRebuildAfterReload() {
+  var oldByText = {};
+  if(sug_session.roles) {
+    sug_session.roles.forEach(function(r) {
+      if(r.role) {
+        oldByText[r.text] = r.role;
+      }
+    });
+  }
+  var index = sugBuildPlainIndex();
+  sug_session.plainText = index.plainText;
+  sug_session.byteOfChar = index.byteOfChar;
+  sug_session.totalBytes = index.totalBytes;
+  sug_session.sentences = sugSplitSentences(index.plainText);
+  SUG_ALGO_CACHE[current_document] = {};
+  if(sug_session.roles) {
+    var blocks = sugBlocks();
+    blocks.forEach(function(b) {
+      b.role = oldByText[b.text] || null;
+      b.prob = null;
+    });
+    sug_session.roles = blocks;
+    var cfg = sugLoadQaConfig();
+    if(cfg && cfg.provider) {
+      var gen = sug_session.editGen;
+      sugQaClassifyAll(blocks, cfg, function(i, role, prob) {
+        if(!sug_session || sug_session.editGen !== gen) {
+          return; // superseded by a later edit
+        }
+        blocks[i].role = role;
+        blocks[i].prob = prob;
+        sugQaSetBlockDom(i);
+      });
+    }
+  }
+  Object.keys(sug_session.panes).forEach(function(pk) {
+    sug_session.panes[pk].candidates = null;
+    sugComputePane(pk);
+  });
+  sug_session.staged.forEach(sugRenderStaged);
+  sugQaRenderBlocks();
+}
 
 
 /*
@@ -2598,6 +3126,9 @@ function sugStart() {
 function sugCleanup() {
   if(!sug_session) {
     return;
+  }
+  if(SUG_EDIT) {
+    sugExitEdit(true); // never leave a paragraph editable behind
   }
   sugHideMenu();
   var wasSplit = sug_session.split;
@@ -2996,6 +3527,7 @@ function sugInit() {
   if(!launch) {
     return; // not on the project page
   }
+  document.addEventListener('dblclick', sugMaybeEdit);
 
   launch.addEventListener('click', function(e) {
     e.preventDefault();
