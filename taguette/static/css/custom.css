@@ -344,10 +344,17 @@ li.tag-current {
   color: #bbb;
 }
 
-#export-button {
+#document-view-toolbar {
   position: absolute;
   top: .1em;
   right: .5em;
+  display: flex;
+  gap: .35em;
+  z-index: 900;
+}
+
+#goto-last-highlight {
+  padding: 0.125rem 0.25rem;
 }
 
 #export-button .dropdown-toggle {
@@ -473,7 +480,8 @@ a.dropdown-item:hover {
   position: absolute;
   top: .1em;
   left: .5em;
-  right: 12em;
+  /* keep clear of the top-right toolbar ("Go to last highlight" + export) */
+  right: 27em;
   z-index: 900;
   font-size: 0.85em;
   background: rgba(255, 255, 255, 0.95);

@@ -1345,6 +1345,26 @@ function removeHighlight(id) {
   }
 }
 
+// "Go to last highlight": scroll so that the most recently
+// created highlight (highest id) is at the top of the screen
+goto_last_button.addEventListener('click', function(e) {
+  e.preventDefault();
+  var last_id = null;
+  for(var id in highlights) {
+    if(last_id === null || parseInt(id) > parseInt(last_id)) {
+      last_id = id;
+    }
+  }
+  if(last_id === null) {
+    return;
+  }
+  var elements = document.getElementsByClassName('highlight-' + last_id);
+  if(!elements.length) {
+    return;
+  }
+  window.scrollTo(0, elements[0].getBoundingClientRect().top + getScrollPos().y - 10);
+});
+
 // Backlight
 var backlight_checkbox = document.getElementById('backlight');
 backlight_checkbox.addEventListener('change', function(e) {
@@ -1662,10 +1682,12 @@ document.getElementById('members-current').addEventListener('submit', function(e
 
 var document_contents = document.getElementById('document-contents');
 var export_button = document.getElementById('export-button');
+var goto_last_button = document.getElementById('goto-last-highlight');
 
 function loadDocument(document_id, keep_scroll) {
   if(document_id === null) {
     document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
+    goto_last_button.style.display = 'none';
     return;
   }
   showSpinner();
@@ -1703,6 +1725,7 @@ function loadDocument(document_id, keep_scroll) {
 
     // Update export button
     export_button.style.display = '';
+    goto_last_button.style.display = '';
     var items = export_button.getElementsByClassName('dropdown-item');
     for(var i = 0; i < items.length; ++i) {
       var ext = items[i].getAttribute('data-extension');
@@ -2070,8 +2093,10 @@ function loadTag(tag_path, page) {
 
     updateTagsList();
 
-    // Update export button
+    // Update export button (the "last highlight" button only makes sense
+    // when a document is displayed)
     export_button.style.display = '';
+    goto_last_button.style.display = 'none';
     var items = export_button.getElementsByClassName('dropdown-item');
     for(var i = 0; i < items.length; ++i) {
       var ext = items[i].getAttribute('data-extension');
