@@ -1,5 +1,11 @@
 # SQLite database files
 *.sqlite3
+# Example SQLite files in the repo root (incl. backups)
+/*.sqlite3*
+
+# Local agent/graphify artifacts
+AGENTS.md
+graphify-out/
 
 # Configuration file
 taguette.conf
@@ -61,13 +67,6 @@ desktop.ini
 
 # Vagrant
 .vagrant
-
-# graphify extraction cache (machine-specific)
-graphify-out/cache/
-
-# Python env local (host e sandbox compartilham o mesmo caminho)
-.venv/
-.python/
 
 # Local Python env (host and sandbox share the same path)
 .venv/
