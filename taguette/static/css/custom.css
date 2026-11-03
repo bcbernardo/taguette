@@ -340,6 +340,54 @@ li.tag-current {
   background-color: #e7f2ff;
 }
 
+/* Tag tree: nested tags in the Highlights panel and the highlight form */
+ul.tag-children {
+  list-style: none;
+  margin: 0;
+  padding-left: 1.1em;
+  border-left: 1px solid #dee2e6;
+}
+
+#highlight-add-tags ul.tag-children {
+  margin-bottom: 0.25em;
+}
+
+/* Drag & drop of tags in the Highlights panel */
+li.tag-item.tag-dragging {
+  opacity: 0.4;
+}
+
+li.tag-item.drop-child {
+  box-shadow: inset 0 3px 0 #007bff;
+}
+
+li.tag-item.drop-merge {
+  background-color: #e9f7ec;
+  outline: 2px dashed #28a745;
+  outline-offset: -2px;
+}
+
+/* Parent tag selector in the tag form */
+.tag-parent-select {
+  position: relative;
+}
+
+.tag-parent-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1055; /* above the modal */
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.tag-parent-list .list-group-item {
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
 .backlight {
   color: #bbb;
 }

@@ -327,6 +327,19 @@
         <input type="hidden" id="tag-add-id" />
         <div class="container">
           <input type="text" class="form-control mb-3 tag-path-input" id="tag-add-path" name="tag-add-path" placeholder="{# TRANSLATORS: Tag change form #}{% trans %}Name{% endtrans %}" required />
+          <div class="form-group mb-3">
+            <label for="tag-add-parent">{# TRANSLATORS: Tag change form #}{% trans %}Parent tag{% endtrans %}</label>
+            <div class="tag-parent-select">
+              <div class="input-group">
+                <input type="text" class="form-control" id="tag-add-parent" name="tag-add-parent" placeholder="{# TRANSLATORS: Tag change form: leave empty for a root-level tag #}{% trans %}Search a parent tag (leave empty for root level){% endtrans %}" autocomplete="off" />
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" id="tag-add-parent-clear" title="{# TRANSLATORS: Tag change form #}{% trans %}Clear the parent (root level){% endtrans %}"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+              <div class="list-group tag-parent-list" id="tag-add-parent-list" style="display: none;"></div>
+            </div>
+            <input type="hidden" id="tag-add-parent-id" name="tag-add-parent-id" />
+          </div>
           <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans %}Description{% endtrans %}"></textarea>
         </div>
       </div>
@@ -337,6 +350,28 @@
         <button type="button" class="btn btn-danger" data-dismiss="modal" id="tag-add-delete">{% trans %}Delete tag{% endtrans %}</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Move tag (change its parent) confirmation modal -->
+<div class="modal" id="tag-move-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans %}Change tag hierarchy{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="tag-move-message"></p>
+        <p class="text-muted mb-0">{% trans %}The parent tag inherits all the highlights of its child tags.{% endtrans %}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="tag-move-confirm">{% trans %}Make child tag{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+      </div>
+    </div>
   </div>
 </div>
 
