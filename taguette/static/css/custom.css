@@ -367,3 +367,192 @@ a.dropdown-item:hover {
     line-height: 1.0;
   }
 }
+
+/* --------------------SUGGESTED HIGHLIGHTS--------------------------*/
+
+#suggest-launch {
+  position: absolute;
+  top: .1em;
+  left: .5em;
+  z-index: 900;
+}
+
+#suggest-panel {
+  position: absolute;
+  top: .1em;
+  left: .5em;
+  right: 12em;
+  z-index: 900;
+  font-size: 0.85em;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.25em 0.5em;
+}
+
+#suggest-panel label {
+  margin-right: 0.8em;
+  margin-bottom: 0;
+}
+
+#sug-status {
+  color: #666;
+}
+
+/* Suggestion brackets: empty inline elements, glyphs drawn via CSS content
+   so they don't appear in textContent (keeps text offsets stable) */
+.sug-bracket {
+  display: inline-block;
+  width: 0.45em;
+  color: #c8c8c8;
+  font-weight: bold;
+  user-select: none;
+  cursor: ew-resize;
+}
+
+.sug-bracket::before {
+  content: "[";
+}
+
+.sug-bracket[data-which="end"]::before {
+  content: "]";
+}
+
+.sug-bracket[data-modified="1"] {
+  color: #909090;
+}
+
+/* Suggested: blinking light gray brackets */
+@keyframes sugblink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.12; }
+}
+
+.sug-bracket:not([data-aid]) {
+  animation: sugblink 1.1s step-start infinite;
+}
+
+/* Accepted: brackets stop blinking */
+.sug-bracket[data-aid] {
+  color: #7d7d7d;
+  cursor: default;
+  animation: none;
+}
+
+.sug-bracket.sug-dragging {
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.sug-span {
+  cursor: pointer;
+}
+
+.sug-span:hover {
+  outline: 1px dashed #b8a000;
+}
+
+/* Accepted highlights: desaturated yellow */
+.hl-staged {
+  background-color: hsl(50, 45%, 78%) !important;
+  color: black;
+}
+
+/* Suggestion context menu */
+#sug-menu {
+  display: none;
+  position: fixed;
+  z-index: 1060;
+  background: white;
+  border: 1px solid #999;
+  padding: 0.4em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  max-width: 270px;
+}
+
+#sug-menu .sug-menu-title {
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 0.3em;
+}
+
+#sug-menu .sug-menu-tags {
+  font-size: 0.8em;
+  color: #444;
+  margin-bottom: 0.3em;
+}
+
+#sug-menu .btn {
+  margin-top: 0.15em;
+}
+
+#sug-menu .sug-menu-taglist {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 0.3em;
+}
+
+#sug-menu .sug-menu-taglist label {
+  display: block;
+  font-size: 0.85em;
+  margin-bottom: 0;
+}
+
+/* Split screen: two algorithm panes with common (page) scrolling */
+.document-view.split {
+  display: flex;
+  gap: 1.5em;
+}
+
+.document-view.split > #document-contents,
+.document-view.split > #document-contents-b {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.document-view.split #document-contents-b {
+  border-left: 1px solid #dee2e6;
+  padding-left: 1.5em;
+}
+
+/* Theme badge on clustered suggestions (CSS-generated content keeps the
+   document's text offsets intact) */
+.sug-span[data-cluster-label]::before {
+  content: attr(data-cluster-label);
+  font-size: 0.65em;
+  font-weight: bold;
+  vertical-align: super;
+  color: #8a7500;
+  padding-right: 1px;
+}
+
+/* Suggest Q/A (interviewer vs interviewee) in-transcript markers: colored
+   outline, no fill, so they never read as highlights */
+.sug-qa-block {
+  border: 2px solid;
+  border-radius: 4px;
+  padding: 0 1px;
+}
+.sug-qa-block[data-role="Q"] { border-color: #6c757d; }
+.sug-qa-block[data-role="A"] { border-color: #28a745; }
+.sug-qa-block[data-role="\2026"] { border-color: #ced4da; }
+.sug-qa-badge {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-right: 4px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.sug-qa-badge::before { content: attr(data-role); }
+.sug-qa-badge[data-role="Q"] { background: #6c757d; color: #fff; }
+.sug-qa-badge[data-role="A"] { background: #28a745; color: #fff; }
+.sug-qa-badge[data-role="\2026"] { background: #ced4da; color: #495057; }
+
+/* Suggest transcript edit mode (double-click a paragraph to fix glitches) */
