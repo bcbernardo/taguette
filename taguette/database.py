@@ -252,6 +252,14 @@ def command_fields(columns, payload_fields):
     return wrapper
 
 
+# Command payload fields that may be missing from commands written by
+# older versions of Taguette (they were added after the command type
+# first appeared)
+OPTIONAL_COMMAND_FIELDS = {
+    'tag_add': frozenset({'parent_id'}),
+}
+
+
 class Command(Base):
     __tablename__ = 'commands'
     __table_args__ = ({'sqlite_autoincrement': True},)
@@ -295,7 +303,7 @@ class Command(Base):
 
     TYPES = {'project_meta', 'document_add', 'document_delete',
              'document_edit', 'highlight_add', 'highlight_delete',
-             'tag_add', 'tag_delete', 'tag_merge', 'member_add',
+             'tag_add', 'tag_delete', 'tag_merge', 'tag_move', 'member_add',
              'member_remove', 'project_import'}
 
     for n in TYPES:
@@ -397,7 +405,7 @@ class Command(Base):
     @classmethod
     @command_fields(
         columns=['project_id'],
-        payload_fields=['tag_id', 'tag_path', 'description'],
+        payload_fields=['tag_id', 'tag_path', 'description', 'parent_id'],
     )
     def tag_add(cls, user_login, tag):
         assert isinstance(tag, Tag)
@@ -407,7 +415,8 @@ class Command(Base):
             payload={'type': 'tag_add',  # keep in sync above
                      'tag_id': tag.id,
                      'tag_path': tag.path,
-                     'description': tag.description},
+                     'description': tag.description,
+                     'parent_id': tag.parent_id},
         )
 
     @classmethod
@@ -423,6 +432,23 @@ class Command(Base):
             project_id=project_id,
             payload={'type': 'tag_delete',  # keep in sync above
                      'tag_id': tag_id},
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['tag_id', 'parent_id'],
+    )
+    def tag_move(cls, user_login, project_id, tag_id, parent_id):
+        assert isinstance(project_id, int)
+        assert isinstance(tag_id, int)
+        assert parent_id is None or isinstance(parent_id, int)
+        return cls(
+            user_login=user_login,
+            project_id=project_id,
+            payload={'type': 'tag_move',  # keep in sync above
+                     'tag_id': tag_id,
+                     'parent_id': parent_id},
         )
 
     @classmethod
@@ -739,19 +765,28 @@ class DefaultMap(object):
         return self.get(key)
 
 
+def _row_dict(row):
+    """Turn a SQLAlchemy row into a dict, across SQLAlchemy versions."""
+    try:
+        return dict(row._mapping)
+    except AttributeError:  # SQLAlchemy < 1.4
+        return dict(row.items())
+
+
 def copy_project(
     src_db, dest_db,
     project_id, user_login,
 ):
     def copy(
         model, pkey, fkeys, size,
-        *, condition=None, transform=None, validators=None
+        *, condition=None, transform=None, validators=None, mapping=None
     ):
         return copy_table(
             src_db, dest_db,
             model.__table__, pkey, fkeys,
             batch_size=size,
             condition=condition, transform=transform, validators=validators,
+            mapping=mapping,
         )
 
     def insert(model, values):
@@ -769,7 +804,7 @@ def copy_project(
         raise KeyError("project ID not found")
     validate.project_name(project['name'])
     validate.description(project['description'])
-    project = dict(project.items())
+    project = _row_dict(project)
     project.pop('id')
     new_project_id, = insert(Project, project).inserted_primary_key
     mapping_project = {project_id: new_project_id}
@@ -798,16 +833,33 @@ def copy_project(
         ),
     )
 
-    # Copy tags
-    mapping_tags = copy(
+    # Copy tags. Tags reference their parent through `parent_id`; since
+    # ids are autoincremented a parent is always copied before its
+    # children, so the mapping built so far can be used to rewrite the
+    # foreign key as we go.
+    mapping_tags = {}
+
+    def transform_tag(row):
+        if row.get('parent_id') is not None:
+            try:
+                row['parent_id'] = mapping_tags[row['parent_id']]
+            except KeyError:
+                raise ValueError(
+                    "Data failed validation (column 'parent_id')"
+                )
+        return row
+
+    copy(
         Tag, 'id',
         dict(project_id=mapping_project),
         50,
         condition=Tag.project_id == project_id,
+        transform=transform_tag,
         validators=dict(
             path=validate.tag_path,
             description=validate.description,
         ),
+        mapping=mapping_tags,
     )
 
     # Copy highlights
@@ -849,8 +901,12 @@ def copy_project(
         if {k for k, v in cmd.items() if v is not None} != expected_columns:
             raise ValueError("Command doesn't have expected columns")
 
-        # Check that the right JSON fields are set
-        if payload.keys() != expected_payload_fields:
+        # Check that the right JSON fields are set. Some fields were added
+        # after a command type first appeared (e.g. 'parent_id' in
+        # 'tag_add'), so commands from older databases may lack them.
+        optional = OPTIONAL_COMMAND_FIELDS.get(payload['type'], frozenset())
+        required_fields = expected_payload_fields - optional
+        if not (required_fields <= payload.keys() <= expected_payload_fields):
             raise ValueError("Command doesn't have expected fields")
 
         # Map an ID, using negative ID if it's unknown
@@ -873,6 +929,7 @@ def copy_project(
             tag_path=validate.tag_path,
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
+            parent_id=lambda v: v is None or isinstance(v, int),
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
         )
@@ -881,6 +938,10 @@ def copy_project(
             highlight_id=lambda v: mv(mapping_highlights, v),
             tag_id=lambda v: mv(mapping_tags, v),
             src_tag_id=lambda v: mv(mapping_tags, v),
+            dest_tag_id=lambda v: mv(mapping_tags, v),
+            parent_id=lambda v: (
+                None if v is None else mv(mapping_tags, v)
+            ),
             tags=lambda tags: [mv(mapping_tags, t) for t in tags],
         )
 
@@ -921,7 +982,8 @@ def copy_project(
 def copy_table(
     src_db, dest_db, table,
     pkey, fkeys,
-    *, batch_size=50, condition=None, transform=None, validators=None
+    *, batch_size=50, condition=None, transform=None, validators=None,
+    mapping=None,
 ):
     """Copy all data in a table across database connections.
 
@@ -935,6 +997,10 @@ def copy_table(
     :param fkeys: A dictionary associating the name of the fields that are
         foreign keys to a dictionary mapping the keys.
     :param transform: Function to apply on each row.
+    :param mapping: Dictionary to fill with the old-to-new primary key
+        mapping; a fresh one is created when not given. Passing one in makes
+        the mapping usable while the copy is in progress (e.g. to rewrite
+        self-referencing foreign keys).
     """
     query = table.select()
     if pkey is not None:
@@ -944,12 +1010,13 @@ def copy_table(
     query = src_db.execute(query)
     assert pkey is None or pkey in query.keys()
     assert all(field in query.keys() for field in fkeys)
-    mapping = {}
+    if mapping is None:
+        mapping = {}
     batch = query.fetchmany(batch_size)
     orig_pkey = None  # Avoids warning
     while batch:
         for row in batch:
-            row = dict(row.items())
+            row = _row_dict(row)
             # Get primary key, remove it
             if pkey is not None:
                 orig_pkey = row[pkey]
