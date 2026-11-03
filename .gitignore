@@ -67,3 +67,7 @@ desktop.ini
 
 # Vagrant
 .vagrant
+
+# Local Python env (host and sandbox share the same path)
+.venv/
+.python/
