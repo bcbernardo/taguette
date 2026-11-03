@@ -109,16 +109,19 @@
   <div class="col-md-9">
 
     <div id="document-view" class="document-view">
-      <div id="export-button" class="dropdown" style="display: none;">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {% trans %}Export this view{% endtrans %}
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdown-export">
-          <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
-          <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+      <div id="document-view-toolbar">
+        <a id="goto-last-highlight" class="btn btn-outline-primary" href="javascript:void(0)" role="button" style="display: none;">{% trans %}Go to last highlight{% endtrans %}</a>
+        <div id="export-button" class="dropdown" style="display: none;">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {% trans %}Export this view{% endtrans %}
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdown-export">
+            <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
+            <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+          </div>
         </div>
       </div>
 
