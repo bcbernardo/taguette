@@ -1,0 +1,3 @@
+# Nextcloud: do not sync the interpreter or the venv (large, contains symlinks)
+.python
+.venv

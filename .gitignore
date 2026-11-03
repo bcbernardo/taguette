@@ -64,3 +64,11 @@ desktop.ini
 
 # graphify extraction cache (machine-specific)
 graphify-out/cache/
+
+# Python env local (host e sandbox compartilham o mesmo caminho)
+.venv/
+.python/
+
+# Local Python env (host and sandbox share the same path)
+.venv/
+.python/
