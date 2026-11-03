@@ -485,6 +485,7 @@
 <script type="text/javascript">
   var user_login = {{ user_login }};
   var project_id = {{ project.id }};
+{% if not multiuser %}  var tagu_edit_documents = true;{% endif %}
   var last_event = {{ last_event }};
   var documents = {{ documents }};
   var highlights = {};

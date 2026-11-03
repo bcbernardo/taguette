@@ -64,6 +64,122 @@ def delete_right(node, indices):
         node = node.contents[idx]
 
 
+def text_length(html):
+    """Length of the text of an HTML document, in UTF-8 bytes.
+
+    Tags are not counted, like everywhere else:
+    >>> text_length('<p>Hello <i>world</i></p>')
+    11
+    """
+    soup = BeautifulSoup(html, 'html5lib')
+    return sum(len(node.string.encode('utf-8'))
+               for node in soup.descendants
+               if isinstance(node, NavigableString))
+
+
+_EDIT_PRUNE_TAGS = {'p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                    'blockquote', 'pre', 'div', 'td', 'th', 'dt', 'dd',
+                    'figcaption'}
+
+
+def _split_node(node, offset):
+    """Split a NavigableString at a byte offset, keeping both parts."""
+    left, right = split_utf8(node.string, offset)
+    if not left:
+        node.replace_with(NavigableString(right))
+    elif right:
+        left_node = NavigableString(left)
+        node.replace_with(left_node)
+        left_node.insert_after(NavigableString(right))
+    # offset == length: already on a boundary, nothing to do
+
+
+def parent_block(node):
+    """Nearest block-level ancestor (see _EDIT_PRUNE_TAGS), or None."""
+    while node is not None and node.name not in _EDIT_PRUNE_TAGS:
+        node = node.parent
+    return node
+
+
+def edit(html, start, end, text, paragraphs=False):
+    """Replace the text between byte offsets [start, end) with `text`.
+
+    Offsets are computed like for extract(): UTF-8 bytes, tags not
+    counted. Returns the new HTML, or None if the range is invalid.
+
+    Inline markup inside the range is replaced by the plain text.
+    With `paragraphs=True`, newlines in `text` are paragraph breaks:
+    the block that receives the text is split into one block per line
+    (only valid when the range covers that block's whole text; None
+    is returned otherwise).
+    """
+    soup = BeautifulSoup(html, 'html5lib')
+    if not (0 <= start < end <= text_length(html)):
+        return None
+    # Split the boundary nodes (end first: it does not move `start`)
+    end_node, end_off, _ = find_pos(soup, end, False)
+    _split_node(end_node, end_off)
+    start_node, start_off, _ = find_pos(soup, start, True)
+    _split_node(start_node, start_off)
+    # Replace every text node inside [start, end): the first one carries
+    # the new text, the others are removed
+    pos = 0
+    inserted = False
+    receiver = None  # block that received the new text
+    maybe_empty = []
+    for node in list(soup.descendants):
+        if not isinstance(node, NavigableString):
+            continue
+        nb = len(node.string.encode('utf-8'))
+        if nb and pos >= start and pos + nb <= end:
+            parent = node.parent
+            if not inserted:
+                if text:
+                    node.replace_with(NavigableString(text))
+                else:
+                    node.extract()
+                inserted = True
+                receiver = parent
+            else:
+                node.extract()
+            if parent is not None and parent.name in _EDIT_PRUNE_TAGS:
+                maybe_empty.append(parent)
+        pos += nb
+    if not inserted:
+        return None  # range did not cover any text node
+    if paragraphs and '\n' in text:
+        receiver = parent_block(receiver)
+        if (receiver is None or receiver.parent is None
+                or receiver.get_text() != text):
+            return None  # can only split blocks whose text is fully replaced
+        pieces = text.split('\n')
+        receiver.clear()
+        if pieces[0]:
+            receiver.append(NavigableString(pieces[0]))
+        block = receiver
+        for piece in pieces[1:]:
+            new = soup.new_tag(receiver.name)
+            if piece:
+                new.append(NavigableString(piece))
+            block.insert_after(new)
+            block = new
+        # emptied blocks are pruned below, but an empty leading piece
+        # here is a deliberate blank paragraph: keep the receiver
+        maybe_empty = [b for b in maybe_empty if b is not receiver]    # Paragraphs emptied by this edit disappear (deleting a paragraph, or
+    # merging two, leaves an empty block behind)
+    for block in maybe_empty:
+        if (block.parent is not None
+                and not block.find(string=True)
+                and not block.find(True)):
+            block.extract()
+    # Keep only the body, like extract()
+    body = soup.body
+    soup.clear()
+    soup.append(body)
+    soup.body.unwrap()
+    return str(soup)
+
+
 @PROM_EXTRACT_TIME.time()
 def extract(html, start, end):
     """Extract a snippet out of an HTML document.

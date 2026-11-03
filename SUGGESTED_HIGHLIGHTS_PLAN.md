@@ -295,7 +295,75 @@ excluded from suggestions, so only the interviewees' answers are highlighted.
   store (keyed by provider+model+URL and the text hash), so re-running the
   classification — or reopening the document — costs no requests.
 
-## 9. Edge cases handled
+## 9. Transcript edit mode (server-side)
+
+Automated transcripts routinely misattribute turns (speakers talking over
+each other, label glitches). **Double-click any paragraph** in the main
+pane to edit its text in place — no formatting tools, just text. `Enter`
+applies, `Esc` cancels, clicking away applies. This is a *document*
+feature, not a suggest feature: it works with or without a session.
+
+The **whole chunk** becomes editable (not just the double-clicked
+paragraph), so `Backspace` at a paragraph start merges it into the
+previous one, selecting + `Delete` removes a paragraph, and
+**`Shift+Enter` splits** the paragraph at the caret into two —
+transcription tools merge and split turns wrongly all the time. `Enter`
+applies everything, `Esc` cancels, clicking away applies. The page keeps
+its scroll position across the reload, so long documents stay workable.
+
+Edits are committed to the **server** (`POST
+/api/project/{p}/document/{d}/edit` with `{start_offset, end_offset,
+text, paragraphs}` in the same byte-offset space highlights use), so the
+corrected transcript is the shared source of truth: exports, other
+views, and later sessions all see the corrected text. Single-user
+deployments only (`--multi-user` disables both the endpoint and the
+client, since concurrent editors need conflict handling we have not
+built).
+
+On commit the client diffs by **block element identity** (the browser
+keeps a paragraph's node when editing or merging into it, drops the node
+of a merged-away or deleted paragraph): a surviving element with new text
+becomes a replacement, a dropped element a deletion, and brand-new
+elements (from `Shift+Enter`) fold into the op of the old block they sit
+next to, joined with `\n` — the paragraph-break marker. One editing
+session can produce several ops, applied to the server one after
+another, each shifting the offsets of the next.
+
+Server behavior on edit (`web/api.py` `DocumentEdit`, splice via
+`extract.edit()` which reuses the `extract()` offset machinery):
+
+- Highlights before the edit are untouched, those past it shift with
+  the text, and those overlapping it are mapped through a diff of the
+  old and new text (`_migrate_highlights`, difflib): a highlight over
+  text that did not change keeps its exact bounds (a typo fix no
+  longer kills highlights elsewhere in the paragraph), one over
+  changed text shrinks to the nearest unchanged boundary, and a
+  highlight is deleted only when it collapses to nothing (all its
+  text was replaced or removed); snippets are recomputed. The client
+  tells the user how many were removed. The edit is logged as a
+  `document_edit` command. (Staged, session-only suggestions follow
+  the simpler shift/resize rule client-side.)
+- For the same reason, the client sends a paragraph **merge as one
+  op** spanning both paragraphs (a pure deletion right after a
+  replacement, with only filler between, is folded into it): the
+  merged-away paragraph's text is then a matching block in the diff,
+  so its highlights survive the merge with exact bounds — instead of
+  being deleted by a separate delete-of-the-emptied-range op. A
+  multi-paragraph merge chains into one op the same way.
+- Blocks emptied by the edit are removed: deleting a paragraph leaves no
+  empty line, and merging two paragraphs actually leaves one. With the
+  `paragraphs` flag, `\n` in the replacement text is a paragraph break:
+  the receiving block is split into one block per line (empty lines
+  become empty paragraphs and are kept); this is only valid when the op
+  covers the block's whole text (otherwise the edit is rejected), and
+  the break bytes carry no offset. A document cannot be emptied
+  entirely (rejected with an error).
+- The client then reloads the document from the server; with a session
+  running, staged highlights and adjusted suggestions are remapped with
+  the same endpoint rule, and blocks/roles/panes are recomputed on the
+  corrected text (roles inherited for turns whose text did not change).
+
+## 10. Edge cases handled
 
 - Very short documents (< 3 sentences / no candidates) → "Not enough text"
   notice in the toolbar, no crash.
@@ -308,7 +376,7 @@ excluded from suggestions, so only the interviewees' answers are highlighted.
 - Suggestions overlapping *real* highlights render as nested spans — no data
   risk; staged (accepted) spans are protected from bracket-drag overlap.
 
-## 10. Self-check
+## 11. Self-check
 
 `suggest.js` ends with an assert-based smoke test (runs only with
 `?suggest_selftest=1` in the URL, harmless in production): byte mapping,
@@ -323,7 +391,7 @@ recomputation on switch-back or session restart, and fetch-call counters
 prove embeddings are only requested for never-seen texts (a two-algorithm
 session with several switches and a model change needs ~3 requests total).
 
-## 11. Explicitly out of scope (lazy senior-dev notes)
+## 12. Explicitly out of scope (lazy senior-dev notes)
 
 - Persisting suggestions across reloads (session is ephemeral by design).
 - transformer.js in-browser model downloads (§0 explains the local-endpoint

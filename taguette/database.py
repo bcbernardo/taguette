@@ -21,7 +21,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import column_property, deferred, relationship, \
     sessionmaker
 from sqlalchemy.sql import functions
-from sqlalchemy.types import DateTime, Enum, Integer, String, Text
+from sqlalchemy.types import Boolean, DateTime, Enum, Integer, String, Text
 import sys
 
 import taguette
@@ -68,7 +68,8 @@ class User(Base):
     login = Column(String(30), primary_key=True)
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
-    hashed_password = Column(String(120), nullable=True)
+    hashed_password = Column(String(192), nullable=True)
+    disabled = Column(Boolean, nullable=False, default=False)
     password_set_date = Column(DateTime, nullable=True)
     language = Column(String(10), nullable=True)
     email = Column(String(256), nullable=True, index=True, unique=True)
@@ -209,6 +210,11 @@ class ProjectMember(Base):
         )
 
 
+class TextDirection(enum.Enum):
+    LEFT_TO_RIGHT = 0
+    RIGHT_TO_LEFT = 1
+
+
 class Document(Base):
     __tablename__ = 'documents'
     __table_args__ = ({'sqlite_autoincrement': True},)
@@ -216,12 +222,14 @@ class Document(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)
-    filename = Column(String(200), nullable=True)
+    filename = Column(String(200), nullable=False)
     created = Column(DateTime, nullable=False,
                      default=lambda: datetime.utcnow())
     project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
                         nullable=False, index=True)
     project = relationship('Project', back_populates='documents')
+    text_direction = Column(Enum(TextDirection), nullable=False,
+                            default=TextDirection.LEFT_TO_RIGHT)
     contents = deferred(Column(Text, nullable=False))
     highlights = relationship('Highlight', cascade='all,delete-orphan',
                               passive_deletes=True)
@@ -253,19 +261,20 @@ class Command(Base):
                   default=lambda: datetime.utcnow(), index=True)
     user_login = Column(String(30),
                         ForeignKey('users.login', onupdate='CASCADE'),
-                        nullable=False)
+                        nullable=False, index=True)
     user = relationship('User')
     project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
                         nullable=False, index=True)
     project = relationship('Project')
     document_id = Column(Integer,
-                         nullable=True)  # Not ForeignKey, document can go away
+                         nullable=True, index=True)  # Not ForeignKey, document can go away
     payload = Column(JSON, nullable=False)
 
     tag_count_changes = None
 
     __table_args__ = (
         Index('idx_project_document', 'project_id', 'document_id'),
+        Index('idx_project_id', 'project_id', 'id'),
     ) + __table_args__
 
     def __init__(self, **kwargs):
@@ -285,8 +294,9 @@ class Command(Base):
         return cmd_json
 
     TYPES = {'project_meta', 'document_add', 'document_delete',
-             'highlight_add', 'highlight_delete', 'tag_add', 'tag_delete',
-             'tag_merge', 'member_add', 'member_remove', 'project_import'}
+             'document_edit', 'highlight_add', 'highlight_delete',
+             'tag_add', 'tag_delete', 'tag_merge', 'member_add',
+             'member_remove', 'project_import'}
 
     for n in TYPES:
         PROM_COMMAND.labels(n).inc(0)
@@ -318,6 +328,21 @@ class Command(Base):
             payload={'type': 'document_add',  # keep in sync above
                      'document_name': document.name,
                      'description': document.description},
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id', 'document_id'],
+        payload_fields=['document_name', 'deleted_highlights'],
+    )
+    def document_edit(cls, user_login, document, deleted_highlights):
+        return cls(
+            user_login=user_login,
+            project=document.project,
+            document_id=document.id,
+            payload={'type': 'document_edit',  # keep in sync above
+                     'document_name': document.name,
+                     'deleted_highlights': deleted_highlights},
         )
 
     @classmethod
@@ -522,6 +547,9 @@ class Tag(Base):
 
     path = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
+    parent_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'),
+                       nullable=True, index=True)
+    parent = relationship('Tag', remote_side=[id])
 
     __table_args__ = (
         UniqueConstraint('project_id', 'path'),
@@ -544,11 +572,11 @@ class HighlightTag(Base):
 
     highlight_id = Column(Integer, ForeignKey('highlights.id',
                                               ondelete='CASCADE'),
-                          primary_key=True)
+                          primary_key=True, index=True)
     highlight = relationship('Highlight')
     tag_id = Column(Integer, ForeignKey('tags.id',
                                         ondelete='CASCADE'),
-                    primary_key=True)
+                    primary_key=True, index=True)
     tag = relationship('Tag')
 
     def __repr__(self):
