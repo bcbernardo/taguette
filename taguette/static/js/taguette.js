@@ -1347,6 +1347,7 @@ function removeHighlight(id) {
 
 // "Go to last highlight": scroll so that the most recently
 // created highlight (highest id) is at the top of the screen
+var goto_last_button = document.getElementById('goto-last-highlight');
 goto_last_button.addEventListener('click', function(e) {
   e.preventDefault();
   var last_id = null;
@@ -1682,7 +1683,6 @@ document.getElementById('members-current').addEventListener('submit', function(e
 
 var document_contents = document.getElementById('document-contents');
 var export_button = document.getElementById('export-button');
-var goto_last_button = document.getElementById('goto-last-highlight');
 
 function loadDocument(document_id, keep_scroll) {
   if(document_id === null) {
