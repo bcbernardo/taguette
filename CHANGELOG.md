@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+Bugfixes (highlight form):
+* Fix tags being dropped from a highlight when a new tag was created while
+  editing it (the tag checkboxes were re-rendered, losing the checked ones)
+* A tag created from within the highlight form is now automatically selected
+  for the current highlight
+
 Enhancements (Highlights panel):
 * The left panel now scrolls when its contents are taller than the window
 * Tag names in the list wrap at whitespace instead of mid-word

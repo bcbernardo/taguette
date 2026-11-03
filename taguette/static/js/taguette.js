@@ -749,6 +749,27 @@ document.getElementById('document-change-delete').addEventListener('click', func
 var tags_list = document.getElementById('tags-list');
 var tags_modal_list = document.getElementById('highlight-add-tags');
 
+/*
+ * Tag selection in the "highlight" modal
+ *
+ * When a tag is created while the highlight form is open, it should get
+ * selected right away; and the list re-render must not lose the current
+ * selection.
+ */
+var tag_to_select_in_highlight = null;
+
+function selectTagInHighlight(tag_id) {
+  var checkbox = document.getElementById('highlight-add-tags-' + tag_id);
+  if(checkbox) {
+    checkbox.checked = true;
+    tag_to_select_in_highlight = null;
+  } else {
+    // The checkbox doesn't exist yet (the tag list hasn't been refreshed):
+    // check it next time the list is rendered
+    tag_to_select_in_highlight = tag_id;
+  }
+}
+
 function linkTag(elem, tag_path) {
   var url = '/project/' + project_id + '/highlights/' + encodeURIComponent(tag_path);
   elem.setAttribute('href', url);
@@ -1077,6 +1098,17 @@ function updateTagsList() {
 
   // The list in the highlight modal
 
+  // Remember which tags are checked, so the selection is preserved when
+  // the list is re-rendered (e.g. when a tag is created while the
+  // highlight form is open)
+  var checked_tag_ids = [];
+  var modal_checkboxes = tags_modal_list.querySelectorAll('input[name="highlight-add-tags"]');
+  for(var i = 0; i < modal_checkboxes.length; ++i) {
+    if(modal_checkboxes[i].checked) {
+      checked_tag_ids.push(modal_checkboxes[i].value);
+    }
+  }
+
   // Empty the list
   while(tags_modal_list.firstChild) {
     var first = tags_modal_list.firstChild;
@@ -1097,12 +1129,22 @@ function updateTagsList() {
     elem.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
       '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label">' + escapeHtml(tag.path) + '</label>';
+    // Restore the checked state. We set the property (not the attribute)
+    // so that resetting the form still clears it.
+    var checkbox = elem.querySelector('input');
+    checkbox.checked = checked_tag_ids.indexOf('' + tag.id) !== -1;
     tags_modal_list.insertBefore(elem, before);
   }
   if(entries.length == 0) {
     var elem = document.createElement('li');
     elem.textContent = gettext("no tags");
     tags_modal_list.insertBefore(elem, before);
+  }
+
+  // Select a tag that was just created from the highlight form, now that
+  // its checkbox exists
+  if(tag_to_select_in_highlight) {
+    selectTagInHighlight(tag_to_select_in_highlight);
   }
 
   console.log("Tags list updated");
@@ -1193,8 +1235,13 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     );
   }
   showSpinner();
-  req.then(function() {
+  req.then(function(result) {
     console.log("Tag posted");
+    if(tag_id === null && highlight_add_modal.classList.contains('show')) {
+      // The tag was created from the highlight form: select it there, as it
+      // is most likely meant to be applied to the current highlight
+      selectTagInHighlight(result.id);
+    }
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
   })
