@@ -321,6 +321,8 @@ function hideSpinner() {
  */
 
 var chunk_offsets = [];
+// Offsets of the second pane in split-screen mode ('R' prefix), see suggest.js
+var chunk_offsets_b = [];
 
 // Get the document offset from a position
 function describePos(node, offset) {
@@ -337,22 +339,30 @@ function describePos(node, offset) {
   if(node.id.substring(0, 11) != 'doc-offset-') {
     return null;
   }
-  return parseInt(node.id.substring(11)) + offset;
+  // Chunk ids may carry a pane prefix ('R' for the second split-screen pane)
+  var chunk_id = node.id.substring(11), num_start = 0;
+  while(num_start < chunk_id.length
+        && (chunk_id[num_start] < '0' || chunk_id[num_start] > '9')) {
+    ++num_start;
+  }
+  return parseInt(chunk_id.substring(num_start)) + offset;
 }
 
 // Find a position from the document offset
-function locatePos(pos) {
+// prefix '' is the main pane, 'R' is the second pane in split-screen mode
+function locatePos(pos, prefix) {
   // Find the right chunk
+  var offsets = prefix ? chunk_offsets_b : chunk_offsets;
   var chunk_start = 0;
-  for(var i = 0; i < chunk_offsets.length; ++i) {
-    if(chunk_offsets[i] > pos) {
+  for(var i = 0; i < offsets.length; ++i) {
+    if(offsets[i] > pos) {
       break;
     }
-    chunk_start = chunk_offsets[i];
+    chunk_start = offsets[i];
   }
 
   var offset = pos - chunk_start;
-  var node = document.getElementById('doc-offset-' + chunk_start);
+  var node = document.getElementById('doc-offset-' + (prefix || '') + chunk_start);
   while(node.firstChild) {
     node = node.firstChild;
   }
@@ -427,30 +437,34 @@ function splitAtPos(pos, after) {
   }
 }
 
-// Highlight a described selection
+// Highlight a described selection, in every pane currently shown
 function highlightSelection(saved, id, clickedCallback, title) {
   console.log("Highlighting", saved);
   if(saved === null) {
     return;
   }
-  var start = locatePos(saved[0]);
-  start = splitAtPos(start, false);
-  var end = locatePos(saved[1]);
-  end = splitAtPos(end, true);
+  var prefixes = document.getElementById('document-contents-b') ? ['', 'R'] : [''];
+  for(var p = 0; p < prefixes.length; ++p) {
+    var prefix = prefixes[p];
+    var start = locatePos(saved[0], prefix);
+    start = splitAtPos(start, false);
+    var end = locatePos(saved[1], prefix);
+    end = splitAtPos(end, true);
 
-  var node = start;
-  while(node != end) {
-    var next = nextElement(node);
-    if(node.nodeType == 3 && node.textContent) { // TEXT_NODE
-      var span = document.createElement('a');
-      span.className = 'highlight highlight-' + id;
-      span.setAttribute('data-highlight-id', '' + id);
-      span.setAttribute('title', title);
-      span.addEventListener('click', clickedCallback);
-      node.parentNode.insertBefore(span, node);
-      span.appendChild(node);
+    var node = start;
+    while(node != end) {
+      var next = nextElement(node);
+      if(node.nodeType == 3 && node.textContent) { // TEXT_NODE
+        var span = document.createElement('a');
+        span.className = 'highlight highlight-' + id;
+        span.setAttribute('data-highlight-id', '' + id);
+        span.setAttribute('title', title);
+        span.addEventListener('click', clickedCallback);
+        node.parentNode.insertBefore(span, node);
+        span.appendChild(node);
+      }
+      node = next;
     }
-    node = next;
   }
 }
 
@@ -1416,7 +1430,7 @@ function loadDocument(document_id) {
     return;
   }
   showSpinner();
-  getJSON(
+  return getJSON(
     '/api/project/' + project_id + '/document/' + document_id + '/content'
   )
   .then(function(result) {
