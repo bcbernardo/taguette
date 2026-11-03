@@ -494,12 +494,13 @@ class TestMultiuser(MyHTTPTestCase):
             body = await response.text()
         self.assertIn('we are good at engineering', body)
         idx = body.index('we are good at engineering')
-        init_js = '\n'.join(body[idx:].splitlines()[1:10])
+        init_js = '\n'.join(body[idx:].splitlines()[1:11])
         self.assertEqual(
             init_js,
             '<script type="text/javascript">\n'
             '  var user_login = "admin";\n'
             '  var project_id = 1;\n'
+            '\n'
             '  var last_event = -1;\n'
             '  var documents = {};\n'
             '  var highlights = {};\n'
@@ -511,6 +512,7 @@ class TestMultiuser(MyHTTPTestCase):
                         "1": {
                             "count": 0, "id": 1, "path": "interesting",
                             "description": "Further review required",
+                            "parent_id": None,
                         },
                     },
                     sort_keys=True),
@@ -542,7 +544,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 1, 'tag_id': 3,
-             'tag_path': 'people', 'description': "People of interest"})
+             'tag_path': 'people', 'description': "People of interest",
+             'parent_id': None})
         poll_proj2 = await self.poll_event(2, 1)
 
         async with self.apost(
@@ -553,7 +556,8 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertEqual(
             await poll_proj2,
             {'type': 'tag_add', 'id': 2, 'tag_id': 4,
-             'tag_path': 'interesting.places', 'description': ''})
+             'tag_path': 'interesting.places', 'description': '',
+             'parent_id': None})
         poll_proj2 = await self.poll_event(2, 2)
 
         # Create document 1 in project 1
@@ -561,7 +565,7 @@ class TestMultiuser(MyHTTPTestCase):
         async with self.apost(
             '/api/project/1/document/new',
             data=dict(name=name, description=''),
-            files=dict(file=('../NUL.html', 'text/plain', b'content here')),
+            files=dict(file=('NUL.html', 'text/plain', b'content here')),
         ) as response:
             self.assertEqual(response.status, 200)
             self.assertEqual(await response.json(), {"created": 1})
@@ -581,7 +585,7 @@ class TestMultiuser(MyHTTPTestCase):
             '/api/project/2/document/new',
             data=dict(name='otherdoc', description='Other one'),
             files=dict(
-                file=('../otherdoc.html', 'text/plain', b'different content'),
+                file=('otherdoc.html', 'text/plain', b'different content'),
             ),
         ) as response:
             self.assertEqual(response.status, 200)
@@ -629,7 +633,7 @@ class TestMultiuser(MyHTTPTestCase):
             '/api/project/2/document/new',
             data=dict(name='third', description='Last one'),
             files=dict(file=(
-                'C:\\Users\\Vicky\\Documents\\study.html',
+                'study.html',
                 'text/html',
                 b'<strong>Opinions</strong> and <em>facts</em>!',
             )),
@@ -961,7 +965,8 @@ class TestMultiuser(MyHTTPTestCase):
             self.assertEqual(await response.json(), {'id': 2})
         self.assertEqual(
             await poll_proj2,
-            {'type': 'tag_merge', 'id': 11, 'src_tag_id': 3, 'dest_tag_id': 2},
+            {'type': 'tag_merge', 'id': 11, 'src_tag_id': 3, 'dest_tag_id': 2,
+             'tag_count_changes': {'2': 1}},
         )
         poll_proj2 = await self.poll_event(2, 11)
 
@@ -983,6 +988,271 @@ class TestMultiuser(MyHTTPTestCase):
         await asyncio.sleep(2)
         self.assertNotDone(poll_proj1)
         self.assertNotDone(poll_proj2)
+
+    @gen_test(timeout=30)
+    async def test_tag_tree(self):
+        # Tag hierarchy, inheritance of highlights, moving and merging
+        #
+        # tag 1 'interesting' (default, root)
+        # tag 2 'topic'  (root)                <- A
+        # tag 3 'sub'    (parent: A)           <- B
+        # tag 4 'subsub' (parent: B)           <- C
+        # tag 5 'other'  (root, then under C)  <- D
+        # doc 1
+        # hl 1 tags=[C]   -> stored tags [A, B, C] (parents inherit)
+        # hl 2 tags=[D]   -> stored tags [D, C, B, A]
+        # move C to root  -> B and A lose hl 2
+        # merge C into A  -> A keeps everything, D re-parented to A
+        # delete A        -> B and D move up to the root
+
+        # Accept cookies, log in, create project 1
+        async with self.apost('/cookies', data=dict()) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/')
+        async with self.aget('/login') as response:
+            self.assertEqual(response.status, 200)
+        async with self.apost(
+            '/login',
+            data=dict(next='/', login='admin', password='hackme'),
+        ) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/')
+        async with self.apost(
+            '/project/new', data=dict(name='tag tree', description=''),
+        ) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/project/1')
+
+        poll = await self.poll_event(1, -1)
+
+        # Add a document
+        async with self.apost(
+            '/api/project/1/document/new',
+            data=dict(name='doc', description=''),
+            files=dict(file=('doc.html', 'text/html', b'some content')),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {"created": 1})
+        self.assertEqual(
+            await poll,
+            {'type': 'document_add', 'id': 1, 'document_id': 1,
+             'document_name': 'doc', 'description': ''})
+        poll = await self.poll_event(1, 1)
+
+        # Create tags: A, B (child of A), C (child of B), D
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='topic', description=''),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {'id': 2})
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_add', 'id': 2, 'tag_id': 2, 'tag_path': 'topic',
+             'description': '', 'parent_id': None})
+        poll = await self.poll_event(1, 2)
+
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='sub', description='', parent_id=2),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {'id': 3})
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_add', 'id': 3, 'tag_id': 3, 'tag_path': 'sub',
+             'description': '', 'parent_id': 2})
+        poll = await self.poll_event(1, 3)
+
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='subsub', description='', parent_id=3),
+        ) as response:
+            self.assertEqual(response.status, 200)
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_add', 'id': 4, 'tag_id': 4, 'tag_path': 'subsub',
+             'description': '', 'parent_id': 3})
+        poll = await self.poll_event(1, 4)
+
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='other', description=''),
+        ) as response:
+            self.assertEqual(response.status, 200)
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_add', 'id': 5, 'tag_id': 5, 'tag_path': 'other',
+             'description': '', 'parent_id': None})
+        poll = await self.poll_event(1, 5)
+
+        # Highlight on C: stored on A, B and C (parents inherit)
+        async with self.apost(
+            '/api/project/1/document/1/highlight/new',
+            json=dict(start_offset=0, end_offset=4, tags=[4]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {'id': 1})
+        self.assertEqual(
+            await poll,
+            {'type': 'highlight_add', 'id': 6, 'highlight_id': 1,
+             'document_id': 1, 'start_offset': 0, 'end_offset': 4,
+             'tags': [2, 3, 4], 'tag_count_changes': {'2': 1, '3': 1, '4': 1}})
+        poll = await self.poll_event(1, 6)
+
+        # Highlight with a tag from another project is still rejected
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='bad', description='', parent_id=999),
+        ) as response:
+            self.assertEqual(response.status, 404)
+
+        # Move D under C: no highlights to inherit
+        async with self.apost(
+            '/api/project/1/tag/5',
+            json=dict(parent_id=4),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {'id': 5})
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_move', 'id': 7, 'tag_id': 5, 'parent_id': 4})
+        poll = await self.poll_event(1, 7)
+
+        # Highlight on D: bubbles up to C, B and A
+        async with self.apost(
+            '/api/project/1/document/1/highlight/new',
+            json=dict(start_offset=5, end_offset=11, tags=[5]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+        self.assertEqual(
+            await poll,
+            {'type': 'highlight_add', 'id': 8, 'highlight_id': 2,
+             'document_id': 1, 'start_offset': 5, 'end_offset': 11,
+             'tags': [2, 3, 4, 5], 'tag_count_changes': {'2': 1, '3': 1,
+                                                        '4': 1, '5': 1}})
+        poll = await self.poll_event(1, 8)
+
+        # Cycles are rejected
+        async with self.apost(
+            '/api/project/1/tag/2', json=dict(parent_id=4),
+        ) as response:
+            self.assertEqual(response.status, 400)
+        async with self.apost(
+            '/api/project/1/tag/4', json=dict(parent_id=4),
+        ) as response:
+            self.assertEqual(response.status, 400)
+
+        # Move C (with its subtree) back to the root: B and A lose the
+        # highlights that only C's subtree justified
+        async with self.apost(
+            '/api/project/1/tag/4', json=dict(parent_id=None),
+        ) as response:
+            self.assertEqual(response.status, 200)
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_move', 'id': 9, 'tag_id': 4, 'parent_id': None,
+             'tag_count_changes': {'3': -2, '2': -2}})
+        poll = await self.poll_event(1, 9)
+
+        # Merge C into A: A gets C's highlights back, D moves up to A
+        async with self.apost(
+            '/api/project/1/tag/merge', json=dict(src=4, dest=2),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {'id': 2})
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_merge', 'id': 10, 'src_tag_id': 4,
+             'dest_tag_id': 2, 'tag_count_changes': {'2': 2}})
+        poll = await self.poll_event(1, 10)
+
+        # Merging into a descendant is rejected
+        async with self.apost(
+            '/api/project/1/tag/merge', json=dict(src=2, dest=5),
+        ) as response:
+            self.assertEqual(response.status, 400)
+
+        # Check the database state
+        db = self.application.DBSession()
+        tags = {
+            tag.id: tag
+            for tag in db.query(database.Tag)
+            .filter(database.Tag.project_id == 1)
+        }
+        self.assertEqual(
+            {tag_id: (tag.path, tag.parent_id)
+             for tag_id, tag in tags.items()},
+            {1: ('interesting', None),
+             2: ('topic', None),
+             3: ('sub', 2),
+             5: ('other', 2)},
+        )
+        hl1 = db.query(database.Highlight).get(1)
+        hl2 = db.query(database.Highlight).get(2)
+        self.assertEqual(sorted(t.id for t in hl1.tags), [2])
+        self.assertEqual(sorted(t.id for t in hl2.tags), [2, 5])
+
+        # Tag view of the parent shows the inherited highlights
+        async with self.aget('/api/project/1/highlights/topic') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {
+                'highlights': [
+                    {'id': 1, 'document_id': 1, 'tags': [2],
+                     'content': "some"},
+                    {'id': 2, 'document_id': 1, 'tags': [2, 5],
+                     'content': "conten"},
+                ],
+                'pages': 1,
+            })
+
+        # Deleting A (tag 2) moves its children (B, D) up to the root and
+        # emits the count changes for the highlights A itself carried
+        cookies = self.http_client.cookie_jar.filter_cookies(
+            self.get_url('/'))
+        async with self.http_client.delete(
+            self.get_url('/api/project/1/tag/2'),
+            params={'_xsrf': cookies['_xsrf'].value},
+        ) as response:
+            self.assertEqual(response.status, 204)
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_delete', 'id': 11, 'tag_id': 2})
+        poll = await self.poll_event(1, 11)
+
+        # Children were re-parented to the root, links to A are gone
+        db = self.application.DBSession()
+        tags = {
+            tag.id: tag
+            for tag in db.query(database.Tag)
+            .filter(database.Tag.project_id == 1)
+        }
+        self.assertEqual(
+            {tag_id: (tag.path, tag.parent_id)
+             for tag_id, tag in tags.items()},
+            {1: ('interesting', None),
+             3: ('sub', None),
+             5: ('other', None)},
+        )
+        hl1 = db.query(database.Highlight).get(1)
+        hl2 = db.query(database.Highlight).get(2)
+        self.assertEqual(sorted(t.id for t in hl1.tags), [])
+        self.assertEqual(sorted(t.id for t in hl2.tags), [5])
+
+        # Creating a tag with a parent, through the regular endpoint
+        async with self.apost(
+            '/api/project/1/tag/new',
+            json=dict(path='nested', description='', parent_id=5),
+        ) as response:
+            self.assertEqual(response.status, 200)
+        self.assertEqual(
+            await poll,
+            {'type': 'tag_add', 'id': 12, 'tag_id': 6, 'tag_path': 'nested',
+             'description': '', 'parent_id': 5})
+        poll = await self.poll_event(1, 12)
+
+        await asyncio.sleep(1)
+        self.assertNotDone(poll)
 
     @gen_test(timeout=30)
     async def test_reset_password(self):
@@ -1339,13 +1609,13 @@ class TestMultiuser(MyHTTPTestCase):
                 (30, 'db1user', 3, -3, {'type': 'document_delete'}),
                 (31, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 7,
-                  'tag_path': 'db2tag11'}),
+                  'tag_path': 'db2tag11', 'parent_id': None}),
                 (32, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': -3,
-                  'tag_path': 'db2tagF'}),
+                  'tag_path': 'db2tagF', 'parent_id': None}),
                 (33, 'db1user', 3, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 8,
-                  'tag_path': 'db2tag12'}),
+                  'tag_path': 'db2tag12', 'parent_id': None}),
                 (34, 'db1user', 3, None, {'type': 'tag_delete', 'tag_id': -3}),
                 (35, 'db1user', 3, 7,
                  {'type': 'highlight_add', 'highlight_id': 7,
@@ -1377,12 +1647,12 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertRowsEqualsExceptDates(
             db1.execute(database.Tag.__table__.select()),
             [
-                (1, 1, 'db1tag11', ''),
-                (2, 1, 'db1tag12', ''),
-                (4, 2, 'db1tag21', ''),
-                (5, 2, 'db1tag22', ''),
-                (7, 3, 'db2tag11', ''),
-                (8, 3, 'db2tag12', ''),
+                (1, 1, 'db1tag11', '', None),
+                (2, 1, 'db1tag12', '', None),
+                (4, 2, 'db1tag21', '', None),
+                (5, 2, 'db1tag22', '', None),
+                (7, 3, 'db2tag11', '', None),
+                (8, 3, 'db2tag12', '', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
@@ -1491,13 +1761,13 @@ class TestMultiuser(MyHTTPTestCase):
                 (4, 'admin', 1, -6, {'type': 'document_delete'}),
                 (5, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 1,
-                  'tag_path': 'db1tag21'}),
+                  'tag_path': 'db1tag21', 'parent_id': None}),
                 (6, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': -6,
-                  'tag_path': 'db1tagF'}),
+                  'tag_path': 'db1tagF', 'parent_id': None}),
                 (7, 'admin', 1, None,
                  {'type': 'tag_add', 'description': '', 'tag_id': 2,
-                  'tag_path': 'db1tag22'}),
+                  'tag_path': 'db1tag22', 'parent_id': None}),
                 (8, 'admin', 1, None,
                  {'type': 'tag_delete', 'tag_id': -6}),
                 (9, 'admin', 1, 1,
@@ -1532,8 +1802,8 @@ class TestMultiuser(MyHTTPTestCase):
                 .order_by(database.Tag.__table__.c.id)
             ),
             [
-                (1, 1, 'db1tag21', ''),
-                (2, 1, 'db1tag22', ''),
+                (1, 1, 'db1tag21', '', None),
+                (2, 1, 'db1tag22', '', None),
             ],
         )
         self.assertRowsEqualsExceptDates(
