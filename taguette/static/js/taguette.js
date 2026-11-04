@@ -1236,7 +1236,20 @@ function updateTagsList() {
   // Fill up the list again, as a tree when tags are nested
   var before = tags_modal_list.firstChild;
 
+  // The tags-ai feature can restrict and reorder this list (ranked
+  // suggestions while creating a highlight, search): {visible: {id: true}}
+  // filters the tree, {order: [tag, ...]} renders a flat ranked list
+  var modal_view = (typeof tagAiModalView === 'function')
+    ? tagAiModalView() : null;
+  var modal_visible = modal_view ? modal_view.visible : null;
+  var modal_order = modal_view ? modal_view.order : null;
+  var modal_shown = 0;
+
   function renderModalTagItem(tag) {
+    if(modal_visible && !modal_visible[tag.id]) {
+      return null;
+    }
+    modal_shown++;
     var li = document.createElement('li');
     li.className = 'tag-name form-check';
     li.innerHTML =
@@ -1251,20 +1264,40 @@ function updateTagsList() {
       var children_ul = document.createElement('ul');
       children_ul.className = 'tag-children';
       for(var i = 0; i < children.length; ++i) {
-        children_ul.appendChild(renderModalTagItem(children[i]));
+        var child_li = renderModalTagItem(children[i]);
+        if(child_li) {
+          children_ul.appendChild(child_li);
+        }
       }
       li.appendChild(children_ul);
     }
     return li;
   }
 
-  var roots = tagRoots();
-  for(var i = 0; i < roots.length; ++i) {
-    tags_modal_list.insertBefore(renderModalTagItem(roots[i]), before);
+  if(modal_order) {
+    // Ranked suggestions: a flat list, best first
+    for(var i = 0; i < modal_order.length; ++i) {
+      var li = renderModalTagItem(modal_order[i]);
+      if(li) {
+        tags_modal_list.insertBefore(li, before);
+      }
+    }
+  } else {
+    var roots = tagRoots();
+    for(var i = 0; i < roots.length; ++i) {
+      var li = renderModalTagItem(roots[i]);
+      if(li) {
+        tags_modal_list.insertBefore(li, before);
+      }
+    }
   }
   if(entries.length == 0) {
     var elem = document.createElement('li');
     elem.textContent = gettext("no tags");
+    tags_modal_list.insertBefore(elem, before);
+  } else if(modal_visible && modal_shown == 0) {
+    var elem = document.createElement('li');
+    elem.textContent = gettext("No tags match.");
     tags_modal_list.insertBefore(elem, before);
   }
 
@@ -1377,6 +1410,10 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     if(tag_id !== null && parent_id !== old_parent_id) {
       // The tag moved in the tree: allow undoing it with Ctrl+Z
       pushTagUndo({tag_id: tag_id, parent_id: old_parent_id});
+    }
+    if(tag_id === null && typeof tagAiAfterTagSaved === 'function') {
+      // Similar-tag actions picked while the tag didn't exist yet
+      tagAiAfterTagSaved(result.id);
     }
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
@@ -2077,10 +2114,17 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     parseInt(document.getElementById('highlight-add-end').value)
   ];
   var hl_tags = [];
+  var edited_tags = highlight_id
+    ? highlights['' + highlight_id].tags : [];
   var entries = Object.entries(tags);
   for(var i = 0; i < entries.length; ++i) {
     var id = entries[i][1].id;
-    if(document.getElementById('highlight-add-tags-' + id).checked) {
+    // The checkbox is missing when the tags-ai filter hides the tag: a
+    // tag already on the highlight keeps its state, one never picked
+    // stays off
+    var checkbox = document.getElementById('highlight-add-tags-' + id);
+    if(checkbox ? checkbox.checked
+                : edited_tags.indexOf(id) !== -1) {
       hl_tags.push(id);
     }
   }
