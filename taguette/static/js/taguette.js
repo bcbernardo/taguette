@@ -1267,7 +1267,13 @@ function updateTagsList() {
     li.className = 'tag-name form-check';
     li.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
-      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label">' + escapeHtml(tag.path) + '</label>';
+      '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label">' + escapeHtml(tag.path) + '</label>' +
+      '<a href="javascript:void(0)" class="tag-pencil tag-modal-pencil" title="' + gettext("Edit tag name") + '">&#9998;</a>';
+    li.querySelector('.tag-modal-pencil').addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      tagModalEditName(li, tag);
+    });
     // Restore the checked state. We set the property (not the attribute)
     // so that resetting the form still clears it.
     var checkbox = li.querySelector('input');
@@ -1332,6 +1338,72 @@ function updateTagsList() {
 }
 
 updateTagsList();
+
+// Rename a tag in place inside the highlight modal's tag list
+function tagModalEditName(li, tag) {
+  var label = li.querySelector(':scope > label');
+  var checkbox = li.querySelector(':scope > input');
+  var pencil = li.querySelector(':scope > .tag-modal-pencil');
+  var editor = document.createElement('input');
+  editor.type = 'text';
+  editor.className = 'form-control form-control-sm tag-modal-editor';
+  editor.value = tag.path;
+  label.style.display = 'none';
+  pencil.style.display = 'none';
+  li.insertBefore(editor, pencil);
+  editor.focus();
+  editor.select();
+
+  var done = false;
+  function finish(save) {
+    if(done) {
+      return;
+    }
+    done = true;
+    var value = editor.value;
+    if(!save || value == tag.path) {
+      if(editor.parentNode) {
+        editor.parentNode.removeChild(editor);
+      }
+      label.style.display = '';
+      pencil.style.display = '';
+      return;
+    }
+    if(!value.trim()) {
+      alert(gettext("Invalid tag name"));
+      done = false;
+      editor.focus();
+      return;
+    }
+    showSpinner();
+    saveTagField(tag.id, {path: value})
+    .then(function() {
+      tags['' + tag.id].path = value;
+      updateTagsList();
+    })
+    .catch(function(error) {
+      console.error("Failed to rename tag:", error);
+      alert(gettext("Couldn't update the tag!") + "\n\n" + error);
+      done = false;
+      editor.focus();
+    })
+    .then(hideSpinner);
+  }
+  editor.addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();  // don't submit the highlight form
+      finish(true);
+    } else if(e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();  // don't close the modal
+      finish(false);
+    }
+  });
+  editor.addEventListener('blur', function() {
+    finish(true);
+  });
+}
 
 function updateTagCount(id, delta) {
   var tag = tags['' + id];
