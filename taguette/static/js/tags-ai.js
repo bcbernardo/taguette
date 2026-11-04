@@ -1184,7 +1184,10 @@ function tagAiSimilarRender() {
   box.style.display = '';
   box.textContent = '';
   box.appendChild(taguEl('span', 'tag-ai-similar-label',
-                         gettext('Similar tags:')));
+                         gettext('Similar tags (click one for options):')));
+  var chip_title = (tag_ai_tag.editing === null)
+    ? gettext('Use as a parent, as a descendant, or use this tag instead of the new one')
+    : gettext('Set as a parent, as a descendant, or merge with this tag');
   tag_ai_tag.similar.forEach(function(s, i) {
     if(i > 0) {
       box.appendChild(document.createTextNode(' '));
@@ -1193,7 +1196,7 @@ function tagAiSimilarRender() {
     chip.href = 'javascript:void(0)';
     chip.className = 'badge badge-light tag-ai-similar-chip';
     chip.textContent = s.tag.path;
-    chip.title = gettext('Click to organize the hierarchy with this tag');
+    chip.title = chip_title;
     chip.addEventListener('click', function(e) {
       e.preventDefault();
       tagAiShowMenu(s.tag, e.clientX, e.clientY);
@@ -1203,15 +1206,33 @@ function tagAiSimilarRender() {
 }
 
 /*
- * Context menu on a similar tag: set as parent / descendant, or merge.
- * "Set as descendant" and "Merge" for a tag that doesn't exist yet are
- * stored and applied by tagAiAfterTagSaved() once it is saved.
+ * Context menu on a similar tag: set as parent / descendant, and —
+ * when creating a tag — "use this tag instead" (drop the new tag and
+ * adopt the existing one); when editing, "merge with this tag".
+ * "Set as descendant" for a tag that doesn't exist yet is stored and
+ * applied by tagAiAfterTagSaved() once it is saved.
  */
 
 function tagAiHideMenu() {
   var menu = document.getElementById('tag-ai-menu');
   if(menu) {
     menu.style.display = 'none';
+  }
+}
+
+// Drop the tag being created: adopt the existing similar one instead
+// (no near-duplicate). From the highlight form, check it right away so
+// the user can just save the highlight.
+function tagAiUseInstead(tag) {
+  var modal = document.getElementById('tag-add-modal');
+  if(modal) {
+    $(modal).modal('hide');
+  }
+  console.log('Tag AI: using existing tag instead of creating', tag.path);
+  if(highlight_add_modal.classList.contains('show')) {
+    highlight_add_tag_state['' + tag.id] = true;
+    updateTagsList();  // renders the tag (appended after the suggestions)
+    selectTagInHighlight(tag.id);  // checks and scrolls to it
   }
 }
 
@@ -1261,15 +1282,17 @@ function tagAiShowMenu(tag, x, y) {
         tag_ai_tag.pending.descendant = tag.id;
       }
     });
-  item(gettext('Merge…'),
-    creating ? gettext('Opens after you save the new tag') : null,
-    function() {
-      if(tag_ai_tag.editing !== null) {
-        showMergeModal(tag_ai_tag.editing, tag.id);
-      } else {
-        tag_ai_tag.pending.merge = tag.id;
-      }
+  if(creating) {
+    item(gettext('Use this tag instead'),
+      gettext('Close this form without creating a new tag'),
+      function() {
+        tagAiUseInstead(tag);
+      });
+  } else {
+    item(gettext('Merge with this tag'), null, function() {
+      showMergeModal(tag_ai_tag.editing, tag.id);
     });
+  }
 
   menu.style.display = '';
   // Fixed-positioned, clamped to the viewport

@@ -29,8 +29,11 @@ New feature (tag AI helpers):
   confound with"* (the latter fed with cosine-similar non-ancestor tags so
   the model can contrast the themes)
 * The tag form lists the most cosine-similar tags below the description;
-  clicking one offers *Set as parent*, *Set as descendant* and *Merge…*
-  (the last two also work for a brand-new tag, applied once it is saved)
+  clicking one opens a menu: *Set as parent*, *Set as descendant*
+  (applied when the new tag is saved), and — while creating a tag —
+  *Use this tag instead*, which drops the new tag and checks the
+  existing one in the highlight form (no near-duplicates); while
+  editing, the third option is *Merge with this tag*
 * New *AI tags* tab in the configuration screen: pick the chat model
   (one of your API keys, a local Ollama/llama.cpp server, or a custom
   endpoint), set the temperature, and edit the five prompt templates

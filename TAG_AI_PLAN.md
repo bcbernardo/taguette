@@ -112,14 +112,19 @@ order: name, description (+AI actions), similar tags, parent picker.
   contrast the themes. Accept appends the section to the description.
 - **Similar tags** below the description: the top 5 most cosine-similar
   tags (embeddings, or lexical fallback), excluding the edited tag, its
-  ancestors and descendants. Clicking one opens a context menu:
+  ancestors and descendants. The label says "click one for options" and
+  every chip carries a tooltip; clicking opens a context menu:
   - *Set as parent* — fills the parent search bar;
   - *Set as descendant* — re-parents the clicked tag under the edited one
     (POST to the existing tag-update endpoint); while the tag form is
     creating a *new* tag, the action is stored and applied by
     `tagAiAfterTagSaved()` once it exists;
-  - *Merge…* — the existing merge modal with the tag preselected (also
-    deferred for not-yet-saved tags).
+  - *Use this tag instead* (create mode only) — drops the tag being
+    created: the form closes and, when opened from the highlight form,
+    the existing tag is checked (and scrolled to) so the user just
+    saves the highlight — the whole point is avoiding near-duplicates;
+  - *Merge with this tag* (edit mode only) — the existing merge modal
+    with the tag preselected.
 
 **Tag view header** (`/project/<id>/highlights/<tag>`): the same
 description actions run inline below the definition. tags-ai.js wraps
