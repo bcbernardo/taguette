@@ -17,7 +17,8 @@ New feature (tag AI helpers):
 * Creating a tag from the highlight form asks the configured LLM for
   three tag names (grounded in the highlighted text and the existing
   tags); the suggestions sit one per line, blue like tag links, and
-  fill the name field with one click, ready for manual edits. The
+  fill the name field with one click, ready for manual edits — at which
+  point they are replaced by a *Re-generate title with AI* link. The
   answer parser tolerates preambles, numbering, markdown and per-name
   explanations; when the model returns nothing there is a *try again*
   link, and the raw model answer is logged to the browser console for

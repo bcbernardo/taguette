@@ -844,6 +844,17 @@ function tagAiSuggestNames() {
         tagAddPathFit();
         input.focus();
         tagAiSimilarRefresh();
+        // Name accepted: swap the list for a re-generate link
+        box.textContent = '';
+        var again = document.createElement('a');
+        again.href = 'javascript:void(0)';
+        again.className = 'tag-ai-retry';
+        again.textContent = gettext('Re-generate title with AI');
+        again.addEventListener('click', function(e2) {
+          e2.preventDefault();
+          tagAiSuggestNames();
+        });
+        box.appendChild(again);
       });
       box.appendChild(chip);
     });
