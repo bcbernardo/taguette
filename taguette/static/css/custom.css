@@ -454,8 +454,10 @@ a.dropdown-item:hover {
   56%, 100% { opacity: 0.12; }
 }
 
+/* While dragged, the bracket follows the boundary (re-rendered at the
+   preview offset): keep it visible but steady, and outside hit-testing
+   so the caret position resolves to the text right next to it */
 .hl-bracket.hl-dragging {
-  opacity: 0.1;
   pointer-events: none;
   animation: none;
 }

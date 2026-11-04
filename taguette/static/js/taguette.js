@@ -2022,20 +2022,11 @@ function removeHighlight(id) {
     return;
   }
 
-  var highlight = highlights[id];
   delete highlights[id];
   console.log("Highlight removed:", id);
 
   // Loop over highlight-<id> elements
-  var elements = document.getElementsByClassName('highlight-' + id);
-  for(var i = 0; i < elements.length; ++i) {
-    // Move children up and delete this element
-    var node = elements[i];
-    while(node.firstChild) {
-      node.parentNode.insertBefore(node.firstChild, node);
-    }
-    node.parentNode.removeChild(node);
-  }
+  hlUnwrapHighlight(id);
 }
 
 // "Go to last highlight": scroll so that the most recently
@@ -2113,8 +2104,11 @@ function createHighlight(selection) {
 }
 
 function openHighlightTags(id) {
-  document.getElementById('highlight-add-form').reset();
   id = '' + id;
+  if(!highlights[id]) {
+    return;
+  }
+  document.getElementById('highlight-add-form').reset();
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
@@ -2352,6 +2346,22 @@ function hlSelectClear() {
   hlMenuHide();
 }
 
+// Unwrap a highlight's elements from the DOM, leaving the text in
+// place. Unlike removeHighlight(), the stored highlight is kept: the
+// drag preview uses this to re-render at the preview offsets without
+// losing the highlight (a static elements snapshot is used, so that
+// removing elements while looping doesn't skip any)
+function hlUnwrapHighlight(id) {
+  var elements = document.querySelectorAll('.highlight-' + id);
+  for(var i = 0; i < elements.length; ++i) {
+    var node = elements[i];
+    while(node.firstChild) {
+      node.parentNode.insertBefore(node.firstChild, node);
+    }
+    node.parentNode.removeChild(node);
+  }
+}
+
 // Click on a highlight: select it (ignore clicks that land on a
 // boundary bracket nested inside the highlight's own elements)
 function highlightClicked(e) {
@@ -2384,7 +2394,7 @@ function hlSelectRender(which) {
     return;
   }
   hlBracketsRemove();
-  removeHighlight(sel.id);
+  hlUnwrapHighlight(sel.id);
   try {
     highlightSelection([sel.start, sel.end], sel.id, highlightClicked, hlTitleFor(sel.id));
   } catch(error) {
@@ -2442,7 +2452,7 @@ function hlBracketMouseDown(e) {
       // switch): put the stored extent back
       var stored = highlights[sel.id];
       if(stored) {
-        removeHighlight(sel.id);
+        hlUnwrapHighlight(sel.id);
         try {
           highlightSelection([stored.start_offset, stored.end_offset], sel.id, highlightClicked, hlTitleFor(sel.id));
         } catch(err) {
@@ -2466,6 +2476,12 @@ function hlBracketMouseDown(e) {
     }
     hlSelectClear();
     console.log("Posting resize for highlight " + id);
+    // Update the stored highlight right away (the long-poll event will
+    // confirm it), so that clicks on the highlight keep working in the
+    // meantime
+    var old_start = hl.start_offset, old_end = hl.end_offset;
+    hl.start_offset = start;
+    hl.end_offset = end;
     showSpinner();
     postJSON(
       '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + id,
@@ -2478,9 +2494,11 @@ function hlBracketMouseDown(e) {
       console.error("Failed to resize highlight:", error);
       alert(gettext("Couldn't update highlight!") + "\n\n" + error);
       // Put the highlight back the way it was
-      removeHighlight(id);
+      hl.start_offset = old_start;
+      hl.end_offset = old_end;
+      hlUnwrapHighlight(id);
       try {
-        highlightSelection([hl.start_offset, hl.end_offset], id, highlightClicked, hlTitleFor(id));
+        highlightSelection([old_start, old_end], id, highlightClicked, hlTitleFor(id));
       } catch(err) {
         console.error("Error restoring highlight:", err);
       }
