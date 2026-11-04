@@ -724,38 +724,42 @@ function sugQaQuestion() {
   };
 }
 
-// Cache-isolation key: decisions from different servers/models never mix
+// Cache-isolation key: decisions from different servers/models never mix.
+// cfg is the resolved wire config (see sugQaResolved).
 function sugQaBase(cfg) {
   if(cfg.provider === 'laya') {
-    return 'laya|' + (cfg.layaUrl || '');
+    return 'laya|' + (cfg.url || '');
   }
-  return 'jev|' + (cfg.jevUrl || '') + '|' + (cfg.jevModel || '');
+  return 'jev|' + (cfg.url || '') + '|' + (cfg.model || '');
 }
 
-function sugQaConfigFromForm() {
-  return {
-    provider: document.getElementById('sug-qa-provider').value,
-    layaUrl: document.getElementById('sug-qa-laya-url').value.trim(),
-    jevKey: document.getElementById('sug-qa-jev-key').value,
-    jevModel: document.getElementById('sug-qa-jev-model').value.trim(),
-    jevUrl: document.getElementById('sug-qa-jev-url').value.trim(),
-  };
+// The Jev decisions endpoint for OpenRouter keys (absolute: it does not
+// live under the OpenAI-compatible /v1 base); other providers have no
+// known default, so the task's URL must be filled in
+function sugQaDefaultPath(key) {
+  return key && key.provider === 'openrouter'
+    ? 'https://openrouter.ai/api/alpha/decisions'
+    : '';
 }
 
-function sugLoadQaConfig() {
-  try {
-    return JSON.parse(window.localStorage.getItem('taguette_suggest_qa') || 'null');
-  } catch(e) {
+// Resolve the stored decisions task into the wire config used by
+// sugQaClassifyOne: {provider: 'laya'|'jev', url, key, authHeader,
+// authScheme, model}. null when the task is off/unusable.
+function sugQaResolved() {
+  var r = taguTaskResolve('decisions', sugQaDefaultPath);
+  if(!r || (r.local && r.local.kind !== 'decisions')) {
     return null;
   }
-}
-
-function sugSaveQaConfig(cfg) {
-  try {
-    window.localStorage.setItem('taguette_suggest_qa', JSON.stringify(cfg));
-  } catch(e) {
-    /* private mode: config just won't persist */
+  if(r.local) {
+    return {provider: 'laya', url: r.url};
   }
+  var cfg = {provider: 'jev', url: r.url, key: r.token,
+             model: r.model || '~typesafe/jev-latest'};
+  if(r.authHeader) {
+    cfg.authHeader = r.authHeader;
+    cfg.authScheme = r.authScheme;
+  }
+  return cfg;
 }
 
 // Speaker turns as {start, end, text} blocks over plainText. Block
@@ -924,18 +928,19 @@ function sugQaClassifyOne(text, cfg) {
       SUG_QA_CACHE[key] = stored[key];
       return stored[key];
     }
-    var url, headers = {'Content-Type': 'application/json'};
+    var headers = {'Content-Type': 'application/json'};
     var body = {state: text, questions: sugQaQuestion()};
     if(cfg.provider === 'laya') {
-      url = (cfg.layaUrl || 'http://localhost:8000').replace(/\/+$/, '')
-        + '/v1/systemone';
+      // Local server, no key
     } else {
-      url = (cfg.jevUrl || 'https://openrouter.ai/api/alpha/decisions').replace(/\/+$/, '');
-      headers['Authorization'] = 'Bearer ' + (cfg.jevKey || '');
-      body.model = cfg.jevModel || '~typesafe/jev-latest';
+      if(cfg.key) {
+        headers[cfg.authHeader || 'Authorization'] =
+          (cfg.authScheme != null ? cfg.authScheme : 'Bearer ') + cfg.key;
+      }
+      body.model = cfg.model || '~typesafe/jev-latest';
     }
-    return fetch(url, {method: 'POST', mode: 'cors', headers: headers,
-                       body: JSON.stringify(body)})
+    return fetch(cfg.url, {method: 'POST', mode: 'cors', headers: headers,
+                           body: JSON.stringify(body)})
       .then(function(resp) {
         if(resp.status != 200) {
           throw new Error('HTTP ' + resp.status);
@@ -1107,21 +1112,18 @@ function sugBuildPlainIndex() {
 
 
 /*
- * Embedding client (OpenAI-compatible /embeddings endpoint)
+ * Embedding client (OpenAI-compatible /embeddings endpoint). Configuration
+ * lives in the Taguette configuration screen ("Embeddings" tab, see
+ * config.js): a saved API key, a local service, or a custom endpoint.
  */
 
 function sugLoadConfig() {
-  try {
-    var cfg = JSON.parse(window.localStorage.getItem('taguette_suggest_config'));
-    if(cfg && cfg.url) {
-      return cfg;
-    }
-  } catch(e) { /* ignore */ }
-  return null;
-}
-
-function sugSaveConfig(cfg) {
-  window.localStorage.setItem('taguette_suggest_config', JSON.stringify(cfg));
+  var r = taguTaskResolve('embeddings', '/embeddings');
+  if(!r || !r.url || (r.local && r.local.kind !== 'embeddings')) {
+    return null;
+  }
+  return {url: r.url, token: r.token, model: r.model,
+          authHeader: r.authHeader, authScheme: r.authScheme};
 }
 
 // texts -> Promise<Array<vector>>. use_cache=false skips the persistent
@@ -1152,9 +1154,7 @@ function sugEmbed(texts, cfg, use_cache) {
       batches.push(to_fetch.slice(i, i + 32));
     }
     var headers = {'Content-Type': 'application/json'};
-    if(cfg.token) {
-      headers['Authorization'] = 'Bearer ' + cfg.token;
-    }
+    taguApplyAuth(headers, cfg);
     var new_entries = [];
     var fetched = 0; // running cursor into missing_idx
     var p = Promise.resolve();
@@ -3037,8 +3037,8 @@ function sugRebuildAfterReload() {
       b.prob = null;
     });
     sug_session.roles = blocks;
-    var cfg = sugLoadQaConfig();
-    if(cfg && cfg.provider) {
+    var cfg = sugQaResolved();
+    if(cfg) {
       var gen = sug_session.editGen;
       sugQaClassifyAll(blocks, cfg, function(i, role, prob) {
         if(!sug_session || sug_session.editGen !== gen) {
@@ -3231,50 +3231,86 @@ function sugStopBeforeNavigate(next) {
 
 
 /*
- * Q/A (interviewer vs interviewee) modal
+ * Q/A (interviewer vs interviewee) — decisions tab of the configuration
+ * screen (registered below), plus the classification run itself
  */
 
+// The suggest toolbar "Q / A" button opens the configuration screen on the
+// decisions tab (the old dedicated modal was folded into that screen)
 function sugOpenQa() {
-  var cfg = sugLoadQaConfig() || {provider: 'laya', layaUrl: 'http://localhost:8000',
-                                  jevKey: '', jevModel: '~typesafe/jev-latest',
-                                  jevUrl: 'https://openrouter.ai/api/alpha/decisions'};
-  document.getElementById('sug-qa-provider').value = cfg.provider || '';
-  document.getElementById('sug-qa-laya-url').value = cfg.layaUrl || 'http://localhost:8000';
-  document.getElementById('sug-qa-jev-key').value = cfg.jevKey || '';
-  document.getElementById('sug-qa-jev-model').value = cfg.jevModel || '~typesafe/jev-latest';
-  document.getElementById('sug-qa-jev-url').value = cfg.jevUrl || 'https://openrouter.ai/api/alpha/decisions';
-  document.getElementById('sug-qa-test-result').textContent = '';
-  document.getElementById('sug-qa-answers-only').checked =
-    sug_session ? !!sug_session.answersOnly : true;
-  sugQaSyncProvider();
-  $(document.getElementById('suggest-qa-modal')).modal().drags({handle: '.modal-header'});
+  taguOpenConfig('decisions');
 }
 
-function sugQaSyncProvider() {
-  var provider = document.getElementById('sug-qa-provider').value;
-  document.getElementById('sug-qa-laya-group').style.display =
-    provider === 'laya' ? '' : 'none';
-  document.getElementById('sug-qa-jev-group').style.display =
-    provider === 'jev' ? '' : 'none';
-  document.getElementById('sug-qa-run').disabled = !provider;
-  document.getElementById('sug-qa-test').disabled = !provider;
+// The tab itself: task panel + session actions (classify, answers-only)
+function sugQaTabBuild(el) {
+  var intro = taguEl('p', 'text-muted', gettext(
+    'Decision model that classifies each speaker turn as an interviewer question or an interviewee answer (used by Q / A). Both providers speak the same Jev wire protocol: Laya runs locally, Jev is served through OpenRouter (or any compatible endpoint).'));
+  el.appendChild(intro);
+  taguTaskPanel(el, {
+    task: 'decisions',
+    locals: ['laya'],
+    defaultSource: 'local:laya',
+    defaultPath: sugQaDefaultPath,
+    modelPlaceholder: function(src) {
+      return src.indexOf('local:') === 0 ? gettext('built-in')
+        : '~typesafe/jev-latest';
+    },
+    test: function(resolved) {
+      return sugQaClassifyOne('So, how did you first get involved in this?',
+                              resolved.local
+                                ? {provider: 'laya', url: resolved.url}
+                                : {provider: 'jev', url: resolved.url,
+                                   key: resolved.token, model: resolved.model,
+                                   authHeader: resolved.authHeader,
+                                   authScheme: resolved.authScheme});
+    },
+    extra: function(box, readTask, saveTask) {
+      if(!sug_session) {
+        var off = taguEl('p', 'text-muted mb-0', gettext(
+          'Start a suggestion session to classify the turns of the loaded document.'));
+        box.appendChild(off);
+        return;
+      }
+      var check = taguEl('div', 'form-check');
+      var label = taguEl('label', 'form-check-label');
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'form-check-input';
+      input.checked = !!sug_session.answersOnly;
+      input.addEventListener('change', function(e) {
+        sug_session.answersOnly = e.target.checked;
+        sugRefilter();
+      });
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(' '
+        + gettext('Suggest highlights only from answers')));
+      check.appendChild(label);
+      box.appendChild(check);
+      var run = taguEl('button', 'btn btn-primary mt-2',
+        gettext('Classify speaker turns'));
+      run.type = 'button';
+      run.addEventListener('click', function(e) {
+        e.preventDefault();
+        sugQaRun();
+      });
+      box.appendChild(run);
+      box.appendChild(taguEl('p', 'mt-2 mb-0', '')).id = 'sug-qa-summary';
+    },
+  });
 }
 
-function sugQaTest() {
-  var result = document.getElementById('sug-qa-test-result');
-  var cfg = sugQaConfigFromForm();
-  result.textContent = gettext('Testing...');
-  var t0 = Date.now();
-  sugQaClassifyOne('So, how did you first get involved in this?', cfg)
-    .then(function() {
-      result.textContent = gettext('OK (%(ms)s ms)', {ms: Date.now() - t0});
-    })
-    .catch(function(error) {
-      result.textContent = gettext('Failed:') + ' ' + error
-        + (cfg.provider === 'jev'
-           ? ' — ' + gettext('check the OpenRouter token and model')
-           : ' — ' + gettext('check that laya-serve is running') + ' (laya-serve)');
-    });
+taguConfigRegisterTab({
+  id: 'decisions', title: gettext('Decisions'), order: 300,
+  build: sugQaTabBuild,
+});
+
+// Progress line lives inside the decisions tab, which can be closed
+// mid-run: write through this null-safe helper
+function sugQaSetSummary(text) {
+  var el = document.getElementById('sug-qa-summary');
+  if(el) {
+    el.textContent = text;
+  }
 }
 
 // Classify every speaker turn with the configured decision model
@@ -3282,15 +3318,14 @@ function sugQaRun() {
   if(!sug_session) {
     return;
   }
-  var cfg = sugQaConfigFromForm();
-  if(!cfg.provider) {
+  var cfg = sugQaResolved();
+  if(!cfg) {
+    sugQaSetSummary(gettext('Pick a decision model first.'));
     return;
   }
-  sugSaveQaConfig(cfg);
   var blocks = sugBlocks();
-  var summary = document.getElementById('sug-qa-summary');
   if(blocks.length < 2) {
-    summary.textContent = gettext('No speaker turns found: put each speaker\'s text on its own line first.');
+    sugQaSetSummary(gettext('No speaker turns found: put each speaker\'s text on its own line first.'));
     sug_session.roles = null;
     sugQaRenderBlocks();
     sugRefilter();
@@ -3299,29 +3334,28 @@ function sugQaRun() {
   var done = 0;
   blocks.forEach(function(b) { b.role = null; b.prob = null; });
   sug_session.roles = blocks; // role stays null until classified; null never filters
-  summary.textContent = gettext('Classifying %(n)s speaker turn(s)...', {n: blocks.length});
+  sugQaSetSummary(gettext('Classifying %(n)s speaker turn(s)...', {n: blocks.length}));
   sugQaRenderBlocks();
   sugQaClassifyAll(blocks, cfg, function(i, role, prob) {
     blocks[i].role = role;
     blocks[i].prob = prob;
     ++done;
     sugQaSetBlockDom(i);
-    summary.textContent = gettext('Classifying %(n)s speaker turn(s)... %(d)s done',
-                                  {n: blocks.length, d: done});
+    sugQaSetSummary(gettext('Classifying %(n)s speaker turn(s)... %(d)s done',
+                            {n: blocks.length, d: done}));
   })
   .then(function() {
     sugQaSummaryText();
     sugRefilter();
   })
   .catch(function(error) {
-    summary.textContent = gettext('Failed:') + ' ' + error;
+    sugQaSetSummary(gettext('Failed:') + ' ' + error);
   });
 }
 
 function sugQaSummaryText() {
-  var summary = document.getElementById('sug-qa-summary');
   if(!sug_session || !sug_session.roles) {
-    summary.textContent = '';
+    sugQaSetSummary('');
     return;
   }
   var q = 0;
@@ -3330,9 +3364,9 @@ function sugQaSummaryText() {
       ++q;
     }
   });
-  summary.textContent = gettext('%(n)s speaker turn(s): %(q)s interviewer, %(a)s interviewee',
+  sugQaSetSummary(gettext('%(n)s speaker turn(s): %(q)s interviewer, %(a)s interviewee',
     {n: sug_session.roles.length, q: q,
-     a: sug_session.roles.length - q});
+     a: sug_session.roles.length - q}));
 }
 
 // Render the classified turns in the document itself: a light-shaded span
@@ -3404,65 +3438,71 @@ function sugFlipRole(i) {
 }
 
 /*
- * Config screen
+ * Config screen: the "Embeddings" button in the suggest toolbar and the
+ * ranking-mode fallback open the configuration screen on the embeddings
+ * tab (the old dedicated modal was folded into that screen).
  */
 
 function sugOpenConfig() {
-  var cfg = sugLoadConfig() || {};
-  document.getElementById('sug-cfg-url').value = cfg.url || 'https://openrouter.ai/api/v1/embeddings';
-  document.getElementById('sug-cfg-token').value = cfg.token || '';
-  document.getElementById('sug-cfg-model').value = cfg.model || '';
-  document.getElementById('sug-cfg-test-result').textContent = '';
-  $(document.getElementById('suggest-config-modal')).modal().drags({handle: '.modal-header'});
+  taguOpenConfig('embeddings');
 }
 
-function sugSaveConfigFromForm() {
-  var cfg = {
-    url: document.getElementById('sug-cfg-url').value.trim(),
-    token: document.getElementById('sug-cfg-token').value,
-    model: document.getElementById('sug-cfg-model').value.trim(),
-    tested: false,
-  };
-  var old = sugLoadConfig();
-  if(old && old.url === cfg.url && old.token === cfg.token
-     && old.model === cfg.model) {
-    cfg.tested = old.tested;
-  }
-  sugSaveConfig(cfg);
-  // Re-score with the (possibly new) endpoint/model; the embKey check inside
-  // invalidates the old scores and only new texts get embedded
-  if(sug_session && sug_session.useEmbeddings) {
-    sugEnhanceEmbeddings();
-  }
-  $(document.getElementById('suggest-config-modal')).modal('hide');
-}
-
-function sugTestConfig() {
-  var result = document.getElementById('sug-cfg-test-result');
-  var cfg = {
-    url: document.getElementById('sug-cfg-url').value.trim(),
-    token: document.getElementById('sug-cfg-token').value,
-    model: document.getElementById('sug-cfg-model').value.trim(),
-    tested: false,
-  };
-  if(!cfg.url) {
-    result.textContent = gettext('Enter an endpoint URL first.');
-    return;
-  }
-  result.textContent = gettext('Testing...');
-  var t0 = Date.now();
-  sugEmbed(['test'], cfg, false)
-  .then(function() {
-    cfg.tested = true;
-    sugSaveConfig(cfg);
-    result.textContent = gettext('OK (%(ms)s ms)', {ms: Date.now() - t0});
-  })
-  .catch(function(error) {
-    sugSaveConfig(cfg);
-    result.textContent = gettext('Failed:') + ' ' + error +
-      ' — ' + gettext('check the URL/token, and CORS (local Ollama needs OLLAMA_ORIGINS=*)');
+// The tab itself: endpoint + model for the embeddings task
+function sugConfigTabBuild(el) {
+  var intro = taguEl('p', 'text-muted', gettext(
+    'Embedding service for semantic ranking, themes and tag search. Any OpenAI-compatible /embeddings endpoint works: pick one of your API keys, a local service, or a custom endpoint.'));
+  el.appendChild(intro);
+  taguTaskPanel(el, {
+    task: 'embeddings',
+    locals: ['ollama', 'llamacpp', 'tei'],
+    defaultPath: '/embeddings',
+    modelPlaceholder: function(src) {
+      var key = src.indexOf('key:') === 0 ? taguKeyById(src.slice(4)) : null;
+      if(key) {
+        var ph = {
+          openai: 'text-embedding-3-small',
+          openrouter: 'openai/text-embedding-3-small',
+          gemini: 'gemini-embedding-001',
+          qwen: 'text-embedding-v3',
+          zai: 'embedding-3',
+        }[key.provider];
+        if(ph) {
+          return ph;
+        }
+        return null; // generic placeholder
+      }
+      if(src === 'local:ollama') {
+        return 'all-minilm';
+      }
+      if(src === 'local:llamacpp') {
+        return 'nomic-embed-text';
+      }
+      if(src === 'local:tei') {
+        return 'BAAI/bge-small-en-v1.5';
+      }
+      return null;
+    },
+    test: function(resolved) {
+      return sugEmbed(['test'], {
+        url: resolved.url, token: resolved.token, model: resolved.model,
+        authHeader: resolved.authHeader, authScheme: resolved.authScheme,
+      }, false);
+    },
+    changed: function() {
+      // Re-score with the (possibly new) endpoint/model; the embKey check
+      // inside sugEnhanceEmbeddings invalidates the old scores and only new
+      // texts get embedded
+      if(sug_session && sug_session.useEmbeddings) {
+        sugEnhanceEmbeddings();
+      }
+    },
   });
 }
+
+taguConfigRegisterTab({
+  id: 'embeddings', title: gettext('Embeddings'), order: 200,
+  build: sugConfigTabBuild,
+});
 
 
 /*
@@ -3629,40 +3669,9 @@ function sugInit() {
       sugFlipRole(parseInt(badge.getAttribute('data-idx'), 10));
     }
   });
-  document.getElementById('sug-qa-provider').addEventListener('change', sugQaSyncProvider);
-  document.getElementById('sug-qa-test').addEventListener('click', function(e) {
-    e.preventDefault();
-    sugQaTest();
-  });
-  document.getElementById('sug-qa-save').addEventListener('click', function(e) {
-    e.preventDefault();
-    sugSaveQaConfig(sugQaConfigFromForm());
-    $(document.getElementById('suggest-qa-modal')).modal('hide');
-  });
-  document.getElementById('sug-qa-run').addEventListener('click', function(e) {
-    e.preventDefault();
-    sugQaRun();
-  });
-  document.getElementById('sug-qa-answers-only').addEventListener('change', function(e) {
-    if(!sug_session) {
-      return;
-    }
-    sug_session.answersOnly = e.target.checked;
-    sugRefilter();
-  });
   document.getElementById('sug-stop').addEventListener('click', function(e) {
     e.preventDefault();
     sugStopButton();
-  });
-
-  // Config modal
-  document.getElementById('sug-cfg-save').addEventListener('click', function(e) {
-    e.preventDefault();
-    sugSaveConfigFromForm();
-  });
-  document.getElementById('sug-cfg-test').addEventListener('click', function(e) {
-    e.preventDefault();
-    sugTestConfig();
   });
 
   // Delegated events over re-rendered spans and brackets
@@ -3913,9 +3922,116 @@ function sugSelfTest() {
   var qq = sugQaQuestion();
   assert(qq.speaker.type === 'choice' && qq.speaker.criteria.interviewer
          && qq.speaker.criteria.interviewee, 'systemone choice question shape');
-  assert(sugQaBase({provider: 'laya', layaUrl: 'http://x'})
-         !== sugQaBase({provider: 'jev', jevModel: 'm'}),
+  assert(sugQaBase({provider: 'laya', url: 'http://x'})
+         !== sugQaBase({provider: 'jev', url: 'http://x', model: 'm'}),
          'qa cache keys differ per provider');
+  assert(sugQaBase({provider: 'jev', url: 'http://x', model: 'm'})
+         !== sugQaBase({provider: 'jev', url: 'http://x', model: 'm2'}),
+         'qa cache keys differ per model');
+
+  // Configuration screen: migration, task resolution, auth headers
+  assert(typeof taguTaskResolve === 'function', 'config.js is loaded');
+  var provs = Object.keys(TAGU_PROVIDERS);
+  ['anthropic', 'deepseek', 'gemini', 'minimax', 'openai', 'openrouter',
+   'qwen', 'zai', 'custom'].forEach(function(p) {
+    assert(provs.indexOf(p) !== -1, 'provider catalog has ' + p);
+  });
+  var mig = taguMigrateLegacy(
+    {url: 'https://example.com/v1/embeddings', token: 'tok', model: 'm1'},
+    {provider: 'jev', jevKey: 'or-1', jevModel: '~typesafe/jev-latest',
+     jevUrl: 'https://openrouter.ai/api/alpha/decisions'});
+  assert(mig.tasks.embeddings.source === 'custom'
+         && mig.tasks.embeddings.url === 'https://example.com/v1/embeddings'
+         && mig.tasks.embeddings.token === 'tok',
+         'legacy embedding config migrates to a custom task');
+  assert(mig.keys.length === 1 && mig.keys[0].provider === 'openrouter'
+         && mig.keys[0].token === 'or-1'
+         && mig.tasks.decisions.source === 'key:' + mig.keys[0].id,
+         'legacy jev config migrates to a key-based decisions task');
+  var mig2 = taguMigrateLegacy(null, {provider: 'laya', layaUrl: 'http://localhost:8000'});
+  assert(mig2.tasks.decisions.source === 'local:laya'
+         && mig2.tasks.decisions.url === 'http://localhost:8000/v1/systemone',
+         'legacy laya config migrates to the local service');
+  assert(taguMigrateLegacy(null, null).tasks.embeddings === undefined,
+         'no legacy config means no tasks');
+  var auth_bearer = taguKeyAuth({provider: 'openrouter', headerFormat: 'bearer'});
+  assert(auth_bearer.header === 'Authorization' && auth_bearer.scheme === 'Bearer ',
+         'default auth is Authorization: Bearer');
+  assert(taguKeyAuth({provider: 'anthropic'}).header === 'x-api-key',
+         'anthropic keys use x-api-key');
+  assert(taguKeyAuth({provider: 'gemini'}).header === 'x-goog-api-key',
+         'gemini keys use x-goog-api-key');
+  assert(taguKeyAuth({provider: 'custom', headerFormat: 'x-api-key'}).header
+         === 'x-api-key', 'custom providers can override the header format');
+  assert(taguKeyBase({provider: 'qwen'})
+         === 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+         'qwen base url');
+  assert(taguKeyBase({provider: 'custom', baseUrl: 'https://x.example/v1/'})
+         === 'https://x.example/v1', 'custom base url trailing slash stripped');
+  // Task resolution through the real store, saved and restored around the
+  // asserts so the user's actual configuration is untouched
+  var ls = window.localStorage;
+  var saved_store = ls.getItem('taguette_config');
+  try {
+    ls.setItem('taguette_config', JSON.stringify({version: 1,
+      keys: [{id: 'kA', provider: 'openrouter', name: 'OR', token: 'tA'},
+             {id: 'kB', provider: 'custom', name: 'Mine', token: 'tB',
+              baseUrl: 'https://my.example/v1', headerFormat: 'x-api-key'}],
+      tasks: {
+        embeddings: {source: 'key:kA', url: '', token: '', model: 'm'},
+        decisions: {source: 'key:kB', url: '', token: '', model: ''},
+      }}));
+    var emb = sugLoadConfig();
+    assert(emb && emb.url === 'https://openrouter.ai/api/v1/embeddings'
+           && emb.token === 'tA' && emb.model === 'm'
+           && emb.authHeader === 'Authorization',
+           'embeddings task resolves a key to base + /embeddings');
+  assert(taguResolveTask({source: 'key:kA'}, sugQaDefaultPath).url
+         === 'https://openrouter.ai/api/alpha/decisions',
+         'openrouter keys default to the absolute alpha decisions endpoint');
+    assert(sugQaResolved() === null,
+           'decisions via a key without a known default endpoint and no URL '
+           + 'resolves to null');
+    ls.setItem('taguette_config', JSON.stringify({version: 1,
+      keys: [{id: 'kB', provider: 'custom', name: 'Mine', token: 'tB',
+              baseUrl: 'https://my.example/v1', headerFormat: 'x-api-key'}],
+      tasks: {decisions: {source: 'key:kB',
+                          url: 'https://my.example/decisions', token: '',
+                          model: ''}}}));
+    var dec = sugQaResolved();
+    assert(dec && dec.provider === 'jev'
+           && dec.url === 'https://my.example/decisions'
+           && dec.key === 'tB' && dec.authHeader === 'x-api-key'
+           && dec.model === '~typesafe/jev-latest',
+           'decisions task resolves a custom key with a URL override');
+    ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
+      tasks: {embeddings: {source: 'local:ollama', url: '', token: '',
+                           model: 'all-minilm'}}}));
+    emb = sugLoadConfig();
+    assert(emb && emb.url === 'http://localhost:11434/v1/embeddings'
+           && !emb.token && emb.model === 'all-minilm',
+           'local ollama resolves to its default endpoint');
+    ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
+      tasks: {embeddings: {source: 'local:laya', url: '', token: '', model: ''}}}));
+    assert(sugLoadConfig() === null, 'a local service without an embeddings '
+           + 'path cannot resolve for embeddings');
+    ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
+      tasks: {decisions: {source: 'local:laya', url: '', token: '', model: ''}}}));
+    dec = sugQaResolved();
+    assert(dec && dec.provider === 'laya'
+           && dec.url === 'http://localhost:8000/v1/systemone',
+           'local laya resolves to the systemone endpoint');
+    ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
+      tasks: {embeddings: {source: '', url: '', token: '', model: ''}}}));
+    assert(sugLoadConfig() === null, 'off embeddings resolves to null');
+    assert(sugQaResolved() === null, 'no decisions task resolves to null');
+  } finally {
+    if(saved_store !== null) {
+      ls.setItem('taguette_config', saved_store);
+    } else {
+      ls.removeItem('taguette_config');
+    }
+  }
 
   // Percentile + cut-off
   var cands = [{raw: 1}, {raw: 2}, {raw: 3}];

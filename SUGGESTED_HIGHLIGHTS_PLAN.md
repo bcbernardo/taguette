@@ -42,10 +42,11 @@ Embedding models:
 | File | Change |
 |---|---|
 | `SUGGESTED_HIGHLIGHTS_PLAN.md` | this plan |
-| `taguette/static/js/suggest.js` | **new** — algorithms, embedding client, session UI, brackets, menus, split screen (~1000 lines, plain ES5-style JS like `taguette.js`) |
+| `taguette/static/js/suggest.js` | **new** — algorithms, embedding client, session UI, brackets, menus, split screen; registers the *Embeddings* and *Decisions* tabs of the configuration screen (~1000 lines, plain ES5-style JS like `taguette.js`) |
 | `taguette/static/js/taguette.js` | small generalization: pane-prefix aware `describePos` / `locatePos` / `highlightSelection` so a second split-screen pane can be addressed; everything else untouched |
 | `taguette/static/css/custom.css` | suggestion colors, blinking brackets, accepted style, split layout, context menu |
-| `taguette/templates/project.html` | session toolbar, algorithm/embedding config modal, stop modal, context-menu div, `<script include>` |
+| `taguette/static/js/config.js` | **new** — shared configuration screen: tab registry, API keys tab, provider/local-service catalogs, task resolution, legacy-store migration |
+| `taguette/templates/project.html` | session toolbar, configuration screen modal shell, stop modal, context-menu div, `<script include>` |
 
 No server-side (Python) changes at all. No changes to exports, existing
 highlight flow, or translations catalogs (new strings use `gettext()` and fall
@@ -274,13 +275,16 @@ excluded from suggestions, so only the interviewees' answers are highlighted.
   - **Laya**, installed locally: `pip install "laya[serve]"`, `laya-serve`
     (default `http://localhost:8000`, `/v1/systemone`). Free, offline,
     multilingual.
-  - **Jev** through OpenRouter: `https://openrouter.ai/api/alpha/decisions`,
-    model `~typesafe/jev-latest`, needs an OpenRouter API token (endpoint
-    URL and model are editable in the modal).
+  - **Jev** through any API key (typically OpenRouter, model
+    `~typesafe/jev-latest`, endpoint `https://openrouter.ai/api/alpha/decisions`)
+    or a custom endpoint — all configured in the configuration screen's
+    *Decisions* tab.
   - Each turn gets one `choice` question (interviewer vs interviewee; the
     instructions mention the possible label/timestamp prefix).
-- **UI**: `Q / A` button in the panel opens the settings modal (provider,
-  test button, classify, answers-only). Review happens in the transcript
+- **UI**: `Q / A` button in the panel opens the configuration screen's
+  *Decisions* tab (service, model, local-service check, test connection);
+  with a session running the tab also hosts the answers-only checkbox and
+  the *Classify speaker turns* action, with its progress/summary line. Review happens in the transcript
   itself: every turn's spoken text is outlined by a colored rectangle
   (gray for Q, green for A, border only — no fill, so it never reads as a
   highlight) with a Q/A badge beside it; click the badge any time to flip
