@@ -49,6 +49,12 @@ The tab (registered by tags-ai.js, order 250) offers:
 `config.js`'s task panel now round-trips unknown task fields on save, so
 panel edits (service, URL, model) never clobber temperature/prompts.
 
+The **Embeddings** tab gains one more setting: how many tag suggestions
+the highlight form shows before "Show all tags" (1–100, default 10;
+`tasks.embeddings.tag_suggestions`, read by `tagAiTopN()`). It lives
+there because the suggestions are embedding-based; suggest.js only adds
+the field when tags-ai.js is loaded.
+
 ## 3. Highlight form: ranked suggestions + search
 
 `taguette.js`'s `updateTagsList()` asks `tagAiModalView()` how to render
@@ -84,7 +90,8 @@ submit handler treats missing checkboxes as "keep".
 
 ## 4. Tag form
 
-Opened from the highlight form (context available) or the panel:
+Opened from the highlight form (context available) or the panel. Field
+order: name, description (+AI actions), similar tags, parent picker.
 
 - **Name suggestions** (new tags, from the highlight form, LLM configured):
   three names asked in one call, shown as light-gray chips under the name
@@ -113,6 +120,16 @@ Opened from the highlight form (context available) or the panel:
     `tagAiAfterTagSaved()` once it exists;
   - *Merge…* — the existing merge modal with the tag preselected (also
     deferred for not-yet-saved tags).
+
+**Tag view header** (`/project/<id>/highlights/<tag>`): the same
+description actions run inline below the definition. tags-ai.js wraps
+`renderTagHeader` to append a generate/re-generate button, the augment
+menu and a preview box; the two surfaces (form / view) share the whole
+machinery (`TAG_AI_SURFACES`), differing only in where the name,
+description, context and the accepted result go — on the view, accepting
+saves through `saveTagField` and refreshes the header immediately. The
+header is rebuilt on every change, which also discards any suggestion in
+flight.
 
 ## 5. Testing
 

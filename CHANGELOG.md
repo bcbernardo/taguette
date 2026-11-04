@@ -30,6 +30,13 @@ New feature (tag AI helpers):
   endpoint), set the temperature, and edit the five prompt templates
   (with placeholders and reset-to-default). Everything stays in your
   browser; model calls go straight from the browser to the service
+* The number of suggested tags in the highlight form is configurable
+  (*Embeddings* tab of the configuration screen)
+* The tag's Highlights view offers the same actions below the
+  definition: *Generate/Re-generate description with AI* and the
+  *Augment* menu; accepting a suggestion saves it immediately
+* The tag form now places the *Parent tag* picker below the description
+  field, next to the similar-tags list
 
 New feature (configuration screen):
 * New dedicated configuration screen (⚙ *Configure* in the document toolbar)
