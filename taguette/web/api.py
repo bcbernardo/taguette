@@ -843,6 +843,11 @@ class HighlightUpdate(BaseHandler):
                 hl.start_offset = obj['start_offset']
             if 'end_offset' in obj:
                 hl.end_offset = obj['end_offset']
+            # Keep the snippet (shown in tag views and exports) in sync
+            # with the new extent
+            if 'start_offset' in obj or 'end_offset' in obj:
+                hl.snippet = extract.extract(
+                    document.contents, hl.start_offset, hl.end_offset)
             if 'tags' in obj:
                 # Obtain old tags from database
                 old_tags = (
@@ -887,7 +892,15 @@ class HighlightUpdate(BaseHandler):
                 for tag in new_tags - old_tags:
                     tag_count_changes[tag] = 1
             else:
-                new_tags = None
+                # Resizing only (dragging the boundary brackets in the
+                # document view): the tags are kept, but the event still
+                # carries them so that every browser can re-render the
+                # highlight
+                new_tags = set(
+                    tag_id for (tag_id,) in
+                    self.db.query(database.HighlightTag.tag_id)
+                    .filter(database.HighlightTag.highlight == hl)
+                )
                 tag_count_changes = None
 
             cmd = database.Command.highlight_add(

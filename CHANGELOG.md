@@ -4,6 +4,14 @@ Changelog
 Unreleased
 ----------
 
+New feature (highlight editing):
+* Clicking a highlight in the document view now shows blinking
+  brackets at its boundaries, which can be dragged to change the
+  highlight's start or end without touching its tags; a menu shown with
+  the brackets (or a double-click on the highlight) still opens the tag
+  form, and the highlight's snippet shown in tag views and exports now
+  follows resizes too
+
 New feature (tag AI helpers):
 * The highlight form now suggests the most appropriate tags: the top 10,
   ranked for the highlighted text (semantic ranking when an embedding

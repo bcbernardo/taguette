@@ -1255,6 +1255,93 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertNotDone(poll)
 
     @gen_test(timeout=30)
+    async def test_highlight_resize(self):
+        # Resizing a highlight (dragging the boundary brackets in the
+        # document view) posts only the offsets: the tags are unchanged
+
+        # Accept cookies, log in, create project 1
+        async with self.apost('/cookies', data=dict()) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/')
+        async with self.aget('/login') as response:
+            self.assertEqual(response.status, 200)
+        async with self.apost(
+            '/login',
+            data=dict(next='/', login='admin', password='hackme'),
+        ) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/')
+        async with self.apost(
+            '/project/new', data=dict(name='resize', description=''),
+        ) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/project/1')
+
+        poll = await self.poll_event(1, -1)
+
+        # Add a document
+        async with self.apost(
+            '/api/project/1/document/new',
+            data=dict(name='doc', description=''),
+            files=dict(file=('doc.html', 'text/html', b'some content')),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {"created": 1})
+        self.assertEqual(
+            await poll,
+            {'type': 'document_add', 'id': 1, 'document_id': 1,
+             'document_name': 'doc', 'description': ''})
+        poll = await self.poll_event(1, 1)
+
+        # Create highlight 1 with tag 1
+        async with self.apost(
+            '/api/project/1/document/1/highlight/new',
+            json=dict(start_offset=0, end_offset=4, tags=[1]),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {"id": 1})
+        self.assertEqual(
+            await poll,
+            {'type': 'highlight_add', 'id': 2, 'highlight_id': 1,
+             'document_id': 1, 'start_offset': 0, 'end_offset': 4,
+             'tags': [1], 'tag_count_changes': {'1': 1}})
+        poll = await self.poll_event(1, 2)
+
+        # Resize it: only the offsets are posted, the tags are kept
+        async with self.apost(
+            '/api/project/1/document/1/highlight/1',
+            json=dict(start_offset=5, end_offset=11),
+        ) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {"id": 1})
+        self.assertEqual(
+            await poll,
+            {'type': 'highlight_add', 'id': 3, 'highlight_id': 1,
+             'document_id': 1, 'start_offset': 5, 'end_offset': 11,
+             'tags': [1]})
+        poll = await self.poll_event(1, 3)
+
+        # The tags didn't change, and the snippet follows the new extent
+        async with self.aget('/api/project/1/highlights/') as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(await response.json(), {
+                'highlights': [
+                    {'id': 1, 'document_id': 1, 'tags': [1],
+                     'content': 'conten'},
+                ],
+                'pages': 1,
+            })
+
+        # The tag counts didn't change
+        async with self.aget('/project/1') as response:
+            self.assertEqual(response.status, 200)
+            body = await response.text()
+        self.assertIn('"count": 1', body)
+
+        await asyncio.sleep(1)
+        self.assertNotDone(poll)
+
+    @gen_test(timeout=30)
     async def test_reset_password(self):
         # Accept cookies
         async with self.apost('/cookies', data=dict()) as response:

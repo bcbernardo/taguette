@@ -11,6 +11,7 @@
  * - Tag view header
  * - Highlights
  * - Add highlight
+ * - Highlight boundary editing
  * - Members
  * - Load contents
  * - Long polling
@@ -462,6 +463,7 @@ function highlightSelection(saved, id, clickedCallback, title) {
         span.setAttribute('data-highlight-id', '' + id);
         span.setAttribute('title', title);
         span.addEventListener('click', clickedCallback);
+        span.addEventListener('dblclick', highlightDblClicked);
         node.parentNode.insertBefore(span, node);
         span.appendChild(node);
       }
@@ -1989,15 +1991,21 @@ tags_modal_list.addEventListener('change', function(e) {
 // Add or replace a highlight
 function setHighlight(highlight) {
   var id = '' + highlight.id;
-  if(highlights[id]) {
+  var previous = highlights[id] || null;
+  if(previous) {
     removeHighlight(id);
   }
   highlights[id] = highlight;
-  var tag_names = highlight.tags.map(function(id) { return tags[id].path; });
-  sortByKey(tag_names, function(path) { return path; });
-  tag_names = tag_names.join(", ");
+  // If this highlight is being edited (brackets shown) and its extent
+  // changed on the server (e.g. a collaborator resized it), drop the
+  // editing UI
+  if(hl_select && hl_select.id == id && previous
+     && (previous.start_offset != highlight.start_offset
+         || previous.end_offset != highlight.end_offset)) {
+    hlSelectClear();
+  }
   try {
-    highlightSelection([highlight.start_offset, highlight.end_offset], id, editHighlight, tag_names);
+    highlightSelection([highlight.start_offset, highlight.end_offset], id, highlightClicked, hlTitleFor(id));
     console.log("Highlight set:", highlight);
   } catch(error) {
     console.error(
@@ -2104,14 +2112,14 @@ function createHighlight(selection) {
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
 }
 
-function editHighlight(e) {
+function openHighlightTags(id) {
   document.getElementById('highlight-add-form').reset();
-  var id = this.getAttribute('data-highlight-id');
+  id = '' + id;
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
   highlight_add_tag_state = {};  // reseeded from this highlight below
-  var hl_tags = highlights['' + id].tags;
+  var hl_tags = highlights[id].tags;
   for(var i = 0; i < hl_tags.length; ++i) {
     document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
     highlight_add_tag_state['' + hl_tags[i]] = true;
@@ -2192,6 +2200,332 @@ document.getElementById('highlight-delete').addEventListener('click', function(e
     });
   }
 });
+
+
+/*
+ * Highlight boundary editing
+ *
+ * A single click on a highlight selects it: blinking brackets appear at
+ * its start and end, and a small menu shows up next to it. Dragging a
+ * bracket changes the highlight's extent without touching its tags; the
+ * tag form is still available through the menu's button, or with a
+ * double-click on the highlight.
+ */
+
+var hl_select = null;       // Selected highlight: {id, prefix, start, end}
+var hl_select_dragging = false;
+var hl_menu = document.getElementById('hl-menu');
+
+// Title (tooltip) of a highlight: its tags, sorted, comma-separated
+function hlTitleFor(id) {
+  var hl = highlights['' + id];
+  if(!hl) {
+    return '';
+  }
+  var tag_names = hl.tags.map(function(tag_id) { return tags['' + tag_id].path; });
+  sortByKey(tag_names, function(path) { return path; });
+  return tag_names.join(", ");
+}
+
+// Byte offset of the caret position under the given point
+function hlCaretByte(clientX, clientY) {
+  var range = null;
+  if(document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(clientX, clientY);
+  } else if(document.caretPositionFromPoint) {
+    var p = document.caretPositionFromPoint(clientX, clientY);
+    if(p) {
+      range = document.createRange();
+      range.setStart(p.offsetNode, p.offset);
+      range.setEnd(p.offsetNode, p.offset);
+    }
+  }
+  if(!range) {
+    return null;
+  }
+  return describePos(range.startContainer, range.startOffset);
+}
+
+// Insert one boundary bracket inline, at the given byte offset
+function hlInsertBracket(prefix, byte, which) {
+  var bracket = document.createElement('span');
+  bracket.className = 'hl-bracket';
+  bracket.setAttribute('data-which', which);
+  var pos = locatePos(byte, prefix);
+  var node = (pos && pos[0]) ? splitAtPos(pos, false) : null;
+  if(node) {
+    node.parentNode.insertBefore(bracket, node);
+  } else {
+    var root = prefix === 'R'
+      ? document.getElementById('document-contents-b')
+      : document.getElementById('document-contents');
+    if(root) {
+      root.appendChild(bracket);
+    }
+  }
+  bracket.addEventListener('mousedown', hlBracketMouseDown);
+  return bracket;
+}
+
+function hlBracketsRemove() {
+  var brackets = document.getElementsByClassName('hl-bracket');
+  while(brackets.length > 0) {
+    var bracket = brackets[0];
+    if(bracket.parentNode) {
+      bracket.parentNode.removeChild(bracket);
+    }
+  }
+}
+
+function hlMenuHide() {
+  if(hl_menu) {
+    hl_menu.style.display = 'none';
+  }
+}
+
+// Show the menu (built once) anchored under the start bracket
+function hlMenuShow() {
+  if(!hl_menu || !hl_select) {
+    return;
+  }
+  var anchor = document.querySelector('.hl-bracket[data-which="start"]');
+  if(!anchor) {
+    hlMenuHide();
+    return;
+  }
+  if(!hl_menu.firstChild) {
+    var hint = document.createElement('div');
+    hint.className = 'hl-menu-hint';
+    hint.textContent = gettext("Drag the brackets to change the highlight");
+    var button = document.createElement('button');
+    button.className = 'btn btn-primary btn-sm';
+    button.type = 'button';
+    button.textContent = gettext("Add or edit tags");
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var sel = hl_select;
+      hlSelectClear();
+      if(sel) {
+        openHighlightTags(sel.id);
+      }
+    });
+    hl_menu.appendChild(hint);
+    hl_menu.appendChild(button);
+  }
+  hl_menu.style.display = 'block';
+  var rect = anchor.getBoundingClientRect();
+  var x = Math.max(0, Math.min(rect.left, window.innerWidth - hl_menu.offsetWidth - 8));
+  var y = rect.bottom + 4;
+  if(y + hl_menu.offsetHeight > window.innerHeight) {
+    y = rect.top - hl_menu.offsetHeight - 4;
+  }
+  hl_menu.style.left = x + 'px';
+  hl_menu.style.top = Math.max(0, y) + 'px';
+}
+
+// Select a highlight: brackets at its boundaries + menu. The brackets
+// are only shown in the pane the user clicked (prefix '' or 'R'), but
+// the preview during a drag re-renders every pane, like setHighlight()
+function hlSelectShow(id, prefix) {
+  hlSelectClear();
+  var hl = highlights['' + id];
+  if(!hl) {
+    return;
+  }
+  hl_select = {
+    id: '' + id,
+    prefix: prefix,
+    start: hl.start_offset,
+    end: hl.end_offset,
+  };
+  hlInsertBracket(prefix, hl.start_offset, 'start');
+  hlInsertBracket(prefix, hl.end_offset, 'end');
+  hlMenuShow();
+  console.log("Highlight selected:", id);
+}
+
+// Drop the selection UI; the highlight itself is left as-is
+function hlSelectClear() {
+  hl_select = null;
+  hlBracketsRemove();
+  hlMenuHide();
+}
+
+// Click on a highlight: select it (ignore clicks that land on a
+// boundary bracket nested inside the highlight's own elements)
+function highlightClicked(e) {
+  if(e.target && e.target.closest && e.target.closest('.hl-bracket')) {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  hlSelectShow(this.getAttribute('data-highlight-id'),
+               (this.closest && this.closest('#document-contents-b')) ? 'R' : '');
+}
+
+// Double-click on a highlight: open the tag form
+function highlightDblClicked(e) {
+  if(e.target && e.target.closest && e.target.closest('.hl-bracket')) {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  var id = this.getAttribute('data-highlight-id');
+  hlSelectClear();
+  openHighlightTags(id);
+}
+
+// Re-render the selected highlight at the preview offsets, then put the
+// brackets back at their new positions
+function hlSelectRender(which) {
+  var sel = hl_select;
+  if(!sel) {
+    return;
+  }
+  hlBracketsRemove();
+  removeHighlight(sel.id);
+  try {
+    highlightSelection([sel.start, sel.end], sel.id, highlightClicked, hlTitleFor(sel.id));
+  } catch(error) {
+    console.error("Error resizing highlight:", error);
+  }
+  hlInsertBracket(sel.prefix, sel.start, 'start');
+  hlInsertBracket(sel.prefix, sel.end, 'end');
+  var dragged = document.querySelector('.hl-bracket[data-which="' + which + '"]');
+  if(dragged) {
+    dragged.classList.add('hl-dragging');
+  }
+}
+
+function hlBracketMouseDown(e) {
+  if(!hl_select) {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  hlMenuHide();
+  var which = this.getAttribute('data-which');
+  var sel = hl_select;
+  var contents = document.getElementById('document-contents');
+  var total = contents ? lengthUTF8(contents.textContent) : 0;
+  var last_render = Date.now();
+  hl_select_dragging = true;
+  this.classList.add('hl-dragging');
+
+  function onMove(e2) {
+    if(hl_select !== sel) {
+      return;
+    }
+    var b = hlCaretByte(e2.clientX, e2.clientY);
+    if(b === null) {
+      return;
+    }
+    if(which === 'start') {
+      sel.start = Math.max(0, Math.min(b, sel.end - 1));
+    } else {
+      sel.end = Math.min(total, Math.max(b, sel.start + 1));
+    }
+    var now = Date.now();
+    if(now - last_render > 100) {
+      last_render = now;
+      hlSelectRender(which);
+    }
+  }
+
+  function onUp() {
+    document.removeEventListener('mousemove', onMove, true);
+    document.removeEventListener('mouseup', onUp, true);
+    hl_select_dragging = false;
+    if(hl_select !== sel) {
+      // Selection dropped mid-drag (Escape key, highlight deleted, view
+      // switch): put the stored extent back
+      var stored = highlights[sel.id];
+      if(stored) {
+        removeHighlight(sel.id);
+        try {
+          highlightSelection([stored.start_offset, stored.end_offset], sel.id, highlightClicked, hlTitleFor(sel.id));
+        } catch(err) {
+          console.error("Error restoring highlight:", err);
+        }
+      }
+      return;
+    }
+    var id = sel.id;
+    var start = sel.start, end = sel.end;
+    var hl = highlights[id];
+    if(!hl) {
+      hlSelectClear();
+      return;
+    }
+    if(start == hl.start_offset && end == hl.end_offset) {
+      // Nothing changed (simple click on the bracket): keep the
+      // selection and its menu
+      hlMenuShow();
+      return;
+    }
+    hlSelectClear();
+    console.log("Posting resize for highlight " + id);
+    showSpinner();
+    postJSON(
+      '/api/project/' + project_id + '/document/' + current_document + '/highlight/' + id,
+      {start_offset: start, end_offset: end}
+    )
+    .then(function() {
+      console.log("Highlight resized");
+    })
+    .catch(function(error) {
+      console.error("Failed to resize highlight:", error);
+      alert(gettext("Couldn't update highlight!") + "\n\n" + error);
+      // Put the highlight back the way it was
+      removeHighlight(id);
+      try {
+        highlightSelection([hl.start_offset, hl.end_offset], id, highlightClicked, hlTitleFor(id));
+      } catch(err) {
+        console.error("Error restoring highlight:", err);
+      }
+    })
+    .then(hideSpinner);
+  }
+
+  document.addEventListener('mousemove', onMove, true);
+  document.addEventListener('mouseup', onUp, true);
+}
+
+// Clicking elsewhere dismisses the brackets and the menu
+document.addEventListener('mousedown', function(e) {
+  if(!hl_select || hl_select_dragging) {
+    return;
+  }
+  var t = e.target;
+  if(t && t.closest && (t.closest('.hl-bracket') || t.closest('#hl-menu')
+                        || t.closest('.highlight'))) {
+    return;
+  }
+  hlSelectClear();
+}, true);
+
+// Escape dismisses the brackets and the menu
+document.addEventListener('keydown', function(e) {
+  if(e.key !== 'Escape' || !hl_select) {
+    return;
+  }
+  var t = e.target;
+  if(t && (t.tagName == 'INPUT' || t.tagName == 'TEXTAREA'
+           || t.tagName == 'SELECT' || t.isContentEditable)) {
+    return;
+  }
+  hlSelectClear();
+});
+
+// Keep the menu next to its bracket when the page scrolls or resizes
+function hlMenuFollow() {
+  if(hl_select && !hl_select_dragging) {
+    hlMenuShow();
+  }
+}
+window.addEventListener('scroll', hlMenuFollow);
+window.addEventListener('resize', hlMenuFollow);
 
 
 /*
@@ -2381,6 +2715,7 @@ var export_button = document.getElementById('export-button');
 
 function loadDocument(document_id, keep_scroll) {
   if(document_id === null) {
+    hlSelectClear();
     document_contents.innerHTML = '<p style="font-style: oblique; text-align: center;">' + gettext("Load a document on the left") + '</p>';
     goto_last_button.style.display = 'none';
     return;
@@ -2390,6 +2725,7 @@ function loadDocument(document_id, keep_scroll) {
     '/api/project/' + project_id + '/document/' + document_id + '/content'
   )
   .then(function(result) {
+    hlSelectClear();
     document_contents.innerHTML = '';
     highlights = {};
     chunk_offsets = [];
@@ -2673,6 +3009,7 @@ function loadTag(tag_path, page) {
   )
   .then(function(result) {
     console.log("Loaded highlights for tag", tag_path || "''");
+    hlSelectClear();
     current_tag = tag_path;
     current_document = null;
     var document_links = document.getElementsByClassName('document-link-current');
@@ -2932,6 +3269,9 @@ function longPollForEvents() {
           tags: event.tags
         });
       } else if(event.type === 'highlight_delete') {
+        if(hl_select && hl_select.id == '' + event.highlight_id) {
+          hlSelectClear();
+        }
         removeHighlight(event.highlight_id);
       } else if(event.type === 'tag_add') {
         addTag({
