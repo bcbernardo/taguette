@@ -88,10 +88,6 @@ msgid "Couldn't delete highlight!"
 msgstr ""
 
 #: taguette/static/js/taguette.js:2299
-msgid "Drag the brackets to change the highlight"
-msgstr ""
-
-#: taguette/static/js/taguette.js:2303
 msgid "Add or edit tags"
 msgstr ""
 

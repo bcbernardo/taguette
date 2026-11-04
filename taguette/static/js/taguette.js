@@ -2304,9 +2304,6 @@ function hlMenuShow() {
   }
   var hl_menu = hlMenu();
   if(!hl_menu.firstChild) {
-    var hint = document.createElement('div');
-    hint.className = 'hl-menu-hint';
-    hint.textContent = gettext("Drag the brackets to change the highlight");
     var button = document.createElement('button');
     button.className = 'btn btn-primary btn-sm';
     button.type = 'button';
@@ -2320,7 +2317,6 @@ function hlMenuShow() {
         openHighlightTags(sel.id);
       }
     });
-    hl_menu.appendChild(hint);
     hl_menu.appendChild(button);
   }
   hl_menu.style.display = 'block';
