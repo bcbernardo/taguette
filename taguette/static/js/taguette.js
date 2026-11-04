@@ -1537,6 +1537,9 @@ document.getElementById('tag-add-delete').addEventListener('click', function(e) 
 
 // Merge tags button in tag edit modal: shows merge modal
 // (also used by drag & drop, with a preselected destination)
+var mergeCandidates = [];  // [{id, path}] valid merge destinations
+var mergeActive = -1;      // index in the visible list of the highlighted item
+
 function showMergeModal(tag_id, preselect_dest) {
   document.getElementById('tag-merge-form').reset();
 
@@ -1544,31 +1547,130 @@ function showMergeModal(tag_id, preselect_dest) {
   document.getElementById('tag-merge-src-id').value = '' + tag_id;
   document.getElementById('tag-merge-src-name').value = tags['' + tag_id].path;
 
-  // Empty target tag <select>
-  var target = document.getElementById('tag-merge-dest');
-  target.innerHTML = '';
-
-  // Fill target tag <select>: can't merge into the source itself or one
-  // of its descendants (that would create a cycle)
+  // Candidates: can't merge into the source itself or one of its
+  // descendants (that would create a cycle)
   var entries = Object.entries(tags);
   sortByKey(entries, function(e) { return e[1].path; });
+  mergeCandidates = [];
   for(var i = 0; i < entries.length; ++i) {
     if(entries[i][0] == '' + tag_id
        || tagIsDescendant(entries[i][1].id, tag_id)) {
       continue;
     }
-    var option = document.createElement('option');
-    option.setAttribute('value', entries[i][0]);
-    option.innerText = entries[i][1].path;
-    target.appendChild(option);
+    mergeCandidates.push({id: entries[i][0], path: entries[i][1].path});
   }
 
+  document.getElementById('tag-merge-dest').value = '';
+  document.getElementById('tag-merge-filter').value = '';
   if(preselect_dest !== undefined && preselect_dest !== null) {
-    target.value = '' + preselect_dest;
+    chooseMergeDest('' + preselect_dest);
   }
+  hideMergeList();
 
   $(document.getElementById('tag-merge-modal')).modal();
 }
+
+function hideMergeList() {
+  document.getElementById('tag-merge-list').style.display = 'none';
+}
+
+// Select a destination: fill the field and close the dropdown
+function chooseMergeDest(id) {
+  var tag = tags['' + id];
+  document.getElementById('tag-merge-dest').value = '' + id;
+  document.getElementById('tag-merge-filter').value = tag ? tag.path : '';
+  hideMergeList();
+}
+
+// Show the dropdown, filtered by case-insensitive substring match
+function showMergeList(filter) {
+  var list = document.getElementById('tag-merge-list');
+  var query = (filter || '').trim().toLowerCase();
+  list.innerHTML = '';
+  mergeActive = -1;
+  mergeCandidates.forEach(function(c) {
+    if(c.path.toLowerCase().indexOf(query) === -1)
+      return;
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'list-group-item list-group-item-action py-1';
+    item.textContent = c.path;
+    item.setAttribute('data-id', c.id);
+    // mousedown fires before the input's blur, so the choice isn't lost
+    item.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      chooseMergeDest(c.id);
+    });
+    list.appendChild(item);
+  });
+  if(!list.children.length) {
+    var empty = document.createElement('div');
+    empty.className = 'list-group-item text-muted py-1';
+    empty.textContent = gettext("No matching tags");
+    list.appendChild(empty);
+  }
+  list.style.display = 'block';
+}
+
+function setMergeActive(idx) {
+  var items = document.querySelectorAll('#tag-merge-list button');
+  if(!items.length)
+    return;
+  idx = Math.max(0, Math.min(items.length - 1, idx));
+  if(mergeActive >= 0 && items[mergeActive])
+    items[mergeActive].classList.remove('active');
+  mergeActive = idx;
+  items[idx].classList.add('active');
+  items[idx].scrollIntoView({block: 'nearest'});
+}
+
+(function() {
+  var input = document.getElementById('tag-merge-filter');
+  input.addEventListener('focus', function() {
+    // Show everything on focus when a tag is already chosen
+    showMergeList(document.getElementById('tag-merge-dest').value
+                  ? '' : input.value);
+  });
+  input.addEventListener('click', function() {
+    if(document.getElementById('tag-merge-list').style.display == 'none')
+      showMergeList('');
+  });
+  input.addEventListener('input', function() {
+    document.getElementById('tag-merge-dest').value = '';
+    showMergeList(input.value);
+  });
+  input.addEventListener('blur', function() {
+    hideMergeList();
+    // Restore the chosen tag's name if the typed text isn't a selection
+    var id = document.getElementById('tag-merge-dest').value;
+    if(id)
+      input.value = tags[id] ? tags[id].path : '';
+  });
+  input.addEventListener('keydown', function(e) {
+    var list = document.getElementById('tag-merge-list');
+    var open = list.style.display != 'none';
+    if(e.key == 'ArrowDown' || e.key == 'ArrowUp') {
+      e.preventDefault();
+      if(!open) {
+        showMergeList('');
+        return;
+      }
+      setMergeActive(mergeActive + (e.key == 'ArrowDown' ? 1 : -1));
+    } else if(e.key == 'Enter') {
+      if(open) {
+        // Enter picks the highlighted (or only/first) match, not submit
+        e.preventDefault();
+        var items = list.querySelectorAll('button');
+        var item = items[mergeActive >= 0 ? mergeActive : 0];
+        if(item)
+          chooseMergeDest(item.getAttribute('data-id'));
+      }
+    } else if(e.key == 'Escape' && open) {
+      e.stopPropagation();
+      hideMergeList();
+    }
+  });
+})();
 
 document.getElementById('tag-add-merge').addEventListener('click', function(e) {
   var tag_id = document.getElementById('tag-add-id').value;
