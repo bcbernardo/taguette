@@ -428,6 +428,16 @@ function tagAiModalView() {
       order.pop();
     }
   }
+  // Tags already checked in the form also stay visible (appended after
+  // the suggestions): a selection must not vanish behind the ranking
+  var checked_state = (typeof highlight_add_tag_state === 'object')
+    ? highlight_add_tag_state : {};
+  Object.keys(checked_state).forEach(function(id) {
+    if(!top[id] && tags['' + id]) {
+      top[id] = true;
+      order.push(tags['' + id]);
+    }
+  });
   return {visible: top, order: order};
 }
 
@@ -1635,10 +1645,12 @@ function tagAiSelfTest() {
     show_all: tag_ai_modal.show_all, matches: tag_ai_modal.matches,
   }));
   var saved_sel = window.tag_to_select_in_highlight;
+  var saved_checked = window.highlight_add_tag_state;
   try {
     tag_ai_modal.open = true;
     tag_ai_modal.show_all = false;
     tag_ai_modal.matches = null;
+    window.highlight_add_tag_state = {};
     var big = [];
     for(var j = 1; j <= 30; ++j) {
       big.push({tag: {id: j, path: 'tag' + j}, score: j});
@@ -1677,6 +1689,13 @@ function tagAiSelfTest() {
     view = tagAiModalView();
     assert(view.order.length === 3 && view.order[0].id === 30,
       'suggestion count follows the setting');
+    // Checked tags stay visible even when unranked
+    window.highlight_add_tag_state = {25: true};
+    view = tagAiModalView();
+    assert(view.order.length === tagAiTopN() + 1
+      && view.order[view.order.length - 1].id === 25,
+      'checked tags appended beyond the suggestions');
+    window.highlight_add_tag_state = {};
     if(typeof taguConfigSave === 'function') {
       taguConfigSave(saved_cfg);
     } else {
@@ -1689,6 +1708,7 @@ function tagAiSelfTest() {
     tag_ai_modal.show_all = saved_state.show_all;
     tag_ai_modal.matches = saved_state.matches;
     window.tag_to_select_in_highlight = saved_sel;
+    window.highlight_add_tag_state = saved_checked;
   }
 
   console.log(failures === 0

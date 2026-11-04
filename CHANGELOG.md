@@ -9,7 +9,11 @@ New feature (tag AI helpers):
   ranked for the highlighted text (semantic ranking when an embedding
   service is configured, lexical otherwise), with a *Show all tags*
   toggle and a search bar that mimics the Highlights panel's (lexical +
-  semantic). Hidden checkboxes keep a highlight's existing tags on save
+  semantic). Tag selections live outside the DOM, so they survive the
+  ranked/search re-renders (searching or clearing the search no longer
+  drops them), and checked tags stay visible — appended after the
+  suggestions — so they can still be unchecked; hidden checkboxes keep
+  a highlight's existing tags on save
 * Creating a tag from the highlight form asks the configured LLM for
   three tag names (grounded in the highlighted text and the existing
   tags); the light-gray suggestions fill the name field with one click,

@@ -1073,6 +1073,11 @@ function mergeTags(tag_src, tag_dest) {
   tagSearchRefresh();
 }
 
+// Checked tags in the highlight form, kept outside the DOM so filtered
+// re-renders (ranked suggestions, search) never lose the selection.
+// Owned by updateTagsList(); seeded by createHighlight()/editHighlight().
+var highlight_add_tag_state = {};
+
 function updateTagsList() {
   var entries = Object.entries(tags);
 
@@ -1213,16 +1218,22 @@ function updateTagsList() {
 
   // The list in the highlight modal
 
-  // Remember which tags are checked, so the selection is preserved when
-  // the list is re-rendered (e.g. when a tag is created while the
-  // highlight form is open)
-  var checked_tag_ids = [];
+  // Checked tags, kept OUTSIDE the DOM: the tags-ai feature can filter
+  // the list (ranked suggestions, search), and a rebuild must not lose
+  // the selection just because some checked tags are hidden. Ids whose
+  // checkbox is currently rendered follow the DOM; hidden ids keep
+  // their state. Seeded when the form is populated (createHighlight /
+  // editHighlight).
   var modal_checkboxes = tags_modal_list.querySelectorAll('input[name="highlight-add-tags"]');
   for(var i = 0; i < modal_checkboxes.length; ++i) {
+    var box_value = modal_checkboxes[i].value;
     if(modal_checkboxes[i].checked) {
-      checked_tag_ids.push(modal_checkboxes[i].value);
+      highlight_add_tag_state[box_value] = true;
+    } else if(box_value in highlight_add_tag_state) {
+      delete highlight_add_tag_state[box_value];
     }
   }
+  var checked_tag_ids = Object.keys(highlight_add_tag_state);
 
   // Empty the list
   while(tags_modal_list.firstChild) {
@@ -2089,6 +2100,7 @@ function createHighlight(selection) {
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
   document.getElementById('highlight-add-form').reset();
+  highlight_add_tag_state = {};  // nothing checked on a new highlight
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
 }
 
@@ -2098,9 +2110,11 @@ function editHighlight(e) {
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
   document.getElementById('highlight-add-end').value = highlights[id].end_offset;
+  highlight_add_tag_state = {};  // reseeded from this highlight below
   var hl_tags = highlights['' + id].tags;
   for(var i = 0; i < hl_tags.length; ++i) {
     document.getElementById('highlight-add-tags-' + hl_tags[i]).checked = true;
+    highlight_add_tag_state['' + hl_tags[i]] = true;
   }
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
 }
