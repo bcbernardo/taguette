@@ -2475,6 +2475,10 @@ function sugSetSplit(on) {
   var view = document.getElementById('document-view');
   var contents = document.getElementById('document-contents');
   var paneB = document.getElementById('document-contents-b');
+  // The highlight boundary-editing UI doesn't survive the pane rebuild
+  if(typeof hlSelectClear === 'function') {
+    hlSelectClear();
+  }
   // Clear all session rendering (real highlights are handled below)
   sugUnwrapClass('sug-span');
   sugUnwrapClass('hl-staged');

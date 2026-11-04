@@ -427,6 +427,52 @@ a.dropdown-item:hover {
   padding: 0.2em;
 }
 
+/* Highlight boundary brackets: click a highlight to show them, drag
+   them to change the highlight's start or end (glyphs drawn via CSS
+   content so they don't appear in textContent, keeping byte offsets
+   stable) */
+.hl-bracket {
+  display: inline-block;
+  width: 0.45em;
+  color: #125368;
+  font-weight: bold;
+  user-select: none;
+  cursor: ew-resize;
+  animation: hlblink 1.1s step-start infinite;
+}
+
+.hl-bracket::before {
+  content: "[";
+}
+
+.hl-bracket[data-which="end"]::before {
+  content: "]";
+}
+
+@keyframes hlblink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.12; }
+}
+
+/* While dragged, the bracket follows the boundary (re-rendered at the
+   preview offset): keep it visible but steady, and outside hit-testing
+   so the caret position resolves to the text right next to it */
+.hl-bracket.hl-dragging {
+  pointer-events: none;
+  animation: none;
+}
+
+/* Menu shown next to a selected highlight */
+#hl-menu {
+  display: none;
+  position: fixed;
+  z-index: 1060;
+  background: white;
+  border: 1px solid #999;
+  padding: 0.4em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 .list-group-item-primary a {
   color: #404041;
 }
