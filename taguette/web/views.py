@@ -513,6 +513,7 @@ class Project(BaseHandler):
                 str(tag.id): {'id': tag.id,
                               'path': tag.path,
                               'description': tag.description,
+                              'parent_id': tag.parent_id,
                               'count': tag.highlights_count}
                 for tag in project.tags
             },

@@ -52,6 +52,195 @@ def api_auth(method):
     return wrapper
 
 
+"""
+Tag tree helpers
+
+Tags can be nested through `tags.parent_id`. Parents inherit the
+highlights of their descendants: this is materialized as regular rows in
+the `highlight_tags` table, so that queries (counts, tag views, exports)
+keep working unchanged. The invariant is:
+
+    a highlight is linked to a tag iff it is linked to the tag itself or
+    to one of its descendants
+
+The helpers below maintain that invariant when highlights or tags change.
+"""
+
+
+def _ancestor_chain(db, tag_id):
+    """Return the ids of a tag's ancestors, closest first (empty at root).
+    """
+    chain = []
+    seen = {tag_id}
+    current = tag_id
+    while current is not None:
+        current = db.query(database.Tag.parent_id).filter(
+            database.Tag.id == current,
+        ).scalar()
+        if current is None or current in seen:
+            break  # Root reached (or corrupt cycle, don't loop forever)
+        chain.append(current)
+        seen.add(current)
+    return chain
+
+
+def _is_descendant(db, candidate_id, tag_id):
+    """Whether `candidate_id` is a strict descendant of `tag_id`."""
+    return candidate_id != tag_id \
+        and candidate_id in _subtree_tag_ids(db, tag_id)
+
+
+def _subtree_tag_ids(db, tag_id):
+    """Return the ids of `tag_id` and all of its descendants."""
+    ids = []
+    frontier = [tag_id]
+    seen = set()
+    while frontier:
+        current = frontier.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        ids.append(current)
+        frontier.extend(
+            row[0] for row in
+            db.query(database.Tag.id)
+            .filter(database.Tag.parent_id == current)
+        )
+    return ids
+
+
+def _tag_highlight_ids(db, tag_id):
+    """Return the set of highlight ids linked to a tag."""
+    return set(
+        row[0] for row in
+        db.query(database.HighlightTag.highlight_id)
+        .filter(database.HighlightTag.tag_id == tag_id)
+    )
+
+
+def _expand_tags_with_ancestors(db, tags):
+    """Return the given tags plus all of their ancestors.
+
+    Highlights added to a tag must also be linked to the tag's parents,
+    so that parents inherit their children's highlights.
+    """
+    ids = set(tag.id for tag in tags)
+    frontier = list(tags)
+    while frontier:
+        tag = frontier.pop()
+        if tag.parent_id is None:
+            continue
+        parent = db.query(database.Tag).get(tag.parent_id)
+        if parent is not None and parent.id not in ids:
+            ids.add(parent.id)
+            frontier.append(parent)
+    return ids
+
+
+def _merge_count_changes(changes, new_changes):
+    """Add tag count changes together (a tag can gain and lose links)."""
+    for tag_id, delta in new_changes.items():
+        changes[tag_id] = changes.get(tag_id, 0) + delta
+    return changes
+
+
+def _inherit_highlights_upwards(db, tag_id, highlight_ids):
+    """Link `highlight_ids` to `tag_id` and its ancestors where missing.
+
+    Returns the number of links added per tag (tag count changes).
+    """
+    changes = {}
+    frontier = [tag_id]
+    seen = set()
+    while frontier:
+        current = frontier.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        to_add = set(highlight_ids) - _tag_highlight_ids(db, current)
+        if to_add:
+            db.bulk_insert_mappings(database.HighlightTag, [
+                dict(highlight_id=hl_id, tag_id=current)
+                for hl_id in sorted(to_add)
+            ])
+            changes[current] = changes.get(current, 0) + len(to_add)
+        # Ancestors further up might still lack the highlight even though
+        # a deeper tag just got it, so the whole chain is walked
+        frontier.extend(_ancestor_chain(db, current))
+    return changes
+
+
+def _prune_implied_links(db, ancestor_ids, involved_highlights):
+    """Drop highlight-tag links that a moving/deleting subtree justified.
+
+    A link on an ancestor is "implied" while one of the ancestor's
+    children also has that highlight. When a subtree moves away (or a tag
+    is deleted), implied links whose highlight came from that subtree and
+    that no child justifies anymore must go.
+
+    `ancestor_ids` must be ordered closest to the moved tag first, so that
+    pruning a deep ancestor is taken into account for the ones above it.
+    Returns the number of links removed per tag.
+    """
+    changes = {}
+    for ancestor_id in ancestor_ids:
+        child_ids = [
+            row[0] for row in
+            db.query(database.Tag.id)
+            .filter(database.Tag.parent_id == ancestor_id)
+        ]
+        justified = set()
+        if child_ids:
+            justified = set(
+                row[0] for row in
+                db.query(database.HighlightTag.highlight_id)
+                .filter(database.HighlightTag.tag_id.in_(child_ids))
+            )
+        lost = (
+            (involved_highlights & _tag_highlight_ids(db, ancestor_id))
+            - justified
+        )
+        if lost:
+            (
+                db.query(database.HighlightTag)
+                .filter(database.HighlightTag.tag_id == ancestor_id)
+                .filter(
+                    database.HighlightTag.highlight_id.in_(lost),
+                )
+                .delete(synchronize_session=False)
+            )
+            changes[ancestor_id] = changes.get(ancestor_id, 0) - len(lost)
+    return changes
+
+
+def _update_inheritance_on_move(db, tag, old_parent_id, new_parent_id):
+    """Keep highlight inheritance consistent after `tag` is re-parented.
+
+    Ancestors of the new location gain the moved subtree's highlights;
+    ancestors of the old location lose the links that only the moved
+    subtree justified. Returns tag count changes to broadcast.
+    """
+    subtree_ids = _subtree_tag_ids(db, tag.id)
+    subtree_highlights = set(
+        row[0] for row in
+        db.query(database.HighlightTag.highlight_id)
+        .filter(database.HighlightTag.tag_id.in_(subtree_ids))
+    )
+
+    changes = {}
+    if new_parent_id is not None:
+        _merge_count_changes(changes, _inherit_highlights_upwards(
+            db, new_parent_id, subtree_highlights,
+        ))
+    if old_parent_id is not None:
+        # The old parent itself and its ancestors, closest first
+        old_chain = [old_parent_id] + _ancestor_chain(db, old_parent_id)
+        _merge_count_changes(changes, _prune_implied_links(
+            db, old_chain, subtree_highlights,
+        ))
+    return changes
+
+
 class CheckUser(BaseHandler):
     @api_auth
     @PROM_REQUESTS.sync('check_user')
@@ -358,9 +547,20 @@ class TagAdd(BaseHandler):
             obj = self.get_json()
             validate.tag_path(obj['path'])
             validate.description(obj['description'])
+
+            # Optional parent: makes the new tag a child of another tag
+            parent_id = obj.get('parent_id')
+            if parent_id is not None:
+                if not isinstance(parent_id, int):
+                    raise validate.InvalidFormat("Invalid parent tag")
+                parent = self.db.query(database.Tag).get(parent_id)
+                if parent is None or parent.project_id != project.id:
+                    return self.send_error_json(404, "No such tag")
+
             tag = database.Tag(project=project,
                                path=obj['path'],
-                               description=obj['description'])
+                               description=obj['description'],
+                               parent_id=parent_id)
             try:
                 self.db.add(tag)
                 self.db.flush()  # Need to flush to get tag.id
@@ -396,24 +596,65 @@ class TagUpdate(BaseHandler):
             if tag is None or tag.project_id != project.id:
                 return self.send_error_json(404, "No such tag")
             if obj:
-                if 'path' in obj:
-                    validate.tag_path(obj['path'])
-                    tag.path = obj['path']
-                if 'description' in obj:
-                    validate.description(obj['description'])
-                    tag.description = obj['description']
-                cmd = database.Command.tag_add(
-                    self.current_user,
-                    tag,
-                )
-                try:
-                    self.db.add(cmd)
-                    self.db.commit()
-                except IntegrityError:
-                    self.db.rollback()
-                    return self.send_error_json(409, "Conflict")
-                self.db.refresh(cmd)
-                self.application.notify_project(project.id, cmd)
+                commands = []
+
+                # Move within the tag tree (new parent, None for root)
+                if 'parent_id' in obj:
+                    new_parent_id = obj['parent_id']
+                    if new_parent_id is not None \
+                            and not isinstance(new_parent_id, int):
+                        raise validate.InvalidFormat("Invalid parent tag")
+                    if new_parent_id is not None:
+                        if new_parent_id == tag.id or _is_descendant(
+                                self.db, new_parent_id, tag.id):
+                            return self.send_error_json(
+                                400,
+                                "Cannot make a tag a child of one of its "
+                                "own descendants",
+                            )
+                        parent = self.db.query(database.Tag).get(
+                            new_parent_id,
+                        )
+                        if parent is None or parent.project_id != project.id:
+                            return self.send_error_json(404, "No such tag")
+                    if new_parent_id != tag.parent_id:
+                        old_parent_id = tag.parent_id
+                        tag.parent_id = new_parent_id
+                        changes = _update_inheritance_on_move(
+                            self.db, tag, old_parent_id, new_parent_id,
+                        )
+                        cmd = database.Command.tag_move(
+                            self.current_user,
+                            project.id,
+                            tag.id,
+                            new_parent_id,
+                        )
+                        cmd.tag_count_changes = changes or None
+                        commands.append(cmd)
+
+                if 'path' in obj or 'description' in obj:
+                    if 'path' in obj:
+                        validate.tag_path(obj['path'])
+                        tag.path = obj['path']
+                    if 'description' in obj:
+                        validate.description(obj['description'])
+                        tag.description = obj['description']
+                    commands.append(database.Command.tag_add(
+                        self.current_user,
+                        tag,
+                    ))
+
+                if commands:
+                    for cmd in commands:
+                        self.db.add(cmd)
+                    try:
+                        self.db.commit()
+                    except IntegrityError:
+                        self.db.rollback()
+                        return self.send_error_json(409, "Conflict")
+                    for cmd in commands:
+                        self.db.refresh(cmd)
+                        self.application.notify_project(project.id, cmd)
 
             return self.send_json({'id': tag.id})
         except validate.InvalidFormat as e:
@@ -430,12 +671,35 @@ class TagUpdate(BaseHandler):
         tag = self.db.query(database.Tag).get(int(tag_id))
         if tag is None or tag.project_id != project.id:
             return self.send_error_json(404, "No such tag")
+
+        # Children move up to the deleted tag's parent (rather than being
+        # silently deleted by the foreign key cascade), and the deleted
+        # tag's ancestors lose the links its own highlights justified
+        old_parent_id = tag.parent_id
+        tag_highlights = _tag_highlight_ids(self.db, tag.id)
+        self.db.query(database.Tag).filter(
+            database.Tag.parent_id == tag.id,
+        ).update(
+            {database.Tag.parent_id: old_parent_id},
+            synchronize_session=False,
+        )
+        if old_parent_id is not None:
+            old_chain = [old_parent_id] + _ancestor_chain(
+                self.db, old_parent_id,
+            )
+            changes = _prune_implied_links(
+                self.db, old_chain, tag_highlights,
+            )
+        else:
+            changes = {}
+
         self.db.delete(tag)
         cmd = database.Command.tag_delete(
             self.current_user,
             project.id,
             tag.id,
         )
+        cmd.tag_count_changes = changes or None
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -462,25 +726,33 @@ class TagMerge(BaseHandler):
             or tag_dest.project_id != project.id
         ):
             return self.send_error_json(404, "No such tag")
+        if tag_src.id == tag_dest.id or _is_descendant(
+                self.db, tag_dest.id, tag_src.id):
+            return self.send_error_json(
+                400, "Cannot merge a tag into one of its own descendants")
 
-        # Remove tag from tag_src if it's already in tag_dest
-        highlights_in_dest = (
-            self.db.query(database.HighlightTag.highlight_id)
-            .filter(database.HighlightTag.tag_id == tag_dest.id)
+        # Handle the hierarchy first: treat the merge as moving the source
+        # (with its subtree) under the destination, so the destination and
+        # its ancestors inherit the subtree's highlights, and the source's
+        # old ancestors lose the links the subtree justified
+        changes = _update_inheritance_on_move(
+            self.db, tag_src, tag_src.parent_id, tag_dest.id,
         )
-        (
-            self.db.query(database.HighlightTag)
-                .filter(database.HighlightTag.tag_id == tag_src.id)
-                .filter(database.HighlightTag.highlight_id.in_(
-                    highlights_in_dest
-                ))
+
+        # Every highlight of the source is now linked to the destination
+        # (inherited above); drop the source's own links
+        self.db.query(database.HighlightTag).filter(
+            database.HighlightTag.tag_id == tag_src.id,
         ).delete(synchronize_session=False)
-        # Update tags that are in tag_src to be in tag_dest
-        self.db.execute(
-            database.HighlightTag.__table__.update()
-            .where(database.HighlightTag.tag_id == tag_src.id)
-            .values(tag_id=tag_dest.id)
+
+        # Children of the source are re-parented onto the destination
+        self.db.query(database.Tag).filter(
+            database.Tag.parent_id == tag_src.id,
+        ).update(
+            {database.Tag.parent_id: tag_dest.id},
+            synchronize_session=False,
         )
+
         # Delete tag_src
         self.db.delete(tag_src)
 
@@ -490,6 +762,7 @@ class TagMerge(BaseHandler):
             tag_src.id,
             tag_dest.id,
         )
+        cmd.tag_count_changes = changes or None
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -519,6 +792,10 @@ class HighlightAdd(BaseHandler):
         if set(tag.id for tag in tags) != new_tags:
             return self.send_error_json(400, "Tag not in project")
 
+        # Parents inherit highlights tagged on their children: expand the
+        # tag set with the tags' ancestors
+        new_tags = _expand_tags_with_ancestors(self.db, tags)
+
         snippet = extract.extract(document.contents, start, end)
         hl = database.Highlight(document=document,
                                 start_offset=start,
@@ -541,7 +818,7 @@ class HighlightAdd(BaseHandler):
             hl,
             sorted(new_tags),
         )
-        cmd.tag_count_changes = {tag: 1 for tag in obj.get('tags')}
+        cmd.tag_count_changes = {tag: 1 for tag in sorted(new_tags)}
         self.db.add(cmd)
         self.db.commit()
         self.db.refresh(cmd)
@@ -585,6 +862,10 @@ class HighlightUpdate(BaseHandler):
                 )
                 if set(tag.id for tag in tags) != new_tags:
                     return self.send_error_json(400, "Tag not in project")
+
+                # Parents inherit highlights tagged on their children:
+                # expand the tag set with the tags' ancestors
+                new_tags = _expand_tags_with_ancestors(self.db, tags)
 
                 # Update tags in database
                 (

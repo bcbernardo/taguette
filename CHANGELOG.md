@@ -4,6 +4,29 @@ Changelog
 Unreleased
 ----------
 
+New feature (tag hierarchy):
+* Tags can be nested: drag a tag onto another in the Highlights panel (top
+  or bottom of the row) to make it a child, after a confirmation; dropping
+  it in the middle of the row offers a merge instead (cancellable by
+  closing the popup). Holding a dragged tag near the top or bottom of the
+  panel auto-scrolls the tag list, so far-apart tags can be nested
+* The tag form has a "parent tag" search bar: pick a parent to create a
+  nested tag, leave it empty for a root-level tag
+* Nested tags are shown as a tree in the Highlights panel and in the
+  highlight form; the collapse arrow hides both a tag's definition and its
+  child tags
+* Parents inherit the highlights of their child tags: highlighting a nested
+  tag adds the highlight to its parents, and re-parenting a tag gives the
+  new parent all the highlights of the moved subtree
+* Tag moves (drag & drop, or parent change in the tag form) can be undone
+  with Ctrl+Z
+
+Bugfixes (highlight form):
+* Fix tags being dropped from a highlight when a new tag was created while
+  editing it (the tag checkboxes were re-rendered, losing the checked ones)
+* A tag created from within the highlight form is now automatically selected
+  for the current highlight
+
 Enhancements (Highlights panel):
 * The left panel now scrolls when its contents are taller than the window
 * Tag names in the list wrap at whitespace instead of mid-word

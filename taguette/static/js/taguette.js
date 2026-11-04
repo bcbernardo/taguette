@@ -749,6 +749,87 @@ document.getElementById('document-change-delete').addEventListener('click', func
 var tags_list = document.getElementById('tags-list');
 var tags_modal_list = document.getElementById('highlight-add-tags');
 
+/*
+ * Tag tree
+ *
+ * Tags can be nested through their `parent_id`. The helpers below build
+ * the hierarchy from the flat `tags` map; projects have on the order of
+ * a few hundred tags, so recomputing on every render stays cheap.
+ */
+
+function tagChildrenOf(tag_id) {
+  var children = [];
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    var tag = entries[i][1];
+    if(tag.parent_id != null && tag.parent_id == tag_id) {
+      children.push(tag);
+    }
+  }
+  sortByKey(children, function(t) { return t.path; });
+  return children;
+}
+
+function tagRoots() {
+  var roots = [];
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    var tag = entries[i][1];
+    if(tag.parent_id == null || !tags['' + tag.parent_id]) {
+      roots.push(tag);
+    }
+  }
+  sortByKey(roots, function(t) { return t.path; });
+  return roots;
+}
+
+function tagAncestorsOf(tag) {
+  var ancestors = [];
+  var current = tag;
+  var guard = 0;
+  while(current && current.parent_id != null && guard++ < 1000) {
+    current = tags['' + current.parent_id];
+    if(!current) {
+      break;
+    }
+    ancestors.push(current);
+  }
+  return ancestors;
+}
+
+function tagIsDescendant(tag_id, maybe_ancestor_id) {
+  var current = tags['' + tag_id];
+  var guard = 0;
+  while(current && current.parent_id != null && guard++ < 1000) {
+    if('' + current.parent_id == '' + maybe_ancestor_id) {
+      return true;
+    }
+    current = tags['' + current.parent_id];
+  }
+  return false;
+}
+
+/*
+ * Tag selection in the "highlight" modal
+ *
+ * When a tag is created while the highlight form is open, it should get
+ * selected right away; and the list re-render must not lose the current
+ * selection.
+ */
+var tag_to_select_in_highlight = null;
+
+function selectTagInHighlight(tag_id) {
+  var checkbox = document.getElementById('highlight-add-tags-' + tag_id);
+  if(checkbox) {
+    checkbox.checked = true;
+    tag_to_select_in_highlight = null;
+  } else {
+    // The checkbox doesn't exist yet (the tag list hasn't been refreshed):
+    // check it next time the list is rendered
+    tag_to_select_in_highlight = tag_id;
+  }
+}
+
 function linkTag(elem, tag_path) {
   var url = '/project/' + project_id + '/highlights/' + encodeURIComponent(tag_path);
   elem.setAttribute('href', url);
@@ -994,7 +1075,6 @@ function mergeTags(tag_src, tag_dest) {
 
 function updateTagsList() {
   var entries = Object.entries(tags);
-  sortByKey(entries, function(e) { return e[1].path; });
 
   // The list in the left panel
 
@@ -1007,29 +1087,52 @@ function updateTagsList() {
     }
     tags_list.removeChild(first);
   }
-  // Fill up the list again
-  // TODO: Show this as a tree
+  // Fill up the list again, as a tree when tags are nested
   var before = tags_list.firstChild;
+
+  // Under a search, show the matches plus their ancestors, so the tree
+  // structure stays readable
+  var visible = null;
+  if(tag_search_state.matches) {
+    visible = {};
+    for(var i = 0; i < entries.length; ++i) {
+      var tag = entries[i][1];
+      if(tag_search_state.matches[tag.id]) {
+        var ancestors = tagAncestorsOf(tag);
+        visible[tag.id] = true;
+        for(var j = 0; j < ancestors.length; ++j) {
+          visible[ancestors[j].id] = true;
+        }
+      }
+    }
+  }
+
   var shown = 0;
-  for(var i = 0; i < entries.length; ++i) {
-    var tag = entries[i][1];
+
+  function renderTagItem(tag) {
+    if(visible && !visible[tag.id]) {
+      return null;
+    }
+    shown++;
+    var children = tagChildrenOf(tag.id);
+    var has_children = children.length > 0;
+    // Default to open for tags with children so the hierarchy is visible,
+    // collapsed otherwise (preserving the old description toggle);
+    // the toggle collapses both the description and the child tags
+    var open = tag_desc_open.hasOwnProperty(tag.id)
+      ? tag_desc_open[tag.id]
+      : has_children;
+    var has_desc = !!tag.description;
     var elem = document.createElement('li');
-    elem.className = 'list-group-item';
+    elem.className = 'list-group-item tag-item';
+    elem.setAttribute('data-tag-id', '' + tag.id);
     if(current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag) {
       elem.classList.add('tag-current');
     }
-    // Hide tags that don't match the current search, if one is active
-    if(tag_search_state.matches && !tag_search_state.matches[tag.id]) {
-      elem.style.display = 'none';
-    } else {
-      shown++;
-    }
-    var open = !!tag_desc_open[tag.id];
-    var has_desc = !!tag.description;
     elem.innerHTML =
-      '<div class="d-flex justify-content-between align-items-start">' +
+      '<div class="d-flex justify-content-between align-items-start tag-drag-handle">' +
       '  <div class="tag-name">' +
-      '    <a href="javascript:void(0)" class="tag-desc-toggle' + (has_desc ? '' : ' tag-desc-toggle-empty') + '" id="tag-desc-toggle-' + tag.id + '" title="' + gettext("Show or hide the tag definition") + '">' + (open ? '&#9662;' : '&#9656;') + '</a>' +
+      '    <a href="javascript:void(0)" class="tag-desc-toggle' + (has_desc || has_children ? '' : ' tag-desc-toggle-empty') + '" id="tag-desc-toggle-' + tag.id + '" title="' + gettext("Show or hide the tag definition and nested tags") + '">' + (open ? '&#9662;' : '&#9656;') + '</a>' +
       '    <a id="tag-link-' + tag.id + '">' + escapeHtml(tag.path) + '</a>' +
       '    <a href="javascript:void(0)" class="tag-pencil" id="tag-edit-' + tag.id + '" title="' + gettext("Edit tag name") + '">&#9998;</a>' +
       '  </div>' +
@@ -1045,16 +1148,25 @@ function updateTagsList() {
     linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
     // Clicking the highlight count opens the tag view as well
     linkTag(document.getElementById('tag-' + tag.id + '-count'), tag.path);
-    // Expand/collapse the definition box (state survives re-renders)
-    document.getElementById('tag-desc-toggle-' + tag.id).addEventListener('click', (function(tag_id) {
+    // Expand/collapse the definition box and the nested tags (state
+    // survives re-renders)
+    document.getElementById('tag-desc-toggle-' + tag.id).addEventListener('click', (function(tag_id, was_open) {
       return function(e) {
         e.preventDefault();
-        tag_desc_open[tag_id] = !tag_desc_open[tag_id];
-        var open_now = tag_desc_open[tag_id];
-        document.getElementById('tag-desc-' + tag_id).style.display = open_now ? '' : 'none';
+        var open_now = !was_open;
+        tag_desc_open[tag_id] = open_now;
+        was_open = open_now;
+        var desc = document.getElementById('tag-desc-' + tag_id);
+        if(desc) {
+          desc.style.display = open_now ? '' : 'none';
+        }
+        var children_list = document.getElementById('tag-children-' + tag_id);
+        if(children_list) {
+          children_list.style.display = open_now ? '' : 'none';
+        }
         this.innerHTML = open_now ? '&#9662;' : '&#9656;';
       };
-    })(tag.id));
+    })(tag.id, open));
     // Pencils: quick edit of name / definition
     document.getElementById('tag-edit-' + tag.id).addEventListener('click', (function(tag_id) {
       return function(e) { e.preventDefault(); editTag(tag_id); };
@@ -1062,6 +1174,30 @@ function updateTagsList() {
     document.getElementById('tag-desc-edit-' + tag.id).addEventListener('click', (function(tag_id) {
       return function(e) { e.preventDefault(); editTag(tag_id); };
     })(tag.id));
+    // Drag & drop: drag a tag onto another to re-parent or merge it
+    enableTagDrag(elem, tag.id);
+    // Nested tags
+    if(has_children) {
+      var children_ul = document.createElement('ul');
+      children_ul.className = 'tag-children';
+      children_ul.setAttribute('id', 'tag-children-' + tag.id);
+      if(!open) {
+        children_ul.style.display = 'none';
+      }
+      for(var i = 0; i < children.length; ++i) {
+        var child_li = renderTagItem(children[i]);
+        if(child_li) {
+          children_ul.appendChild(child_li);
+        }
+      }
+      elem.appendChild(children_ul);
+    }
+    return elem;
+  }
+
+  var roots = tagRoots();
+  for(var i = 0; i < roots.length; ++i) {
+    renderTagItem(roots[i]);
   }
   if(entries.length == 0) {
     var elem = document.createElement('div');
@@ -1077,6 +1213,17 @@ function updateTagsList() {
 
   // The list in the highlight modal
 
+  // Remember which tags are checked, so the selection is preserved when
+  // the list is re-rendered (e.g. when a tag is created while the
+  // highlight form is open)
+  var checked_tag_ids = [];
+  var modal_checkboxes = tags_modal_list.querySelectorAll('input[name="highlight-add-tags"]');
+  for(var i = 0; i < modal_checkboxes.length; ++i) {
+    if(modal_checkboxes[i].checked) {
+      checked_tag_ids.push(modal_checkboxes[i].value);
+    }
+  }
+
   // Empty the list
   while(tags_modal_list.firstChild) {
     var first = tags_modal_list.firstChild;
@@ -1086,23 +1233,45 @@ function updateTagsList() {
     }
     tags_modal_list.removeChild(first);
   }
-  // Fill up the list again
-  // TODO: Show this as a tree
-  var tree = {};
+  // Fill up the list again, as a tree when tags are nested
   var before = tags_modal_list.firstChild;
-  for(var i = 0; i < entries.length; ++i) {
-    var tag = entries[i][1];
-    var elem = document.createElement('li');
-    elem.className = 'tag-name form-check';
-    elem.innerHTML =
+
+  function renderModalTagItem(tag) {
+    var li = document.createElement('li');
+    li.className = 'tag-name form-check';
+    li.innerHTML =
       '<input type="checkbox" class="form-check-input" value="' + tag.id + '" name="highlight-add-tags" id="highlight-add-tags-' + tag.id + '" />' +
       '<label for="highlight-add-tags-' + tag.id + '" class="form-check-label">' + escapeHtml(tag.path) + '</label>';
-    tags_modal_list.insertBefore(elem, before);
+    // Restore the checked state. We set the property (not the attribute)
+    // so that resetting the form still clears it.
+    var checkbox = li.querySelector('input');
+    checkbox.checked = checked_tag_ids.indexOf('' + tag.id) !== -1;
+    var children = tagChildrenOf(tag.id);
+    if(children.length > 0) {
+      var children_ul = document.createElement('ul');
+      children_ul.className = 'tag-children';
+      for(var i = 0; i < children.length; ++i) {
+        children_ul.appendChild(renderModalTagItem(children[i]));
+      }
+      li.appendChild(children_ul);
+    }
+    return li;
+  }
+
+  var roots = tagRoots();
+  for(var i = 0; i < roots.length; ++i) {
+    tags_modal_list.insertBefore(renderModalTagItem(roots[i]), before);
   }
   if(entries.length == 0) {
     var elem = document.createElement('li');
     elem.textContent = gettext("no tags");
     tags_modal_list.insertBefore(elem, before);
+  }
+
+  // Select a tag that was just created from the highlight form, now that
+  // its checkbox exists
+  if(tag_to_select_in_highlight) {
+    selectTagInHighlight(tag_to_select_in_highlight);
   }
 
   console.log("Tags list updated");
@@ -1135,6 +1304,8 @@ function createTag() {
   document.getElementById('tag-add-cancel').style.display = '';
   document.getElementById('tag-add-delete').style.display = 'none';
   document.getElementById('tag-add-merge').style.display = 'none';
+  // New tags are root-level unless a parent is picked
+  tagAddParentSelect(null);
   tagAddPathFit();
   $(tag_add_modal).modal();
 }
@@ -1149,6 +1320,11 @@ function editTag(tag_id) {
   document.getElementById('tag-add-cancel').style.display = 'none';
   document.getElementById('tag-add-delete').style.display = '';
   document.getElementById('tag-add-merge').style.display = '';
+  // Show the tag's current parent in the search bar
+  var parent = tags['' + tag_id].parent_id != null
+    ? tags['' + tags['' + tag_id].parent_id]
+    : null;
+  tagAddParentSelect(parent);
   tagAddPathFit();
   $(tag_add_modal).modal();
 }
@@ -1176,27 +1352,35 @@ document.getElementById('tag-add-form').addEventListener('submit', function(e) {
     alert(gettext("Invalid tag name"));
     return;
   }
-  var req;
-  if(tag_id !== null) {
-    console.log("Posting update for tag " + tag_id);
-    req = postJSON(
-      '/api/project/' + project_id + '/tag/' + tag_id,
-      {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
-    );
-  } else {
-    console.log("Posting new tag");
-    req = postJSON(
-      '/api/project/' + project_id + '/tag/new',
-      {path: tag_path,
-       description: document.getElementById('tag-add-description').value}
-    );
-  }
+  // Parent selection: empty means root level
+  var parent_value = document.getElementById('tag-add-parent-id').value;
+  var parent_id = parent_value ? parseInt(parent_value) : null;
+  var old_parent_id = tag_id !== null ? tags['' + tag_id].parent_id : undefined;
+
+  console.log("Posting new tag");
+  var req = postJSON(
+    tag_id !== null
+      ? '/api/project/' + project_id + '/tag/' + tag_id
+      : '/api/project/' + project_id + '/tag/new',
+    {path: tag_path,
+     description: document.getElementById('tag-add-description').value,
+     parent_id: parent_id}
+  );
   showSpinner();
-  req.then(function() {
+  req.then(function(result) {
     console.log("Tag posted");
+    if(tag_id === null && highlight_add_modal.classList.contains('show')) {
+      // The tag was created from the highlight form: select it there, as it
+      // is most likely meant to be applied to the current highlight
+      selectTagInHighlight(result.id);
+    }
+    if(tag_id !== null && parent_id !== old_parent_id) {
+      // The tag moved in the tree: allow undoing it with Ctrl+Z
+      pushTagUndo({tag_id: tag_id, parent_id: old_parent_id});
+    }
     $(tag_add_modal).modal('hide');
     document.getElementById('tag-add-form').reset();
+    tagAddParentSelect(null);
   })
   .catch(function(error) {
     console.error("Failed to create tag:", error);
@@ -1230,12 +1414,8 @@ document.getElementById('tag-add-delete').addEventListener('click', function(e) 
 });
 
 // Merge tags button in tag edit modal: shows merge modal
-document.getElementById('tag-add-merge').addEventListener('click', function(e) {
-  var tag_id = document.getElementById('tag-add-id').value;
-  if(!tag_id)
-    return;
-  tag_id = parseInt(tag_id);
-
+// (also used by drag & drop, with a preselected destination)
+function showMergeModal(tag_id, preselect_dest) {
   document.getElementById('tag-merge-form').reset();
 
   // Set source tag
@@ -1246,12 +1426,13 @@ document.getElementById('tag-add-merge').addEventListener('click', function(e) {
   var target = document.getElementById('tag-merge-dest');
   target.innerHTML = '';
 
-  // Fill target tag <select>
+  // Fill target tag <select>: can't merge into the source itself or one
+  // of its descendants (that would create a cycle)
   var entries = Object.entries(tags);
   sortByKey(entries, function(e) { return e[1].path; });
   for(var i = 0; i < entries.length; ++i) {
-    if(entries[i][0] == '' + tag_id) {
-      // Can't merge into itself
+    if(entries[i][0] == '' + tag_id
+       || tagIsDescendant(entries[i][1].id, tag_id)) {
       continue;
     }
     var option = document.createElement('option');
@@ -1260,7 +1441,18 @@ document.getElementById('tag-add-merge').addEventListener('click', function(e) {
     target.appendChild(option);
   }
 
+  if(preselect_dest !== undefined && preselect_dest !== null) {
+    target.value = '' + preselect_dest;
+  }
+
   $(document.getElementById('tag-merge-modal')).modal();
+}
+
+document.getElementById('tag-add-merge').addEventListener('click', function(e) {
+  var tag_id = document.getElementById('tag-add-id').value;
+  if(!tag_id)
+    return;
+  showMergeModal(parseInt(tag_id));
 });
 
 // Merge modal submit button
@@ -1294,6 +1486,451 @@ document.getElementById('tag-merge-form').addEventListener('submit', function(e)
     alert(gettext("Couldn't merge tags!") + "\n\n" + error);
   })
   .then(hideSpinner);
+});
+
+
+/*
+ * Tag tree: drag & drop, undo
+ */
+
+// Tag being dragged (id), reset on dragend/drop
+var tag_drag_id = null;
+
+/*
+ * Auto-scroll of the Highlights panel during a drag
+ *
+ * Browsers scroll the page itself during an HTML5 drag, but not inner
+ * scrollable containers such as the tags panel. While a tag is being
+ * dragged, the pointer position is tracked (dragover events fire all the
+ * way up to the document) and a timer scrolls the panel whenever the
+ * pointer is held near its top or bottom edge. The timer keeps running
+ * while the pointer is stationary, so the panel keeps scrolling until the
+ * pointer moves away from the edge.
+ */
+
+var tag_scroll_container = document.querySelector('.left-panel-scroll');
+var tag_drag_last_y = null;
+var tag_autoscroll_timer = null;
+var TAG_AUTOSCROLL_EDGE = 48;  // Pointer this close to an edge starts scrolling
+var TAG_AUTOSCROLL_MAX = 22;   // Maximum pixels scrolled per tick
+
+function tagAutoScrollTick() {
+  if(tag_drag_id === null || tag_drag_last_y === null
+     || !tag_scroll_container) {
+    return;
+  }
+  var rect = tag_scroll_container.getBoundingClientRect();
+  // Only the part of the panel that is on screen can be used as a scroll
+  // zone: the panel can extend below the window (its top is under the
+  // page header), so clip it to the viewport
+  var top = Math.max(rect.top, 0);
+  var bottom = Math.min(rect.bottom, window.innerHeight);
+  var y = tag_drag_last_y;
+  // Don't scroll when the pointer is far away from the panel
+  if(y < top - TAG_AUTOSCROLL_EDGE || y > bottom + TAG_AUTOSCROLL_EDGE) {
+    return;
+  }
+  var delta = 0;
+  if(y < top + TAG_AUTOSCROLL_EDGE) {
+    // Closer to the top edge: scroll up, faster when closer
+    delta = -Math.ceil(
+      (top + TAG_AUTOSCROLL_EDGE - y)
+      / TAG_AUTOSCROLL_EDGE * TAG_AUTOSCROLL_MAX);
+  } else if(y > bottom - TAG_AUTOSCROLL_EDGE) {
+    // Closer to the bottom edge: scroll down, faster when closer
+    delta = Math.ceil(
+      (y - (bottom - TAG_AUTOSCROLL_EDGE))
+      / TAG_AUTOSCROLL_EDGE * TAG_AUTOSCROLL_MAX);
+  }
+  if(delta) {
+    tag_scroll_container.scrollTop += delta;
+  }
+}
+
+function tagAutoScrollStart() {
+  if(tag_autoscroll_timer === null) {
+    tag_autoscroll_timer = window.setInterval(tagAutoScrollTick, 25);
+  }
+}
+
+function tagAutoScrollStop() {
+  if(tag_autoscroll_timer !== null) {
+    window.clearInterval(tag_autoscroll_timer);
+    tag_autoscroll_timer = null;
+  }
+  tag_drag_last_y = null;
+}
+
+// Track the pointer during the drag, wherever it goes: dragover fires on
+// the element under the cursor and bubbles all the way up to the document
+// (this includes hovering over the search bar, the panel's margins, etc.)
+document.addEventListener('dragover', function(e) {
+  if(tag_drag_id !== null) {
+    tag_drag_last_y = e.clientY;
+  }
+}, true);
+
+// Safety net in case the source element is removed from the DOM mid-drag
+// (e.g. the tags list is re-rendered): dragend always fires, but perhaps
+// not on the element it started from
+document.addEventListener('dragend', function() {
+  tagAutoScrollStop();
+});
+
+function tagDropZone(e, elem) {
+  // Which third of the row the cursor is over: the top and bottom thirds
+  // re-parent the dragged tag, the middle third merges it into this tag
+  var rect = elem.getBoundingClientRect();
+  var y = e.clientY - rect.top;
+  if(y < rect.height / 3) {
+    return 'child-top';
+  } else if(y > 2 * rect.height / 3) {
+    return 'child-bottom';
+  } else {
+    return 'merge';
+  }
+}
+
+function tagDropSetIndicator(elem, zone) {
+  elem.classList.remove('drop-child', 'drop-merge');
+  if(zone == 'merge') {
+    elem.classList.add('drop-merge');
+  } else {
+    elem.classList.add('drop-child');
+  }
+}
+
+function tagDropClearIndicator(elem) {
+  elem.classList.remove('drop-child', 'drop-merge');
+}
+
+function enableTagDrag(elem, tag_id) {
+  elem.setAttribute('draggable', 'true');
+
+  // Drag events bubble up through the nested tag items: only the
+  // innermost tag item under the cursor must handle them
+  function isInnermost(e) {
+    if(!e.target || !e.target.closest) {
+      return true;
+    }
+    return e.target.closest('li.tag-item') === elem;
+  }
+
+  elem.addEventListener('dragstart', function(e) {
+    if(!isInnermost(e)) {
+      return;
+    }
+    tag_drag_id = tag_id;
+    tag_drag_last_y = e.clientY;
+    tagAutoScrollStart();
+    e.dataTransfer.setData('text/plain', '' + tag_id);
+    e.dataTransfer.effectAllowed = 'move';
+    try {
+      e.dataTransfer.setDragImage(elem, 10, 10);
+    } catch(err) {
+    }
+    window.setTimeout(function() {
+      elem.classList.add('tag-dragging');
+    }, 0);
+  });
+  elem.addEventListener('dragend', function(e) {
+    tag_drag_id = null;
+    tagAutoScrollStop();
+    elem.classList.remove('tag-dragging');
+  });
+
+  elem.addEventListener('dragover', function(e) {
+    if(!isInnermost(e)) {
+      return;
+    }
+    if(tag_drag_id === null) {
+      return; // Some other drag (text, images, ...)
+    }
+    // Can't drop a tag onto itself or one of its descendants
+    if(tag_id == tag_drag_id || tagIsDescendant(tag_id, tag_drag_id)) {
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    tagDropSetIndicator(elem, tagDropZone(e, elem));
+  });
+  elem.addEventListener('dragleave', function(e) {
+    tagDropClearIndicator(elem);
+  });
+  elem.addEventListener('drop', function(e) {
+    if(!isInnermost(e)) {
+      return;
+    }
+    e.preventDefault();
+    tagDropClearIndicator(elem);
+    tagAutoScrollStop();
+    var dragged = tag_drag_id;
+    tag_drag_id = null;
+    if(dragged === null) {
+      return;
+    }
+    if(tag_id == dragged || tagIsDescendant(tag_id, dragged)) {
+      return;
+    }
+    var zone = tagDropZone(e, elem);
+    if(zone == 'merge') {
+      // Dropping in the middle merges; closing the popup cancels
+      showMergeModal(dragged, tag_id);
+    } else {
+      // Dropping inside or below re-parents, after a confirmation
+      confirmTagMove(dragged, tag_id);
+    }
+  });
+}
+
+/*
+ * Moving a tag to a new parent (with confirmation)
+ */
+
+var tag_move_modal = document.getElementById('tag-move-modal');
+var tag_move_pending = null;
+
+function confirmTagMove(tag_id, parent_id) {
+  var tag = tags['' + tag_id];
+  var parent = tags['' + parent_id];
+  if(!tag || !parent) {
+    return;
+  }
+  if(tag.parent_id != null && tag.parent_id == parent_id) {
+    return; // Already a child of that tag
+  }
+  document.getElementById('tag-move-message').textContent = gettext(
+    "Make '%(tag)s' a child of '%(parent)s'?",
+    {tag: tag.path, parent: parent.path});
+  tag_move_pending = {
+    tag_id: tag_id,
+    old_parent_id: tag.parent_id,
+    new_parent_id: parent_id,
+  };
+  $(tag_move_modal).modal('show');
+}
+
+document.getElementById('tag-move-confirm').addEventListener('click', function(e) {
+  e.preventDefault();
+  var pending = tag_move_pending;
+  tag_move_pending = null;
+  $(tag_move_modal).modal('hide');
+  if(!pending) {
+    return;
+  }
+  moveTagRequest(pending.tag_id, pending.new_parent_id, pending.old_parent_id);
+});
+
+function moveTagRequest(tag_id, parent_id, undo_parent_id) {
+  showSpinner();
+  postJSON(
+    '/api/project/' + project_id + '/tag/' + tag_id,
+    {parent_id: parent_id}
+  )
+  .then(function() {
+    if(undo_parent_id !== undefined) {
+      pushTagUndo({tag_id: tag_id, parent_id: undo_parent_id});
+    }
+  })
+  .catch(function(error) {
+    console.error("Failed to move tag:", error);
+    alert(gettext("Couldn't move the tag!") + "\n\n" + error);
+  })
+  .then(hideSpinner);
+}
+
+// Apply a tag move received from the server (our own request or another
+// user's) to the local state
+function moveTagLocal(tag_id, parent_id) {
+  var tag = tags['' + tag_id];
+  if(!tag) {
+    return;
+  }
+  tag.parent_id = parent_id;
+  updateTagsList();
+  tagSearchRefresh();
+}
+
+/*
+ * Undo (Ctrl+Z) of tag moves
+ *
+ * Moves made by dragging tags around (or by changing the parent in the
+ * tag form) can be undone by moving the tag back to its previous parent.
+ * Merges and deletions are destructive and cannot be undone this way.
+ */
+
+var tag_undo_stack = [];
+
+function pushTagUndo(entry) {
+  tag_undo_stack.push(entry);
+  if(tag_undo_stack.length > 50) {
+    tag_undo_stack.shift();
+  }
+  console.log("Tag undo entry added", entry);
+}
+
+document.addEventListener('keydown', function(e) {
+  if(!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) {
+    return;
+  }
+  if(e.key.toLowerCase() != 'z') {
+    return;
+  }
+  // Let text fields undo their own edits
+  var t = e.target;
+  if(t && (t.tagName == 'INPUT' || t.tagName == 'TEXTAREA'
+           || t.tagName == 'SELECT' || t.isContentEditable)) {
+    return;
+  }
+  if(tag_undo_stack.length == 0) {
+    return;
+  }
+  e.preventDefault();
+  var entry = tag_undo_stack.pop();
+  console.log("Undoing tag move", entry);
+  moveTagRequest(entry.tag_id, entry.parent_id);
+});
+
+/*
+ * Parent tag selection in the tag form
+ */
+
+var tag_add_parent_input = document.getElementById('tag-add-parent');
+var tag_add_parent_id_input = document.getElementById('tag-add-parent-id');
+var tag_add_parent_list = document.getElementById('tag-add-parent-list');
+
+function tagAddParentSelect(tag) {
+  if(tag) {
+    tag_add_parent_id_input.value = '' + tag.id;
+    tag_add_parent_input.value = tag.path;
+  } else {
+    tag_add_parent_id_input.value = '';
+    tag_add_parent_input.value = '';
+  }
+  tag_add_parent_list.style.display = 'none';
+}
+
+function tagAddParentShowList() {
+  // Candidates: all tags except the edited tag and its descendants (a
+  // tag can't become a child of its own subtree)
+  var editing_id = document.getElementById('tag-add-id').value;
+  var query = tag_add_parent_input.value.trim().toLowerCase();
+  var entries = Object.entries(tags);
+  sortByKey(entries, function(e) { return e[1].path; });
+
+  var candidates = [];
+  for(var i = 0; i < entries.length && candidates.length < 10; ++i) {
+    var tag = entries[i][1];
+    if(editing_id && ('' + tag.id) == editing_id) {
+      continue;
+    }
+    if(editing_id && tagIsDescendant(tag.id, parseInt(editing_id))) {
+      continue;
+    }
+    if(query && tag.path.toLowerCase().indexOf(query) === -1) {
+      continue;
+    }
+    candidates.push(tag);
+  }
+
+  while(tag_add_parent_list.firstChild) {
+    tag_add_parent_list.removeChild(tag_add_parent_list.firstChild);
+  }
+  if(candidates.length == 0) {
+    var item = document.createElement('a');
+    item.className = 'list-group-item disabled';
+    item.textContent = gettext("No matching tag");
+    tag_add_parent_list.appendChild(item);
+  } else {
+    for(var i = 0; i < candidates.length; ++i) {
+      (function(tag) {
+        var item = document.createElement('a');
+        item.className = 'list-group-item list-group-item-action';
+        item.textContent = tag.path;
+        item.title = gettext("Select as parent");
+        // mousedown rather than click, so the input doesn't lose focus
+        // (and hide the list) before the click registers
+        item.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          tagAddParentSelect(tag);
+        });
+        tag_add_parent_list.appendChild(item);
+      })(candidates[i]);
+    }
+  }
+  tag_add_parent_list.style.display = '';
+}
+
+tag_add_parent_input.addEventListener('input', function(e) {
+  // Typing invalidates the selection made so far
+  tag_add_parent_id_input.value = '';
+  tagAddParentShowList();
+});
+tag_add_parent_input.addEventListener('focus', function(e) {
+  tag_add_parent_input.select();
+  tagAddParentShowList();
+});
+tag_add_parent_input.addEventListener('keydown', function(e) {
+  if(e.key === 'Enter') {
+    // Pick the first candidate
+    e.preventDefault();
+    var first = tag_add_parent_list.querySelector('.list-group-item-action');
+    if(first) {
+      first.dispatchEvent(new Event('mousedown'));
+    } else {
+      tagAddParentSelect(null);
+    }
+  } else if(e.key === 'Escape') {
+    tag_add_parent_list.style.display = 'none';
+  }
+});
+tag_add_parent_input.addEventListener('blur', function(e) {
+  // Clicking elsewhere: keep the list hidden and reflect the actual
+  // selection (or root level) in the input
+  window.setTimeout(function() {
+    tag_add_parent_list.style.display = 'none';
+    if(!tag_add_parent_id_input.value) {
+      tag_add_parent_input.value = '';
+    }
+  }, 150);
+});
+document.getElementById('tag-add-parent-clear').addEventListener('click', function(e) {
+  tagAddParentSelect(null);
+  tag_add_parent_input.focus();
+});
+
+/*
+ * Highlight form: checking a child tag checks its parents (they inherit
+ * the highlight), unchecking a parent unchecks its children (a parent
+ * can't be removed while a child keeps the highlight)
+ */
+
+tags_modal_list.addEventListener('change', function(e) {
+  var input = e.target;
+  if(!input || input.name !== 'highlight-add-tags') {
+    return;
+  }
+  var tag_id = parseInt(input.value);
+  if(input.checked) {
+    var ancestors = tagAncestorsOf(tags['' + tag_id]);
+    for(var i = 0; i < ancestors.length; ++i) {
+      var cb = document.getElementById('highlight-add-tags-' + ancestors[i].id);
+      if(cb && !cb.checked) {
+        cb.checked = true;
+      }
+    }
+  } else {
+    (function uncheckChildren(tid) {
+      var children = tagChildrenOf(tid);
+      for(var i = 0; i < children.length; ++i) {
+        var cb = document.getElementById('highlight-add-tags-' + children[i].id);
+        if(cb && cb.checked) {
+          cb.checked = false;
+        }
+        uncheckChildren(children[i].id);
+      }
+    })(tag_id);
+  }
 });
 
 
@@ -2242,12 +2879,33 @@ function longPollForEvents() {
         addTag({
           id: event.tag_id,
           path: event.tag_path,
-          description: event.description
+          description: event.description,
+          parent_id: ('parent_id' in event) ? event.parent_id : null,
         });
         refreshTagViewHeader(event.tag_id);
+      } else if(event.type === 'tag_move') {
+        moveTagLocal(event.tag_id, event.parent_id);
       } else if(event.type === 'tag_delete') {
+        // Children of the deleted tag move up to its own parent
+        var deleted_tag = tags['' + event.tag_id];
+        var orphan_parent = deleted_tag ? deleted_tag.parent_id : null;
+        var tag_entries = Object.entries(tags);
+        for(var i = 0; i < tag_entries.length; ++i) {
+          if(tag_entries[i][1].parent_id != null
+             && tag_entries[i][1].parent_id == event.tag_id) {
+            tag_entries[i][1].parent_id = orphan_parent;
+          }
+        }
         removeTag(event.tag_id);
       } else if(event.type === 'tag_merge') {
+        // Children of the source tag move to the destination tag
+        var tag_entries = Object.entries(tags);
+        for(var i = 0; i < tag_entries.length; ++i) {
+          if(tag_entries[i][1].parent_id != null
+             && tag_entries[i][1].parent_id == event.src_tag_id) {
+            tag_entries[i][1].parent_id = event.dest_tag_id;
+          }
+        }
         mergeTags(event.src_tag_id, event.dest_tag_id);
       } else if(event.type === 'member_add') {
         addMember(event.member, event.privileges);
