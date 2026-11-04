@@ -5,6 +5,12 @@
 
 {% block containerclass %}container-fluid{% endblock %}
 
+{% block navextra %}
+<li class="nav-item">
+  <button id="tagu-config-btn" class="btn btn-outline-light" type="button" title="{% trans %}Taguette settings (API keys, AI services…){% endtrans %}">&#9881; {% trans %}Settings{% endtrans %}</button>
+</li>
+{% endblock %}
+
 {% block contents %}
 <div class="row">
   <!-- Left panel -->
@@ -108,31 +114,11 @@
   <!-- Right panel -->
   <div class="col-md-9">
 
-    <div id="document-view" class="document-view">
-      <div id="document-view-toolbar">
-        <a id="goto-last-highlight" class="btn btn-outline-primary" href="javascript:void(0)" role="button" style="display: none;">{% trans %}Go to last highlight{% endtrans %}</a>
-        <button id="tagu-config-btn" class="btn btn-outline-secondary" type="button" title="{% trans %}Taguette configuration (API keys, AI services…){% endtrans %}">&#9881; {% trans %}Configure{% endtrans %}</button>
-        <div id="export-button" class="dropdown" style="display: none;">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            {% trans %}Export this view{% endtrans %}
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdown-export">
-            <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
-            <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
-            <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
-            <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
-            <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
-          </div>
-        </div>
-      </div>
-
-      <div id="document-contents">
-        <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
-      </div>
-
+    <!-- Sticky toolbar -->
+    <div id="document-view-toolbar">
       <!-- Suggested highlights launcher -->
       <button id="suggest-launch" class="btn btn-outline-primary btn-sm" style="display: none;">{% trans %}Suggest highlights{% endtrans %}</button>
-
+      <a id="goto-last-highlight" class="btn btn-outline-primary" href="javascript:void(0)" role="button" style="display: none;">{% trans %}Go to last highlight{% endtrans %}</a>
       <!-- Suggested highlights session panel -->
       <div id="suggest-panel" style="display: none;">
         <label>{% trans %}Algorithm{% endtrans %}
@@ -171,6 +157,24 @@
         <button id="sug-qa-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Decision model settings — opens the configuration screen{% endtrans %}">{% trans %}Q / A{% endtrans %}</button>
         <button id="sug-stop" class="btn btn-sm btn-warning">{% trans %}Stop{% endtrans %}</button>
         <span id="sug-status"></span>
+      </div>
+      <div id="export-button" class="dropdown" style="display: none;">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {% trans %}Export this view{% endtrans %}
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdown-export">
+          <a href="#" class="dropdown-item" data-extension="html">{% trans %}HTML{% endtrans %}</a>
+          <a href="#" class="dropdown-item" data-extension="docx">{% trans %}DOCX{% endtrans %}</a>
+          <a href="#" class="dropdown-item" data-extension="pdf">{% trans %}PDF{% endtrans %}</a>
+          <a href="#" class="dropdown-item" data-extension="xlsx" data-document="false">{% trans %}Excel{% endtrans %}</a>
+          <a href="#" class="dropdown-item" data-extension="csv" data-document="false">{% trans %}CSV{% endtrans %}</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="document-view" class="document-view">
+      <div id="document-contents">
+        <p style="font-style: oblique; text-align: center;">{% trans %}Load a document on the left{% endtrans %}</p>
       </div>
 
       <!-- Suggestion context menu -->

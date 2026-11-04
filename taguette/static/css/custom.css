@@ -255,7 +255,8 @@ li.document-link-current a.document-link-a {
 
 .document-view {
   border: 2px solid #dee2e6;
-  padding: 2.2em 0.3em 1.2em 0.3em;
+  border-top: 0;
+  padding: 0.6em 0.3em 1.2em 0.3em;
   position: relative;
 }
 
@@ -296,6 +297,15 @@ li.document-link-current a.document-link-a {
   top: 43px; /* below the sticky nav-tabs inside .left-panel-scroll */
   z-index: 2;
   background: #fff;
+}
+
+/* Navbar Settings button: same font as the navbar links, compact padding */
+#tagu-config-btn {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+  padding: 0.125rem 0.5rem;
+  margin-left: 0.5rem;
 }
 
 #tag-search-status {
@@ -393,12 +403,25 @@ li.tag-item.drop-merge {
 }
 
 #document-view-toolbar {
-  position: absolute;
-  top: .1em;
-  right: .5em;
-  display: flex;
-  gap: .35em;
+  position: sticky;
+  top: 0;
   z-index: 900;
+  display: flex;
+  align-items: flex-start;
+  gap: .35em;
+  padding: .25em .5em;
+  background: #fff;
+  border: 2px solid #dee2e6;
+  border-bottom: 0;
+}
+
+/* The panel fills the space between the left buttons and the export menu */
+#document-view-toolbar #suggest-panel {
+  flex: 1 1 auto;
+}
+
+#export-button {
+  margin-left: auto;
 }
 
 #goto-last-highlight {
@@ -564,19 +587,10 @@ a.dropdown-item:hover {
 /* --------------------SUGGESTED HIGHLIGHTS--------------------------*/
 
 #suggest-launch {
-  position: absolute;
-  top: .1em;
-  left: .5em;
-  z-index: 900;
+  padding: 0.125rem 0.25rem;
 }
 
 #suggest-panel {
-  position: absolute;
-  top: .1em;
-  left: .5em;
-  /* keep clear of the top-right toolbar ("Go to last highlight" + export) */
-  right: 27em;
-  z-index: 900;
   font-size: 0.85em;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #dee2e6;
@@ -780,9 +794,6 @@ a.dropdown-item:hover {
 }
 #tagu-config-nav {
   flex-wrap: wrap; /* future tabs wrap instead of overflowing */
-}
-#tagu-config-btn {
-  padding: 0.125rem 0.25rem; /* match the compact toolbar buttons */
 }
 
 /* Tag AI: LLM name suggestions, description preview, similar tags */
