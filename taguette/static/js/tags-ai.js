@@ -62,7 +62,7 @@ var TAG_AI_PROMPTS = {
     + 'Tags that already exist (do not duplicate or nearly duplicate them):\n'
     + '{{tags}}\n'
     + '\n'
-    + 'Answer with exactly 3 names, one per line, no numbering, no extra commentary.\n'
+    + 'Answer with EXACTLY 3 names, one per line: just the names, no numbering, no explanations, no markdown, no preamble.\n'
     + '\n'
     + 'Highlighted excerpt:\n'
     + '"""\n'
@@ -212,22 +212,45 @@ function tagAiSampleExcerpts(texts, max_count, max_len) {
   return out;
 }
 
-// Parse a "3 names, one per line" LLM answer into clean tag names
+// Parse an LLM answer into clean tag names. Models are asked for 3
+// names, one per line, but often add a preamble, numbering, markdown or
+// an explanation after each name — be liberal in what we accept.
 function tagAiParseNames(text) {
+  text = String(text || '');
+  // Reasoning models wrap their thinking in <think>...</think>
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   var names = [];
-  String(text || '').split(/\r?\n/).forEach(function(line) {
-    line = line.trim()
-      .replace(/^[-*•\d.).\s]+/, '')        // bullets and numbering
-      .replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, '')  // quotes
-      .replace(/\*+/g, '')                  // markdown emphasis
-      .trim();
-    if(!line || line.length > 60) {
-      return;
-    }
-    if(names.indexOf(line) === -1) {
-      names.push(line);
-    }
-  });
+  function collect(parts) {
+    parts.forEach(function(raw) {
+      raw = String(raw || '').trim();
+      if(!raw || /:$/.test(raw)) {
+        return; // empty line or a preamble/header ("Here are 3 names:")
+      }
+      var line = raw
+        .replace(/^(?:[-*•]\s*|\d+[.):\uFF09-]\s*)+/, '')  // bullets/numbering
+        .replace(/\s*\([^)]*\)\s*$/, '')   // trailing "(explanation)"
+        .replace(/ +[-\u2013\u2014](?: +[-\u2013\u2014])? .*$/, '') // " — because..."
+        .replace(/^["'\u201c\u2018*_`]+|["'\u201d\u2019*_`]+$/g, '') // quotes/markdown
+        .trim();
+      if(!line || line.length > 80) {
+        return;
+      }
+      if(names.indexOf(line) === -1) {
+        names.push(line);
+      }
+    });
+  }
+  collect(text.split(/\r?\n/));
+  if(!names.length) {
+    // Single-line "a, b, c" answers
+    collect(text.split(/[,;]+/));
+  } else if(names.length < 3
+            && names.some(function(n) { return /[,;]/.test(n); })) {
+    // An accepted line may hold several comma-separated names
+    var combined = names.join('\n');
+    names = [];
+    collect(combined.split(/[,;\n]+/));
+  }
   return names.slice(0, 3);
 }
 
@@ -728,6 +751,9 @@ function tagAiSuggestNames() {
   var cfg = tagAiLLMConfig();
   var text = tagAiTruncate(tagAiHighlightText(), 1500);
   if(!cfg || !text) {
+    console.log(!cfg
+      ? 'Tag name suggestions: no AI model configured'
+      : 'Tag name suggestions: no highlighted text to suggest from');
     box.style.display = 'none';
     return;
   }
@@ -742,12 +768,14 @@ function tagAiSuggestNames() {
     highlight: text,
     tags: tagAiTruncate(existing, 2000) || gettext('(none yet)'),
   });
-  tagAiChat(cfg, prompt, 150)
+  tagAiChat(cfg, prompt, 400)
   .then(function(content) {
     if(seq !== tag_ai_tag.seq) {
       return;
     }
     var names = tagAiParseNames(content);
+    console.log('Tag name suggestions:', names.length, 'parsed from',
+      JSON.stringify(tagAiTruncate(content, 300)));
     if(!names.length) {
       box.textContent = gettext('Suggestions: none');
       return;
@@ -774,6 +802,7 @@ function tagAiSuggestNames() {
     });
   })
   .catch(function(error) {
+    console.error('Tag name suggestions: failed', error);
     if(seq !== tag_ai_tag.seq) {
       return;
     }
@@ -1543,6 +1572,27 @@ function tagAiSelfTest() {
   assert(names.length === 2, 'over-long line dropped');
   assert(names[0] === 'Housing insecurity', 'numbering stripped');
   assert(names[1] === 'food bank', 'quotes stripped');
+  // Preamble + "**Name** — explanation" answers (previously parsed as none)
+  names = tagAiParseNames('Here are 3 tag name suggestions:\n'
+    + '1. **housing insecurity** — when the interviewee describes losing their home or struggling to keep it\n'
+    + '2. **food bank access** (covers visits, eligibility and barriers to using food banks)\n'
+    + '3. volunteer retention');
+  assert(names.length === 3 && names[0] === 'housing insecurity'
+    && names[1] === 'food bank access' && names[2] === 'volunteer retention',
+    'preamble skipped, explanations stripped');
+  // Single-line "a, b, c" answer
+  names = tagAiParseNames('housing insecurity, food bank access, volunteer retention');
+  assert(names.length === 3 && names[0] === 'housing insecurity',
+    'comma-separated line split');
+  // Reasoning models: <think> block, names after
+  names = tagAiParseNames('<think>\nLet me analyze this excerpt carefully...\n</think>\n'
+    + 'housing insecurity\nfood bank access\nvolunteer retention');
+  assert(names.length === 3 && names[0] === 'housing insecurity',
+    'think block ignored');
+  // A year-leading name keeps its year, and snake_case survives
+  names = tagAiParseNames('2024 election funding\nfood_bank access\nvolunteer retention');
+  assert(names[0] === '2024 election funding' && names[1] === 'food_bank access',
+    'leading numbers/underscores in names kept');
 
   // Prompt substitution and overrides
   var cfg = {prompts: {names: 'Tag for {{highlight}} ({{unknown}})'}};

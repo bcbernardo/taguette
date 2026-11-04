@@ -13,7 +13,9 @@ New feature (tag AI helpers):
 * Creating a tag from the highlight form asks the configured LLM for
   three tag names (grounded in the highlighted text and the existing
   tags); the light-gray suggestions fill the name field with one click,
-  ready for manual edits
+  ready for manual edits. The answer parser tolerates preambles,
+  numbering, markdown and per-name explanations, and the raw model
+  answer is logged to the browser console for troubleshooting
 * *Generate description with AI* writes a tag definition from the tag
   name and the highlighted text (new tags) or from all the tag's
   highlights (existing tags); the suggestion is previewed with
