@@ -880,3 +880,20 @@ textarea.tag-ai-prompt {
   font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.8em;
 }
+
+/* Pencil in the highlight modal's tag list: only on hover/focus of its own
+   row (not of nested rows, hence the sibling selectors) */
+#highlight-add-tags .tag-modal-pencil {
+  opacity: 0;
+  margin-left: 0.25em;
+}
+#highlight-add-tags label:hover ~ .tag-modal-pencil,
+#highlight-add-tags .tag-modal-pencil:hover,
+#highlight-add-tags .tag-modal-pencil:focus {
+  opacity: 1;
+}
+#highlight-add-tags .tag-modal-editor {
+  display: inline-block;
+  width: auto;
+  max-width: 80%;
+}
