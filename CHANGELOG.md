@@ -4,6 +4,33 @@ Changelog
 Unreleased
 ----------
 
+New feature (tag AI helpers):
+* The highlight form now suggests the most appropriate tags: the top 10,
+  ranked for the highlighted text (semantic ranking when an embedding
+  service is configured, lexical otherwise), with a *Show all tags*
+  toggle and a search bar that mimics the Highlights panel's (lexical +
+  semantic). Hidden checkboxes keep a highlight's existing tags on save
+* Creating a tag from the highlight form asks the configured LLM for
+  three tag names (grounded in the highlighted text and the existing
+  tags); the light-gray suggestions fill the name field with one click,
+  ready for manual edits
+* *Generate description with AI* writes a tag definition from the tag
+  name and the highlighted text (new tags) or from all the tag's
+  highlights (existing tags); the suggestion is previewed with
+  *Accept / Try again / Discard*. With an existing description the button
+  becomes *Re-generate description with AI*, joined by *Augment
+  description with AI*: *Add examples*, *Add "includes"* and *Add "Do not
+  confound with"* (the latter fed with cosine-similar non-ancestor tags so
+  the model can contrast the themes)
+* The tag form lists the most cosine-similar tags below the description;
+  clicking one offers *Set as parent*, *Set as descendant* and *Merge…*
+  (the last two also work for a brand-new tag, applied once it is saved)
+* New *AI tags* tab in the configuration screen: pick the chat model
+  (one of your API keys, a local Ollama/llama.cpp server, or a custom
+  endpoint), set the temperature, and edit the five prompt templates
+  (with placeholders and reset-to-default). Everything stays in your
+  browser; model calls go straight from the browser to the service
+
 New feature (configuration screen):
 * New dedicated configuration screen (⚙ *Configure* in the document toolbar)
   with a tabbed, extensible layout: any feature can register a tab, and the
