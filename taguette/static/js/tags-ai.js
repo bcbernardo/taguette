@@ -1294,7 +1294,7 @@ function tagAiShowMenu(tag, x, y) {
     });
   }
 
-  menu.style.display = '';
+  menu.style.display = 'block';  // overrides the stylesheet's display: none
   // Fixed-positioned, clamped to the viewport
   menu.style.left = Math.max(8, Math.min(x, window.innerWidth
     - menu.offsetWidth - 8)) + 'px';
