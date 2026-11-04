@@ -4,6 +4,24 @@ Changelog
 Unreleased
 ----------
 
+New feature (configuration screen):
+* New dedicated configuration screen (⚙ *Configure* in the document toolbar)
+  with a tabbed, extensible layout: any feature can register a tab, and the
+  per-feature settings modals were folded into it
+* *API keys* tab: store one key per provider — Anthropic, DeepSeek, Gemini,
+  MiniMax, OpenAI, OpenRouter, Qwen, Z.ai, or custom providers with their own
+  base URL and header format (Authorization: Bearer by default, x-api-key
+  and x-goog-api-key supported)
+* *Embeddings* and *Decisions* tabs (ported from the suggested-highlights
+  feature): pick a service per task — one of the saved keys, a supported
+  local service (Ollama, llama.cpp, text-embeddings-inference, Laya), or a
+  custom endpoint — plus model and endpoint override; selecting a local
+  service checks whether it is running and shows install instructions when
+  it is not. A *Test connection* button validates the setup
+* The suggest toolbar's *Embeddings* and *Q / A* buttons still work, but now
+  open the configuration screen on their tab (existing settings are
+  migrated automatically)
+
 New feature (tag hierarchy):
 * Tags can be nested: drag a tag onto another in the Highlights panel (top
   or bottom of the row) to make it a child, after a confirmation; dropping
