@@ -3497,6 +3497,39 @@ function sugConfigTabBuild(el) {
       }
     },
   });
+
+  // Number of suggested tags in the highlight form (a tags-ai.js feature;
+  // the setting lives here because the suggestions are embedding-based)
+  if(typeof tagAiModalView === 'function') {
+    var group = taguEl('div', 'form-group mt-3 mb-0');
+    var label = taguEl('label', 'mb-1',
+      gettext('Tag suggestions in the highlight form'));
+    label.setAttribute('for', 'sug-tag-suggestions');
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.max = '100';
+    input.step = '1';
+    input.className = 'form-control';
+    input.id = 'sug-tag-suggestions';
+    input.value = tagAiTopN();
+    input.addEventListener('change', function() {
+      var n = parseInt(input.value, 10);
+      if(isNaN(n) || n < 1 || n > 100) {
+        input.value = tagAiTopN();
+        return;
+      }
+      var cfg = taguConfig();
+      cfg.tasks.embeddings = cfg.tasks.embeddings || {};
+      cfg.tasks.embeddings.tag_suggestions = n;
+      taguConfigSave(cfg);
+    });
+    group.appendChild(label);
+    group.appendChild(input);
+    group.appendChild(taguEl('small', 'form-text text-muted', gettext(
+      'Number of suggested tags shown for a new highlight before "Show all tags".')));
+    el.appendChild(group);
+  }
 }
 
 taguConfigRegisterTab({

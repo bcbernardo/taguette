@@ -757,8 +757,9 @@ a.dropdown-item:hover {
   text-decoration: none;
 }
 
-/* Description suggestion preview: shown before it is accepted */
-#tag-add-desc-preview {
+/* Description suggestion preview: shown before it is accepted.
+ * Shared by the tag form modal and the tag view header */
+.tag-ai-preview-box {
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
   background: #f8f9fa;
@@ -776,11 +777,11 @@ a.dropdown-item:hover {
   max-height: 220px;
   overflow-y: auto;
 }
-#tag-add-desc-preview.tag-ai-preview-loading .tag-ai-preview-text,
-#tag-add-desc-preview.tag-ai-preview-error .tag-ai-preview-text {
+.tag-ai-preview-box.tag-ai-preview-loading .tag-ai-preview-text,
+.tag-ai-preview-box.tag-ai-preview-error .tag-ai-preview-text {
   font-style: normal;
 }
-#tag-add-desc-preview.tag-ai-preview-error .tag-ai-preview-text {
+.tag-ai-preview-box.tag-ai-preview-error .tag-ai-preview-text {
   color: #dc3545;
 }
 

@@ -338,6 +338,19 @@ function tagAiHighlightText() {
 
 var TAG_AI_TOP_N = 10;
 
+// Number of suggested tags in the highlight form: a user setting on the
+// Embeddings configuration tab (tasks.embeddings.tag_suggestions)
+function tagAiTopN() {
+  var cfg = (typeof taguConfig === 'function') ? taguConfig() : null;
+  var raw = cfg && cfg.tasks && cfg.tasks.embeddings
+    ? cfg.tasks.embeddings.tag_suggestions : null;
+  var n = parseInt(raw, 10);
+  if(isNaN(n) || n < 1) {
+    return TAG_AI_TOP_N;
+  }
+  return Math.min(n, 100);
+}
+
 var tag_ai_modal = {
   open: false,
   text: '',
@@ -376,7 +389,8 @@ function tagAiModalView() {
   }
   var order = [];
   var top = {};
-  for(var k = 0; k < tag_ai_modal.ranked.length && order.length < TAG_AI_TOP_N; ++k) {
+  var top_n = tagAiTopN();
+  for(var k = 0; k < tag_ai_modal.ranked.length && order.length < top_n; ++k) {
     var t = tag_ai_modal.ranked[k].tag;
     top[t.id] = true;
     order.push(t);
@@ -386,7 +400,7 @@ function tagAiModalView() {
      && tags['' + tag_to_select_in_highlight]) {
     top[tag_to_select_in_highlight] = true;
     order.unshift(tags['' + tag_to_select_in_highlight]);
-    if(order.length > TAG_AI_TOP_N) {
+    if(order.length > top_n) {
       delete top[order[order.length - 1].id];
       order.pop();
     }
@@ -418,7 +432,7 @@ function tagAiModalRefreshStatus() {
     return;
   }
   el.textContent = gettext('Top %(n)s suggested tags',
-                           {n: Math.min(TAG_AI_TOP_N, tag_ai_modal.ranked.length)})
+                           {n: Math.min(tagAiTopN(), tag_ai_modal.ranked.length)})
     + ' (' + (tag_ai_modal.semantic ? gettext('semantic') : gettext('lexical')) + ')';
 }
 
@@ -805,9 +819,111 @@ function tagAiCurrentTagText() {
   return (name + '\n' + desc).trim();
 }
 
-function tagAiDescVars(mode) {
-  var name = document.getElementById('tag-add-path').value.trim();
-  var desc = document.getElementById('tag-add-description').value.trim();
+/*
+ * Description generation/augmentation. The same machinery runs on two
+ * surfaces: the tag form modal and the tag view header
+ * (/project/<id>/highlights/<tag>).
+ */
+
+var tag_ai_view = {seq: 0, tag_id: null};
+
+var TAG_AI_SURFACES = {
+  // The tag form modal (creating or editing a tag)
+  form: {
+    preview_id: 'tag-add-desc-preview',
+    nextSeq: function() { return ++tag_ai_tag.seq; },
+    isStale: function(seq) { return seq !== tag_ai_tag.seq; },
+    name: function() {
+      var el = document.getElementById('tag-add-path');
+      return el ? el.value.trim() : '';
+    },
+    description: function() {
+      var el = document.getElementById('tag-add-description');
+      return el ? el.value.trim() : '';
+    },
+    // Where the LLM's context comes from
+    highlights: function() {
+      if(tag_ai_tag.editing !== null) {
+        // Editing an existing tag: all of its highlights are the context
+        return tagAiFetchHighlights(tags['' + tag_ai_tag.editing]);
+      }
+      // Creating: the highlighted text is the context
+      var hl = tagAiTruncate(tagAiHighlightText(), 1500);
+      return Promise.resolve(hl ? [hl] : []);
+    },
+    similarContext: function() {
+      return {editing_id: tag_ai_tag.editing, text: tagAiCurrentTagText()};
+    },
+    apply: function(mode, text) {
+      var textarea = document.getElementById('tag-add-description');
+      if(!textarea) {
+        return;
+      }
+      if(mode === 'generate') {
+        textarea.value = text;
+      } else {
+        var current = textarea.value.trim();
+        textarea.value = current + (current ? '\n\n' : '') + text;
+      }
+    },
+    afterAccept: function() { tagAiSimilarRefresh(); },
+  },
+  // The tag view header (Highlights view of one tag)
+  view: {
+    preview_id: 'tag-view-ai-preview',
+    nextSeq: function() { return ++tag_ai_view.seq; },
+    isStale: function(seq) {
+      return seq !== tag_ai_view.seq || tag_ai_view.tag_id === null;
+    },
+    tag: function() {
+      return tag_ai_view.tag_id !== null
+        ? tags['' + tag_ai_view.tag_id] : null;
+    },
+    name: function() {
+      var t = this.tag();
+      return t ? t.path : '';
+    },
+    description: function() {
+      var t = this.tag();
+      return t ? (t.description || '').trim() : '';
+    },
+    highlights: function() {
+      var t = this.tag();
+      return t ? tagAiFetchHighlights(t) : Promise.resolve([]);
+    },
+    similarContext: function() {
+      var t = this.tag();
+      return {
+        editing_id: tag_ai_view.tag_id,
+        text: t ? (t.path + '\n' + (t.description || '')).trim() : '',
+      };
+    },
+    apply: function(mode, text) {
+      var t = this.tag();
+      if(!t) {
+        return Promise.resolve();
+      }
+      var base = (mode === 'generate') ? '' : (t.description || '').trim();
+      var new_desc = base ? base + '\n\n' + text : text;
+      showSpinner();
+      return saveTagField(t.id, {description: new_desc})
+      .then(function() {
+        t.description = new_desc;
+        // Rebuilds the header (and its AI row) with the new description
+        tagHeaderRefreshInPlace();
+      })
+      .catch(function(error) {
+        alert(gettext("Couldn't update the tag!") + '\n\n' + error);
+      })
+      .then(hideSpinner);
+    },
+    afterAccept: null,
+  },
+};
+
+function tagAiDescVars(surface, mode) {
+  var name = surface.name();
+  var desc = surface.description();
   function finish(excerpts) {
     var vars = {
       tag: name,
@@ -820,7 +936,9 @@ function tagAiDescVars(mode) {
       return Promise.resolve(vars);
     }
     // The confounding section needs the cosine-similar non-ancestor tags
-    return tagAiSimilarTagsPromise(5).then(function(similar) {
+    var ctx = surface.similarContext();
+    return tagAiSimilarTagsPromise(5, ctx.editing_id, ctx.text)
+    .then(function(similar) {
       vars.similar = similar.length
         ? similar.map(function(s) {
             return s.tag.path + ' — '
@@ -830,14 +948,7 @@ function tagAiDescVars(mode) {
       return vars;
     });
   }
-  if(tag_ai_tag.editing !== null) {
-    // Editing an existing tag: all of its highlights are the context
-    return tagAiFetchHighlights(tags['' + tag_ai_tag.editing])
-      .then(finish);
-  }
-  // Creating: the highlighted text is the context
-  var hl = tagAiTruncate(tagAiHighlightText(), 1500);
-  return Promise.resolve(finish(hl ? [hl] : []));
+  return surface.highlights().then(finish);
 }
 
 var TAG_AI_DESC_MODES = {
@@ -847,12 +958,13 @@ var TAG_AI_DESC_MODES = {
   augment_confound: 'augment_confound',
 };
 
-function tagAiDescPreviewSet(text) {
-  var box = document.getElementById('tag-add-desc-preview');
+function tagAiDescPreviewSet(surface, text) {
+  var box = document.getElementById(surface.preview_id);
   if(!box) {
     return;
   }
   box.style.display = '';
+  box.className = 'tag-ai-preview-box mt-2';
   box.textContent = '';
   box.appendChild(taguEl('div', 'tag-ai-preview-label', gettext('AI suggestion:')));
   var body = taguEl('div', 'tag-ai-preview-text');
@@ -861,57 +973,58 @@ function tagAiDescPreviewSet(text) {
   return box;
 }
 
-function tagAiDescPreviewHide() {
-  var box = document.getElementById('tag-add-desc-preview');
+function tagAiDescPreviewHide(surface) {
+  surface = surface || TAG_AI_SURFACES.form;
+  var box = document.getElementById(surface.preview_id);
   if(box) {
     box.style.display = 'none';
     box.textContent = '';
   }
 }
 
-function tagAiDescRun(mode) {
+function tagAiDescRun(surface, mode) {
   var cfg = tagAiLLMConfig();
   if(!cfg) {
     var note = tagAiDescPreviewSet(
-      gettext('No AI model configured — open ⚙ Configure → AI tags to pick one.'));
+      surface, gettext('No AI model configured — open ⚙ Configure → AI tags to pick one.'));
     if(note) {
       note.classList.add('tag-ai-preview-error');
     }
     return;
   }
-  var name = document.getElementById('tag-add-path').value.trim();
+  var name = surface.name();
   if(!name) {
     alert(gettext('Enter a tag name first'));
     return;
   }
-  var seq = ++tag_ai_tag.seq;
-  var box = tagAiDescPreviewSet(gettext('Asking the AI model…'));
+  var seq = surface.nextSeq();
+  var box = tagAiDescPreviewSet(surface, gettext('Asking the AI model…'));
   if(box) {
     box.classList.add('tag-ai-preview-loading');
   }
-  tagAiDescVars(mode)
+  tagAiDescVars(surface, mode)
   .then(function(vars) {
     return tagAiChat(cfg, tagAiPrompt(cfg, TAG_AI_DESC_MODES[mode], vars), 600);
   })
   .then(function(content) {
-    if(seq !== tag_ai_tag.seq) {
+    if(surface.isStale(seq)) {
       return;
     }
-    tagAiDescPreviewShow(mode, content);
+    tagAiDescPreviewShow(surface, mode, content);
   })
   .catch(function(error) {
-    if(seq !== tag_ai_tag.seq) {
+    if(surface.isStale(seq)) {
       return;
     }
-    var err = tagAiDescPreviewSet(gettext('Failed:') + ' ' + error);
+    var err = tagAiDescPreviewSet(surface, gettext('Failed:') + ' ' + error);
     if(err) {
       err.classList.add('tag-ai-preview-error');
     }
   });
 }
 
-function tagAiDescPreviewShow(mode, text) {
-  var box = tagAiDescPreviewSet(text);
+function tagAiDescPreviewShow(surface, mode, text) {
+  var box = tagAiDescPreviewSet(surface, text);
   if(!box) {
     return;
   }
@@ -923,22 +1036,19 @@ function tagAiDescPreviewShow(mode, text) {
     return b;
   }
   row.appendChild(button(gettext('Accept'), 'btn btn-sm btn-primary', function() {
-    var textarea = document.getElementById('tag-add-description');
-    if(mode === 'generate') {
-      textarea.value = text;
-    } else {
-      var current = textarea.value.trim();
-      textarea.value = current + (current ? '\n\n' : '') + text;
+    tagAiDescPreviewHide(surface);
+    surface.apply(mode, text);
+    if(surface.afterAccept) {
+      surface.afterAccept();
     }
-    tagAiDescPreviewHide();
-    tagAiSimilarRefresh();
   }));
   row.appendChild(button(gettext('Try again'),
     'btn btn-sm btn-outline-secondary ml-1', function() {
-      tagAiDescRun(mode);
+      tagAiDescRun(surface, mode);
     }));
   row.appendChild(button(gettext('Discard'),
-    'btn btn-sm btn-outline-secondary ml-1', tagAiDescPreviewHide));
+    'btn btn-sm btn-outline-secondary ml-1',
+    function() { tagAiDescPreviewHide(surface); }));
   box.appendChild(row);
 }
 
@@ -965,14 +1075,12 @@ function tagAiSimilarCandidates(entries, editing_id) {
   return out;
 }
 
-function tagAiSimilarTagsPromise(limit) {
+function tagAiSimilarTagsPromise(limit, editing_id, text) {
   limit = limit || 5;
-  var text = tagAiCurrentTagText();
   if(!text) {
     return Promise.resolve([]);
   }
-  var candidates = tagAiSimilarCandidates(Object.entries(tags),
-                                          tag_ai_tag.editing);
+  var candidates = tagAiSimilarCandidates(Object.entries(tags), editing_id);
   if(!candidates.length) {
     return Promise.resolve([]);
   }
@@ -1013,7 +1121,8 @@ function tagAiSimilarRefresh() {
       return;
     }
     var seq = ++tag_ai_tag.similar_seq;
-    tagAiSimilarTagsPromise(5).then(function(scored) {
+    tagAiSimilarTagsPromise(5, tag_ai_tag.editing, tagAiCurrentTagText())
+    .then(function(scored) {
       if(seq !== tag_ai_tag.similar_seq || !tag_ai_tag.modal_open) {
         return;
       }
@@ -1169,6 +1278,93 @@ function tagAiAfterTagSaved(tag_id) {
   }
 }
 
+/*
+ * Tag view header (/project/<id>/highlights/<tag>): the same generate /
+ * re-generate / augment actions as the tag form, inline under the
+ * description. The header is rebuilt on every change, so the row is
+ * rebuilt with it (and any in-flight suggestion goes stale).
+ */
+
+function tagAiViewBuildRow(tag) {
+  var row = taguEl('div', 'mt-1');
+  row.setAttribute('id', 'tag-view-ai-row');
+  var has_desc = !!(tag.description || '').trim();
+
+  var generate = taguEl('button',
+    'btn btn-sm btn-outline-secondary', '');
+  generate.type = 'button';
+  generate.setAttribute('id', 'tag-view-ai-generate');
+  generate.innerHTML = '<i class="fas fa-magic"></i> '
+    + (has_desc
+       ? gettext('Re-generate description with AI')
+       : gettext('Generate description with AI'));
+  generate.addEventListener('click', function(e) {
+    e.preventDefault();
+    tagAiDescRun(TAG_AI_SURFACES.view, 'generate');
+  });
+  row.appendChild(generate);
+
+  if(has_desc) {
+    var dd = taguEl('div', 'dropdown d-inline-block ml-2');
+    var dd_btn = taguEl('button',
+      'btn btn-sm btn-outline-secondary dropdown-toggle', '');
+    dd_btn.type = 'button';
+    dd_btn.setAttribute('id', 'tag-view-ai-augment');
+    dd_btn.setAttribute('data-toggle', 'dropdown');
+    dd_btn.setAttribute('aria-haspopup', 'true');
+    dd_btn.setAttribute('aria-expanded', 'false');
+    dd_btn.innerHTML = '<i class="fas fa-magic"></i> '
+      + gettext('Augment description with AI');
+    var menu = taguEl('div', 'dropdown-menu');
+    menu.setAttribute('aria-labelledby', 'tag-view-ai-augment');
+    var kinds = {
+      examples: gettext('Add examples'),
+      includes: gettext('Add "includes"'),
+      confound: gettext('Add "Do not confound with"'),
+    };
+    Object.keys(kinds).forEach(function(kind) {
+      var item = taguEl('a', 'dropdown-item', kinds[kind]);
+      item.href = '#';
+      item.setAttribute('id', 'tag-view-ai-augment-' + kind);
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        tagAiDescRun(TAG_AI_SURFACES.view, 'augment_' + kind);
+      });
+      menu.appendChild(item);
+    });
+    dd.appendChild(dd_btn);
+    dd.appendChild(menu);
+    row.appendChild(dd);
+  }
+
+  var preview = taguEl('div', 'tag-ai-preview-box mt-2');
+  preview.setAttribute('id', 'tag-view-ai-preview');
+  preview.style.display = 'none';
+  row.appendChild(preview);
+  return row;
+}
+
+(function() {
+  if(typeof renderTagHeader !== 'function') {
+    return;
+  }
+  var orig = renderTagHeader;
+  window.renderTagHeader = function(tag_path) {
+    var header = orig(tag_path);
+    var tag_id = header ? header.getAttribute('data-tag-id') : null;
+    // Bumping the sequence discards any suggestion in flight for the
+    // previous header instance
+    ++tag_ai_view.seq;
+    tag_ai_view.tag_id = tag_id !== null ? parseInt(tag_id) : null;
+    if(header && tag_ai_view.tag_id !== null
+       && tags['' + tag_ai_view.tag_id]) {
+      header.appendChild(
+        tagAiViewBuildRow(tags['' + tag_ai_view.tag_id]));
+    }
+    return header;
+  };
+})();
+
 // Wiring is deferred to window load (jQuery loads at the end of the page)
 window.addEventListener('load', function() {
   var modal = document.getElementById('tag-add-modal');
@@ -1187,7 +1383,7 @@ window.addEventListener('load', function() {
   if(generate) {
     generate.addEventListener('click', function(e) {
       e.preventDefault();
-      tagAiDescRun('generate');
+      tagAiDescRun(TAG_AI_SURFACES.form, 'generate');
     });
   }
   ['examples', 'includes', 'confound'].forEach(function(kind) {
@@ -1195,7 +1391,7 @@ window.addEventListener('load', function() {
     if(item) {
       item.addEventListener('click', function(e) {
         e.preventDefault();
-        tagAiDescRun('augment_' + kind);
+        tagAiDescRun(TAG_AI_SURFACES.form, 'augment_' + kind);
       });
     }
   });
@@ -1417,6 +1613,25 @@ function tagAiSelfTest() {
     assert(view.order[0].id === 7 && view.order.length === 10,
       'just-created tag kept in the top 10');
     window.tag_to_select_in_highlight = null;
+    // The Embeddings-tab setting overrides the default count
+    var saved_cfg = window.taguConfig();
+    var cfg_edit = JSON.parse(JSON.stringify(saved_cfg));
+    cfg_edit.tasks.embeddings = cfg_edit.tasks.embeddings || {};
+    cfg_edit.tasks.embeddings.tag_suggestions = 3;
+    if(typeof taguConfigSave === 'function') {
+      taguConfigSave(cfg_edit);
+    } else {
+      window.taguConfig = function() { return cfg_edit; };
+    }
+    assert(tagAiTopN() === 3, 'tagAiTopN() reads the setting');
+    view = tagAiModalView();
+    assert(view.order.length === 3 && view.order[0].id === 30,
+      'suggestion count follows the setting');
+    if(typeof taguConfigSave === 'function') {
+      taguConfigSave(saved_cfg);
+    } else {
+      window.taguConfig = function() { return saved_cfg; };
+    }
     window.tags = saved_tags2;
   } finally {
     tag_ai_modal.open = saved_state.open;
