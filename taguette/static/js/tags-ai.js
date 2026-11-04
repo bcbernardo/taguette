@@ -281,33 +281,60 @@ function tagAiLLMConfig() {
 
 // resolved: {url, token, model, authHeader, authScheme, temperature}
 function tagAiChat(resolved, prompt, max_tokens) {
-  var headers = {'Content-Type': 'application/json'};
-  taguApplyAuth(headers, resolved);
-  return fetch(resolved.url, {
-    method: 'POST',
-    mode: 'cors',
-    headers: headers,
-    body: JSON.stringify({
-      model: resolved.model || '',
-      messages: [
-        {role: 'system', content: TAG_AI_SYSTEM},
-        {role: 'user', content: prompt},
-      ],
-      temperature: resolved.temperature,
-      max_tokens: max_tokens || 500,
-    }),
-  }).then(function(response) {
-    if(response.status != 200) {
-      throw new Error('HTTP ' + response.status);
+  function request(cap) {
+    var headers = {'Content-Type': 'application/json'};
+    taguApplyAuth(headers, resolved);
+    return fetch(resolved.url, {
+      method: 'POST',
+      mode: 'cors',
+      headers: headers,
+      body: JSON.stringify({
+        model: resolved.model || '',
+        messages: [
+          {role: 'system', content: TAG_AI_SYSTEM},
+          {role: 'user', content: prompt},
+        ],
+        temperature: resolved.temperature,
+        max_tokens: cap,
+      }),
+    }).then(function(response) {
+      if(response.status != 200) {
+        throw new Error('HTTP ' + response.status);
+      }
+      return response.json();
+    });
+  }
+  return request(max_tokens || 500).then(function(json) {
+    var choice = json.choices && json.choices[0];
+    var message = choice && choice.message;
+    var has_content = message && typeof message.content === 'string';
+    var content = has_content ? message.content : '';
+    if(!content.trim() && message) {
+      // Some servers put reasoning models' whole answer elsewhere
+      var reasoning = message.reasoning_content || message.reasoning;
+      if(typeof reasoning === 'string') {
+        content = reasoning;
+      }
     }
-    return response.json();
-  }).then(function(json) {
-    var content = json.choices && json.choices[0]
-      && json.choices[0].message && json.choices[0].message.content;
-    if(typeof content !== 'string') {
+    if(!message || (!has_content && !content)) {
       throw new Error(gettext('Unexpected response shape'));
     }
-    return content.trim();
+    var text = content.trim();
+    // Reasoning models can spend the whole budget thinking (empty
+    // answer, finish_reason "length"): retry once with plenty of room
+    if(!text && choice && choice.finish_reason === 'length'
+       && max_tokens) {
+      console.log('Tag AI: empty answer with the token budget exhausted',
+        '- retrying with a larger budget');
+      return request(max_tokens * 4).then(function(json2) {
+        var choice2 = json2.choices && json2.choices[0];
+        var m2 = choice2 && choice2.message;
+        var c2 = (m2 && m2.content)
+          || (m2 && (m2.reasoning_content || m2.reasoning)) || '';
+        return String(c2).trim();
+      });
+    }
+    return text;
   });
 }
 
@@ -778,7 +805,7 @@ function tagAiSuggestNames() {
     highlight: text,
     tags: tagAiTruncate(existing, 2000) || gettext('(none yet)'),
   });
-  tagAiChat(cfg, prompt, 400)
+  tagAiChat(cfg, prompt, 800)
   .then(function(content) {
     if(seq !== tag_ai_tag.seq) {
       return;
@@ -787,13 +814,23 @@ function tagAiSuggestNames() {
     console.log('Tag name suggestions:', names.length, 'parsed from',
       JSON.stringify(tagAiTruncate(content, 300)));
     if(!names.length) {
-      box.textContent = gettext('Suggestions: none');
+      box.textContent = '';
+      box.appendChild(document.createTextNode(gettext('Suggestions: none') + ' — '));
+      var retry = document.createElement('a');
+      retry.href = 'javascript:void(0)';
+      retry.className = 'tag-ai-retry';
+      retry.textContent = gettext('try again');
+      retry.addEventListener('click', function(e) {
+        e.preventDefault();
+        tagAiSuggestNames();
+      });
+      box.appendChild(retry);
       return;
     }
     box.textContent = gettext('Suggestions:') + ' ';
     names.forEach(function(name, i) {
       if(i > 0) {
-        box.appendChild(document.createTextNode(' '));
+        box.appendChild(document.createElement('br'));
       }
       var chip = document.createElement('a');
       chip.href = 'javascript:void(0)';
@@ -1627,6 +1664,62 @@ function tagAiSelfTest() {
   assert(names[0] === '2024 election funding' && names[1] === 'food_bank access',
     'leading numbers/underscores in names kept');
 
+  // tagAiChat: reasoning models can return an empty content with the
+  // token budget exhausted — the call must retry with 4x the budget.
+  // Answers may also arrive in reasoning_content when content is empty.
+  // (The two cases share window.fetch, so they run back to back.)
+  var real_fetch = window.fetch;
+  var chat_calls = [];
+  var chat_done = [];
+  window.fetch = function(url, opts) {
+    var body = JSON.parse(opts.body);
+    chat_calls.push(body.max_tokens);
+    var answer = (chat_calls.length === 1)
+      ? {choices: [{message: {content: ''}, finish_reason: 'length'}]}
+      : {choices: [{message: {content: 'theme one\ntheme two\ntheme three'},
+                   finish_reason: 'stop'}]};
+    return Promise.resolve({
+      status: 200,
+      json: function() { return Promise.resolve(answer); },
+    });
+  };
+  chat_done.push(tagAiChat(
+    {url: 'http://x/v1/chat/completions', model: 'm', temperature: 0.4},
+    'prompt', 800)
+  .then(function(answer) {
+    assert(answer === 'theme one\ntheme two\ntheme three',
+      'empty answer retried with a larger budget');
+    assert(chat_calls.length === 2 && chat_calls[1] === 3200,
+      'retry uses 4x the token budget');
+  })
+  .catch(function(e) {
+    assert(false, 'tagAiChat retry: ' + e);
+  })
+  .then(function() {
+    window.fetch = function(url, opts) {
+      return Promise.resolve({
+        status: 200,
+        json: function() {
+          return Promise.resolve({choices: [{message: {
+            content: '',
+            reasoning_content: 'theme one\ntheme two\ntheme three',
+          }}]});
+        },
+      });
+    };
+    return tagAiChat({url: 'http://x/v1/chat/completions', model: 'm'},
+                     'prompt', 800);
+  })
+  .then(function(answer) {
+    window.fetch = real_fetch;
+    assert(answer === 'theme one\ntheme two\ntheme three',
+      'reasoning_content fallback when content is empty');
+  })
+  .catch(function(e) {
+    window.fetch = real_fetch;
+    assert(false, 'tagAiChat reasoning_content: ' + e);
+  }));
+
   // Prompt substitution and overrides
   var cfg = {prompts: {names: 'Tag for {{highlight}} ({{unknown}})'}};
   assert(tagAiPrompt(cfg, 'names', {highlight: 'X'})
@@ -1737,6 +1830,15 @@ function tagAiSelfTest() {
   console.log(failures === 0
     ? 'SELFTEST OK'
     : 'SELFTEST: ' + failures + ' failure(s)');
+  // Async checks (tagAiChat retries) finish after this function returns:
+  // tag_ai_selftest_async resolves to the final failure count
+  tag_ai_selftest_async = Promise.all(chat_done).then(function() {
+    if(failures) {
+      console.error('SELFTEST (async checks included): ' + failures
+        + ' failure(s)');
+    }
+    return failures;
+  });
   return failures;
 }
 

@@ -16,10 +16,15 @@ New feature (tag AI helpers):
   a highlight's existing tags on save
 * Creating a tag from the highlight form asks the configured LLM for
   three tag names (grounded in the highlighted text and the existing
-  tags); the light-gray suggestions fill the name field with one click,
-  ready for manual edits. The answer parser tolerates preambles,
-  numbering, markdown and per-name explanations, and the raw model
-  answer is logged to the browser console for troubleshooting
+  tags); the suggestions sit one per line, blue like tag links, and
+  fill the name field with one click, ready for manual edits. The
+  answer parser tolerates preambles, numbering, markdown and per-name
+  explanations; when the model returns nothing there is a *try again*
+  link, and the raw model answer is logged to the browser console for
+  troubleshooting. Reasoning models that spend their whole token
+  budget thinking (empty answer) are handled: the answer is retried
+  with 4× the budget, and answers that arrive in the reasoning field
+  instead of the content field are read too
 * *Generate description with AI* writes a tag definition from the tag
   name and the highlighted text (new tags) or from all the tag's
   highlights (existing tags); the suggestion is previewed with
