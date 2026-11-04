@@ -650,8 +650,17 @@ function taguTaskPanel(el, opts) {
   }
 
   function readTask() {
-    return {source: currentSource(), url: url_input.value.trim(),
-            token: token_input.value, model: model_input.value.trim()};
+    var task = {source: currentSource(), url: url_input.value.trim(),
+                token: token_input.value, model: model_input.value.trim()};
+    // Keep fields this panel doesn't manage (temperature, prompts, ...):
+    // they belong to the task's feature tab, written straight to the store
+    var prev = taguConfig().tasks[opts.task] || {};
+    Object.keys(prev).forEach(function(k) {
+      if(!(k in task)) {
+        task[k] = prev[k];
+      }
+    });
+    return task;
   }
 
   function saveTask() {

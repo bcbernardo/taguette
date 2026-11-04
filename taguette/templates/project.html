@@ -177,6 +177,9 @@
       <div id="sug-menu"></div>
     </div>
 
+    <!-- Tag AI (similar tags) context menu -->
+    <div id="tag-ai-menu"></div>
+
   </div>
 </div>
 
@@ -299,8 +302,19 @@
         <input type="hidden" id="highlight-add-start" />
         <input type="hidden" id="highlight-add-end" />
         <div class="container">
+          <div class="input-group mb-1" id="highlight-add-search-group">
+            <div class="input-group-prepend">
+              <button class="btn btn-outline-secondary" type="button" id="highlight-add-search-run" title="{% trans %}Search{% endtrans %}"><i class="fas fa-search"></i></button>
+            </div>
+            <input type="text" class="form-control" id="highlight-add-search" placeholder="{% trans %}Search tags and definitions{% endtrans %}" aria-label="{% trans %}Search tags{% endtrans %}" autocomplete="off" />
+            <div class="input-group-append">
+              <button class="btn btn-outline-secondary" type="button" id="highlight-add-search-clear" title="{% trans %}Clear search, show suggested tags{% endtrans %}"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          <div id="highlight-add-search-status" class="small text-muted mb-1"></div>
           <ul class="list-unstyled" id="highlight-add-tags">
             <li>{% trans %}Loading...{% endtrans %}</li>
+            <li class="special-item-button" id="highlight-add-showall-li" style="display: none;"><a href="javascript:void(0)" id="highlight-add-showall"></a></li>
             <li class="special-item-button"><a href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a></li>
           </ul>
         </div>
@@ -327,7 +341,22 @@
       <div class="modal-body">
         <input type="hidden" id="tag-add-id" />
         <div class="container">
-          <input type="text" class="form-control mb-3 tag-path-input" id="tag-add-path" name="tag-add-path" placeholder="{# TRANSLATORS: Tag change form #}{% trans %}Name{% endtrans %}" required />
+          <input type="text" class="form-control mb-2 tag-path-input" id="tag-add-path" name="tag-add-path" placeholder="{# TRANSLATORS: Tag change form #}{% trans %}Name{% endtrans %}" required />
+          <div id="tag-add-name-suggestions" class="mb-3" style="display: none;"></div>
+          <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans %}Description{% endtrans %}"></textarea>
+          <div class="mt-2 d-flex flex-wrap" id="tag-add-ai-row">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="tag-add-desc-generate"><i class="fas fa-magic"></i> {% trans %}Generate description with AI{% endtrans %}</button>
+            <div class="dropdown ml-2" id="tag-add-augment-wrap" style="display: none;">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="tag-add-desc-augment" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-magic"></i> {% trans %}Augment description with AI{% endtrans %}</button>
+              <div class="dropdown-menu" aria-labelledby="tag-add-desc-augment">
+                <a class="dropdown-item" href="#" id="tag-add-augment-examples">{% trans %}Add examples{% endtrans %}</a>
+                <a class="dropdown-item" href="#" id="tag-add-augment-includes">{% trans %}Add "includes"{% endtrans %}</a>
+                <a class="dropdown-item" href="#" id="tag-add-augment-confound">{% trans %}Add "Do not confound with"{% endtrans %}</a>
+              </div>
+            </div>
+          </div>
+          <div id="tag-add-desc-preview" class="tag-ai-preview-box mt-2" style="display: none;"></div>
+          <div id="tag-add-similar" class="mt-3" style="display: none;"></div>
           <div class="form-group mb-3">
             <label for="tag-add-parent">{# TRANSLATORS: Tag change form #}{% trans %}Parent tag{% endtrans %}</label>
             <div class="tag-parent-select">
@@ -341,7 +370,6 @@
             </div>
             <input type="hidden" id="tag-add-parent-id" name="tag-add-parent-id" />
           </div>
-          <textarea class="form-control" id="tag-add-description" name="tag-add-description" placeholder="{% trans %}Description{% endtrans %}"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -489,6 +517,8 @@
 <script type="text/javascript" src="{{ static_url('js/config.js') }}"></script>
 
 <script type="text/javascript" src="{{ static_url('js/suggest.js') }}"></script>
+
+<script type="text/javascript" src="{{ static_url('js/tags-ai.js') }}"></script>
 
 <!-- "New highlight" button shown after selecting text -->
 <div id="hlinfo"><a class="btn btn-outline-primary" href="javascript:createHighlight(current_selection);">{% trans %}new highlight{% endtrans %}</a></div>

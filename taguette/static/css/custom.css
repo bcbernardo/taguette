@@ -738,3 +738,88 @@ a.dropdown-item:hover {
 #tagu-config-btn {
   padding: 0.125rem 0.25rem; /* match the compact toolbar buttons */
 }
+
+/* Tag AI: LLM name suggestions, description preview, similar tags */
+
+/* Name suggestions below the tag name field: one per line, blue like
+   the tag links elsewhere in the interface; one click copies the name
+   into the field */
+#tag-add-name-suggestions {
+  color: #868e96;
+  font-size: 0.9em;
+}
+#tag-add-name-suggestions .tag-ai-chip {
+  color: #007bff;
+}
+#tag-add-name-suggestions .tag-ai-chip:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+#tag-add-name-suggestions .tag-ai-retry {
+  color: #007bff;
+}
+
+/* Description suggestion preview: shown before it is accepted.
+ * Shared by the tag form modal and the tag view header */
+.tag-ai-preview-box {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  background: #f8f9fa;
+  padding: 0.5em 0.75em;
+}
+.tag-ai-preview-label {
+  font-size: 0.8em;
+  color: #6c757d;
+  margin-bottom: 0.25em;
+}
+.tag-ai-preview-text {
+  font-style: italic;
+  color: #495057;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.tag-ai-preview-box.tag-ai-preview-loading .tag-ai-preview-text,
+.tag-ai-preview-box.tag-ai-preview-error .tag-ai-preview-text {
+  font-style: normal;
+}
+.tag-ai-preview-box.tag-ai-preview-error .tag-ai-preview-text {
+  color: #dc3545;
+}
+
+/* Similar tags below the description */
+.tag-ai-similar-label {
+  font-size: 0.85em;
+  color: #6c757d;
+  margin-right: 0.35em;
+}
+.tag-ai-similar-chip {
+  cursor: pointer;
+}
+
+/* Context menu on a similar tag (mirrors the suggestion menu) */
+#tag-ai-menu {
+  display: none;
+  position: fixed;
+  z-index: 1060; /* above open modals */
+  background: white;
+  border: 1px solid #999;
+  padding: 0.4em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  max-width: 270px;
+}
+#tag-ai-menu .tag-ai-menu-title {
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 0.3em;
+}
+#tag-ai-menu .btn {
+  margin-top: 0.15em;
+  white-space: normal;
+}
+
+/* Prompt template textareas in the configuration screen */
+textarea.tag-ai-prompt {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.8em;
+}

@@ -4,6 +4,55 @@ Changelog
 Unreleased
 ----------
 
+New feature (tag AI helpers):
+* The highlight form now suggests the most appropriate tags: the top 10,
+  ranked for the highlighted text (semantic ranking when an embedding
+  service is configured, lexical otherwise), with a *Show all tags*
+  toggle and a search bar that mimics the Highlights panel's (lexical +
+  semantic). Tag selections live outside the DOM, so they survive the
+  ranked/search re-renders (searching or clearing the search no longer
+  drops them), and checked tags stay visible — appended after the
+  suggestions — so they can still be unchecked; hidden checkboxes keep
+  a highlight's existing tags on save
+* Creating a tag from the highlight form asks the configured LLM for
+  three tag names (grounded in the highlighted text and the existing
+  tags); the suggestions sit one per line, blue like tag links, and
+  fill the name field with one click, ready for manual edits — at which
+  point they are replaced by a *Re-generate title with AI* link. The
+  answer parser tolerates preambles, numbering, markdown and per-name
+  explanations; when the model returns nothing there is a *try again*
+  link, and the raw model answer is logged to the browser console for
+  troubleshooting. Reasoning models that spend their whole token
+  budget thinking (empty answer) are handled: the answer is retried
+  with 4× the budget, and answers that arrive in the reasoning field
+  instead of the content field are read too
+* *Generate description with AI* writes a tag definition from the tag
+  name and the highlighted text (new tags) or from all the tag's
+  highlights (existing tags); the suggestion is previewed with
+  *Accept / Try again / Discard*. With an existing description the button
+  becomes *Re-generate description with AI*, joined by *Augment
+  description with AI*: *Add examples*, *Add "includes"* and *Add "Do not
+  confound with"* (the latter fed with cosine-similar non-ancestor tags so
+  the model can contrast the themes)
+* The tag form lists the most cosine-similar tags below the description;
+  clicking one opens a menu: *Set as parent*, *Set as descendant*
+  (applied when the new tag is saved), and — while creating a tag —
+  *Use this tag instead*, which drops the new tag and checks the
+  existing one in the highlight form (no near-duplicates); while
+  editing, the third option is *Merge with this tag*
+* New *AI tags* tab in the configuration screen: pick the chat model
+  (one of your API keys, a local Ollama/llama.cpp server, or a custom
+  endpoint), set the temperature, and edit the five prompt templates
+  (with placeholders and reset-to-default). Everything stays in your
+  browser; model calls go straight from the browser to the service
+* The number of suggested tags in the highlight form is configurable
+  (*Embeddings* tab of the configuration screen)
+* The tag's Highlights view offers the same actions below the
+  definition: *Generate/Re-generate description with AI* and the
+  *Augment* menu; accepting a suggestion saves it immediately
+* The tag form now places the *Parent tag* picker below the description
+  field, next to the similar-tags list
+
 New feature (configuration screen):
 * New dedicated configuration screen (⚙ *Configure* in the document toolbar)
   with a tabbed, extensible layout: any feature can register a tab, and the
