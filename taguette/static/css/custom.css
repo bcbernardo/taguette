@@ -710,3 +710,31 @@ a.dropdown-item:hover {
   background: rgba(133, 77, 158, 0.05);
   cursor: text;
 }
+
+/* Taguette configuration screen */
+.tagu-key {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.tagu-instructions {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+.tagu-instructions code {
+  display: inline-block;
+  padding: 0 4px;
+  margin: 2px 0;
+  background: #e9ecef;
+  border-radius: 3px;
+}
+#tagu-config-nav {
+  flex-wrap: wrap; /* future tabs wrap instead of overflowing */
+}
+#tagu-config-btn {
+  padding: 0.125rem 0.25rem; /* match the compact toolbar buttons */
+}

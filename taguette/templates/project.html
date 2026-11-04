@@ -111,6 +111,7 @@
     <div id="document-view" class="document-view">
       <div id="document-view-toolbar">
         <a id="goto-last-highlight" class="btn btn-outline-primary" href="javascript:void(0)" role="button" style="display: none;">{% trans %}Go to last highlight{% endtrans %}</a>
+        <button id="tagu-config-btn" class="btn btn-outline-secondary" type="button" title="{% trans %}Taguette configuration (API keys, AI services…){% endtrans %}">&#9881; {% trans %}Configure{% endtrans %}</button>
         <div id="export-button" class="dropdown" style="display: none;">
           <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {% trans %}Export this view{% endtrans %}
@@ -166,8 +167,8 @@
             <option value="cluster">{% trans %}Themes (clusters){% endtrans %}</option>
           </select>
         </label>
-        <button id="sug-config-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Embedding settings{% endtrans %}">&#9881; {% trans %}Embeddings{% endtrans %}</button>
-        <button id="sug-qa-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Classify speaker turns as interviewer questions or interviewee answers{% endtrans %}">{% trans %}Q / A{% endtrans %}</button>
+        <button id="sug-config-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Embedding settings (opens the configuration screen){% endtrans %}">&#9881; {% trans %}Embeddings{% endtrans %}</button>
+        <button id="sug-qa-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Decision model settings — opens the configuration screen{% endtrans %}">{% trans %}Q / A{% endtrans %}</button>
         <button id="sug-stop" class="btn btn-sm btn-warning">{% trans %}Stop{% endtrans %}</button>
         <span id="sug-status"></span>
       </div>
@@ -411,87 +412,26 @@
 </div>
 
 <!-- Embedding settings modal -->
-<div class="modal" id="suggest-config-modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans %}Embedding settings{% endtrans %}</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="sug-cfg-url">{% trans %}Endpoint URL{% endtrans %}</label>
-          <input type="url" class="form-control" id="sug-cfg-url" placeholder="https://openrouter.ai/api/v1/embeddings" />
-        </div>
-        <div class="form-group">
-          <label for="sug-cfg-token">{% trans %}API token{% endtrans %}</label>
-          <input type="password" class="form-control" id="sug-cfg-token" />
-          <small class="form-text text-muted">{% trans %}Leave empty for a local server. The token stays in your browser and is never sent to the Taguette server.{% endtrans %}</small>
-        </div>
-        <div class="form-group">
-          <label for="sug-cfg-model">{% trans %}Model{% endtrans %}</label>
-          <input type="text" class="form-control" id="sug-cfg-model" placeholder="openai/text-embedding-3-small" />
-          <small class="form-text text-muted">{% trans %}A local model (e.g. MiniLM through Ollama or llama.cpp) also works here: point the URL at it and leave the token empty. Local Ollama needs OLLAMA_ORIGINS=* to accept browser requests.{% endtrans %}</small>
-        </div>
-        <p id="sug-cfg-test-result" class="mt-2"></p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" id="sug-cfg-test">{% trans %}Test connection{% endtrans %}</button>
-        <button type="button" class="btn btn-primary" id="sug-cfg-save">{% trans %}Save{% endtrans %}</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Suggest Q/A (interviewer vs interviewee) modal -->
-<div class="modal" id="suggest-qa-modal" tabindex="-1" role="dialog">
+<!-- Taguette configuration screen: tabs are registered in JS
+     (config.js: API keys; suggest.js: Embeddings, Decisions) -->
+<div class="modal" id="tagu-config-modal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{% trans %}Interviewer / interviewee{% endtrans %}</h5>
+        <h5 class="modal-title">{% trans %}Taguette configuration{% endtrans %}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label for="sug-qa-provider">{% trans %}Decision model{% endtrans %}</label>
-          <select class="form-control" id="sug-qa-provider">
-            <option value="">({% trans %}off{% endtrans %})</option>
-            <option value="laya">Laya ({% trans %}local server{% endtrans %})</option>
-            <option value="jev">Jev ({% trans %}through OpenRouter{% endtrans %})</option>
-          </select>
-          <small class="form-text text-muted">{% trans %}Laya: install locally with <code>pip install "laya[serve]"</code>, run <code>laya-serve</code>, and keep the URL below. Jev: served through OpenRouter, needs an OpenRouter API token. Both classify each speaker turn as an interviewer question or an interviewee answer.{% endtrans %}</small>
+        <ul class="nav nav-tabs" id="tagu-config-nav" role="tablist">
+        </ul>
+        <div class="tab-content pt-3" id="tagu-config-body">
         </div>
-        <div class="form-group" id="sug-qa-laya-group">
-          <label for="sug-qa-laya-url">{% trans %}Laya server URL{% endtrans %}</label>
-          <input type="url" class="form-control" id="sug-qa-laya-url" placeholder="http://localhost:8000" />
-        </div>
-        <div class="form-group" id="sug-qa-jev-group" style="display: none;">
-          <label for="sug-qa-jev-key">{% trans %}OpenRouter API token{% endtrans %}</label>
-          <input type="password" class="form-control" id="sug-qa-jev-key" />
-          <small class="form-text text-muted">{% trans %}The token stays in your browser and is never sent to the Taguette server.{% endtrans %}</small>
-          <label for="sug-qa-jev-model">{% trans %}Model{% endtrans %}</label>
-          <input type="text" class="form-control" id="sug-qa-jev-model" placeholder="~typesafe/jev-latest" />
-          <label for="sug-qa-jev-url">{% trans %}Endpoint URL{% endtrans %}</label>
-          <input type="url" class="form-control" id="sug-qa-jev-url" placeholder="https://openrouter.ai/api/alpha/decisions" />
-        </div>
-        <p id="sug-qa-test-result"></p>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input type="checkbox" class="form-check-input" id="sug-qa-answers-only" checked />
-            {% trans %}Suggest highlights only from answers{% endtrans %}
-          </label>
-        </div>
-        <p id="sug-qa-summary" class="mt-2"></p>
-        <small class="form-text text-muted">{% trans %}Classified turns are shaded in the transcript with a Q/A badge next to them; click a badge any time to flip a misclassification.{% endtrans %}</small>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" id="sug-qa-test">{% trans %}Test connection{% endtrans %}</button>
-        <button type="button" class="btn btn-outline-secondary" id="sug-qa-save">{% trans %}Save{% endtrans %}</button>
-        <button type="button" class="btn btn-primary" id="sug-qa-run">{% trans %}Classify speaker turns{% endtrans %}</button>
+        <small class="form-text text-muted mr-auto">{% trans %}Settings are stored in your browser and are never sent to the Taguette server.{% endtrans %}</small>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Close{% endtrans %}</button>
       </div>
     </div>
   </div>
@@ -545,6 +485,8 @@
 
 <!-- Should minify this but I hate NPM -->
 <script type="text/javascript" src="{{ static_url('js/taguette.js') }}"></script>
+
+<script type="text/javascript" src="{{ static_url('js/config.js') }}"></script>
 
 <script type="text/javascript" src="{{ static_url('js/suggest.js') }}"></script>
 
