@@ -2208,7 +2208,22 @@ document.getElementById('highlight-delete').addEventListener('click', function(e
 
 var hl_select = null;       // Selected highlight: {id, prefix, start, end}
 var hl_select_dragging = false;
-var hl_menu = document.getElementById('hl-menu');
+var hl_menu = null;         // Menu element, created on first use
+
+// The menu element. It is created lazily rather than expected in the
+// page, so that a server still running an older template (which does
+// not have the #hl-menu div) doesn't silently break the feature
+function hlMenu() {
+  if(!hl_menu) {
+    hl_menu = document.getElementById('hl-menu');
+    if(!hl_menu) {
+      hl_menu = document.createElement('div');
+      hl_menu.id = 'hl-menu';
+      document.body.appendChild(hl_menu);
+    }
+  }
+  return hl_menu;
+}
 
 // Title (tooltip) of a highlight: its tags, sorted, comma-separated
 function hlTitleFor(id) {
@@ -2279,7 +2294,7 @@ function hlMenuHide() {
 
 // Show the menu (built once) anchored under the start bracket
 function hlMenuShow() {
-  if(!hl_menu || !hl_select) {
+  if(!hl_select) {
     return;
   }
   var anchor = document.querySelector('.hl-bracket[data-which="start"]');
@@ -2287,6 +2302,7 @@ function hlMenuShow() {
     hlMenuHide();
     return;
   }
+  var hl_menu = hlMenu();
   if(!hl_menu.firstChild) {
     var hint = document.createElement('div');
     hint.className = 'hl-menu-hint';
