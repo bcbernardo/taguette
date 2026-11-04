@@ -8,7 +8,8 @@ New feature (tag hierarchy):
 * Tags can be nested: drag a tag onto another in the Highlights panel (top
   or bottom of the row) to make it a child, after a confirmation; dropping
   it in the middle of the row offers a merge instead (cancellable by
-  closing the popup)
+  closing the popup). Holding a dragged tag near the top or bottom of the
+  panel auto-scrolls the tag list, so far-apart tags can be nested
 * The tag form has a "parent tag" search bar: pick a parent to create a
   nested tag, leave it empty for a root-level tag
 * Nested tags are shown as a tree in the Highlights panel and in the

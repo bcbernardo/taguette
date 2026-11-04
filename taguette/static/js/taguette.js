@@ -1496,6 +1496,87 @@ document.getElementById('tag-merge-form').addEventListener('submit', function(e)
 // Tag being dragged (id), reset on dragend/drop
 var tag_drag_id = null;
 
+/*
+ * Auto-scroll of the Highlights panel during a drag
+ *
+ * Browsers scroll the page itself during an HTML5 drag, but not inner
+ * scrollable containers such as the tags panel. While a tag is being
+ * dragged, the pointer position is tracked (dragover events fire all the
+ * way up to the document) and a timer scrolls the panel whenever the
+ * pointer is held near its top or bottom edge. The timer keeps running
+ * while the pointer is stationary, so the panel keeps scrolling until the
+ * pointer moves away from the edge.
+ */
+
+var tag_scroll_container = document.querySelector('.left-panel-scroll');
+var tag_drag_last_y = null;
+var tag_autoscroll_timer = null;
+var TAG_AUTOSCROLL_EDGE = 48;  // Pointer this close to an edge starts scrolling
+var TAG_AUTOSCROLL_MAX = 22;   // Maximum pixels scrolled per tick
+
+function tagAutoScrollTick() {
+  if(tag_drag_id === null || tag_drag_last_y === null
+     || !tag_scroll_container) {
+    return;
+  }
+  var rect = tag_scroll_container.getBoundingClientRect();
+  // Only the part of the panel that is on screen can be used as a scroll
+  // zone: the panel can extend below the window (its top is under the
+  // page header), so clip it to the viewport
+  var top = Math.max(rect.top, 0);
+  var bottom = Math.min(rect.bottom, window.innerHeight);
+  var y = tag_drag_last_y;
+  // Don't scroll when the pointer is far away from the panel
+  if(y < top - TAG_AUTOSCROLL_EDGE || y > bottom + TAG_AUTOSCROLL_EDGE) {
+    return;
+  }
+  var delta = 0;
+  if(y < top + TAG_AUTOSCROLL_EDGE) {
+    // Closer to the top edge: scroll up, faster when closer
+    delta = -Math.ceil(
+      (top + TAG_AUTOSCROLL_EDGE - y)
+      / TAG_AUTOSCROLL_EDGE * TAG_AUTOSCROLL_MAX);
+  } else if(y > bottom - TAG_AUTOSCROLL_EDGE) {
+    // Closer to the bottom edge: scroll down, faster when closer
+    delta = Math.ceil(
+      (y - (bottom - TAG_AUTOSCROLL_EDGE))
+      / TAG_AUTOSCROLL_EDGE * TAG_AUTOSCROLL_MAX);
+  }
+  if(delta) {
+    tag_scroll_container.scrollTop += delta;
+  }
+}
+
+function tagAutoScrollStart() {
+  if(tag_autoscroll_timer === null) {
+    tag_autoscroll_timer = window.setInterval(tagAutoScrollTick, 25);
+  }
+}
+
+function tagAutoScrollStop() {
+  if(tag_autoscroll_timer !== null) {
+    window.clearInterval(tag_autoscroll_timer);
+    tag_autoscroll_timer = null;
+  }
+  tag_drag_last_y = null;
+}
+
+// Track the pointer during the drag, wherever it goes: dragover fires on
+// the element under the cursor and bubbles all the way up to the document
+// (this includes hovering over the search bar, the panel's margins, etc.)
+document.addEventListener('dragover', function(e) {
+  if(tag_drag_id !== null) {
+    tag_drag_last_y = e.clientY;
+  }
+}, true);
+
+// Safety net in case the source element is removed from the DOM mid-drag
+// (e.g. the tags list is re-rendered): dragend always fires, but perhaps
+// not on the element it started from
+document.addEventListener('dragend', function() {
+  tagAutoScrollStop();
+});
+
 function tagDropZone(e, elem) {
   // Which third of the row the cursor is over: the top and bottom thirds
   // re-parent the dragged tag, the middle third merges it into this tag
@@ -1540,6 +1621,8 @@ function enableTagDrag(elem, tag_id) {
       return;
     }
     tag_drag_id = tag_id;
+    tag_drag_last_y = e.clientY;
+    tagAutoScrollStart();
     e.dataTransfer.setData('text/plain', '' + tag_id);
     e.dataTransfer.effectAllowed = 'move';
     try {
@@ -1552,6 +1635,7 @@ function enableTagDrag(elem, tag_id) {
   });
   elem.addEventListener('dragend', function(e) {
     tag_drag_id = null;
+    tagAutoScrollStop();
     elem.classList.remove('tag-dragging');
   });
 
@@ -1579,6 +1663,7 @@ function enableTagDrag(elem, tag_id) {
     }
     e.preventDefault();
     tagDropClearIndicator(elem);
+    tagAutoScrollStop();
     var dragged = tag_drag_id;
     tag_drag_id = null;
     if(dragged === null) {
