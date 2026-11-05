@@ -89,7 +89,6 @@
           <div class="row">
             <div class="col-md-12 mb-3">
               <a id="load-all-tags" class="btn btn-primary float-right ml-2" href="/project/{{ project.id }}/highlights/">{% trans %}See all highlights{% endtrans %}</a>
-              <a class="btn btn-primary float-right" href="javascript:createTag()">{% trans %}Create a tag{% endtrans %}</a>
             </div>
           </div>
           <div class="input-group mb-1" id="tag-search-group">
@@ -105,6 +104,13 @@
           <ul class="list-group list-group-flush" id="tags-list">
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
+          <!-- Floating "create a tag" button: pinned to the bottom right
+               of the left panel — the sticky panel (.left-panel-scroll)
+               is its positioning ancestor, not the scrolling tab content
+               — so it floats above the tag names without scrolling with
+               them; hidden while the bulk action bar is shown
+               (tagUpdateBulkBar toggles d-none on it) -->
+          <a id="tag-create-float" class="btn btn-primary" href="javascript:createTag()" role="button" title="{% trans %}Create a tag{% endtrans %}" aria-label="{% trans %}Create a tag{% endtrans %}"><i class="fas fa-plus" aria-hidden="true"></i></a>
         </div>
 
       </div>

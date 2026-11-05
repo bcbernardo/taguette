@@ -870,6 +870,14 @@ function tagUpdateBulkBar() {
   // with a stale count after the selection is cleared
   var hidden = count === 0 || !pane || !pane.classList.contains('active');
   bar.classList.toggle('d-none', hidden);
+  // The floating "create a tag" button shares the bar's spot at the
+  // bottom of the panel: it shows exactly when the bar is hidden. It
+  // also disappears with the Highlights tab itself, since it lives
+  // inside the tab pane
+  var create_float = document.getElementById('tag-create-float');
+  if(create_float) {
+    create_float.classList.toggle('d-none', !hidden);
+  }
   if(hidden) {
     document.getElementById('tag-bulk-count').textContent = '';
     var group_btn0 = document.getElementById('tag-bulk-group');
