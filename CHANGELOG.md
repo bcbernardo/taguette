@@ -4,6 +4,23 @@ Changelog
 Unreleased
 ----------
 
+Usability (Highlights panel):
+* Tag definitions longer than 200 characters are now capped in the
+  left panel, with a "(show more)" note at the end of the capped text
+  to reveal the full definition ("(show less)" collapses it back);
+  while capped, the definition's edit pencil is hidden
+* The *Create a tag* button moved from the top of the Highlights panel
+  to a small square "+" button floating at the bottom right corner of
+  the panel: it stays in place while the tag list scrolls and hides
+  while the bulk action bar is shown (it also disappears with the
+  panel's other tabs, as it lives inside the Highlights tab)
+* The search bar is now hidden by default; a matching square
+  magnifying-glass button floats to the left of the "+" one and opens
+  it (the bar already sticks to the top of the tag list while the list
+  scrolls). The cross button closes the search again when the field is
+  already empty, bringing the floating button back; both floating
+  buttons hide while the bulk action bar is shown
+
 New feature (tag multiselect and bulk organization):
 * Tags in the Highlights panel can be checked for bulk actions; a bar
   pinned to the bottom of the left panel — always visible without

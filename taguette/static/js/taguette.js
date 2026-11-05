@@ -870,6 +870,15 @@ function tagUpdateBulkBar() {
   // with a stale count after the selection is cleared
   var hidden = count === 0 || !pane || !pane.classList.contains('active');
   bar.classList.toggle('d-none', hidden);
+  // The floating "create a tag" button shares the bar's spot at the
+  // bottom of the panel: it shows exactly when the bar is hidden. It
+  // also disappears with the Highlights tab itself, since it lives
+  // inside the tab pane
+  var create_float = document.getElementById('tag-create-float');
+  if(create_float) {
+    create_float.classList.toggle('d-none', !hidden);
+  }
+  updateTagSearchFloat();
   if(hidden) {
     document.getElementById('tag-bulk-count').textContent = '';
     var group_btn0 = document.getElementById('tag-bulk-group');
@@ -1031,6 +1040,15 @@ linkTag(document.getElementById('load-all-tags'), '');
 // Description boxes expanded (tag id -> true), kept across re-renders
 var tag_desc_open = {};
 
+// Maximum number of characters of a tag definition shown in the left
+// panel before it is capped with a "(show more)" link (and, while
+// capped, without the edit pencil)
+var TAG_DESC_MAX_CHARS = 200;
+
+// Definitions expanded past the cap (tag id -> true), kept across
+// re-renders like tag_desc_open
+var tag_desc_expanded = {};
+
 var tag_search_input = document.getElementById('tag-search');
 var tag_search_status = document.getElementById('tag-search-status');
 var tag_search_state = {
@@ -1177,10 +1195,17 @@ if(tag_search_run) {
   });
 }
 
-// Cross button: clear the search and show all tags again
+// Cross button: clear the search and show all tags again; if the
+// field was already empty, close the search bar and show all tags
 var tag_search_clear = document.getElementById('tag-search-clear');
 if(tag_search_clear) {
   tag_search_clear.addEventListener('click', function(e) {
+    if(!tag_search_input.value) {
+      // Nothing to clear: close the search UI and bring the floating
+      // button back
+      hideTagSearch();
+      return;
+    }
     window.clearTimeout(tag_search_timer);
     tag_search_input.value = '';
     tag_search_state.query = '';
@@ -1190,6 +1215,43 @@ if(tag_search_clear) {
     updateTagsList();
     tag_search_input.focus();
   });
+}
+
+// Floating search button and sticky search bar: the bar is hidden by
+// default and takes the button's place (stuck to the top of the tag
+// list) while the search is open. Inline display is enough here: no
+// !important display rule applies to these elements
+function showTagSearch() {
+  document.getElementById('tag-search-float').classList.add('d-none');
+  document.getElementById('tag-search-group').style.display = '';
+  tag_search_status.style.display = '';
+  tag_search_input.focus();
+}
+
+function hideTagSearch() {
+  window.clearTimeout(tag_search_timer);
+  tag_search_input.value = '';
+  tag_search_state.query = '';
+  ++tag_search_state.seq; // make any in-flight semantic result stale
+  tag_search_state.matches = null;
+  tag_search_status.textContent = '';
+  updateTagsList();
+  document.getElementById('tag-search-group').style.display = 'none';
+  tag_search_status.style.display = 'none';
+  updateTagSearchFloat();
+}
+
+// Show the floating search button only when the search bar is closed
+// AND the bulk action bar (which shares the corner) is hidden
+function updateTagSearchFloat() {
+  var search_float = document.getElementById('tag-search-float');
+  var group = document.getElementById('tag-search-group');
+  var bar = document.getElementById('tag-bulk-bar');
+  if(!search_float || !group || !bar) {
+    return;
+  }
+  var bar_hidden = bar.classList.contains('d-none');
+  search_float.classList.toggle('d-none', group.style.display !== 'none' || !bar_hidden);
 }
 
 function tagSearchRunNow() {
@@ -1310,6 +1372,16 @@ function updateTagsList() {
       ? tag_desc_open[tag.id]
       : has_children;
     var has_desc = !!tag.description;
+    // Cap long definitions: truncated text plus a "(show more)" link,
+    // without the edit pencil until the full text is shown
+    var desc_long = has_desc && tag.description.length > TAG_DESC_MAX_CHARS;
+    var desc_expanded = desc_long && !!tag_desc_expanded['' + tag.id];
+    var desc_capped = desc_long && !desc_expanded;
+    var desc_text = !has_desc
+      ? gettext("(no definition)")
+      : (desc_capped
+          ? tag.description.substr(0, TAG_DESC_MAX_CHARS) + '\u2026'
+          : tag.description);
     // Restore the bulk-selection state from outside the DOM: the
     // checkbox is re-created on every render
     var is_selected = !!tag_selected['' + tag.id];
@@ -1333,8 +1405,13 @@ function updateTagsList() {
       '  </div>' +
       '</div>' +
       '<div class="tag-desc-box" id="tag-desc-' + tag.id + '"' + (open ? '' : ' style="display: none;"') + '>' +
-      '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(has_desc ? tag.description : gettext("(no definition)")) + '</span>' +
-      '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>' +
+      '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(desc_text) + '</span>' +
+      (desc_capped
+        ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-more-' + tag.id + '">' + gettext("(show more)") + '</a>'
+        : '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>') +
+      (desc_expanded
+        ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-less-' + tag.id + '">' + gettext("(show less)") + '</a>'
+        : '') +
       '</div>';
     tags_list.insertBefore(elem, before);
     linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
@@ -1363,9 +1440,34 @@ function updateTagsList() {
     document.getElementById('tag-edit-' + tag.id).addEventListener('click', (function(tag_id) {
       return function(e) { e.preventDefault(); editTag(tag_id); };
     })(tag.id));
-    document.getElementById('tag-desc-edit-' + tag.id).addEventListener('click', (function(tag_id) {
-      return function(e) { e.preventDefault(); editTag(tag_id); };
-    })(tag.id));
+    var desc_edit = document.getElementById('tag-desc-edit-' + tag.id);
+    if(desc_edit) {
+      desc_edit.addEventListener('click', (function(tag_id) {
+        return function(e) { e.preventDefault(); editTag(tag_id); };
+      })(tag.id));
+    }
+    // "(show more)" / "(show less)" on a capped definition: a full
+    // re-render keeps the expansion state and swaps the link and pencil
+    var desc_more = document.getElementById('tag-desc-more-' + tag.id);
+    if(desc_more) {
+      desc_more.addEventListener('click', (function(tag_id) {
+        return function(e) {
+          e.preventDefault();
+          tag_desc_expanded['' + tag_id] = true;
+          updateTagsList();
+        };
+      })(tag.id));
+    }
+    var desc_less = document.getElementById('tag-desc-less-' + tag.id);
+    if(desc_less) {
+      desc_less.addEventListener('click', (function(tag_id) {
+        return function(e) {
+          e.preventDefault();
+          delete tag_desc_expanded['' + tag_id];
+          updateTagsList();
+        };
+      })(tag.id));
+    }
     // Bulk selection checkbox: the element dies with the re-render, so
     // the listener cannot leak
     document.getElementById('tag-select-' + tag.id).addEventListener('change', (function(tag_id) {

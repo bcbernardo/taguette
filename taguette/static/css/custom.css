@@ -305,6 +305,20 @@ li.document-link-current a.document-link-a {
   color: #868e96;
 }
 
+/* "(show more)" / "(show less)" note at the end of a capped tag
+ * definition; styled like an unobtrusive inline link */
+.tag-desc-more {
+  text-decoration: none;
+  color: #495057;
+  padding: 0 0.15em;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.tag-desc-more:hover {
+  color: #212529;
+  text-decoration: underline;
+}
+
 /* Search bar on top of the highlights (tags) panel: sticks to the top
  * of the scrolling tab content (#myTabContent), right below the tab
  * bar, which lives outside the scroller */
@@ -408,6 +422,37 @@ li.tag-item.drop-merge {
   border-top: 0;
   margin-top: -1px;
   padding: 0.3rem 0.25rem 0.25rem 0.25rem;
+}
+
+/* Floating "search tags" and "create a tag" buttons: small squares
+ * pinned near the bottom right corner of the left panel. The sticky
+ * panel (.left-panel-scroll) is their positioning ancestor — not the
+ * scrolling tab content — so they hover above the tag names and stay
+ * put while they scroll. Colors come from Bootstrap's .btn-primary,
+ * like the other buttons. The search button hides itself while the
+ * search bar is open, and both hide while the bulk action bar is shown
+ * (tagUpdateBulkBar/updateTagSearchFloat toggle d-none, which wins
+ * over the display here). */
+#tag-create-float,
+#tag-search-float {
+  position: absolute;
+  bottom: 2rem;
+  width: 2.7rem;
+  height: 2.7rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+#tag-create-float {
+  right: 2rem;
+}
+
+/* Create button: 2rem inset + 2.7rem width, then a 0.5rem gap */
+#tag-search-float {
+  right: 5.2rem;
 }
 
 /* Bulk selection of tags in the Highlights panel: checked rows read as
