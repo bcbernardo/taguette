@@ -69,6 +69,22 @@ var TAG_AI_PROMPTS = {
     + '{{highlight}}\n'
     + '"""\n',
 
+  group_names: 'You are helping a qualitative researcher organize the tags (codes) of a Taguette project.\n'
+    + '\n'
+    + 'Suggest 3 names for a new tag: {{task}}\n'
+    + '\n'
+    + 'A tag name is a short key phrase (1-4 words, lowercase).\n'
+    + '\n'
+    + 'Tags involved:\n'
+    + '{{tags}}\n'
+    + '\n'
+    + 'Sample excerpts highlighted with these tags (may be empty):\n'
+    + '"""\n'
+    + '{{highlights}}\n'
+    + '"""\n'
+    + '\n'
+    + 'Answer with EXACTLY 3 names, one per line: just the names, no numbering, no explanations, no markdown, no preamble.\n',
+
   description: 'You are helping a qualitative researcher write definitions for the tags (codes) of a Taguette project.\n'
     + '\n'
     + 'Write a concise definition (2-4 sentences, plain text) for the tag "{{tag}}": what it covers and when to apply it, grounded in the excerpts below.\n'
@@ -76,6 +92,20 @@ var TAG_AI_PROMPTS = {
     + 'Current definition (may be empty or partial): {{description}}\n'
     + '\n'
     + 'Excerpts highlighted with this tag:\n'
+    + '"""\n'
+    + '{{highlights}}\n'
+    + '"""\n',
+
+  group_description: 'You are helping a qualitative researcher write definitions for the tags (codes) of a Taguette project.\n'
+    + '\n'
+    + 'Write a concise definition (2-4 sentences, plain text) for the new {{kind}} tag "{{tag}}": what it covers and when to apply it, grounded in the tags below and the excerpts.\n'
+    + '\n'
+    + 'Current definition (may be empty or partial): {{description}}\n'
+    + '\n'
+    + 'Tags it brings together:\n'
+    + '{{tags}}\n'
+    + '\n'
+    + 'Sample excerpts highlighted with these tags (may be empty):\n'
     + '"""\n'
     + '{{highlights}}\n'
     + '"""\n',
@@ -122,7 +152,9 @@ var TAG_AI_PROMPTS = {
 
 var TAG_AI_PROMPT_LABELS = {
   names: gettext('Tag name suggestions'),
+  group_names: gettext('Umbrella/unified tag name suggestions'),
   description: gettext('Tag description'),
+  group_description: gettext('Umbrella/unified tag description'),
   augment_examples: gettext('Augment: examples'),
   augment_includes: gettext('Augment: includes'),
   augment_confound: gettext('Augment: do not confound with'),
@@ -733,6 +765,21 @@ var tag_ai_tag = {
                        // yet: {descendant: id, merge: id}
 };
 
+// Tag compose modal (umbrella/unified creation from a multi-selection):
+// title suggestions, member-grounded description, and the ranking for
+// the "other suggested tags" list. The form and the two lists live in
+// taguette.js (compose_members, composeRenderLists); this side only
+// fills the AI boxes.
+var tag_ai_compose = {
+  open: false,
+  mode: null,        // 'umbrella' | 'unified'
+  seq: 0,            // guards the title suggestions and description runs
+  suggestions: [],   // [{tag, score, id}] for the "other suggested tags"
+                     // list (id duplicated for taguette.js's renderer)
+  suggest_seq: 0,    // guards the debounced ranking
+  suggest_timer: null,
+};
+
 function tagAiTagModalOpen() {
   var id_input = document.getElementById('tag-add-id');
   tag_ai_tag.modal_open = true;
@@ -1006,6 +1053,23 @@ var TAG_AI_SURFACES = {
     },
     afterAccept: null,
   },
+  // The tag compose modal (umbrella/unified creation; the description
+  // runs on this surface, the title suggestions have their own code)
+  compose: {
+    preview_id: 'tag-compose-desc-preview',
+    nextSeq: function() { return ++tag_ai_compose.seq; },
+    isStale: function(seq) { return seq !== tag_ai_compose.seq; },
+    apply: function(mode, text) {
+      var textarea = document.getElementById('tag-compose-description');
+      if(textarea) {
+        textarea.value = text;
+      }
+    },
+    afterAccept: function() { tagAiComposeRefreshSuggestions(); },
+    // tagAiDescPreviewShow's "Try again" re-runs the member-grounded
+    // prompt instead of the plain description one
+    descRun: function() { tagAiComposeDescRun(); },
+  },
 };
 
 function tagAiDescVars(surface, mode) {
@@ -1131,7 +1195,11 @@ function tagAiDescPreviewShow(surface, mode, text) {
   }));
   row.appendChild(button(gettext('Try again'),
     'btn btn-sm btn-outline-secondary ml-1', function() {
-      tagAiDescRun(surface, mode);
+      if(surface.descRun) {
+        surface.descRun();
+      } else {
+        tagAiDescRun(surface, mode);
+      }
     }));
   row.appendChild(button(gettext('Discard'),
     'btn btn-sm btn-outline-secondary ml-1',
@@ -1144,8 +1212,10 @@ function tagAiDescPreviewShow(surface, mode, text) {
  * otherwise), with a context menu to organize the hierarchy
  */
 
-// Pure: which tags are candidates for the similar list
-function tagAiSimilarCandidates(entries, editing_id) {
+// Pure: which tags are candidates for the similar list. exclude_ids
+// ({id_string: true}) additionally drops specific tags (compose modal:
+// the member tags).
+function tagAiSimilarCandidates(entries, editing_id, exclude_ids) {
   var out = [];
   for(var i = 0; i < entries.length; ++i) {
     var tag = entries[i][1];
@@ -1157,17 +1227,21 @@ function tagAiSimilarCandidates(entries, editing_id) {
            || tagIsDescendant(editing_id, tag.id))) {  // own ancestors
       continue;
     }
+    if(exclude_ids && exclude_ids['' + tag.id]) {
+      continue;
+    }
     out.push(tag);
   }
   return out;
 }
 
-function tagAiSimilarTagsPromise(limit, editing_id, text) {
+function tagAiSimilarTagsPromise(limit, editing_id, text, exclude_ids) {
   limit = limit || 5;
   if(!text) {
     return Promise.resolve([]);
   }
-  var candidates = tagAiSimilarCandidates(Object.entries(tags), editing_id);
+  var candidates = tagAiSimilarCandidates(Object.entries(tags), editing_id,
+                                          exclude_ids);
   if(!candidates.length) {
     return Promise.resolve([]);
   }
@@ -1389,6 +1463,270 @@ function tagAiAfterTagSaved(tag_id) {
 }
 
 /*
+ * Tag compose modal (Group / Create new unified tag): AI title
+ * suggestions grounded in the member tags, the member-grounded
+ * description, and the ranking of the "other suggested tags" list.
+ * taguette.js's showComposeModal calls the guarded hooks; the live
+ * member list is compose_members (a global in taguette.js).
+ */
+
+// '- path — definition' lines for the member tags (the LLM's context)
+function tagAiComposeMemberLines() {
+  var members = (typeof compose_members !== 'undefined') ? compose_members : [];
+  var lines = [];
+  for(var i = 0; i < members.length; ++i) {
+    var tag = tags['' + members[i]];
+    if(!tag) {
+      continue;
+    }
+    lines.push('- ' + tag.path + ' — '
+      + (tag.description || gettext('(no definition)')));
+  }
+  return lines.join('\n');
+}
+
+// Unified mode: excerpts sampled across every member's highlights (up
+// to 2 per member), joined for the prompts; '(none)' when empty
+function tagAiComposeHighlights() {
+  var members = (typeof compose_members !== 'undefined') ? compose_members : [];
+  var fetches = [];
+  for(var i = 0; i < members.length; ++i) {
+    fetches.push(tagAiFetchHighlights(tags['' + members[i]]));
+  }
+  return Promise.all(fetches).then(function(per_member) {
+    var all = [];
+    for(var j = 0; j < per_member.length; ++j) {
+      all = all.concat(per_member[j].slice(0, 2));  // up to 2 per member
+    }
+    return tagAiSampleExcerpts(all, 8, 400).join('\n---\n')
+      || gettext('(none)');
+  });
+}
+
+// Called by showComposeModal (guarded) when the compose modal opens
+function tagAiComposeOpen(mode, member_ids) {
+  // (member_ids mirrors compose_members; the live global is read below)
+  tag_ai_compose.open = true;
+  tag_ai_compose.mode = mode;
+  ++tag_ai_compose.seq;
+  ++tag_ai_compose.suggest_seq;
+  window.clearTimeout(tag_ai_compose.suggest_timer);
+  tag_ai_compose.suggestions = [];
+
+  var names = document.getElementById('tag-compose-name-suggestions');
+  if(names) {
+    names.style.display = 'none';
+    names.textContent = '';
+  }
+  tagAiDescPreviewHide(TAG_AI_SURFACES.compose);
+
+  // The title is the primary need: auto-run the suggestions (the
+  // description stays button-triggered, as on the tag form)
+  tagAiComposeSuggestNames();
+  tagAiComposeRefreshSuggestions();
+}
+
+// Title suggestions for the new umbrella/unified tag
+function tagAiComposeSuggestNames() {
+  var box = document.getElementById('tag-compose-name-suggestions');
+  if(!box) {
+    return;
+  }
+  var cfg = tagAiLLMConfig();
+  if(!cfg) {
+    console.log('Compose tag name suggestions: no AI model configured');
+    box.style.display = 'none';
+    return;
+  }
+  var seq = tag_ai_compose.seq;
+  box.style.display = '';
+  box.textContent = gettext('Suggestions: thinking…');
+  var task = (tag_ai_compose.mode === 'unified')
+    ? gettext('a unified tag that will replace all these tags — they will be merged into it, so the name must cover all of them together.')
+    : gettext('an umbrella tag — a broader category under which all these tags will be grouped as children.');
+  var members_text = tagAiTruncate(tagAiComposeMemberLines(), 2000)
+    || gettext('(none)');
+  var highlights_promise = (tag_ai_compose.mode === 'unified')
+    ? tagAiComposeHighlights()
+    : Promise.resolve(gettext('(none)'));
+  highlights_promise.then(function(highlights) {
+    if(seq !== tag_ai_compose.seq) {
+      return;
+    }
+    var prompt = tagAiPrompt(cfg, 'group_names', {
+      task: task,
+      tags: members_text,
+      highlights: highlights,
+    });
+    return tagAiChat(cfg, prompt, 800);
+  })
+  .then(function(content) {
+    if(seq !== tag_ai_compose.seq) {
+      return;
+    }
+    var names = tagAiParseNames(content);
+    console.log('Compose tag name suggestions:', names.length, 'parsed from',
+      JSON.stringify(tagAiTruncate(content, 300)));
+    if(!names.length) {
+      box.textContent = '';
+      box.appendChild(document.createTextNode(gettext('Suggestions: none') + ' — '));
+      var retry = document.createElement('a');
+      retry.href = 'javascript:void(0)';
+      retry.className = 'tag-ai-retry';
+      retry.textContent = gettext('try again');
+      retry.addEventListener('click', function(e) {
+        e.preventDefault();
+        tagAiComposeSuggestNames();
+      });
+      box.appendChild(retry);
+      return;
+    }
+    box.textContent = gettext('Suggestions:') + ' ';
+    names.forEach(function(name, i) {
+      if(i > 0) {
+        box.appendChild(document.createElement('br'));
+      }
+      var chip = document.createElement('a');
+      chip.href = 'javascript:void(0)';
+      chip.className = 'tag-ai-chip';
+      chip.textContent = name;
+      chip.title = gettext('Use this name — you can edit it afterwards');
+      chip.addEventListener('click', function(e) {
+        e.preventDefault();
+        var input = document.getElementById('tag-compose-path');
+        input.value = name;
+        if(typeof tagComposePathFit === 'function') {
+          tagComposePathFit();  // taguette.js
+        } else {
+          input.size = Math.max(30, input.value.length + 2);
+        }
+        input.focus();
+        tagAiComposeRefreshSuggestions();
+        // Name accepted: swap the list for a re-generate link
+        box.textContent = '';
+        var again = document.createElement('a');
+        again.href = 'javascript:void(0)';
+        again.className = 'tag-ai-retry';
+        again.textContent = gettext('Re-generate title with AI');
+        again.addEventListener('click', function(e2) {
+          e2.preventDefault();
+          tagAiComposeSuggestNames();
+        });
+        box.appendChild(again);
+      });
+      box.appendChild(chip);
+    });
+  })
+  .catch(function(error) {
+    console.error('Compose tag name suggestions: failed', error);
+    if(seq !== tag_ai_compose.seq) {
+      return;
+    }
+    box.textContent = gettext('Suggestions: failed') + ' (' + error + ')';
+  });
+}
+
+// Debounced re-ranking of the "other suggested tags" list: the current
+// name + description against every tag that is not a member
+function tagAiComposeRefreshSuggestions() {
+  window.clearTimeout(tag_ai_compose.suggest_timer);
+  tag_ai_compose.suggest_timer = window.setTimeout(function() {
+    if(!tag_ai_compose.open) {
+      return;
+    }
+    var name = document.getElementById('tag-compose-path');
+    var desc = document.getElementById('tag-compose-description');
+    var text = ((name ? name.value : '') + '\n' + (desc ? desc.value : '')).trim();
+    var exclude = {};
+    var members = (typeof compose_members !== 'undefined') ? compose_members : [];
+    for(var i = 0; i < members.length; ++i) {
+      exclude['' + members[i]] = true;
+    }
+    var seq = ++tag_ai_compose.suggest_seq;
+    tagAiSimilarTagsPromise(5, null, text, exclude)
+    .then(function(scored) {
+      if(seq !== tag_ai_compose.suggest_seq || !tag_ai_compose.open) {
+        return;
+      }
+      // Each item also carries the id at the top level: taguette.js's
+      // composeRenderLists() reads suggested.id directly
+      tag_ai_compose.suggestions = scored.map(function(s) {
+        return {tag: s.tag, score: s.score, id: s.tag.id};
+      });
+      // taguette.js re-renders the two lists on every members change;
+      // it doesn't know about this async ranking, so re-render here
+      if(typeof composeRenderLists === 'function') {
+        composeRenderLists();
+      }
+    });
+  }, 600);
+}
+
+// Ranked [{tag, score}] for composeRenderLists()'s suggested list
+function tagAiComposeSuggestions() {
+  return tag_ai_compose.suggestions;
+}
+
+// Description generation for the new umbrella/unified tag
+// (button-triggered, like on the tag form), grounded in the member tags
+// and — unified mode only — in up to 2 sampled excerpts per member
+function tagAiComposeDescRun(mode) {
+  mode = mode || tag_ai_compose.mode;
+  var surface = TAG_AI_SURFACES.compose;
+  var cfg = tagAiLLMConfig();
+  if(!cfg) {
+    var note = tagAiDescPreviewSet(surface,
+      gettext('No AI model configured — open ⚙ Configure → AI tags to pick one.'));
+    if(note) {
+      note.classList.add('tag-ai-preview-error');
+    }
+    return;
+  }
+  var name_input = document.getElementById('tag-compose-path');
+  var name = name_input ? name_input.value.trim() : '';
+  if(!name) {
+    alert(gettext('Enter a tag name first'));
+    return;
+  }
+  var desc_input = document.getElementById('tag-compose-description');
+  // Snapshot the inputs so the prompt stays coherent while the member
+  // highlights are being fetched
+  var vars = {
+    kind: mode,
+    tag: name,
+    description: (desc_input && desc_input.value.trim()) || gettext('(none yet)'),
+    tags: tagAiTruncate(tagAiComposeMemberLines(), 2000) || gettext('(none)'),
+  };
+  var seq = surface.nextSeq();
+  var box = tagAiDescPreviewSet(surface, gettext('Asking the AI model…'));
+  if(box) {
+    box.classList.add('tag-ai-preview-loading');
+  }
+  var highlights_promise = (mode === 'unified')
+    ? tagAiComposeHighlights()
+    : Promise.resolve(gettext('(none)'));
+  highlights_promise.then(function(highlights) {
+    vars.highlights = highlights;
+    return tagAiChat(cfg, tagAiPrompt(cfg, 'group_description', vars), 600);
+  })
+  .then(function(content) {
+    if(surface.isStale(seq)) {
+      return;
+    }
+    tagAiDescPreviewShow(surface, 'generate', content);
+  })
+  .catch(function(error) {
+    if(surface.isStale(seq)) {
+      return;
+    }
+    var err = tagAiDescPreviewSet(surface, gettext('Failed:') + ' ' + error);
+    if(err) {
+      err.classList.add('tag-ai-preview-error');
+    }
+  });
+}
+
+/*
  * Tag view header (/project/<id>/highlights/<tag>): the same generate /
  * re-generate / augment actions as the tag form, inline under the
  * description. The header is rebuilt on every change, so the row is
@@ -1513,6 +1851,25 @@ window.addEventListener('load', function() {
   if(desc) {
     desc.addEventListener('input', tagAiSimilarRefresh);
   }
+
+  // Tag compose modal: drop in-flight suggestions/rankings when it
+  // closes, and wire the description button
+  var compose_modal = document.getElementById('tag-compose-modal');
+  if(compose_modal) {
+    $(compose_modal).on('hidden.bs.modal', function() {
+      tag_ai_compose.open = false;
+      ++tag_ai_compose.seq;
+      ++tag_ai_compose.suggest_seq;
+      window.clearTimeout(tag_ai_compose.suggest_timer);
+    });
+  }
+  var compose_generate = document.getElementById('tag-compose-desc-generate');
+  if(compose_generate) {
+    compose_generate.addEventListener('click', function(e) {
+      e.preventDefault();
+      tagAiComposeDescRun();
+    });
+  }
 });
 
 /*
@@ -1548,7 +1905,7 @@ function tagAiConfigExtra(box) {
   });
 
   box.appendChild(taguEl('h6', 'mt-3', gettext('Prompt templates')));
-  taguHint(box, gettext('Placeholders: {{tag}} tag name, {{description}} current definition, {{highlights}} highlight excerpts, {{similar}} similar tags, {{tags}} existing tag names, {{highlight}} highlighted text. Leave a template empty to use the built-in default.'));
+  taguHint(box, gettext('Placeholders: {{tag}} tag name, {{description}} current definition, {{highlights}} highlight excerpts, {{similar}} similar tags, {{tags}} existing tag names, {{highlight}} highlighted text, {{task}} compose task wording, {{kind}} compose tag kind (umbrella/unified). Leave a template empty to use the built-in default.'));
   Object.keys(TAG_AI_PROMPTS).forEach(function(key) {
     var g = taguEl('div', 'form-group');
     g.appendChild(taguEl('label', null, TAG_AI_PROMPT_LABELS[key]));
@@ -1737,6 +2094,17 @@ function tagAiSelfTest() {
     === 'Tag for X ({{unknown}})', 'placeholders filled, unknowns kept');
   assert(tagAiPrompt({}, 'names', {highlight: 'X'}).indexOf('{{highlight}}') === -1,
     'default template used without override');
+  // Compose prompts: the group template fills its placeholders and an
+  // unknown one stays visible (templates are overridable like the rest)
+  var group = tagAiPrompt({}, 'group_names',
+    {task: 'X', tags: 'Y', highlights: 'Z'});
+  assert(group.indexOf('X') !== -1 && group.indexOf('Y') !== -1
+    && group.indexOf('Z') !== -1, 'group_names template filled');
+  var cfg_nope = {prompts: {group_names:
+    TAG_AI_PROMPTS.group_names + '\n{{nope}}'}};
+  group = tagAiPrompt(cfg_nope, 'group_names',
+    {task: 'X', tags: 'Y', highlights: 'Z'});
+  assert(group.indexOf('{{nope}}') !== -1, 'unknown placeholder kept intact');
 
   // Excerpt sampling: caps the count, keeps the spread
   var many = [];
@@ -1762,6 +2130,14 @@ function tagAiSelfTest() {
     var cands = tagAiSimilarCandidates(Object.entries(window.tags), 2);
     assert(cands.length === 2 && cands[0].id === 3 && cands[1].id === 4,
       'self and ancestors excluded, unrelated subtrees kept');
+    // exclude_ids drops the listed ids on top of the editing rules
+    cands = tagAiSimilarCandidates(Object.entries(window.tags), 2, {'4': true});
+    assert(cands.length === 1 && cands[0].id === 3,
+      'exclude_ids removes the listed tags too');
+    cands = tagAiSimilarCandidates(Object.entries(window.tags), null,
+                                   {'3': true, '4': true});
+    assert(cands.length === 2 && cands[0].id === 1 && cands[1].id === 2,
+      'exclude_ids applies without an editing id');
   } finally {
     window.tags = saved_tags;
   }
