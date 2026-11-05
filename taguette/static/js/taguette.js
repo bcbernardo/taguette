@@ -908,8 +908,20 @@ document.getElementById('tag-bulk-clear').addEventListener('click', function(e) 
 
 // The bulk bar sits below the tab content, so it must follow tab
 // switches: hide it when the Highlights tab is left, show it again
-// when it becomes active and tags are still selected
-$(document).on('shown.bs.tab hidden.bs.tab', 'a[data-toggle="tab"]', tagUpdateBulkBar);
+// when it becomes active and tags are still selected. jQuery is not
+// loaded yet when this script runs (it loads at the end of the page,
+// after the contents block), so no $() here — and jQuery-triggered
+// Bootstrap events do not reach native listeners anyway. Instead,
+// watch the pane's class attribute: Bootstrap's tab plugin toggles
+// the .active class on it on every tab switch
+(function() {
+  var pane = document.getElementById('tags');
+  if(pane && typeof MutationObserver !== 'undefined') {
+    new MutationObserver(function() {
+      tagUpdateBulkBar();
+    }).observe(pane, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
 
 /*
  * Shared candidate rule for bulk operations: the members themselves plus
