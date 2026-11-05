@@ -923,6 +923,27 @@ document.getElementById('tag-bulk-clear').addEventListener('click', function(e) 
   }
 })();
 
+// Cap the left panel to the visible window exactly. The navbar and
+// page padding above the panel vary with font size, so a CSS calc can
+// only guess: measured here, the panel bottom — where the bulk action
+// bar lives — is inside the viewport from the first paint, without
+// having to scroll the page first. Document-relative, so it stays
+// correct whatever the scroll position was when it ran.
+function tagPanelFit() {
+  var panel = document.querySelector('.left-panel-scroll');
+  if(!panel) {
+    return;
+  }
+  var top = panel.getBoundingClientRect().top + (window.pageYOffset || 0);
+  var avail = window.innerHeight - top;
+  if(avail < 200) {
+    avail = 200;
+  }
+  panel.style.maxHeight = avail + 'px';
+}
+tagPanelFit();
+window.addEventListener('resize', tagPanelFit);
+
 /*
  * Shared candidate rule for bulk operations: the members themselves plus
  * all their descendants are excluded as targets, which prevents cycles
