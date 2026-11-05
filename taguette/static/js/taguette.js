@@ -878,6 +878,7 @@ function tagUpdateBulkBar() {
   if(create_float) {
     create_float.classList.toggle('d-none', !hidden);
   }
+  updateTagSearchFloat();
   if(hidden) {
     document.getElementById('tag-bulk-count').textContent = '';
     var group_btn0 = document.getElementById('tag-bulk-group');
@@ -1194,10 +1195,17 @@ if(tag_search_run) {
   });
 }
 
-// Cross button: clear the search and show all tags again
+// Cross button: clear the search and show all tags again; if the
+// field was already empty, close the search bar and show all tags
 var tag_search_clear = document.getElementById('tag-search-clear');
 if(tag_search_clear) {
   tag_search_clear.addEventListener('click', function(e) {
+    if(!tag_search_input.value) {
+      // Nothing to clear: close the search UI and bring the floating
+      // button back
+      hideTagSearch();
+      return;
+    }
     window.clearTimeout(tag_search_timer);
     tag_search_input.value = '';
     tag_search_state.query = '';
@@ -1207,6 +1215,43 @@ if(tag_search_clear) {
     updateTagsList();
     tag_search_input.focus();
   });
+}
+
+// Floating search button and sticky search bar: the bar is hidden by
+// default and takes the button's place (stuck to the top of the tag
+// list) while the search is open. Inline display is enough here: no
+// !important display rule applies to these elements
+function showTagSearch() {
+  document.getElementById('tag-search-float').classList.add('d-none');
+  document.getElementById('tag-search-group').style.display = '';
+  tag_search_status.style.display = '';
+  tag_search_input.focus();
+}
+
+function hideTagSearch() {
+  window.clearTimeout(tag_search_timer);
+  tag_search_input.value = '';
+  tag_search_state.query = '';
+  ++tag_search_state.seq; // make any in-flight semantic result stale
+  tag_search_state.matches = null;
+  tag_search_status.textContent = '';
+  updateTagsList();
+  document.getElementById('tag-search-group').style.display = 'none';
+  tag_search_status.style.display = 'none';
+  updateTagSearchFloat();
+}
+
+// Show the floating search button only when the search bar is closed
+// AND the bulk action bar (which shares the corner) is hidden
+function updateTagSearchFloat() {
+  var search_float = document.getElementById('tag-search-float');
+  var group = document.getElementById('tag-search-group');
+  var bar = document.getElementById('tag-bulk-bar');
+  if(!search_float || !group || !bar) {
+    return;
+  }
+  var bar_hidden = bar.classList.contains('d-none');
+  search_float.classList.toggle('d-none', group.style.display !== 'none' || !bar_hidden);
 }
 
 function tagSearchRunNow() {

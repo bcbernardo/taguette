@@ -424,16 +424,18 @@ li.tag-item.drop-merge {
   padding: 0.3rem 0.25rem 0.25rem 0.25rem;
 }
 
-/* Floating "create a tag" button: a small square pinned near the
- * bottom right corner of the left panel. The sticky panel
- * (.left-panel-scroll) is its positioning ancestor — not the scrolling
- * tab content — so it hovers above the tag names and stays put while
- * they scroll. Colors come from Bootstrap's .btn-primary, like the
- * other buttons. Hidden while the bulk action bar is shown
- * (tagUpdateBulkBar toggles d-none, which wins over the display here). */
-#tag-create-float {
+/* Floating "search tags" and "create a tag" buttons: small squares
+ * pinned near the bottom right corner of the left panel. The sticky
+ * panel (.left-panel-scroll) is their positioning ancestor — not the
+ * scrolling tab content — so they hover above the tag names and stay
+ * put while they scroll. Colors come from Bootstrap's .btn-primary,
+ * like the other buttons. The search button hides itself while the
+ * search bar is open, and both hide while the bulk action bar is shown
+ * (tagUpdateBulkBar/updateTagSearchFloat toggle d-none, which wins
+ * over the display here). */
+#tag-create-float,
+#tag-search-float {
   position: absolute;
-  right: 2rem;
   bottom: 2rem;
   width: 2.7rem;
   height: 2.7rem;
@@ -442,6 +444,15 @@ li.tag-item.drop-merge {
   align-items: center;
   justify-content: center;
   z-index: 5;
+}
+
+#tag-create-float {
+  right: 2rem;
+}
+
+/* Create button: 2rem inset + 2.7rem width, then a 0.5rem gap */
+#tag-search-float {
+  right: 5.2rem;
 }
 
 /* Bulk selection of tags in the Highlights panel: checked rows read as

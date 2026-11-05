@@ -91,7 +91,7 @@
               <a id="load-all-tags" class="btn btn-primary float-right ml-2" href="/project/{{ project.id }}/highlights/">{% trans %}See all highlights{% endtrans %}</a>
             </div>
           </div>
-          <div class="input-group mb-1" id="tag-search-group">
+          <div class="input-group mb-1" id="tag-search-group" style="display: none;">
             <div class="input-group-prepend">
               <button class="btn btn-outline-secondary" type="button" id="tag-search-run" title="{% trans %}Search{% endtrans %}"><i class="fas fa-search"></i></button>
             </div>
@@ -100,16 +100,21 @@
               <button class="btn btn-outline-secondary" type="button" id="tag-search-clear" title="{% trans %}Clear search, show all tags{% endtrans %}"><i class="fas fa-times"></i></button>
             </div>
           </div>
-          <div id="tag-search-status" class="small text-muted mb-1"></div>
+          <div id="tag-search-status" class="small text-muted mb-1" style="display: none;"></div>
           <ul class="list-group list-group-flush" id="tags-list">
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
-          <!-- Floating "create a tag" button: pinned to the bottom right
-               of the left panel — the sticky panel (.left-panel-scroll)
-               is its positioning ancestor, not the scrolling tab content
-               — so it floats above the tag names without scrolling with
-               them; hidden while the bulk action bar is shown
-               (tagUpdateBulkBar toggles d-none on it) -->
+          <!-- Floating "search tags" and "create a tag" buttons: small
+               squares pinned near the bottom right corner of the left
+               panel — the sticky panel (.left-panel-scroll) is their
+               positioning ancestor, not the scrolling tab content — so
+               they float above the tag names without scrolling with
+               them. Colors come from Bootstrap's .btn-primary, like the
+               other buttons. The search one opens the sticky search bar
+               (and hides itself until the bar is closed again); both
+               hide while the bulk action bar is shown
+               (tagUpdateBulkBar/updateTagSearchFloat toggle d-none) -->
+          <a id="tag-search-float" class="btn btn-primary" href="javascript:showTagSearch()" role="button" title="{% trans %}Search tags{% endtrans %}" aria-label="{% trans %}Search tags{% endtrans %}"><i class="fas fa-search" aria-hidden="true"></i></a>
           <a id="tag-create-float" class="btn btn-primary" href="javascript:createTag()" role="button" title="{% trans %}Create a tag{% endtrans %}" aria-label="{% trans %}Create a tag{% endtrans %}"><i class="fas fa-plus" aria-hidden="true"></i></a>
         </div>
 

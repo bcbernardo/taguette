@@ -14,6 +14,12 @@ Usability (Highlights panel):
   the panel: it stays in place while the tag list scrolls and hides
   while the bulk action bar is shown (it also disappears with the
   panel's other tabs, as it lives inside the Highlights tab)
+* The search bar is now hidden by default; a matching square
+  magnifying-glass button floats to the left of the "+" one and opens
+  it (the bar already sticks to the top of the tag list while the list
+  scrolls). The cross button closes the search again when the field is
+  already empty, bringing the floating button back; both floating
+  buttons hide while the bulk action bar is shown
 
 New feature (tag multiselect and bulk organization):
 * Tags in the Highlights panel can be checked for bulk actions; a bar
