@@ -105,20 +105,22 @@
           <ul class="list-group list-group-flush" id="tags-list">
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
-          <!-- Bulk action bar: at the bottom of the tags panel, sticky
-               while scrolling; shown/hidden via the d-none class (never
-               inline display: the .d-flex !important would win over it) -->
-          <div id="tag-bulk-bar" class="d-none">
-            <span class="small mr-2" id="tag-bulk-count"></span>
-            <div class="btn-group btn-group-sm" role="group" aria-label="{% trans %}Bulk tag actions{% endtrans %}">
-              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-merge">{% trans %}Merge{% endtrans %}</button>
-              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-move">{% trans %}Move to{% endtrans %}</button>
-              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-group" title="{% trans %}Select at least two tags to group them under a new tag{% endtrans %}">{% trans %}Group{% endtrans %}</button>
-            </div>
-            <button type="button" class="btn btn-sm btn-link ml-1" id="tag-bulk-clear" title="{% trans %}Clear the selection{% endtrans %}"><i class="fas fa-times"></i></button>
-          </div>
         </div>
 
+      </div>
+      <!-- Bulk action bar: below the scrolling tab content, so it stays
+           at the bottom of the left panel without scrolling; shown only
+           while the Highlights tab is active and tags are selected, via
+           the d-none class (never inline display: an !important rule
+           such as .d-flex's would win over it) -->
+      <div id="tag-bulk-bar" class="d-none">
+        <span class="small mr-2" id="tag-bulk-count"></span>
+        <div class="btn-group btn-group-sm" role="group" aria-label="{% trans %}Bulk tag actions{% endtrans %}">
+          <button type="button" class="btn btn-outline-secondary" id="tag-bulk-merge">{% trans %}Merge{% endtrans %}</button>
+          <button type="button" class="btn btn-outline-secondary" id="tag-bulk-move">{% trans %}Move to{% endtrans %}</button>
+          <button type="button" class="btn btn-outline-secondary" id="tag-bulk-group" title="{% trans %}Select at least two tags to group them under a new tag{% endtrans %}">{% trans %}Group{% endtrans %}</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-link ml-1" id="tag-bulk-clear" title="{% trans %}Clear the selection{% endtrans %}"><i class="fas fa-times"></i></button>
       </div>
     </div>
   </div>

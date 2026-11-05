@@ -860,13 +860,17 @@ function tagUpdateBulkBar() {
   if(!bar) {
     return;
   }
+  var pane = document.getElementById('tags');
   var count = tagSelectedIds().length;
-  // Toggle Bootstrap's d-none (!important) rather than setting an
-  // inline display: a plain inline style would lose to any !important
-  // display rule on the element, leaving the bar visible with a stale
-  // count after the selection is cleared
-  bar.classList.toggle('d-none', count === 0);
-  if(count === 0) {
+  // The bar sits below the tab content, outside the scroller, so it is
+  // only shown while the Highlights tab is the active one AND at least
+  // one tag is selected. Toggle Bootstrap's d-none (!important) rather
+  // than setting an inline display: a plain inline style would lose to
+  // any !important display rule on the element, leaving the bar visible
+  // with a stale count after the selection is cleared
+  var hidden = count === 0 || !pane || !pane.classList.contains('active');
+  bar.classList.toggle('d-none', hidden);
+  if(hidden) {
     document.getElementById('tag-bulk-count').textContent = '';
     var group_btn0 = document.getElementById('tag-bulk-group');
     group_btn0.disabled = true;
@@ -901,6 +905,11 @@ document.getElementById('tag-bulk-clear').addEventListener('click', function(e) 
   e.preventDefault();
   tagClearSelection();
 });
+
+// The bulk bar sits below the tab content, so it must follow tab
+// switches: hide it when the Highlights tab is left, show it again
+// when it becomes active and tags are still selected
+$(document).on('shown.bs.tab hidden.bs.tab', 'a[data-toggle="tab"]', tagUpdateBulkBar);
 
 /*
  * Shared candidate rule for bulk operations: the members themselves plus
@@ -2228,7 +2237,7 @@ var tag_drag_id = null;
  * pointer moves away from the edge.
  */
 
-var tag_scroll_container = document.querySelector('.left-panel-scroll');
+var tag_scroll_container = document.getElementById('myTabContent');
 var tag_drag_last_y = null;
 var tag_autoscroll_timer = null;
 var TAG_AUTOSCROLL_EDGE = 48;  // Pointer this close to an edge starts scrolling

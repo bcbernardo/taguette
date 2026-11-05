@@ -201,18 +201,28 @@ textarea.form-control {
   resize: none;
 }
 
-/* Left panel: keep its own scrollbar when contents are taller than the
- * window. Tabs stay visible at the top of the scroll area. */
+/* Left panel: a flex column — tab bar on top, scrolling tab content
+ * (#myTabContent), and the bulk action bar pinned below it when tags
+ * are selected. The panel itself stays stuck to the top of the window
+ * while the right column (documents) is scrolled. */
 .left-panel-scroll {
+  display: flex;
+  flex-direction: column;
   max-height: calc(100vh - 1rem);
-  overflow-y: auto;
 }
 
 .left-panel-scroll .nav-tabs {
-  position: sticky;
-  top: 0;
   z-index: 3;
   background: #fff;
+}
+
+/* The tab content is the panel's scroll area: the tab bar above and
+ * the bulk action bar below stay put while it scrolls. It does not
+ * grow beyond its content, so short panels stay compact. */
+#myTabContent {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Wrap tag/doc names at whitespace; only an unbroken word longer than the
@@ -291,10 +301,12 @@ li.document-link-current a.document-link-a {
   color: #868e96;
 }
 
-/* Search bar on top of the highlights (tags) panel */
+/* Search bar on top of the highlights (tags) panel: sticks to the top
+ * of the scrolling tab content (#myTabContent), right below the tab
+ * bar, which lives outside the scroller */
 #tag-search-group {
   position: sticky;
-  top: 43px; /* below the sticky nav-tabs inside .left-panel-scroll */
+  top: 0;
   z-index: 2;
   background: #fff;
 }
@@ -377,22 +389,21 @@ li.tag-item.drop-merge {
   outline-offset: -2px;
 }
 
-/* Bulk action bar (Merge / Move to / Group): pinned to the bottom of
- * the tags panel while at least one tag is selected, following the
- * panel's own scrollbar (the panel is .left-panel-scroll). Shown and
- * hidden by toggling Bootstrap's d-none class — never via inline
- * display, which an .d-flex-style !important rule would override. */
+/* Bulk action bar (Merge / Move to / Group): sits below the scrolling
+ * tab content, outside the scroller, so it is always at the bottom of
+ * the left panel — visible without scrolling — whenever tags are
+ * selected. Shown and hidden by toggling Bootstrap's d-none class —
+ * never via inline display, which an !important rule such as .d-flex's
+ * would override. */
 #tag-bulk-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
   background: #fff;
-  border-top: 1px solid #dee2e6;
+  border: 1px solid #dee2e6;
+  border-top: 0;
+  margin-top: -1px;
   padding: 0.3rem 0.25rem 0.25rem 0.25rem;
-  margin-top: 0.25rem;
 }
 
 /* Bulk selection of tags in the Highlights panel: checked rows read as

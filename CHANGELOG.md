@@ -6,8 +6,9 @@ Unreleased
 
 New feature (tag multiselect and bulk organization):
 * Tags in the Highlights panel can be checked for bulk actions; a bar
-  pinned to the bottom of the panel (sticky while scrolling) appears
-  with the selection count and three buttons: *Merge*,
+  pinned to the bottom of the left panel — always visible without
+  scrolling — appears with the selection count and three buttons:
+  *Merge*,
   *Move to* and *Group*. Merge opens the existing merge dialog for
   several tags at once (the API accepts a list of sources and applies
   the merges in one transaction, deepest tags first); Move to re-parents
