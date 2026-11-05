@@ -1031,6 +1031,15 @@ linkTag(document.getElementById('load-all-tags'), '');
 // Description boxes expanded (tag id -> true), kept across re-renders
 var tag_desc_open = {};
 
+// Maximum number of characters of a tag definition shown in the left
+// panel before it is capped with a "(show more)" link (and, while
+// capped, without the edit pencil)
+var TAG_DESC_MAX_CHARS = 200;
+
+// Definitions expanded past the cap (tag id -> true), kept across
+// re-renders like tag_desc_open
+var tag_desc_expanded = {};
+
 var tag_search_input = document.getElementById('tag-search');
 var tag_search_status = document.getElementById('tag-search-status');
 var tag_search_state = {
@@ -1310,6 +1319,16 @@ function updateTagsList() {
       ? tag_desc_open[tag.id]
       : has_children;
     var has_desc = !!tag.description;
+    // Cap long definitions: truncated text plus a "(show more)" link,
+    // without the edit pencil until the full text is shown
+    var desc_long = has_desc && tag.description.length > TAG_DESC_MAX_CHARS;
+    var desc_expanded = desc_long && !!tag_desc_expanded['' + tag.id];
+    var desc_capped = desc_long && !desc_expanded;
+    var desc_text = !has_desc
+      ? gettext("(no definition)")
+      : (desc_capped
+          ? tag.description.substr(0, TAG_DESC_MAX_CHARS) + '\u2026'
+          : tag.description);
     // Restore the bulk-selection state from outside the DOM: the
     // checkbox is re-created on every render
     var is_selected = !!tag_selected['' + tag.id];
@@ -1333,8 +1352,15 @@ function updateTagsList() {
       '  </div>' +
       '</div>' +
       '<div class="tag-desc-box" id="tag-desc-' + tag.id + '"' + (open ? '' : ' style="display: none;"') + '>' +
-      '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(has_desc ? tag.description : gettext("(no definition)")) + '</span>' +
-      '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>' +
+      '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(desc_text) + '</span>' +
+      (desc_capped
+        ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-more-' + tag.id + '">' + gettext("(show more)") + '</a>'
+        : (desc_expanded
+            ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-less-' + tag.id + '">' + gettext("(show less)") + '</a>'
+            : '')) +
+      (desc_capped
+        ? ''
+        : '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>') +
       '</div>';
     tags_list.insertBefore(elem, before);
     linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
@@ -1363,9 +1389,34 @@ function updateTagsList() {
     document.getElementById('tag-edit-' + tag.id).addEventListener('click', (function(tag_id) {
       return function(e) { e.preventDefault(); editTag(tag_id); };
     })(tag.id));
-    document.getElementById('tag-desc-edit-' + tag.id).addEventListener('click', (function(tag_id) {
-      return function(e) { e.preventDefault(); editTag(tag_id); };
-    })(tag.id));
+    var desc_edit = document.getElementById('tag-desc-edit-' + tag.id);
+    if(desc_edit) {
+      desc_edit.addEventListener('click', (function(tag_id) {
+        return function(e) { e.preventDefault(); editTag(tag_id); };
+      })(tag.id));
+    }
+    // "(show more)" / "(show less)" on a capped definition: a full
+    // re-render keeps the expansion state and swaps the link and pencil
+    var desc_more = document.getElementById('tag-desc-more-' + tag.id);
+    if(desc_more) {
+      desc_more.addEventListener('click', (function(tag_id) {
+        return function(e) {
+          e.preventDefault();
+          tag_desc_expanded['' + tag_id] = true;
+          updateTagsList();
+        };
+      })(tag.id));
+    }
+    var desc_less = document.getElementById('tag-desc-less-' + tag.id);
+    if(desc_less) {
+      desc_less.addEventListener('click', (function(tag_id) {
+        return function(e) {
+          e.preventDefault();
+          delete tag_desc_expanded['' + tag_id];
+          updateTagsList();
+        };
+      })(tag.id));
+    }
     // Bulk selection checkbox: the element dies with the re-render, so
     // the listener cannot leak
     document.getElementById('tag-select-' + tag.id).addEventListener('change', (function(tag_id) {

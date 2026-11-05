@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+Usability (Highlights panel):
+* Tag definitions longer than 200 characters are now capped in the
+  left panel, with a "(show more)" note at the end of the capped text
+  to reveal the full definition ("(show less)" collapses it back);
+  while capped, the definition's edit pencil is hidden
+
 New feature (tag multiselect and bulk organization):
 * Tags in the Highlights panel can be checked for bulk actions; a bar
   pinned to the bottom of the left panel — always visible without

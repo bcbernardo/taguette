@@ -305,6 +305,20 @@ li.document-link-current a.document-link-a {
   color: #868e96;
 }
 
+/* "(show more)" / "(show less)" note at the end of a capped tag
+ * definition; styled like an unobtrusive inline link */
+.tag-desc-more {
+  text-decoration: none;
+  color: #495057;
+  padding: 0 0.15em;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.tag-desc-more:hover {
+  color: #212529;
+  text-decoration: underline;
+}
+
 /* Search bar on top of the highlights (tags) panel: sticks to the top
  * of the scrolling tab content (#myTabContent), right below the tab
  * bar, which lives outside the scroller */
