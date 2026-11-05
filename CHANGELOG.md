@@ -4,6 +4,31 @@ Changelog
 Unreleased
 ----------
 
+New feature (tag multiselect and bulk organization):
+* Tags in the Highlights panel can be checked for bulk actions; a bar
+  appears with the selection count and three buttons: *Merge*,
+  *Move to* and *Group*. Merge opens the existing merge dialog for
+  several tags at once (the API accepts a list of sources and applies
+  the merges in one transaction, deepest tags first); Move to re-parents
+  every selected tag under a chosen tag or the root; Group opens a new
+  *Create new umbrella tag* dialog
+* The merge dialog's destination list gains a pinned *Create new
+  unified tag* action (kept visible while filtering, reachable with the
+  keyboard): it opens a variant of the tag form that creates the tag
+  and merges the sources into it. The Group dialog is the same variant
+  in umbrella mode: it creates the tag and re-parents the selected tags
+  under it
+* The umbrella/unified dialog shows the tags to be grouped (or
+  unified) as highlighted chips with a cross mark to de-select them,
+  and *Other suggested tags* below — ranked by semantic similarity to
+  the typed name/description like the tag form's similar tags, and
+  clickable to promote them into the selection
+* Its AI helpers generate the new tag's title (automatically, on open)
+  and description (button) from the member tags and their definitions,
+  plus sample highlights from all members for a unified tag; the two
+  new prompt templates are configurable in ⚙ Settings → AI tags like
+  the others
+
 New feature (highlight editing):
 * Clicking a highlight in the document view now shows blinking
   brackets at its boundaries, which can be dragged to change the

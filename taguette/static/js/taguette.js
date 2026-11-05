@@ -2093,19 +2093,28 @@ function showBulkMoveModal(tag_ids) {
     tag_bulk_move_ids.push(parseInt(tag_ids[i]));
   }
 
-  // Message: the selected tags, truncated to ~5 names
+  // Message: the selected tags, truncated to ~5 names (the full list
+  // goes in a tooltip: tag names can be sentence-length)
   var names = [];
-  for(var i = 0; i < tag_bulk_move_ids.length && names.length < 5; ++i) {
+  var all_names = [];
+  for(var i = 0; i < tag_bulk_move_ids.length; ++i) {
     var tag = tags['' + tag_bulk_move_ids[i]];
     if(tag) {
-      names.push(tag.path);
+      all_names.push(tag.path);
+      if(names.length < 5) {
+        names.push(tag.path);
+      }
     }
   }
   var listing = names.join(', ')
-    + (tag_bulk_move_ids.length > 5 ? '…' : '');
-  document.getElementById('tag-bulk-move-message').textContent =
-    gettext("Move %(n)s selected tags (%(tags)s) under which tag?",
-            {n: tag_bulk_move_ids.length, tags: listing});
+    + (all_names.length > 5 ? '…' : '');
+  var message = document.getElementById('tag-bulk-move-message');
+  message.textContent = all_names.length === 1
+    ? gettext("Move the selected tag (%(tags)s) under which tag?",
+              {tags: listing})
+    : gettext("Move %(n)s selected tags (%(tags)s) under which tag?",
+              {n: all_names.length, tags: listing});
+  message.title = all_names.join('\n');
 
   document.getElementById('tag-bulk-move-dest').value = '';
   document.getElementById('tag-bulk-move-filter').value = '';
