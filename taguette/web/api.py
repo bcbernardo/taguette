@@ -717,56 +717,93 @@ class TagMerge(BaseHandler):
         if not privileges.can_merge_tags():
             return self.send_error_json(403, "Unauthorized")
         obj = self.get_json()
-        tag_src = self.db.query(database.Tag).get(obj['src'])
+        if 'srcs' in obj:
+            srcs = obj['srcs']
+            if (
+                not isinstance(srcs, list)
+                or not srcs
+                or not all(isinstance(src, int) and not isinstance(src, bool)
+                           for src in srcs)
+            ):
+                return self.send_error_json(400, "Invalid source tags")
+            src_ids = []
+            for src in srcs:
+                if src not in src_ids:  # Dedupe, keeping the given order
+                    src_ids.append(src)
+        elif 'src' in obj:  # Legacy single-source form
+            src_ids = [obj['src']]
+        else:
+            return self.send_error_json(400, "Invalid source tags")
+
         tag_dest = self.db.query(database.Tag).get(obj['dest'])
-        if (
-            tag_src is None
-            or tag_src.project_id != project.id
-            or tag_dest is None
-            or tag_dest.project_id != project.id
-        ):
+        if tag_dest is None or tag_dest.project_id != project.id:
             return self.send_error_json(404, "No such tag")
-        if tag_src.id == tag_dest.id or _is_descendant(
-                self.db, tag_dest.id, tag_src.id):
-            return self.send_error_json(
-                400, "Cannot merge a tag into one of its own descendants")
 
-        # Handle the hierarchy first: treat the merge as moving the source
-        # (with its subtree) under the destination, so the destination and
-        # its ancestors inherit the subtree's highlights, and the source's
-        # old ancestors lose the links the subtree justified
-        changes = _update_inheritance_on_move(
-            self.db, tag_src, tag_src.parent_id, tag_dest.id,
+        # Validate every source up front, so that an invalid batch
+        # changes nothing
+        tags_src = []
+        for src_id in src_ids:
+            tag_src = self.db.query(database.Tag).get(src_id)
+            if tag_src is None or tag_src.project_id != project.id:
+                return self.send_error_json(404, "No such tag")
+            if tag_src.id == tag_dest.id or _is_descendant(
+                    self.db, tag_dest.id, tag_src.id):
+                return self.send_error_json(
+                    400,
+                    "Cannot merge a tag into one of its own descendants",
+                )
+            tags_src.append(tag_src)
+
+        # Process the sources deepest first (an ancestor's merge must run
+        # after its merged descendants are gone), with depths computed on
+        # the original tree before any mutation
+        tags_src.sort(
+            key=lambda tag: len(_ancestor_chain(self.db, tag.id)),
+            reverse=True,
         )
 
-        # Every highlight of the source is now linked to the destination
-        # (inherited above); drop the source's own links
-        self.db.query(database.HighlightTag).filter(
-            database.HighlightTag.tag_id == tag_src.id,
-        ).delete(synchronize_session=False)
+        commands = []
+        for tag_src in tags_src:
+            # Handle the hierarchy first: treat the merge as moving the
+            # source (with its subtree) under the destination, so the
+            # destination and its ancestors inherit the subtree's
+            # highlights, and the source's old ancestors lose the links
+            # the subtree justified
+            changes = _update_inheritance_on_move(
+                self.db, tag_src, tag_src.parent_id, tag_dest.id,
+            )
 
-        # Children of the source are re-parented onto the destination
-        self.db.query(database.Tag).filter(
-            database.Tag.parent_id == tag_src.id,
-        ).update(
-            {database.Tag.parent_id: tag_dest.id},
-            synchronize_session=False,
-        )
+            # Every highlight of the source is now linked to the
+            # destination (inherited above); drop the source's own links
+            self.db.query(database.HighlightTag).filter(
+                database.HighlightTag.tag_id == tag_src.id,
+            ).delete(synchronize_session=False)
 
-        # Delete tag_src
-        self.db.delete(tag_src)
+            # Children of the source are re-parented onto the destination
+            self.db.query(database.Tag).filter(
+                database.Tag.parent_id == tag_src.id,
+            ).update(
+                {database.Tag.parent_id: tag_dest.id},
+                synchronize_session=False,
+            )
 
-        cmd = database.Command.tag_merge(
-            self.current_user,
-            project.id,
-            tag_src.id,
-            tag_dest.id,
-        )
-        cmd.tag_count_changes = changes or None
-        self.db.add(cmd)
+            # Delete tag_src
+            self.db.delete(tag_src)
+
+            cmd = database.Command.tag_merge(
+                self.current_user,
+                project.id,
+                tag_src.id,
+                tag_dest.id,
+            )
+            cmd.tag_count_changes = changes or None
+            self.db.add(cmd)
+            commands.append(cmd)
+
         self.db.commit()
-        self.db.refresh(cmd)
-        self.application.notify_project(project.id, cmd)
+        for cmd in commands:
+            self.db.refresh(cmd)
+            self.application.notify_project(project.id, cmd)
 
         return self.send_json({'id': tag_dest.id})
 
