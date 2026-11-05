@@ -1355,12 +1355,10 @@ function updateTagsList() {
       '  <span class="' + (has_desc ? 'tag-desc-text' : 'tag-desc-text tag-desc-empty') + '">' + escapeHtml(desc_text) + '</span>' +
       (desc_capped
         ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-more-' + tag.id + '">' + gettext("(show more)") + '</a>'
-        : (desc_expanded
-            ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-less-' + tag.id + '">' + gettext("(show less)") + '</a>'
-            : '')) +
-      (desc_capped
-        ? ''
         : '  <a href="javascript:void(0)" class="tag-pencil" id="tag-desc-edit-' + tag.id + '" title="' + gettext("Edit tag description") + '">&#9998;</a>') +
+      (desc_expanded
+        ? '  <a href="javascript:void(0)" class="tag-desc-more" id="tag-desc-less-' + tag.id + '">' + gettext("(show less)") + '</a>'
+        : '') +
       '</div>';
     tags_list.insertBefore(elem, before);
     linkTag(document.getElementById('tag-link-' + tag.id), tag.path);
