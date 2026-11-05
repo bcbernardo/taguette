@@ -102,6 +102,15 @@
             </div>
           </div>
           <div id="tag-search-status" class="small text-muted mb-1"></div>
+          <div class="d-flex align-items-center flex-wrap mb-1" id="tag-bulk-bar" style="display: none;">
+            <span class="small mr-2" id="tag-bulk-count"></span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="{% trans %}Bulk tag actions{% endtrans %}">
+              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-merge">{% trans %}Merge{% endtrans %}</button>
+              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-move">{% trans %}Move to{% endtrans %}</button>
+              <button type="button" class="btn btn-outline-secondary" id="tag-bulk-group" title="{% trans %}Select at least two tags to group them under a new tag{% endtrans %}">{% trans %}Group{% endtrans %}</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-link ml-1" id="tag-bulk-clear" title="{% trans %}Clear the selection{% endtrans %}"><i class="fas fa-times"></i></button>
+          </div>
           <ul class="list-group list-group-flush" id="tags-list">
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
@@ -420,7 +429,7 @@
       </div>
       <div class="modal-body" style="min-height: 26rem;">
         <div class="form-group">
-          <label for="tag-merge-src-name">Merge tag</label>
+          <label for="tag-merge-src-name" id="tag-merge-src-label">{% trans %}Merge tag{% endtrans %}</label>
           <input type="hidden" id="tag-merge-src-id" />
           <input type="text" class="form-control" id="tag-merge-src-name" disabled />
         </div>
@@ -436,6 +445,85 @@
       <div class="modal-footer">
         <button type="submit" class="btn btn-primary">Merge tags</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Bulk move modal: re-parent all the selected tags at once -->
+<div class="modal" id="tag-bulk-move-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form id="tag-bulk-move-form" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans %}Move tags{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="tag-bulk-move-message"></p>
+        <div class="form-group mb-0">
+          <input type="hidden" id="tag-bulk-move-dest" />
+          <div class="position-relative">
+            <input type="text" class="form-control" id="tag-bulk-move-filter" autocomplete="off" placeholder="{% trans %}Type to search tags...{% endtrans %}" />
+            <div class="list-group position-absolute w-100 shadow" id="tag-bulk-move-list" style="display: none; z-index: 1060; max-height: 14rem; overflow-y: auto;"></div>
+          </div>
+        </div>
+        <p class="text-muted mb-0 mt-2">{% trans %}The parent tag inherits all the highlights of its child tags.{% endtrans %}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary" id="tag-bulk-move-submit">{% trans %}Move tags{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tag compose modal: create an umbrella tag grouping the selected tags,
+     or a new unified tag replacing them (chained from the merge modal) -->
+<div class="modal" id="tag-compose-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form id="tag-compose-form" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tag-compose-title"></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container">
+          <input type="text" class="form-control mb-2 tag-path-input" id="tag-compose-path" name="tag-compose-path" placeholder="{# TRANSLATORS: Tag compose form #}{% trans %}Name{% endtrans %}" required />
+          <div id="tag-compose-name-suggestions" class="mb-3" style="display: none;"></div>
+          <textarea class="form-control" id="tag-compose-description" name="tag-compose-description" placeholder="{% trans %}Description{% endtrans %}"></textarea>
+          <div class="mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="tag-compose-desc-generate"><i class="fas fa-magic"></i> {% trans %}Generate description with AI{% endtrans %}</button>
+          </div>
+          <div id="tag-compose-desc-preview" class="tag-ai-preview-box mt-2" style="display: none;"></div>
+          <div id="tag-compose-members" class="mt-3">
+            <div id="tag-compose-members-label" class="tag-compose-members-label"></div>
+            <div id="tag-compose-members-empty" class="small text-muted" style="display: none;"></div>
+            <div id="tag-compose-members-list" class="mt-1"></div>
+            <div id="tag-compose-suggested-label" class="tag-compose-suggested-label mt-2">{% trans %}Other suggested tags:{% endtrans %}</div>
+            <div id="tag-compose-suggested-list" class="mt-1"></div>
+          </div>
+          <div class="form-group mb-3 mt-3">
+            <label for="tag-compose-parent">{# TRANSLATORS: Tag compose form #}{% trans %}Parent tag{% endtrans %}</label>
+            <div class="tag-parent-select">
+              <div class="input-group">
+                <input type="text" class="form-control" id="tag-compose-parent" name="tag-compose-parent" placeholder="{# TRANSLATORS: Tag compose form: leave empty for a root-level tag #}{% trans %}Search a parent tag (leave empty for root level){% endtrans %}" autocomplete="off" />
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" id="tag-compose-parent-clear" title="{# TRANSLATORS: Tag compose form #}{% trans %}Clear the parent (root level){% endtrans %}"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+              <div class="list-group tag-parent-list" id="tag-compose-parent-list" style="display: none;"></div>
+            </div>
+            <input type="hidden" id="tag-compose-parent-id" name="tag-compose-parent-id" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary" id="tag-compose-submit"></button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
       </div>
     </form>
   </div>

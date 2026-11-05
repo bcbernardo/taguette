@@ -377,6 +377,22 @@ li.tag-item.drop-merge {
   outline-offset: -2px;
 }
 
+/* Bulk selection of tags in the Highlights panel: checked rows read as
+ * selected, and the checkbox sits between the row's left edge and the
+ * expand toggle */
+li.tag-item.tag-item-selected {
+  background-color: #e7f3fb;
+}
+
+.tag-select-box {
+  margin-right: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.tag-drag-handle > .tag-name {
+  flex-grow: 1;
+}
+
 /* Parent tag selector in the tag form */
 .tag-parent-select {
   position: relative;
@@ -396,6 +412,39 @@ li.tag-item.drop-merge {
 .tag-parent-list .list-group-item {
   padding: 0.4rem 0.75rem;
   cursor: pointer;
+}
+
+/* Pinned "Create new unified tag" action in the merge dropdown, and its
+ * divider above the tag candidates */
+.tag-merge-new-item {
+  font-weight: 600;
+}
+
+.tag-merge-divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 0;
+}
+
+/* Tag compose modal: member/suggestion labels and chips */
+.tag-compose-members-label,
+.tag-compose-suggested-label {
+  font-weight: 600;
+}
+
+.tag-compose-member {
+  font-size: 0.85em;
+}
+
+.tag-compose-member .tag-compose-remove,
+.tag-compose-member .tag-compose-remove:hover {
+  color: #fff;
+  margin-left: 0.35em;
+  text-decoration: none;
+}
+
+#tag-compose-members-list .badge,
+#tag-compose-suggested-list .badge {
+  margin: 0.15em 0.3em 0.15em 0;
 }
 
 .backlight {

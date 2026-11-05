@@ -812,6 +812,129 @@ function tagIsDescendant(tag_id, maybe_ancestor_id) {
 }
 
 /*
+ * Tag multiselect for bulk actions (merge / move / group)
+ *
+ * Checked tags are kept OUTSIDE the DOM (same pattern as tag_desc_open):
+ * updateTagsList() re-creates the checkboxes on every render and restores
+ * their state from this map, so the selection survives re-renders and
+ * searches. Selecting a parent does not select its children.
+ */
+var tag_selected = {};   // {tag_id_string: true}
+
+function tagSelectedIds() {
+  var ids = [];
+  var keys = Object.keys(tag_selected);
+  for(var i = 0; i < keys.length; ++i) {
+    ids.push(parseInt(keys[i]));
+  }
+  ids.sort(function(a, b) { return a - b; });
+  return ids;
+}
+
+function tagToggleSelected(id) {
+  var key = '' + id;
+  if(tag_selected[key]) {
+    delete tag_selected[key];
+  } else {
+    tag_selected[key] = true;
+  }
+  // Keep the row in sync without a full re-render
+  var box = document.getElementById('tag-select-' + id);
+  if(box && box.closest) {
+    var li = box.closest('li.tag-item');
+    if(li) {
+      li.classList.toggle('tag-item-selected', !!tag_selected[key]);
+    }
+  }
+  tagUpdateBulkBar();
+}
+
+function tagClearSelection() {
+  tag_selected = {};
+  updateTagsList();
+  tagUpdateBulkBar();
+}
+
+function tagUpdateBulkBar() {
+  var bar = document.getElementById('tag-bulk-bar');
+  if(!bar) {
+    return;
+  }
+  var count = tagSelectedIds().length;
+  if(count === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  document.getElementById('tag-bulk-count').textContent = count === 1
+    ? gettext("1 tag selected")
+    : gettext("%(n)s tags selected", {n: count});
+  // Grouping needs at least two tags to make sense
+  var group_btn = document.getElementById('tag-bulk-group');
+  group_btn.disabled = count < 2;
+  group_btn.title = count < 2
+    ? gettext("Select at least two tags to group them under a new tag")
+    : '';
+}
+
+// Bulk action bar buttons
+document.getElementById('tag-bulk-merge').addEventListener('click', function(e) {
+  e.preventDefault();
+  showMergeModal(tagSelectedIds());
+});
+document.getElementById('tag-bulk-move').addEventListener('click', function(e) {
+  e.preventDefault();
+  showBulkMoveModal(tagSelectedIds());
+});
+document.getElementById('tag-bulk-group').addEventListener('click', function(e) {
+  e.preventDefault();
+  showComposeModal('umbrella', tagSelectedIds());
+});
+document.getElementById('tag-bulk-clear').addEventListener('click', function(e) {
+  e.preventDefault();
+  tagClearSelection();
+});
+
+/*
+ * Shared candidate rule for bulk operations: the members themselves plus
+ * all their descendants are excluded as targets, which prevents cycles
+ * for merge destinations, new parents and the compose modal's parent
+ * picker.
+ */
+function tagBulkExcludedIds(member_ids) {
+  var excluded = {};
+  var i;
+  for(i = 0; i < member_ids.length; ++i) {
+    excluded['' + member_ids[i]] = true;
+  }
+  var entries = Object.entries(tags);
+  for(i = 0; i < entries.length; ++i) {
+    var tag = entries[i][1];
+    for(var j = 0; j < member_ids.length; ++j) {
+      if(tagIsDescendant(tag.id, member_ids[j])) {
+        excluded['' + tag.id] = true;
+        break;
+      }
+    }
+  }
+  return excluded;
+}
+
+// Candidates: all tags not excluded, sorted by path
+function tagBulkCandidates(member_ids) {
+  var excluded = tagBulkExcludedIds(member_ids);
+  var candidates = [];
+  var entries = Object.entries(tags);
+  for(var i = 0; i < entries.length; ++i) {
+    if(!excluded[entries[i][0]]) {
+      candidates.push(entries[i][1]);
+    }
+  }
+  sortByKey(candidates, function(t) { return t.path; });
+  return candidates;
+}
+
+/*
  * Tag selection in the "highlight" modal
  *
  * When a tag is created while the highlight form is open, it should get
@@ -1045,6 +1168,10 @@ function addTag(tag) {
 function removeTag(tag_id) {
   // Remove from list of tags
   delete tags['' + tag_id];
+  // Drop the tag from the bulk selection (it no longer exists); this
+  // runs for local and remote deletions alike
+  delete tag_selected['' + tag_id];
+  tagUpdateBulkBar();
   // Remove from all highlights
   var hl_entries = Object.entries(highlights);
   for(var i = 0; i < hl_entries.length; ++i) {
@@ -1071,6 +1198,10 @@ function mergeTags(tag_src, tag_dest) {
     }
   }
   delete tags['' + tag_src];
+  // Drop the merged tag from the bulk selection (it no longer exists);
+  // this runs for local and remote merges alike
+  delete tag_selected['' + tag_src];
+  tagUpdateBulkBar();
   updateTagsList();
   tagSearchRefresh();
 }
@@ -1130,14 +1261,19 @@ function updateTagsList() {
       ? tag_desc_open[tag.id]
       : has_children;
     var has_desc = !!tag.description;
+    // Restore the bulk-selection state from outside the DOM: the
+    // checkbox is re-created on every render
+    var is_selected = !!tag_selected['' + tag.id];
     var elem = document.createElement('li');
-    elem.className = 'list-group-item tag-item';
+    elem.className = 'list-group-item tag-item'
+      + (is_selected ? ' tag-item-selected' : '');
     elem.setAttribute('data-tag-id', '' + tag.id);
     if(current_tag !== null && tag.path.substr(0, current_tag.length) == current_tag) {
       elem.classList.add('tag-current');
     }
     elem.innerHTML =
       '<div class="d-flex justify-content-between align-items-start tag-drag-handle">' +
+      '  <input type="checkbox" class="tag-select-box" id="tag-select-' + tag.id + '" aria-label="' + escapeHtml(gettext("Select tag for bulk actions")) + '"' + (is_selected ? ' checked' : '') + ' />' +
       '  <div class="tag-name">' +
       '    <a href="javascript:void(0)" class="tag-desc-toggle' + (has_desc || has_children ? '' : ' tag-desc-toggle-empty') + '" id="tag-desc-toggle-' + tag.id + '" title="' + gettext("Show or hide the tag definition and nested tags") + '">' + (open ? '&#9662;' : '&#9656;') + '</a>' +
       '    <a id="tag-link-' + tag.id + '">' + escapeHtml(tag.path) + '</a>' +
@@ -1180,6 +1316,13 @@ function updateTagsList() {
     })(tag.id));
     document.getElementById('tag-desc-edit-' + tag.id).addEventListener('click', (function(tag_id) {
       return function(e) { e.preventDefault(); editTag(tag_id); };
+    })(tag.id));
+    // Bulk selection checkbox: the element dies with the re-render, so
+    // the listener cannot leak
+    document.getElementById('tag-select-' + tag.id).addEventListener('change', (function(tag_id) {
+      return function() {
+        tagToggleSelected(tag_id);
+      };
     })(tag.id));
     // Drag & drop: drag a tag onto another to re-parent or merge it
     enableTagDrag(elem, tag.id);
@@ -1447,11 +1590,14 @@ function editTag(tag_id) {
   $(tag_add_modal).modal();
 }
 
-// Make the tag name input wide enough to show its whole content: it is
+// Make a tag name input wide enough to show its whole content: it is
 // sized through the "size" attribute (grows with the text, capped by CSS)
+function tagPathFit(input) {
+  input.size = Math.max(30, input.value.length + 2);
+}
 var tag_add_path_input = document.getElementById('tag-add-path');
 function tagAddPathFit() {
-  tag_add_path_input.size = Math.max(30, tag_add_path_input.value.length + 2);
+  tagPathFit(tag_add_path_input);
 }
 tag_add_path_input.addEventListener('input', tagAddPathFit);
 
@@ -1539,25 +1685,43 @@ document.getElementById('tag-add-delete').addEventListener('click', function(e) 
 // (also used by drag & drop, with a preselected destination)
 var mergeCandidates = [];  // [{id, path}] valid merge destinations
 var mergeActive = -1;      // index in the visible list of the highlighted item
+var merge_src_ids = [];    // ids (as strings) of the tags being merged
 
-function showMergeModal(tag_id, preselect_dest) {
+// tag_ids: a single tag id, or an array of ids (bulk merge)
+function showMergeModal(tag_ids, preselect_dest) {
   document.getElementById('tag-merge-form').reset();
 
-  // Set source tag
-  document.getElementById('tag-merge-src-id').value = '' + tag_id;
-  document.getElementById('tag-merge-src-name').value = tags['' + tag_id].path;
-
-  // Candidates: can't merge into the source itself or one of its
-  // descendants (that would create a cycle)
-  var entries = Object.entries(tags);
-  sortByKey(entries, function(e) { return e[1].path; });
-  mergeCandidates = [];
-  for(var i = 0; i < entries.length; ++i) {
-    if(entries[i][0] == '' + tag_id
-       || tagIsDescendant(entries[i][1].id, tag_id)) {
-      continue;
+  // Normalize the source(s) to an array of id strings
+  merge_src_ids = [];
+  if(tag_ids !== undefined && tag_ids !== null
+     && (typeof tag_ids === 'number' || typeof tag_ids === 'string')) {
+    merge_src_ids = ['' + tag_ids];
+  } else if(tag_ids && tag_ids.length) {
+    for(var i = 0; i < tag_ids.length; ++i) {
+      merge_src_ids.push('' + tag_ids[i]);
     }
-    mergeCandidates.push({id: entries[i][0], path: entries[i][1].path});
+  }
+
+  // Set source display (the hidden input keeps a single-tag value for
+  // compatibility; the submit handler uses merge_src_ids)
+  document.getElementById('tag-merge-src-id').value = merge_src_ids.join(',');
+  var src_paths = [];
+  for(var i = 0; i < merge_src_ids.length; ++i) {
+    var src_tag = tags[merge_src_ids[i]];
+    if(src_tag) {
+      src_paths.push(src_tag.path);
+    }
+  }
+  document.getElementById('tag-merge-src-name').value = src_paths.join(', ');
+  document.getElementById('tag-merge-src-label').textContent =
+    merge_src_ids.length > 1 ? gettext("Merge tags") : gettext("Merge tag");
+
+  // Candidates: can't merge into one of the sources or one of their
+  // descendants (that would create a cycle)
+  mergeCandidates = [];
+  var candidates = tagBulkCandidates(merge_src_ids);
+  for(var i = 0; i < candidates.length; ++i) {
+    mergeCandidates.push({id: '' + candidates[i].id, path: candidates[i].path});
   }
 
   document.getElementById('tag-merge-dest').value = '';
@@ -1578,7 +1742,13 @@ function hideMergeList() {
 function chooseMergeDest(id) {
   var tag = tags['' + id];
   document.getElementById('tag-merge-dest').value = '' + id;
-  document.getElementById('tag-merge-filter').value = tag ? tag.path : '';
+  if(id === 'new') {
+    // Pinned "create a new tag" action: show its label
+    document.getElementById('tag-merge-filter').value =
+      gettext("✨ Create new unified tag");
+  } else {
+    document.getElementById('tag-merge-filter').value = tag ? tag.path : '';
+  }
   hideMergeList();
 }
 
@@ -1588,6 +1758,24 @@ function showMergeList(filter) {
   var query = (filter || '').trim().toLowerCase();
   list.innerHTML = '';
   mergeActive = -1;
+  // Pinned action, always shown regardless of the filter: create a
+  // brand-new tag and merge the sources into it (it is an action, not a
+  // tag, so it must not be filtered away)
+  var new_item = document.createElement('button');
+  new_item.type = 'button';
+  new_item.className = 'list-group-item list-group-item-action py-1 tag-merge-new-item';
+  new_item.textContent = gettext("✨ Create new unified tag");
+  new_item.setAttribute('data-id', 'new');
+  // mousedown fires before the input's blur, so the choice isn't lost
+  new_item.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    chooseMergeDest('new');
+  });
+  list.appendChild(new_item);
+  var divider = document.createElement('div');
+  divider.className = 'tag-merge-divider';
+  list.appendChild(divider);
+  var shown = 0;
   mergeCandidates.forEach(function(c) {
     if(c.path.toLowerCase().indexOf(query) === -1)
       return;
@@ -1602,8 +1790,9 @@ function showMergeList(filter) {
       chooseMergeDest(c.id);
     });
     list.appendChild(item);
+    shown++;
   });
-  if(!list.children.length) {
+  if(!shown) {
     var empty = document.createElement('div');
     empty.className = 'list-group-item text-muted py-1';
     empty.textContent = gettext("No matching tags");
@@ -1643,8 +1832,11 @@ function setMergeActive(idx) {
     hideMergeList();
     // Restore the chosen tag's name if the typed text isn't a selection
     var id = document.getElementById('tag-merge-dest').value;
-    if(id)
-      input.value = tags[id] ? tags[id].path : '';
+    if(id) {
+      input.value = (id === 'new')
+        ? gettext("✨ Create new unified tag")
+        : (tags[id] ? tags[id].path : '');
+    }
   });
   input.addEventListener('keydown', function(e) {
     var list = document.getElementById('tag-merge-list');
@@ -1658,10 +1850,12 @@ function setMergeActive(idx) {
       setMergeActive(mergeActive + (e.key == 'ArrowDown' ? 1 : -1));
     } else if(e.key == 'Enter') {
       if(open) {
-        // Enter picks the highlighted (or only/first) match, not submit
+        // Enter picks the highlighted (or only/first) match, not submit;
+        // with nothing highlighted this skips the pinned "new tag" item
+        // (index 0) and picks the first tag candidate instead
         e.preventDefault();
         var items = list.querySelectorAll('button');
-        var item = items[mergeActive >= 0 ? mergeActive : 0];
+        var item = items[mergeActive >= 0 ? mergeActive : 1];
         if(item)
           chooseMergeDest(item.getAttribute('data-id'));
       }
@@ -1676,38 +1870,319 @@ document.getElementById('tag-add-merge').addEventListener('click', function(e) {
   var tag_id = document.getElementById('tag-add-id').value;
   if(!tag_id)
     return;
-  showMergeModal(parseInt(tag_id));
+  showMergeModal([parseInt(tag_id)]);
 });
 
 // Merge modal submit button
 document.getElementById('tag-merge-form').addEventListener('submit', function(e) {
   e.preventDefault();
 
-  var tag_src = document.getElementById('tag-merge-src-id').value;
-  if(!tag_src)
+  if(merge_src_ids.length === 0)
     return;
-  tag_src = parseInt(tag_src);
 
   var tag_dest = document.getElementById('tag-merge-dest').value;
   if(!tag_dest)
     return;
+
+  if(tag_dest === 'new') {
+    // Create a brand-new tag and merge the sources into it: hide this
+    // modal first, then open the compose modal (chained on 'hidden' so
+    // the backdrops don't fight)
+    $(document.getElementById('tag-merge-modal'))
+      .one('hidden.bs.modal', function() {
+        showComposeModal('unified', merge_src_ids.slice());
+      })
+      .modal('hide');
+    return;
+  }
   tag_dest = parseInt(tag_dest);
 
+  var src_paths = [];
+  for(var i = 0; i < merge_src_ids.length; ++i) {
+    var src_tag = tags[merge_src_ids[i]];
+    if(src_tag) {
+      src_paths.push(src_tag.path);
+    }
+  }
   console.log(
-    "Merging tag " + tag_src + " (" + tags['' + tag_src].path +
-    ") into tag " + tag_dest + " (" + tags['' + tag_dest].path + ")");
+    "Merging tag(s) " + merge_src_ids.join(', ') + " (" + src_paths.join(', ') +
+    ") into tag " + tag_dest + " (" +
+    (tags['' + tag_dest] ? tags['' + tag_dest].path : '') + ")");
   showSpinner();
   postJSON(
     '/api/project/' + project_id + '/tag/merge',
-    {src: tag_src, dest: tag_dest}
+    {srcs: merge_src_ids.map(Number), dest: tag_dest}
   )
   .then(function() {
     console.log("Tag merge posted");
     $(document.getElementById('tag-merge-modal')).modal('hide');
+    tagClearSelection();
   })
   .catch(function(error) {
     console.error("Failed to merge tags:", error);
     alert(gettext("Couldn't merge tags!") + "\n\n" + error);
+  })
+  .then(hideSpinner);
+});
+
+
+/*
+ * Bulk move modal: re-parent all the selected tags under one chosen
+ * parent (or root level)
+ */
+
+var tag_bulk_move_ids = [];  // ids selected in the tag tree
+
+/*
+ * Reusable combobox for picking one value (a tag, or a pinned action)
+ * from a filtered dropdown list. Used by the bulk move modal and the
+ * compose modal's parent picker. config:
+ *   input:         the text input element
+ *   list:          the dropdown list element
+ *   hidden:        the hidden input receiving the chosen id
+ *   candidates:    function returning [{id, path}] in display order
+ *   pinned:        optional {id, label} always shown first (e.g. root level)
+ *   labelFor:      function(id) -> text shown in the input after picking
+ *   emptyText:     message shown when no candidate matches
+ *   itemTitle:     optional title for the candidate items
+ *   max:           maximum number of candidates rendered
+ *   selectOnFocus: select the input's content on focus
+ *   focusQuery:    function returning the filter to use when the input
+ *                  gains focus (default: the input's current value)
+ *   onBlur:        function called after the dropdown was hidden on blur
+ */
+function tagCombobox(config) {
+  var input = config.input;
+  var list = config.list;
+  var hidden = config.hidden;
+  var active = -1;
+
+  function addItem(id, label, is_pinned) {
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'list-group-item list-group-item-action py-1'
+      + (is_pinned ? ' tag-merge-new-item' : '');
+    item.textContent = label;
+    item.setAttribute('data-id', '' + id);
+    if(config.itemTitle) {
+      item.title = config.itemTitle;
+    }
+    // mousedown fires before the input's blur, so the choice isn't lost
+    item.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      pick(id);
+    });
+    list.appendChild(item);
+  }
+
+  // Show the dropdown, filtered by case-insensitive substring match
+  function render(query) {
+    var query_lower = (query || '').trim().toLowerCase();
+    list.innerHTML = '';
+    active = -1;
+    if(config.pinned) {
+      addItem(config.pinned.id, config.pinned.label, true);
+      var divider = document.createElement('div');
+      divider.className = 'tag-merge-divider';
+      list.appendChild(divider);
+    }
+    var candidates = config.candidates();
+    var shown = 0;
+    for(var i = 0; i < candidates.length; ++i) {
+      if(config.max && shown >= config.max) {
+        break;
+      }
+      var candidate = candidates[i];
+      if(query_lower
+         && ('' + candidate.path).toLowerCase().indexOf(query_lower) === -1) {
+        continue;
+      }
+      addItem(candidate.id, candidate.path, false);
+      shown++;
+    }
+    if(!shown) {
+      var empty = document.createElement('div');
+      empty.className = 'list-group-item text-muted py-1';
+      empty.textContent = config.emptyText;
+      list.appendChild(empty);
+    }
+    list.style.display = 'block';
+  }
+
+  function hide() {
+    list.style.display = 'none';
+  }
+
+  function setActive(idx) {
+    var items = list.querySelectorAll('button');
+    if(!items.length)
+      return;
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    if(active >= 0 && items[active])
+      items[active].classList.remove('active');
+    active = idx;
+    items[idx].classList.add('active');
+    items[idx].scrollIntoView({block: 'nearest'});
+  }
+
+  function pick(id) {
+    hidden.value = '' + id;
+    input.value = config.labelFor('' + id);
+    hide();
+  }
+
+  input.addEventListener('focus', function() {
+    if(config.selectOnFocus) {
+      input.select();
+    }
+    render(config.focusQuery ? config.focusQuery() : input.value);
+  });
+  input.addEventListener('click', function() {
+    if(list.style.display == 'none')
+      render('');
+  });
+  input.addEventListener('input', function() {
+    // Typing invalidates the choice made so far
+    hidden.value = '';
+    render(input.value);
+  });
+  input.addEventListener('blur', function() {
+    hide();
+    if(config.onBlur) {
+      config.onBlur();
+    }
+  });
+  input.addEventListener('keydown', function(e) {
+    var open = list.style.display != 'none';
+    if(e.key == 'ArrowDown' || e.key == 'ArrowUp') {
+      e.preventDefault();
+      if(!open) {
+        render('');
+        return;
+      }
+      setActive(active + (e.key == 'ArrowDown' ? 1 : -1));
+    } else if(e.key == 'Enter') {
+      if(open) {
+        // Enter picks the highlighted match, otherwise the first
+        // candidate (skipping the pinned action, if any)
+        e.preventDefault();
+        var items = list.querySelectorAll('button');
+        var item = items[active >= 0 ? active : (config.pinned ? 1 : 0)];
+        if(item)
+          pick(item.getAttribute('data-id'));
+      }
+    } else if(e.key == 'Escape' && open) {
+      e.stopPropagation();
+      hide();
+    }
+  });
+}
+
+// Label shown in the move modal's input for a chosen destination
+function tagBulkMoveLabel(id) {
+  if(id === 'root') {
+    return gettext("(root level)");
+  }
+  var tag = tags['' + id];
+  return tag ? tag.path : '';
+}
+
+function showBulkMoveModal(tag_ids) {
+  tag_bulk_move_ids = [];
+  for(var i = 0; i < tag_ids.length; ++i) {
+    tag_bulk_move_ids.push(parseInt(tag_ids[i]));
+  }
+
+  // Message: the selected tags, truncated to ~5 names
+  var names = [];
+  for(var i = 0; i < tag_bulk_move_ids.length && names.length < 5; ++i) {
+    var tag = tags['' + tag_bulk_move_ids[i]];
+    if(tag) {
+      names.push(tag.path);
+    }
+  }
+  var listing = names.join(', ')
+    + (tag_bulk_move_ids.length > 5 ? '…' : '');
+  document.getElementById('tag-bulk-move-message').textContent =
+    gettext("Move %(n)s selected tags (%(tags)s) under which tag?",
+            {n: tag_bulk_move_ids.length, tags: listing});
+
+  document.getElementById('tag-bulk-move-dest').value = '';
+  document.getElementById('tag-bulk-move-filter').value = '';
+  document.getElementById('tag-bulk-move-list').style.display = 'none';
+
+  $(document.getElementById('tag-bulk-move-modal')).modal();
+}
+
+// Destination combobox: pinned "(root level)" action + all valid
+// candidate parents (the selected tags and their subtrees excluded)
+tagCombobox({
+  input: document.getElementById('tag-bulk-move-filter'),
+  list: document.getElementById('tag-bulk-move-list'),
+  hidden: document.getElementById('tag-bulk-move-dest'),
+  candidates: function() {
+    return tagBulkCandidates(tag_bulk_move_ids);
+  },
+  pinned: {id: 'root', label: gettext("(root level)")},
+  labelFor: tagBulkMoveLabel,
+  emptyText: gettext("No matching tags"),
+  // Show everything on focus when a destination is already chosen
+  focusQuery: function() {
+    return document.getElementById('tag-bulk-move-dest').value
+      ? '' : document.getElementById('tag-bulk-move-filter').value;
+  },
+  onBlur: function() {
+    // Restore the chosen destination's label if the typed text isn't a
+    // selection
+    var id = document.getElementById('tag-bulk-move-dest').value;
+    if(id) {
+      document.getElementById('tag-bulk-move-filter').value =
+        tagBulkMoveLabel(id);
+    }
+  }
+});
+
+// Submit: re-parent the selected tags one by one, so a failure in the
+// middle can be reported with the number of tags already moved
+document.getElementById('tag-bulk-move-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  var dest = document.getElementById('tag-bulk-move-dest').value;
+  if(!dest)
+    return;
+  var parent_id = dest === 'root' ? null : parseInt(dest);
+  var ids = tag_bulk_move_ids.slice();
+  var total = ids.length;
+
+  showSpinner();
+  var moved = 0;
+  function moveNext() {
+    if(moved >= ids.length) {
+      return Promise.resolve();
+    }
+    var id = ids[moved];
+    var old_parent_id = tags['' + id] ? tags['' + id].parent_id : null;
+    return postJSON(
+      '/api/project/' + project_id + '/tag/' + id,
+      {parent_id: parent_id}
+    )
+    .then(function() {
+      pushTagUndo({tag_id: id, parent_id: old_parent_id});
+      moved++;
+      return moveNext();
+    });
+  }
+  moveNext()
+  .then(function() {
+    console.log("Tags moved: " + moved);
+    $(document.getElementById('tag-bulk-move-modal')).modal('hide');
+    tagClearSelection();
+  })
+  .catch(function(error) {
+    console.error("Failed to move tags:", error);
+    alert(gettext("Couldn't move the tags!") + "\n\n" + error + "\n("
+          + gettext("%(done)s of %(total)s tags moved",
+                    {done: moved, total: total}) + ")");
   })
   .then(hideSpinner);
 });
@@ -2121,6 +2596,312 @@ tag_add_parent_input.addEventListener('blur', function(e) {
 document.getElementById('tag-add-parent-clear').addEventListener('click', function(e) {
   tagAddParentSelect(null);
   tag_add_parent_input.focus();
+});
+
+/*
+ * Tag compose modal: create an umbrella tag grouping the selected tags
+ * ('umbrella' mode) or a new unified tag replacing them ('unified' mode,
+ * chained from the merge modal). A variant of the tag form whose
+ * similar-tags area is replaced by two lists: the member tags, and the
+ * other tags suggested by the AI feature (tags-ai.js).
+ */
+
+var compose_mode = null;        // 'umbrella' | 'unified'
+var compose_members = [];       // [id, ...] in selection order
+var compose_dropped = [];       // ids removed via ×, most recent first (cap 10)
+
+var tag_compose_path_input = document.getElementById('tag-compose-path');
+
+function tagComposePathFit() {
+  tagPathFit(tag_compose_path_input);
+}
+tag_compose_path_input.addEventListener('input', function() {
+  tagComposePathFit();
+  if(typeof tagAiComposeRefreshSuggestions === 'function') {
+    tagAiComposeRefreshSuggestions();
+  }
+});
+document.getElementById('tag-compose-description').addEventListener('input', function() {
+  if(typeof tagAiComposeRefreshSuggestions === 'function') {
+    tagAiComposeRefreshSuggestions();
+  }
+});
+
+// Move a tag from the suggestions back into the members
+function composePromote(tag_id) {
+  tag_id = parseInt(tag_id);
+  if(compose_members.indexOf(tag_id) === -1) {
+    compose_members.push(tag_id);
+  }
+  var dropped_idx = compose_dropped.indexOf(tag_id);
+  if(dropped_idx !== -1) {
+    compose_dropped.splice(dropped_idx, 1);
+  }
+  composeRenderLists();
+  if(typeof tagAiComposeRefreshSuggestions === 'function') {
+    tagAiComposeRefreshSuggestions();
+  }
+}
+
+// Remove a tag from the members (via ×): it reappears in the
+// suggestions, most recently dropped tags first (capped)
+function composeDemote(tag_id) {
+  var idx = compose_members.indexOf(tag_id);
+  if(idx !== -1) {
+    compose_members.splice(idx, 1);
+  }
+  var dropped_idx = compose_dropped.indexOf(tag_id);
+  if(dropped_idx !== -1) {
+    compose_dropped.splice(dropped_idx, 1);
+  }
+  compose_dropped.unshift(tag_id);
+  if(compose_dropped.length > 10) {
+    compose_dropped.pop();
+  }
+  composeRenderLists();
+  if(typeof tagAiComposeRefreshSuggestions === 'function') {
+    tagAiComposeRefreshSuggestions();
+  }
+}
+
+function composeRenderLists() {
+  var members_list = document.getElementById('tag-compose-members-list');
+  var suggested_list = document.getElementById('tag-compose-suggested-list');
+  var empty_hint = document.getElementById('tag-compose-members-empty');
+  var submit = document.getElementById('tag-compose-submit');
+  members_list.innerHTML = '';
+  suggested_list.innerHTML = '';
+
+  // Members: selected chips with a × to remove them
+  for(var i = 0; i < compose_members.length; ++i) {
+    (function(tag_id) {
+      var tag = tags['' + tag_id];
+      if(!tag) {
+        return;
+      }
+      var chip = document.createElement('span');
+      chip.className = 'badge badge-primary tag-compose-member';
+      chip.appendChild(document.createTextNode(tag.path));
+      var remove = document.createElement('a');
+      remove.href = 'javascript:void(0)';
+      remove.className = 'tag-compose-remove';
+      remove.title = gettext("Remove from the list");
+      remove.textContent = '×';
+      remove.addEventListener('click', function(e) {
+        e.preventDefault();
+        composeDemote(tag_id);
+      });
+      chip.appendChild(remove);
+      members_list.appendChild(chip);
+    })(compose_members[i]);
+  }
+
+  // Empty members: disable the submit and hint at the suggestions
+  var has_members = compose_members.length > 0;
+  submit.disabled = !has_members;
+  empty_hint.style.display = has_members ? 'none' : '';
+  if(!has_members) {
+    empty_hint.textContent =
+      gettext("No tags left in the list — add at least one suggested tag below, or cancel.");
+  }
+
+  // Other suggested tags: dropped tags first (they were explicitly
+  // deselected, so they must reappear immediately), then the ranked
+  // suggestions from the AI feature, deduped, capped
+  var suggestions = compose_dropped.slice();
+  var ranked = (typeof tagAiComposeSuggestions === 'function')
+    ? tagAiComposeSuggestions() : [];
+  for(var i = 0; i < ranked.length; ++i) {
+    suggestions.push(ranked[i]);
+  }
+  var chip_title = compose_mode === 'unified'
+    ? gettext("Add to the tags to be unified")
+    : gettext("Add to the tags to be grouped");
+  var seen = {};
+  for(var i = 0; i < compose_members.length; ++i) {
+    seen['' + compose_members[i]] = true;
+  }
+  var shown = 0;
+  for(var i = 0; i < suggestions.length && shown < 8; ++i) {
+    var suggested = suggestions[i];
+    var suggested_id = '' + (suggested && suggested.id !== undefined
+      ? suggested.id : suggested);
+    if(seen[suggested_id] || !tags[suggested_id]) {
+      continue;
+    }
+    seen[suggested_id] = true;
+    (function(tag_id) {
+      var chip = document.createElement('a');
+      chip.href = 'javascript:void(0)';
+      chip.className = 'badge badge-light tag-ai-similar-chip';
+      chip.textContent = tags['' + tag_id].path;
+      chip.title = chip_title;
+      chip.addEventListener('click', function(e) {
+        e.preventDefault();
+        composePromote(tag_id);
+      });
+      suggested_list.appendChild(chip);
+    })(suggested_id);
+    shown++;
+  }
+  if(!shown) {
+    var none = document.createElement('span');
+    none.className = 'text-muted small';
+    none.textContent = gettext("(none)");
+    suggested_list.appendChild(none);
+  }
+}
+
+// mode: 'umbrella' (group the selected tags under a new tag) or
+// 'unified' (merge them into a new tag); member_ids: ids or id strings
+function showComposeModal(mode, member_ids) {
+  compose_mode = mode;
+  compose_members = [];
+  compose_dropped = [];
+  for(var i = 0; i < member_ids.length; ++i) {
+    compose_members.push(parseInt(member_ids[i]));
+  }
+
+  // Reset the form and the AI-filled boxes
+  document.getElementById('tag-compose-form').reset();
+  document.getElementById('tag-compose-parent-id').value = '';
+  document.getElementById('tag-compose-name-suggestions').style.display = 'none';
+  document.getElementById('tag-compose-desc-preview').style.display = 'none';
+
+  // Labels depend on the mode
+  var is_unified = mode === 'unified';
+  document.getElementById('tag-compose-title').textContent = is_unified
+    ? gettext("Create new unified tag")
+    : gettext("Create new umbrella tag");
+  document.getElementById('tag-compose-members-label').textContent = is_unified
+    ? gettext("Tags to be unified into the new tag:")
+    : gettext("Tags to be grouped under the new tag:");
+  document.getElementById('tag-compose-submit').textContent = is_unified
+    ? gettext("Create and merge")
+    : gettext("Create tag");
+
+  composeRenderLists();
+  tagComposePathFit();
+
+  // AI feature (tags-ai.js) may fill in title suggestions
+  if(typeof tagAiComposeOpen === 'function') {
+    tagAiComposeOpen(compose_mode, compose_members.slice());
+  }
+
+  $(document.getElementById('tag-compose-modal')).modal();
+}
+
+// Parent picker: same behavior as the tag form's, with the member tags
+// and their subtrees excluded as candidates (cycles are impossible then)
+tagCombobox({
+  input: document.getElementById('tag-compose-parent'),
+  list: document.getElementById('tag-compose-parent-list'),
+  hidden: document.getElementById('tag-compose-parent-id'),
+  candidates: function() {
+    return tagBulkCandidates(compose_members);
+  },
+  labelFor: function(id) {
+    var tag = tags['' + id];
+    return tag ? tag.path : '';
+  },
+  emptyText: gettext("No matching tag"),
+  itemTitle: gettext("Select as parent"),
+  max: 10,
+  selectOnFocus: true,
+  onBlur: function() {
+    // Clicking elsewhere: keep the list hidden and reflect the actual
+    // selection (or root level) in the input
+    window.setTimeout(function() {
+      document.getElementById('tag-compose-parent-list').style.display = 'none';
+      if(!document.getElementById('tag-compose-parent-id').value) {
+        document.getElementById('tag-compose-parent').value = '';
+      }
+    }, 150);
+  }
+});
+document.getElementById('tag-compose-parent-clear').addEventListener('click', function(e) {
+  document.getElementById('tag-compose-parent-id').value = '';
+  document.getElementById('tag-compose-parent').value = '';
+  document.getElementById('tag-compose-parent-list').style.display = 'none';
+  document.getElementById('tag-compose-parent').focus();
+});
+
+// Submit: create the new tag, then apply the operation (merge into it,
+// or re-parent the members under it) — clearing the selection only once
+// the whole chain succeeded
+document.getElementById('tag-compose-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  var tag_path = document.getElementById('tag-compose-path').value;
+  if(!tag_path) {
+    alert(gettext("Invalid tag name"));
+    return;
+  }
+  if(compose_members.length === 0) {
+    return;  // the submit button is disabled anyway
+  }
+  var parent_value = document.getElementById('tag-compose-parent-id').value;
+  var parent_id = parent_value ? parseInt(parent_value) : null;
+  var mode = compose_mode;
+  var members = compose_members.slice();
+  var created = false;
+
+  console.log("Posting new tag (compose mode: " + mode + ")");
+  showSpinner();
+  postJSON(
+    '/api/project/' + project_id + '/tag/new',
+    {path: tag_path,
+     description: document.getElementById('tag-compose-description').value,
+     parent_id: parent_id}
+  )
+  .then(function(result) {
+    created = true;
+    var new_id = result.id;
+    if(mode === 'unified') {
+      // Merge all the source tags into the new tag
+      return postJSON(
+        '/api/project/' + project_id + '/tag/merge',
+        {srcs: members.map(Number), dest: new_id}
+      );
+    }
+    // Umbrella: make each member a child of the new tag, one by one
+    var done = 0;
+    function moveNext() {
+      if(done >= members.length) {
+        return Promise.resolve();
+      }
+      var m = members[done];
+      var old_parent_id = tags['' + m] ? tags['' + m].parent_id : null;
+      return postJSON(
+        '/api/project/' + project_id + '/tag/' + m,
+        {parent_id: new_id}
+      )
+      .then(function() {
+        pushTagUndo({tag_id: m, parent_id: old_parent_id});
+        done++;
+        return moveNext();
+      });
+    }
+    return moveNext();
+  })
+  .then(function() {
+    console.log("Tag compose done");
+    $(document.getElementById('tag-compose-modal')).modal('hide');
+    tagClearSelection();
+  })
+  .catch(function(error) {
+    console.error("Failed to compose tag:", error);
+    if(!created) {
+      alert(gettext("Couldn't create tag!") + "\n\n" + error);
+    } else if(mode === 'unified') {
+      alert(gettext("Created the tag, but couldn't merge all the tags into it!")
+            + "\n\n" + error);
+    } else {
+      alert(gettext("Created the tag, but couldn't group all the tags under it!")
+            + "\n\n" + error);
+    }
+  })
+  .then(hideSpinner);
 });
 
 /*
