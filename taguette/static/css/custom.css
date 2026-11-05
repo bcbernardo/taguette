@@ -377,6 +377,24 @@ li.tag-item.drop-merge {
   outline-offset: -2px;
 }
 
+/* Bulk action bar (Merge / Move to / Group): pinned to the bottom of
+ * the tags panel while at least one tag is selected, following the
+ * panel's own scrollbar (the panel is .left-panel-scroll). Shown and
+ * hidden by toggling Bootstrap's d-none class — never via inline
+ * display, which an .d-flex-style !important rule would override. */
+#tag-bulk-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #fff;
+  border-top: 1px solid #dee2e6;
+  padding: 0.3rem 0.25rem 0.25rem 0.25rem;
+  margin-top: 0.25rem;
+}
+
 /* Bulk selection of tags in the Highlights panel: checked rows read as
  * selected, and the checkbox sits between the row's left edge and the
  * expand toggle */

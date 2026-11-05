@@ -861,11 +861,18 @@ function tagUpdateBulkBar() {
     return;
   }
   var count = tagSelectedIds().length;
+  // Toggle Bootstrap's d-none (!important) rather than setting an
+  // inline display: a plain inline style would lose to any !important
+  // display rule on the element, leaving the bar visible with a stale
+  // count after the selection is cleared
+  bar.classList.toggle('d-none', count === 0);
   if(count === 0) {
-    bar.style.display = 'none';
+    document.getElementById('tag-bulk-count').textContent = '';
+    var group_btn0 = document.getElementById('tag-bulk-group');
+    group_btn0.disabled = true;
+    group_btn0.title = gettext("Select at least two tags to group them under a new tag");
     return;
   }
-  bar.style.display = '';
   document.getElementById('tag-bulk-count').textContent = count === 1
     ? gettext("1 tag selected")
     : gettext("%(n)s tags selected", {n: count});
@@ -1478,6 +1485,11 @@ function updateTagsList() {
   }
 
   console.log("Highlights updated");
+
+  // Keep the bulk action bar in sync with the selection on every
+  // re-render (events, searches, remote changes): the bar must always
+  // agree with the checkboxes just rebuilt above
+  tagUpdateBulkBar();
 }
 
 updateTagsList();
