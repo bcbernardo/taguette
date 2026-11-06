@@ -1069,3 +1069,216 @@ textarea.tag-ai-prompt {
   width: auto;
   max-width: 80%;
 }
+
+/* Segment-based suggestions */
+.sug-span[data-tag-count]::after {
+  content: attr(data-tag-count);
+  display: inline-block;
+  font-size: 0.6em;
+  font-weight: bold;
+  vertical-align: super;
+  line-height: 1;
+  color: #fff;
+  background: #6c757d;
+  border-radius: 8px;
+  padding: 1px 4px;
+  margin-left: 2px;
+}
+#sug-menu .sug-menu-section {
+  margin-bottom: 0.25em;
+}
+#sug-menu .sug-menu-subtitle {
+  font-size: 0.85em;
+  font-weight: bold;
+}
+#sug-menu .sug-menu-suggtags {
+  margin-bottom: 0.5em;
+}
+#sug-menu .sug-menu-suggtags label {
+  display: block;
+  margin: 0;
+}
+#sug-menu .sug-tag-off {
+  color: #8a8f94;
+}
+#sug-menu .sug-menu-divider {
+  margin: 0.25em 0;
+}
+
+/* Thematic segments */
+/* Section separator in the transcript: a full-width thin rule labelled with
+   the section's segment. The element has no text content (the label is CSS
+   content), so character offsets of the document are unaffected. */
+i.seg-separator {
+  display: block;
+  position: relative;
+  height: 1.4em;
+  margin: 0.6em 0 0.2em 0;
+  border-top: 1px solid #6c8ea4;
+  font-style: normal;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  clear: both;
+}
+i.seg-separator::before {
+  content: attr(data-seg-label);
+  display: inline-block;
+  position: relative;
+  top: -0.75em;
+  max-width: 92%;
+  padding: 0 0.5em;
+  background: #fff;
+  color: #3f6178;
+  font-size: 0.72em;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+i.seg-separator[data-first="1"] {
+  cursor: default;
+}
+i.seg-separator[data-emergent="1"] {
+  border-top-style: dashed;
+  border-top-color: #b07a2a;
+}
+i.seg-separator[data-emergent="1"]::before {
+  color: #8a5a10;
+}
+body.seg-dragging, body.seg-dragging * {
+  cursor: grabbing !important;
+}
+body.seg-splitting #document-contents {
+  cursor: crosshair;
+}
+
+/* Sections panel (left tab) */
+#seg-sections-box .seg-coverage {
+  font-size: 0.85em;
+  margin-bottom: 0.5em;
+}
+#seg-sections-box .seg-missing {
+  color: #a94442;
+}
+.seg-section-row {
+  border: 1px solid #dee2e6;
+  border-left: 4px solid #6c8ea4;
+  border-radius: 3px;
+  padding: 0.35em 0.5em;
+  margin-bottom: 0.4em;
+  background: #fff;
+  cursor: pointer;
+}
+.seg-section-row:hover {
+  background: #f4f8fa;
+}
+.seg-section-row.seg-emergent {
+  border-left-color: #b07a2a;
+}
+.seg-section-row .seg-row-label {
+  font-size: 0.85em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seg-section-row .seg-row-controls {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25em;
+}
+.seg-section-row .seg-row-controls select {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 0.25em;
+}
+.seg-section-row .seg-row-controls .btn {
+  padding: 0 0.35em;
+  margin-left: 0.15em;
+  line-height: 1.5;
+}
+.seg-section-row .seg-row-meta {
+  display: flex;
+  align-items: center;
+  font-size: 0.75em;
+  color: #6c757d;
+  margin-top: 0.25em;
+}
+.seg-cov {
+  flex: 1 1 auto;
+  height: 0.5em;
+  background: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-right: 0.5em;
+}
+.seg-cov-fill {
+  height: 100%;
+  background: #6c8ea4;
+}
+.seg-badge-emergent {
+  display: inline-block;
+  font-size: 0.7em;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #8a5a10;
+  background: #f7e8cc;
+  border-radius: 3px;
+  padding: 0 0.35em;
+  margin-right: 0.3em;
+}
+.seg-section-row.seg-readonly {
+  cursor: default;
+}
+
+/* Script & segments modal, emergent confirmation, evaluation */
+#seg-script-modal .seg-modal-wide {
+  max-width: 900px;
+}
+.seg-guide-row, .seg-emergent-row {
+  border: 1px solid #dee2e6;
+  border-radius: 3px;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  background: #fafbfc;
+}
+.seg-guide-row .seg-guide-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.3em;
+}
+.seg-guide-row .seg-guide-head .seg-guide-spacer {
+  flex: 1 1 auto;
+}
+.seg-guide-row .seg-guide-head .btn {
+  padding: 0 0.4em;
+  margin-left: 0.2em;
+}
+.seg-emergent-row label {
+  font-size: 0.8em;
+  margin: 0.3em 0 0 0;
+  color: #6c757d;
+}
+.seg-emergent-row .seg-merge-choice {
+  font-size: 0.9em;
+  margin-top: 0.4em;
+}
+#seg-script-modal .seg-readonly .seg-edit-only,
+#seg-script-modal.seg-readonly .seg-edit-only {
+  display: none !important;
+}
+.seg-eval-table {
+  font-size: 0.85em;
+}
+.seg-eval-table td, .seg-eval-table th {
+  padding: 0.2em 0.5em;
+}
+.seg-eval-ok {
+  color: #1e7e34;
+  font-weight: bold;
+}
+.seg-eval-bad {
+  color: #a94442;
+  font-weight: bold;
+}

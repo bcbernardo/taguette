@@ -1,1 +1,2658 @@
-/* Thematic segments UI: panels, persistence, session orchestration (see THEMATIC_SEGMENTS_PLAN.md). */
+/*
+ * Thematic segments UI: panels, persistence, session orchestration (see
+ * THEMATIC_SEGMENTS_PLAN.md).
+ *
+ * - State and small pure helpers
+ * - Persistence (IndexedDB)
+ * - Session hooks + analysis orchestration (called by suggest.js)
+ * - Manual edits (pure helpers + commit)
+ * - Sections panel and separators
+ * - Emergent segments confirmation + prototype recording
+ * - Script & segments modal
+ * - Evaluation panel (settings, Segmentation tab)
+ * - Wiring
+ * - Self-test
+ *
+ * Nothing here touches the DOM at load time except registering listeners
+ * (guarded by typeof document). All user / model text goes through
+ * textContent; strings go through gettext().
+ */
+
+
+/*
+ * State and small pure helpers
+ */
+
+var SEG_UI_EXEMPLAR_TTL = 60000;   // ms: refetch exemplars at most this often
+
+var SEG_UI = {
+  doc: null,           // state of the open document, see segUiNewDoc()
+  token: 0,            // bumped when a session starts/ends (stale async guard)
+  cacheToken: 0,
+  version: 0,          // bumped whenever doc.result changes
+  exemplars: null,
+  exemplarsAt: 0,
+  extrasRaw: null,     // {embKey, protos, cooc}
+  running: null,       // {key, promise}
+  busy: false,
+  splitting: null,     // section id awaiting a click in the text
+  drag: null,
+  keyCounter: 0,
+  wired: false,
+  script: {rows: [], dirty: false, docs: [], index: {}, open: false,
+           busy: false, generating: false, allowClose: false},
+  emergent: {proceed: null, groups: [], working: false},
+  evalState: {metrics: null, grid: null, running: false}
+};
+
+function segUiNewDoc(docId, textHash) {
+  return {
+    docId: docId, textHash: textHash || null, speakersHash: null,
+    sections: null, manual: segUiEmptyManual(), emergent: {},
+    result: null, resultKey: null, unitOverrides: null
+  };
+}
+
+function segUiEmptyManual() {
+  return {assign: {}, starts: []};
+}
+
+function segUiGuide() {
+  var g = (typeof window !== 'undefined') ? window.taguette_thematic_segments : null;
+  return g || [];
+}
+
+// Only project administrators can edit project metadata (database.py,
+// Privileges.can_edit_project_meta)
+function segCanEditMeta() {
+  try {
+    var m = (typeof members !== 'undefined') ? members : null;
+    var login = (typeof user_login !== 'undefined') ? user_login : null;
+    if(!m || login === null || !m[login]) {
+      return false;
+    }
+    return m[login].privileges === 'ADMIN';
+  } catch(e) {
+    return false;
+  }
+}
+
+function segUiGuideHash(guide) {
+  return sugTextKey('g', JSON.stringify((guide || []).map(function(g) {
+    return [g.id, g.name, g.description || '', g.guide_questions || []];
+  })));
+}
+
+function segUiParamsHash(params) {
+  var keys = Object.keys(params).sort();
+  return sugTextKey('p', JSON.stringify(keys.map(function(k) {
+    return [k, params[k]];
+  })));
+}
+
+function segUiManualHash(manual) {
+  manual = manual || segUiEmptyManual();
+  var ak = Object.keys(manual.assign || {}).sort();
+  return sugTextKey('m', JSON.stringify([
+    ak.map(function(k) {
+      var e = manual.assign[k];
+      return [k, e.segId === undefined ? null : e.segId, e.emergentKey || null];
+    }),
+    (manual.starts || []).slice().sort()]));
+}
+
+function segUiSpeakersHash(speakers, turns) {
+  return sugTextKey('s', JSON.stringify([
+    (speakers || []).map(function(s) {
+      return [s.id, s.include !== false];
+    }),
+    (turns || []).map(function(t) {
+      return t.speaker || '';
+    })]));
+}
+
+function segUiTurns() {
+  if(!sug_session) {
+    return [];
+  }
+  if(!sug_session.turns) {
+    sug_session.turns = sugSpeakerTurns();
+  }
+  return sug_session.turns || [];
+}
+
+function segUiTagList() {
+  var out = [];
+  var all = (typeof tags !== 'undefined' && tags) ? tags : {};
+  for(var k in all) {
+    out.push({id: parseInt(all[k].id !== undefined ? all[k].id : k, 10),
+              path: all[k].path, description: all[k].description || ''});
+  }
+  return out;
+}
+
+function segUiErrText(err) {
+  return (err && err.message) ? err.message : String(err);
+}
+
+function segUiStatus(msg) {
+  try {
+    if(typeof sugSetStatus === 'function' && typeof document !== 'undefined'
+       && document.getElementById('sug-status')) {
+      sugSetStatus(msg);
+    }
+  } catch(e) { /* status line is best effort */ }
+}
+
+var SEG_UI_STAGES = {
+  embed: 'embedding windows', decide: 'checking ambiguous passages',
+  emergent: 'naming new segments', units: 'cutting suggestions',
+  tags: 'proposing tags'
+};
+
+function segUiProgressText(stage, done, total) {
+  var label = gettext(SEG_UI_STAGES[stage] || stage);
+  if(total) {
+    return gettext('Segmenting: %(stage)s %(done)s/%(total)s',
+                   {stage: label, done: done, total: total});
+  }
+  return gettext('Segmenting: %(stage)s', {stage: label});
+}
+
+function segUiProgress(stage, done, total) {
+  segUiStatus(segUiProgressText(stage, done, total));
+}
+
+function segUiAssignmentOf(sec) {
+  return {
+    segId: (sec.segId !== null && sec.segId !== undefined) ? sec.segId : null,
+    emergentKey: sec.emergent ? sec.emergent.key : null
+  };
+}
+
+function segUiSameAssignment(a, b) {
+  var sa = segUiAssignmentOf(a), sb = segUiAssignmentOf(b);
+  if(sa.segId !== null || sb.segId !== null) {
+    return sa.segId === sb.segId;
+  }
+  return sa.emergentKey !== null && sa.emergentKey === sb.emergentKey;
+}
+
+// Key of the turn containing `pos`, or null when the turn text is not unique
+function segUiUniqueKey(turns, pos) {
+  var i = segTurnAt(turns, pos);
+  if(i < 0) {
+    return null;
+  }
+  var key = segTurnKey(turns[i]), n = 0;
+  for(var t = 0; t < turns.length; ++t) {
+    if(segTurnKey(turns[t]) === key) {
+      ++n;
+    }
+  }
+  return n === 1 ? key : null;
+}
+
+// Start of the turn nearest to a char index (turn start or next turn start)
+function segUiNearestTurnStart(turns, ch) {
+  if(!turns.length) {
+    return null;
+  }
+  var i = Math.max(0, segTurnAt(turns, ch));
+  var best = turns[i].start;
+  if(i + 1 < turns.length
+     && Math.abs(turns[i + 1].start - ch) < Math.abs(best - ch)) {
+    best = turns[i + 1].start;
+  }
+  return best;
+}
+
+// Record that the section starting at `pos` has this assignment (and, with
+// pin, that its start is a user-made boundary). false: turn text not unique.
+function segUiRecordAssign(manual, turns, pos, assignment, pin) {
+  var key = segUiUniqueKey(turns, pos);
+  if(key === null) {
+    return false;
+  }
+  manual.assign[key] = {segId: assignment.segId, emergentKey: assignment.emergentKey};
+  if(pin && manual.starts.indexOf(key) === -1) {
+    manual.starts.push(key);
+  }
+  return true;
+}
+
+function segUiForgetKey(manual, key) {
+  if(key === null) {
+    return;
+  }
+  delete manual.assign[key];
+  var at = manual.starts.indexOf(key);
+  if(at !== -1) {
+    manual.starts.splice(at, 1);
+  }
+}
+
+// Char positions of the user's section starts that still exist
+function segUiStartPositions(turns, manual) {
+  var out = {}, count = {}, at = {}, i;
+  for(i = 0; i < turns.length; ++i) {
+    var k = segTurnKey(turns[i]);
+    count[k] = (count[k] || 0) + 1;
+    at[k] = i;
+  }
+  var starts = (manual && manual.starts) || [];
+  for(i = 0; i < starts.length; ++i) {
+    if(count[starts[i]] === 1) {
+      out[turns[at[starts[i]]].start] = true;
+    }
+  }
+  return out;
+}
+
+// Merge sections[i] with sections[i+1]; the result keeps the label of
+// sections[keepIdx] (i or i+1)
+function segUiMergePair(sections, i, keepIdx) {
+  var merged = segCloneSection(sections[keepIdx]);
+  merged.start = sections[i].start;
+  merged.end = sections[i + 1].end;
+  merged.manual = true;
+  if(keepIdx !== i) {
+    merged.openingQuestion = sections[i].openingQuestion;
+  }
+  var out = sections.slice(0, i);
+  out.push(merged);
+  return out.concat(sections.slice(i + 2));
+}
+
+// Move the start of sections[i] (i >= 1) to char `pos`; null when invalid
+function segUiMoveStart(sections, i, pos) {
+  if(i < 1 || i >= sections.length) {
+    return null;
+  }
+  var prev = sections[i - 1], cur = sections[i];
+  if(pos <= prev.start || pos >= cur.end || pos === cur.start) {
+    return null;
+  }
+  var out = sections.slice();
+  var p = segCloneSection(prev), c = segCloneSection(cur);
+  p.end = pos;
+  c.start = pos;
+  c.manual = true;
+  c.openingQuestion = null;
+  out[i - 1] = p;
+  out[i] = c;
+  return out;
+}
+
+// Adjacent sections with the same assignment are one section, unless the
+// user made a boundary between them
+function segUiCoalesce(sections, startPositions) {
+  var out = [];
+  for(var i = 0; i < sections.length; ++i) {
+    var cur = sections[i], prev = out.length ? out[out.length - 1] : null;
+    if(prev && prev.end === cur.start && !startPositions[cur.start]
+       && segUiSameAssignment(prev, cur)) {
+      var merged = segCloneSection(prev);
+      merged.end = cur.end;
+      merged.manual = prev.manual || cur.manual;
+      out[out.length - 1] = merged;
+    } else {
+      out.push(cur);
+    }
+  }
+  return out;
+}
+
+// Coalesce, apply the user's edits to emergent names, refresh derived fields.
+// ctx = {guide, windows, plainText, infos, turns}
+function segUiFinalize(sections, ctx, manual, emergentDict) {
+  var out = segUiCoalesce(sections, segUiStartPositions(ctx.turns || [], manual));
+  for(var i = 0; i < out.length; ++i) {
+    var e = out[i].emergent;
+    if(e && emergentDict && emergentDict[e.key]) {
+      var d = emergentDict[e.key];
+      e.name = d.name;
+      e.description = d.description || '';
+      e.question = d.question || '';
+      e.proposed = !!d.proposed;
+    }
+  }
+  segRefreshSections(out, ctx);
+  return out;
+}
+
+// Emergent info per key, kept across runs when the user edited it
+function segUiCollectEmergent(sections, old) {
+  var out = {}, k;
+  old = old || {};
+  for(k in old) {
+    if(old[k].user) {
+      out[k] = old[k];
+    }
+  }
+  for(var i = 0; i < sections.length; ++i) {
+    var e = sections[i].emergent;
+    if(!e || out[e.key]) {
+      continue;
+    }
+    if(old[e.key] && old[e.key].edited) {
+      out[e.key] = old[e.key];
+    } else {
+      out[e.key] = {name: e.name, description: e.description || '',
+                    question: e.question || '', proposed: !!e.proposed};
+    }
+  }
+  return out;
+}
+
+// Sections not backed by a guide segment (emergent or user created), grouped
+// by emergent key; "Whole document" / unassigned sections are not pending
+function segUiPendingGroups(sections, dict) {
+  var groups = [], by = {};
+  dict = dict || {};
+  for(var i = 0; i < (sections || []).length; ++i) {
+    var s = sections[i];
+    if((s.segId !== null && s.segId !== undefined) || !s.emergent) {
+      continue;
+    }
+    var key = s.emergent.key, g = by[key];
+    if(!g) {
+      var d = dict[key] || s.emergent;
+      g = by[key] = {
+        key: key, sectionIds: [], name: d.name || '',
+        description: d.description || '', question: d.question || '',
+        user: key.charAt(0) === 'u', merge: null, choice: 'new'
+      };
+      groups.push(g);
+    }
+    g.sectionIds.push(s.id);
+  }
+  return groups;
+}
+
+// After the guide was saved: sections of each group become guide segments.
+// mapping = {emergentKey: {segId, name}}
+function segUiRemap(sections, manual, dict, mapping) {
+  var changed = 0, i, k;
+  for(i = 0; i < sections.length; ++i) {
+    var s = sections[i];
+    if(s.emergent && mapping[s.emergent.key]) {
+      var m = mapping[s.emergent.key];
+      s.segId = m.segId;
+      s.emergent = null;
+      s.name = m.name;
+      s.label = segSectionLabel(s.name, s.openingQuestion);
+      ++changed;
+    }
+  }
+  for(k in manual.assign) {
+    var ek = manual.assign[k].emergentKey;
+    if(ek && mapping[ek]) {
+      manual.assign[k] = {segId: mapping[ek].segId, emergentKey: null};
+    }
+  }
+  for(k in mapping) {
+    delete dict[k];
+  }
+  return changed;
+}
+
+function segUiFindByName(list, name) {
+  var n = String(name || '').trim().toLowerCase();
+  for(var i = 0; i < list.length; ++i) {
+    if(String(list[i].name).trim().toLowerCase() === n) {
+      return list[i];
+    }
+  }
+  return null;
+}
+
+function segUiFindById(list, id) {
+  for(var i = 0; i < list.length; ++i) {
+    if(list[i].id === id) {
+      return list[i];
+    }
+  }
+  return null;
+}
+
+// Units -> candidates for the suggestion panes (CHAR offsets)
+function segUnitsAsCandidates(result, theta) {
+  if(theta === undefined || theta === null) {
+    theta = segParams().theta;
+  }
+  var out = [];
+  var units = (result && result.units) || [];
+  for(var i = 0; i < units.length; ++i) {
+    var u = units[i], ts = [], best = -1;
+    var utags = u.tags || [];
+    for(var t = 0; t < utags.length; ++t) {
+      ts.push({id: utags[t].id, name: utags[t].name, conf: utags[t].conf,
+               source: utags[t].source});
+      best = Math.max(best, utags[t].conf);
+    }
+    out.push({
+      start: u.start, end: u.end,
+      raw: best >= 0 ? 0.5 + 0.5 * best : 0.5,
+      tags: ts, section_id: u.sectionId,
+      ticked: ts.filter(function(x) {
+        return x.conf >= theta;
+      }).map(function(x) {
+        return x.id;
+      })
+    });
+  }
+  return out;
+}
+
+function segSectionAt(charIdx) {
+  var secs = null;
+  if(SEG_UI.doc) {
+    secs = (SEG_UI.doc.result && SEG_UI.doc.result.sections) || SEG_UI.doc.sections;
+  }
+  if(!secs || !secs.length) {
+    return null;
+  }
+  for(var i = 0; i < secs.length; ++i) {
+    if(charIdx >= secs[i].start && (charIdx < secs[i].end
+       || (i === secs.length - 1 && charIdx <= secs[i].end))) {
+      return secs[i];
+    }
+  }
+  return null;
+}
+
+function segResultVersion() {
+  return SEG_UI.version;
+}
+
+function segUiMergeIntervals(ivs) {
+  var a = ivs.slice().sort(function(x, y) {
+    return x[0] - y[0];
+  });
+  var out = [];
+  for(var i = 0; i < a.length; ++i) {
+    if(a[i][1] <= a[i][0]) {
+      continue;
+    }
+    if(out.length && a[i][0] <= out[out.length - 1][1]) {
+      out[out.length - 1][1] = Math.max(out[out.length - 1][1], a[i][1]);
+    } else {
+      out.push([a[i][0], a[i][1]]);
+    }
+  }
+  return out;
+}
+
+// {count, covered, codable}: suggestions/staged inside a section and the share
+// of its codable characters they cover. spans = [{cStart, cEnd}]
+function segUiSectionStats(sec, turns, speakers, spans) {
+  var include = {}, i;
+  for(i = 0; i < (speakers || []).length; ++i) {
+    include[speakers[i].id] = speakers[i].include !== false;
+  }
+  var codable = [];
+  if(!turns || !turns.length) {
+    codable.push([sec.start, sec.end]);
+  } else {
+    for(i = 0; i < turns.length; ++i) {
+      var t = turns[i];
+      if(t.end <= sec.start || t.start >= sec.end) {
+        continue;
+      }
+      if(t.speaker && include[t.speaker] === false) {
+        continue;
+      }
+      codable.push([Math.max(t.start, sec.start), Math.min(t.end, sec.end)]);
+    }
+  }
+  codable = segUiMergeIntervals(codable);
+  var clipped = [], count = 0;
+  for(i = 0; i < spans.length; ++i) {
+    var s = spans[i];
+    if(s.cStart >= sec.start && s.cStart < sec.end) {
+      ++count;
+    }
+    clipped.push([Math.max(s.cStart, sec.start), Math.min(s.cEnd, sec.end)]);
+  }
+  clipped = segUiMergeIntervals(clipped);
+  var total = 0, covered = 0;
+  codable.forEach(function(c) {
+    total += c[1] - c[0];
+    clipped.forEach(function(k) {
+      covered += Math.max(0, Math.min(c[1], k[1]) - Math.max(c[0], k[0]));
+    });
+  });
+  return {count: count, covered: covered, codable: total};
+}
+
+// Prototype / co-occurrence extras (stored per document) -> core inputs
+function segUiExtrasFrom(protosRaw, coocRaw, excludeDocId) {
+  var protos = {}, cooc = {}, seg, doc, tag;
+  function excluded(d) {
+    return excludeDocId !== null && excludeDocId !== undefined
+      && String(d) === String(excludeDocId);
+  }
+  for(seg in (protosRaw || {})) {
+    for(doc in protosRaw[seg]) {
+      if(excluded(doc)) {
+        continue;
+      }
+      var e = protosRaw[seg][doc];
+      if(!e || !e.n || !e.sum) {
+        continue;
+      }
+      (protos[seg] = protos[seg] || []).push(e.sum.map(function(x) {
+        return x / e.n;
+      }));
+    }
+  }
+  for(tag in (coocRaw || {})) {
+    for(seg in coocRaw[tag]) {
+      for(doc in coocRaw[tag][seg]) {
+        if(excluded(doc)) {
+          continue;
+        }
+        cooc[tag] = cooc[tag] || {};
+        cooc[tag][seg] = (cooc[tag][seg] || 0) + coocRaw[tag][seg][doc];
+      }
+    }
+  }
+  return {protos: protos, cooc: cooc};
+}
+
+// Add one saved unit to the per-document prototype sums and tag counts
+function segUiAddPrototype(protos, cooc, segId, docId, vec, tagIds) {
+  var v = Array.prototype.slice.call(vec);
+  var bySeg = (protos[segId] = protos[segId] || {});
+  var slot = (bySeg[docId] = bySeg[docId] || {sum: v.map(function() {
+    return 0;
+  }), n: 0});
+  for(var i = 0; i < v.length; ++i) {
+    slot.sum[i] += v[i];
+  }
+  slot.n += 1;
+  tagIds.forEach(function(t) {
+    var by = (cooc[t] = cooc[t] || {});
+    var per = (by[segId] = by[segId] || {});
+    per[docId] = (per[docId] || 0) + 1;
+  });
+}
+
+
+/*
+ * Persistence
+ */
+
+function segUiDocKey(docId) {
+  return 'seg|doc|' + docId;
+}
+
+function segUiEmbKey() {
+  try {
+    var cfg = sugLoadConfig();
+    return cfg ? sugEmbKey(cfg) : null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function segUiStripSections(sections) {
+  return (sections || []).map(function(s) {
+    var c = segCloneSection(s);
+    delete c.vec;
+    return c;
+  });
+}
+
+function segUiPersist() {
+  var doc = SEG_UI.doc;
+  if(!doc || doc.docId === null || doc.docId === undefined) {
+    return;
+  }
+  var secs = (doc.result && doc.result.sections) || doc.sections;
+  segIdbPut(segUiDocKey(doc.docId), {
+    version: 1, textHash: doc.textHash, guideHash: segUiGuideHash(segUiGuide()),
+    paramsHash: segUiParamsHash(segParams()), sections: segUiStripSections(secs),
+    manual: doc.manual, emergent: doc.emergent
+  });
+  segIdbGet('seg|index').then(function(index) {
+    index = index || {};
+    var ids = [];
+    (secs || []).forEach(function(s) {
+      if(s.segId !== null && s.segId !== undefined && ids.indexOf(s.segId) === -1) {
+        ids.push(s.segId);
+      }
+    });
+    index[doc.docId] = ids;
+    segIdbPut('seg|index', index);
+  });
+}
+
+function segUiAdoptRecord(rec) {
+  var doc = SEG_UI.doc;
+  if(!doc || !rec || rec.version !== 1) {
+    return;
+  }
+  doc.manual = rec.manual || segUiEmptyManual();
+  doc.manual.assign = doc.manual.assign || {};
+  doc.manual.starts = doc.manual.starts || [];
+  doc.emergent = rec.emergent || {};
+  if(rec.textHash === doc.textHash && rec.sections && rec.sections.length) {
+    doc.sections = rec.sections;
+  }
+}
+
+
+/*
+ * Session hooks + analysis
+ */
+
+function segOnSessionStart() {
+  SEG_UI.token++;
+  SEG_UI.exemplars = null;
+  SEG_UI.running = null;
+  SEG_UI.splitting = null;
+  if(!sug_session) {
+    return;
+  }
+  var token = SEG_UI.token, docId = current_document;
+  SEG_UI.doc = segUiNewDoc(docId, sugTextKey('doc', sug_session.plainText));
+  segRenderSections();
+  segIdbGet(segUiDocKey(docId)).then(function(rec) {
+    if(token !== SEG_UI.token || !sug_session) {
+      return;
+    }
+    segUiAdoptRecord(rec);
+    segRenderSections();
+    segRenderSeparators();
+  });
+}
+
+function segOnSessionEnd() {
+  SEG_UI.token++;
+  SEG_UI.doc = null;
+  SEG_UI.running = null;
+  SEG_UI.exemplars = null;
+  segUiSetSplitting(null);
+  segRemoveSeparators();
+  segRenderSections();
+}
+
+// The text changed: results are stale, the user's edits are inherited
+function segOnRebuild() {
+  var doc = SEG_UI.doc;
+  if(!doc || !sug_session) {
+    return;
+  }
+  doc.textHash = sugTextKey('doc', sug_session.plainText);
+  doc.result = null;
+  doc.resultKey = null;
+  doc.sections = null;
+  doc.unitOverrides = null;
+  SEG_UI.exemplars = null;
+  SEG_UI.running = null;
+  ++SEG_UI.version;
+  segRemoveSeparators();
+  segRenderSections();
+}
+
+// Key of everything the SECTIONS depend on (tau/theta are not included)
+function segUiResultKey() {
+  var doc = SEG_UI.doc;
+  return [doc.textHash, doc.speakersHash, segUiGuideHash(segUiGuide()),
+          segUiParamsHash(segParams()), segUiManualHash(doc.manual)].join('|');
+}
+
+function segUiEnsureDoc() {
+  if(!SEG_UI.doc && sug_session) {
+    SEG_UI.doc = segUiNewDoc(current_document, sugTextKey('doc', sug_session.plainText));
+  }
+  return SEG_UI.doc;
+}
+
+// {tau, theta} given by the caller (slider), or null
+function segUiUnitOverrides(opts) {
+  if(!opts) {
+    return null;
+  }
+  var o = {}, any = false;
+  ['tau', 'theta'].forEach(function(k) {
+    if(typeof opts[k] === 'number' && isFinite(opts[k])) {
+      o[k] = opts[k];
+      any = true;
+    }
+  });
+  return any ? o : null;
+}
+
+function segUiSameOverrides(a, b) {
+  return JSON.stringify(a || null) === JSON.stringify(b || null);
+}
+
+function segUiExemplars() {
+  var now = Date.now();
+  if(SEG_UI.exemplars && now - SEG_UI.exemplarsAt < SEG_UI_EXEMPLAR_TTL) {
+    return Promise.resolve(SEG_UI.exemplars);
+  }
+  return Promise.resolve().then(function() {
+    return segFetchExemplars();
+  }).then(function(ex) {
+    SEG_UI.exemplars = ex;
+    SEG_UI.exemplarsAt = Date.now();
+    return ex;
+  }, function(err) {
+    // Without exemplars tags are still scored from their definitions
+    console.warn('Could not fetch the tag exemplars:', segUiErrText(err));
+    return SEG_UI.exemplars || [];
+  });
+}
+
+function segUiExtras(excludeDocId) {
+  var embKey = segUiEmbKey();
+  if(!embKey) {
+    return Promise.resolve({protos: {}, cooc: {}});
+  }
+  var raw = SEG_UI.extrasRaw;
+  if(raw && raw.embKey === embKey) {
+    return Promise.resolve(segUiExtrasFrom(raw.protos, raw.cooc, excludeDocId));
+  }
+  return Promise.all([segIdbGet('seg|protos|' + embKey), segIdbGet('seg|cooc')])
+    .then(function(r) {
+      SEG_UI.extrasRaw = {embKey: embKey, protos: r[0] || {}, cooc: r[1] || {}};
+      return segUiExtrasFrom(r[0], r[1], excludeDocId);
+    });
+}
+
+// opts: {overrides, excludeDocId, manual (null = none; default: the user's)}
+function segUiMakeInput(opts) {
+  opts = opts || {};
+  var excl = (opts.excludeDocId === undefined) ? null : opts.excludeDocId;
+  return Promise.all([segUiExemplars(), segUiExtras(excl)]).then(function(r) {
+    if(!sug_session) {
+      throw new Error(gettext('The suggestion session has ended.'));
+    }
+    var doc = SEG_UI.doc;
+    var manual = opts.manual !== undefined ? opts.manual
+      : (doc ? doc.manual : null);
+    return {
+      plainText: sug_session.plainText, turns: segUiTurns(),
+      speakers: sug_session.speakers || [], guide: segUiGuide(),
+      params: segParams(opts.overrides), tags: segUiTagList(),
+      exemplars: r[0], docId: current_document, excludeDocId: excl,
+      segPrototypeExtras: r[1].protos, tagSegmentCooc: r[1].cooc,
+      manual: manual
+    };
+  });
+}
+
+function segUiCtx(r, input) {
+  return {guide: segUiGuide(), windows: r.windows, plainText: input.plainText,
+          infos: r.infos, turns: input.turns};
+}
+
+function segUiRefreshStats(r) {
+  r.coverage = segCoverage(r.sections, segUiGuide());
+  if(r.stats) {
+    r.stats.sections = r.sections.length;
+    r.stats.emergent = r.sections.filter(function(s) {
+      return !!s.emergent;
+    }).length;
+  }
+}
+
+// Run (or reuse) windows -> sections -> units -> tags for the open session.
+// opts {force, excludeDocId, tau, theta}: tau/theta only change the units
+// stage (the sections cache is not invalidated). Rejects with a readable Error.
+function segAnalyzeDocument(opts) {
+  opts = opts || {};
+  if(!sug_session) {
+    return Promise.reject(new Error(gettext('Start a suggestion session first.')));
+  }
+  var doc = segUiEnsureDoc();
+  var turns = segUiTurns();
+  doc.speakersHash = segUiSpeakersHash(sug_session.speakers, turns);
+  var key = segUiResultKey();
+  var over = segUiUnitOverrides(opts);
+  var uncached = opts.excludeDocId !== undefined && opts.excludeDocId !== null;
+  if(!uncached && !opts.force && doc.result && doc.resultKey === key) {
+    if(over && !segUiSameOverrides(over, doc.unitOverrides)) {
+      return segRefreshUnits(over);
+    }
+    return Promise.resolve(doc.result);
+  }
+  if(!uncached && !opts.force && SEG_UI.running && SEG_UI.running.key === key) {
+    return SEG_UI.running.promise;
+  }
+  var token = SEG_UI.token, gen = sug_session.editGen;
+  function stale() {
+    return !sug_session || token !== SEG_UI.token || gen !== sug_session.editGen;
+  }
+  segAiReset();
+  var deps = segMakeDeps({progress: segUiProgress});
+  var input = null;
+  var p = segUiMakeInput({excludeDocId: opts.excludeDocId}).then(function(inp) {
+    input = inp;
+    return segRunSections(inp, deps);
+  }).then(function(sr) {
+    if(stale()) {
+      throw new Error(gettext('The suggestion session has ended.'));
+    }
+    sr.sections = segUiFinalize(sr.sections, segUiCtx(sr, input), input.manual,
+                                doc.emergent);
+    segUiRefreshStats(sr);
+    var uin = Object.create(input);
+    uin.params = segParams(over || (uncached ? null : doc.unitOverrides));
+    return segRunUnits(sr, uin, deps);
+  }).then(function(res) {
+    if(stale()) {
+      throw new Error(gettext('The suggestion session has ended.'));
+    }
+    if(!uncached) {
+      doc.emergent = segUiCollectEmergent(res.sections, doc.emergent);
+      doc.result = res;
+      doc.sections = res.sections;
+      doc.resultKey = key;
+      doc.unitOverrides = over || doc.unitOverrides;
+      ++SEG_UI.version;
+      segUiPersist();
+      segRenderSections();
+      segRenderSeparators();
+    }
+    return res;
+  });
+  if(!uncached) {
+    SEG_UI.running = {key: key, promise: p};
+  }
+  function clear() {
+    if(SEG_UI.running && SEG_UI.running.promise === p) {
+      SEG_UI.running = null;
+    }
+  }
+  return p.then(function(res) {
+    clear();
+    return res;
+  }, function(err) {
+    clear();
+    throw err;
+  });
+}
+
+// Re-run only units + tags (sections reused); overrides {tau, theta, ...}
+function segRefreshUnits(overrides) {
+  var doc = SEG_UI.doc;
+  var ready = (doc && doc.result) ? Promise.resolve(doc.result)
+    : segAnalyzeDocument({});
+  var deps = segMakeDeps({progress: segUiProgress});
+  return ready.then(function(r) {
+    return segUiMakeInput({overrides: overrides}).then(function(input) {
+      return segRunUnits(r, input, deps);
+    });
+  }).then(function(res) {
+    var d = SEG_UI.doc;
+    if(d && sug_session) {
+      d.result = res;
+      d.sections = res.sections;
+      d.unitOverrides = overrides || null;
+      ++SEG_UI.version;
+    }
+    return res;
+  });
+}
+
+
+/*
+ * Manual edits (commit + operations)
+ */
+
+// Rebuild sections after the user's edits were recorded, redo units, notify
+function segUiCommit() {
+  var doc = SEG_UI.doc, r = doc && doc.result;
+  if(!r || !sug_session) {
+    return Promise.resolve();
+  }
+  var turns = segUiTurns();
+  var ctx = {guide: segUiGuide(), windows: r.windows,
+             plainText: sug_session.plainText, infos: r.infos, turns: turns};
+  var secs = segApplyManual(r.sections, turns, doc.manual, ctx);
+  secs = segUiFinalize(secs, ctx, doc.manual, doc.emergent);
+  doc.emergent = segUiCollectEmergent(secs, doc.emergent);
+  r.sections = secs;
+  doc.sections = secs;
+  segUiRefreshStats(r);
+  doc.resultKey = segUiResultKey();
+  segUiPersist();
+  segRenderSections();
+  segRenderSeparators();
+  SEG_UI.busy = true;
+  segUiStatus(gettext('Updating suggestions…'));
+  return segRefreshUnits(doc.unitOverrides).then(function() {
+    SEG_UI.busy = false;
+    segUiStatus('');
+    segRenderSections();
+    if(typeof sugRecomputeSegmented === 'function') {
+      sugRecomputeSegmented();
+    }
+  }, function(err) {
+    SEG_UI.busy = false;
+    segUiStatus(segUiErrText(err));
+    segRenderSections();
+  });
+}
+
+function segUiEditable() {
+  return !!(sug_session && SEG_UI.doc && SEG_UI.doc.result && !SEG_UI.busy);
+}
+
+function segUiSectionIndex(id) {
+  var secs = SEG_UI.doc.result.sections;
+  for(var i = 0; i < secs.length; ++i) {
+    if(secs[i].id === id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function segUiNewEmergentKey() {
+  return 'u' + Date.now().toString(36) + (++SEG_UI.keyCounter);
+}
+
+function segUiNotUnique() {
+  segUiStatus(gettext('This section starts at a turn whose text appears more than once, so the change cannot be remembered.'));
+}
+
+function segUiAssignSection(secId, value) {
+  if(!segUiEditable()) {
+    return;
+  }
+  var doc = SEG_UI.doc, i = segUiSectionIndex(secId);
+  if(i < 0) {
+    return;
+  }
+  var sec = doc.result.sections[i], assignment;
+  if(value === 'new') {
+    var name = window.prompt(gettext('Name of the new segment'), '');
+    if(!name || !name.trim()) {
+      segRenderSections();
+      return;
+    }
+    var key = segUiNewEmergentKey();
+    doc.emergent[key] = {name: name.trim(), description: '', question: '',
+                         proposed: false, user: true, edited: true};
+    assignment = {segId: null, emergentKey: key};
+  } else if(value.indexOf('s:') === 0) {
+    assignment = {segId: parseInt(value.substring(2), 10), emergentKey: null};
+  } else if(value.indexOf('e:') === 0) {
+    assignment = {segId: null, emergentKey: value.substring(2)};
+  } else {
+    assignment = {segId: null, emergentKey: null};
+  }
+  if(!segUiRecordAssign(doc.manual, segUiTurns(), sec.start, assignment, true)) {
+    segUiNotUnique();
+    segRenderSections();
+    return;
+  }
+  segUiCommit();
+}
+
+// Merge sections[i] with its next neighbour: keepIdx = which label survives
+function segUiMergeSections(i, keepIdx) {
+  var doc = SEG_UI.doc, secs = doc.result.sections;
+  if(i < 0 || i + 1 >= secs.length) {
+    return;
+  }
+  var turns = segUiTurns();
+  var merged = segUiMergePair(secs, i, keepIdx);
+  var m = merged[i];
+  var boundaryKey = segUiUniqueKey(turns, secs[i + 1].start);
+  // The dropped boundary is no longer a user boundary; the merged section's
+  // assignment is recorded on both turns so it survives a re-run
+  segUiForgetKey(doc.manual, boundaryKey);
+  if(boundaryKey !== null) {
+    doc.manual.assign[boundaryKey] = segUiAssignmentOf(m);
+  }
+  segUiRecordAssign(doc.manual, turns, m.start, segUiAssignmentOf(m), true);
+  doc.result.sections = merged;
+  segUiCommit();
+}
+
+function segUiSplitAt(secId, pos) {
+  var doc = SEG_UI.doc, i = segUiSectionIndex(secId);
+  if(i < 0) {
+    return;
+  }
+  var sec = doc.result.sections[i];
+  if(pos <= sec.start || pos >= sec.end) {
+    segUiStatus(gettext('Click inside the section, away from its first turn.'));
+    return;
+  }
+  if(!segUiRecordAssign(doc.manual, segUiTurns(), pos, segUiAssignmentOf(sec), true)) {
+    segUiNotUnique();
+    return;
+  }
+  segUiCommit();
+}
+
+function segUiMoveBoundary(secId, pos) {
+  var doc = SEG_UI.doc, i = segUiSectionIndex(secId);
+  if(i < 1) {
+    return;
+  }
+  var secs = doc.result.sections, turns = segUiTurns();
+  var moved = segUiMoveStart(secs, i, pos);
+  if(!moved) {
+    segUiStatus(gettext('A section boundary cannot be moved past its neighbours.'));
+    return;
+  }
+  if(segUiUniqueKey(turns, pos) === null) {
+    segUiNotUnique();
+    return;
+  }
+  segUiForgetKey(doc.manual, segUiUniqueKey(turns, secs[i].start));
+  segUiRecordAssign(doc.manual, turns, pos, segUiAssignmentOf(secs[i]), true);
+  doc.result.sections = moved;
+  segUiCommit();
+}
+
+function segUiDiscardEmergent(secId) {
+  var secs = SEG_UI.doc.result.sections, i = segUiSectionIndex(secId);
+  if(i < 0 || secs.length < 2 || !secs[i].emergent) {
+    return;
+  }
+  if(i === 0) {
+    segUiMergeSections(0, 1);
+  } else {
+    segUiMergeSections(i - 1, i - 1);
+  }
+}
+
+// Re-run the units of one section with a finer cut and a lower tick threshold
+// (the cut distribution is then computed over that section alone)
+function segUiRefineSection(secId) {
+  var doc = SEG_UI.doc, r = doc.result, i = segUiSectionIndex(secId);
+  if(i < 0) {
+    return;
+  }
+  var sec = r.sections[i];
+  var base = segParams(doc.unitOverrides);
+  var over = {tau: segClamp(base.tau + 0.15, 0, 0.9),
+              theta: segClamp(base.theta - 0.1, 0, 1)};
+  SEG_UI.busy = true;
+  segUiStatus(gettext('Refining the section…'));
+  var deps = segMakeDeps({progress: segUiProgress});
+  segUiMakeInput({overrides: over}).then(function(input) {
+    return segBuildUnits([sec], input, deps, r.infos).then(function(units) {
+      return segProposeTags(units, [sec], input, deps).then(function() {
+        return units;
+      });
+    });
+  }).then(function(units) {
+    var kept = r.units.filter(function(u) {
+      return u.sectionId !== sec.id;
+    });
+    var stamp = 'r' + (++SEG_UI.keyCounter) + '_';
+    units.forEach(function(u, n) {
+      u.id = stamp + n;
+      u.sectionId = sec.id;
+    });
+    var res = {};
+    for(var k in r) {
+      res[k] = r[k];
+    }
+    res.units = kept.concat(units).sort(function(a, b) {
+      return a.start - b.start;
+    });
+    doc.result = res;
+    ++SEG_UI.version;
+    SEG_UI.busy = false;
+    segUiStatus('');
+    segRenderSections();
+    if(typeof sugRecomputeSegmented === 'function') {
+      sugRecomputeSegmented();
+    }
+  }).then(null, function(err) {
+    SEG_UI.busy = false;
+    segUiStatus(segUiErrText(err));
+    segRenderSections();
+  });
+}
+
+
+/*
+ * Sections panel + separators
+ */
+
+function segUiEl(tag, cls, text) {
+  var el = document.createElement(tag);
+  if(cls) {
+    el.className = cls;
+  }
+  if(text !== undefined && text !== null) {
+    el.textContent = text;
+  }
+  return el;
+}
+
+function segUiClear(el) {
+  while(el.firstChild) {
+    el.removeChild(el.firstChild);
+  }
+}
+
+function segUiSpans() {
+  var out = [];
+  if(!sug_session) {
+    return out;
+  }
+  var main = sug_session.panes && sug_session.panes[''];
+  if(main) {
+    (main.suggestions || []).forEach(function(s) {
+      out.push({cStart: s.cStart, cEnd: s.cEnd});
+    });
+  }
+  (sug_session.staged || []).forEach(function(s) {
+    out.push({cStart: s.cStart, cEnd: s.cEnd});
+  });
+  return out;
+}
+
+function segUiOptionList(sections, dict) {
+  var seen = {}, out = [];
+  sections.forEach(function(s) {
+    if(s.emergent && !seen[s.emergent.key]) {
+      seen[s.emergent.key] = true;
+      out.push({key: s.emergent.key,
+                name: (dict[s.emergent.key] || s.emergent).name});
+    }
+  });
+  for(var k in dict) {
+    if(!seen[k] && dict[k].user) {
+      out.push({key: k, name: dict[k].name});
+    }
+  }
+  return out;
+}
+
+function segUiSelectEl(sec, sections, dict, guide) {
+  var sel = segUiEl('select', 'form-control form-control-sm seg-row-select');
+  sel.setAttribute('data-act', 'assign');
+  var cur = segUiAssignmentOf(sec);
+  function add(v, label) {
+    var o = segUiEl('option', null, label);
+    o.value = v;
+    sel.appendChild(o);
+  }
+  guide.forEach(function(g) {
+    add('s:' + g.id, g.name);
+  });
+  segUiOptionList(sections, dict).forEach(function(e) {
+    add('e:' + e.key, gettext('Emergent: %(name)s', {name: e.name}));
+  });
+  if(cur.segId === null && cur.emergentKey === null) {
+    add('none', gettext('Unassigned'));
+  }
+  add('new', gettext('New segment…'));
+  sel.value = cur.segId !== null ? 's:' + cur.segId
+    : (cur.emergentKey !== null ? 'e:' + cur.emergentKey : 'none');
+  return sel;
+}
+
+function segUiButton(act, text, title) {
+  var b = segUiEl('button', 'btn btn-outline-secondary btn-sm', text);
+  b.type = 'button';
+  b.setAttribute('data-act', act);
+  b.title = title;
+  return b;
+}
+
+function segUiNamesOf(ids, guide) {
+  return ids.map(function(id) {
+    var g = segUiFindById(guide, id);
+    return g ? g.name : String(id);
+  }).join(', ');
+}
+
+function segUiRenderList(box, sections, editable) {
+  var doc = SEG_UI.doc, guide = segUiGuide();
+  var dict = doc ? doc.emergent : {};
+  var cov = segCoverage(sections, guide);
+  var line = segUiEl('div', 'seg-coverage');
+  if(guide.length) {
+    line.appendChild(segUiEl('span', null, gettext('In the script: %(present)s', {
+      present: cov.present.length ? segUiNamesOf(cov.present, guide) : gettext('none')})));
+    if(cov.missing.length) {
+      line.appendChild(document.createElement('br'));
+      line.appendChild(segUiEl('span', 'seg-missing', gettext('Missing: %(missing)s', {
+        missing: segUiNamesOf(cov.missing, guide)})));
+    }
+  }
+  box.appendChild(line);
+  var turns = sug_session ? segUiTurns() : [];
+  var spans = segUiSpans();
+  var speakers = sug_session ? sug_session.speakers : [];
+  sections.forEach(function(sec, idx) {
+    var row = segUiEl('div', 'seg-section-row'
+      + (sec.emergent ? ' seg-emergent' : '') + (editable ? '' : ' seg-readonly'));
+    row.setAttribute('data-section-id', sec.id);
+    var label = segUiEl('div', 'seg-row-label');
+    if(sec.emergent) {
+      label.appendChild(segUiEl('span', 'seg-badge-emergent', gettext('emergent')));
+    }
+    label.appendChild(document.createTextNode(sec.label || sec.name || ''));
+    label.title = sec.label || sec.name || '';
+    row.appendChild(label);
+    if(editable) {
+      var ctl = segUiEl('div', 'seg-row-controls');
+      ctl.appendChild(segUiSelectEl(sec, sections, dict, guide));
+      if(idx + 1 < sections.length) {
+        ctl.appendChild(segUiButton('merge', '⇣', gettext('Merge with the next section')));
+      }
+      ctl.appendChild(segUiButton('split', '✂', gettext('Split this section (then click in the text)')));
+      ctl.appendChild(segUiButton('refine', '⟳', gettext('Refine this section (shorter suggestions)')));
+      if(sec.emergent && sections.length > 1) {
+        ctl.appendChild(segUiButton('discard', '✕', gettext('Discard as emergent: merge into the neighbouring section')));
+      }
+      row.appendChild(ctl);
+      var st = segUiSectionStats(sec, turns, speakers, spans);
+      var meta = segUiEl('div', 'seg-row-meta');
+      var bar = segUiEl('div', 'seg-cov');
+      var fill = segUiEl('div', 'seg-cov-fill');
+      fill.style.width = (st.codable ? Math.round(100 * st.covered / st.codable) : 0) + '%';
+      bar.appendChild(fill);
+      meta.appendChild(bar);
+      meta.appendChild(segUiEl('span', null, gettext('%(n)s suggestions', {n: st.count})));
+      row.appendChild(meta);
+    }
+    box.appendChild(row);
+  });
+}
+
+function segRenderSections() {
+  if(typeof document === 'undefined') {
+    return;
+  }
+  var box = document.getElementById('seg-sections-box');
+  if(!box) {
+    return;
+  }
+  segUiClear(box);
+  var hint = gettext('Start a suggestion session with Segment-based coding to segment this document.');
+  var doc = SEG_UI.doc;
+  if(sug_session && doc) {
+    var secs = (doc.result && doc.result.sections) || doc.sections;
+    if(!secs || !secs.length) {
+      box.appendChild(segUiEl('p', 'text-muted small', hint));
+      return;
+    }
+    if(!doc.result) {
+      box.appendChild(segUiEl('p', 'text-muted small', gettext(
+        'Saved sections from an earlier analysis. Run Segment-based coding to update them.')));
+    }
+    segUiRenderList(box, secs, segUiEditable());
+    return;
+  }
+  box.appendChild(segUiEl('p', 'text-muted small', hint));
+  if(typeof current_document !== 'undefined' && current_document) {
+    var token = ++SEG_UI.cacheToken;
+    segIdbGet(segUiDocKey(current_document)).then(function(rec) {
+      if(token !== SEG_UI.cacheToken || SEG_UI.doc || !rec || !rec.sections
+         || !rec.sections.length) {
+        return;
+      }
+      segUiRenderList(box, rec.sections, false);
+    });
+  }
+}
+
+function segRemoveSeparators() {
+  if(typeof document === 'undefined') {
+    return;
+  }
+  var old = document.querySelectorAll('i.seg-separator');
+  for(var i = 0; i < old.length; ++i) {
+    if(old[i].parentNode) {
+      old[i].parentNode.removeChild(old[i]);
+    }
+  }
+}
+
+// Mirrors sugInsertBracket for a zero-text separator element
+function segUiInsertSeparator(prefix, byte, attrs) {
+  var el = document.createElement('i');
+  el.className = 'seg-separator';
+  for(var k in attrs) {
+    el.setAttribute('data-' + k, attrs[k]);
+  }
+  var pos = locatePos(byte, prefix);
+  var node = (pos && pos[0]) ? splitAtPos(pos, false) : null;
+  if(node && node.parentNode) {
+    node.parentNode.insertBefore(el, node);
+  } else {
+    var root = prefix === 'R'
+      ? document.getElementById('document-contents-b')
+      : document.getElementById('document-contents');
+    if(!root) {
+      return null;
+    }
+    root.appendChild(el);
+  }
+  return el;
+}
+
+// (Re)insert one separator per section; idempotent. Also called by
+// suggest.js at the end of sugSetSplit.
+function segRenderSeparators() {
+  if(typeof document === 'undefined') {
+    return;
+  }
+  segRemoveSeparators();
+  var doc = SEG_UI.doc;
+  if(!sug_session || !doc) {
+    return;
+  }
+  var secs = (doc.result && doc.result.sections) || doc.sections;
+  if(!secs || !secs.length || (secs.length === 1 && !secs[0].segId
+     && !secs[0].emergent)) {
+    return;
+  }
+  var prefixes = [''];
+  if(sug_session.split && document.getElementById('document-contents-b')) {
+    prefixes.push('R');
+  }
+  var boc = sug_session.byteOfChar;
+  prefixes.forEach(function(prefix) {
+    for(var i = secs.length - 1; i >= 0; --i) {
+      var s = secs[i];
+      var el = segUiInsertSeparator(prefix, boc[Math.min(s.start, boc.length - 1)], {
+        'seg-label': s.name || s.label || '', 'section-id': s.id,
+        'first': i === 0 ? '1' : '0', 'emergent': s.emergent ? '1' : '0'});
+      if(el) {
+        el.setAttribute('title', s.label || '');
+      }
+    }
+  });
+}
+
+function segUiScrollToSection(secId) {
+  var el = document.querySelector('i.seg-separator[data-section-id="' + secId + '"]');
+  if(el && el.scrollIntoView) {
+    el.scrollIntoView({block: 'center', behavior: 'smooth'});
+  }
+}
+
+function segUiSetSplitting(secId) {
+  SEG_UI.splitting = secId;
+  if(typeof document === 'undefined' || !document.body || !document.body.classList) {
+    return;
+  }
+  if(secId) {
+    document.body.classList.add('seg-splitting');
+    segUiStatus(gettext('Click in the text where the new section should start (Esc cancels).'));
+  } else {
+    document.body.classList.remove('seg-splitting');
+  }
+}
+
+// Char index under a viewport point, or null
+function segUiCharAtPoint(x, y) {
+  var byte = sugCaretByte(x, y);
+  if(byte === null || byte === undefined || !sug_session) {
+    return null;
+  }
+  return segByteToChar(sug_session.byteOfChar, byte);
+}
+
+function segUiOnSectionsClick(e) {
+  var target = e.target;
+  var actEl = target.closest ? target.closest('[data-act]') : null;
+  var row = target.closest ? target.closest('.seg-section-row') : null;
+  if(!row) {
+    return;
+  }
+  var id = row.getAttribute('data-section-id');
+  if(!actEl) {
+    segUiScrollToSection(id);
+    return;
+  }
+  if(actEl.tagName === 'SELECT' || !segUiEditable()) {
+    return;
+  }
+  var act = actEl.getAttribute('data-act'), i = segUiSectionIndex(id);
+  if(act === 'merge') {
+    segUiMergeSections(i, i);
+  } else if(act === 'split') {
+    segUiSetSplitting(id);
+  } else if(act === 'refine') {
+    segUiRefineSection(id);
+  } else if(act === 'discard') {
+    segUiDiscardEmergent(id);
+  }
+}
+
+function segUiOnSectionsChange(e) {
+  var sel = e.target;
+  if(!sel || sel.getAttribute('data-act') !== 'assign') {
+    return;
+  }
+  var row = sel.closest('.seg-section-row');
+  if(row) {
+    segUiAssignSection(row.getAttribute('data-section-id'), sel.value);
+  }
+}
+
+// Capturing click while "split" is armed
+function segUiOnDocumentClick(e) {
+  if(!SEG_UI.splitting) {
+    return;
+  }
+  var inside = e.target.closest && e.target.closest('#document-contents');
+  if(!inside) {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  var secId = SEG_UI.splitting;
+  segUiSetSplitting(null);
+  segUiStatus('');
+  var ch = segUiCharAtPoint(e.clientX, e.clientY);
+  if(ch === null || !segUiEditable()) {
+    return;
+  }
+  var pos = segUiNearestTurnStart(segUiTurns(), ch);
+  if(pos !== null) {
+    segUiSplitAt(secId, pos);
+  }
+}
+
+function segUiOnMouseDown(e) {
+  var sep = e.target.closest ? e.target.closest('i.seg-separator') : null;
+  if(!sep || e.button !== 0 || sep.getAttribute('data-first') === '1'
+     || !segUiEditable()) {
+    return;
+  }
+  e.preventDefault();
+  SEG_UI.drag = {id: sep.getAttribute('data-section-id'), x: e.clientX, y: e.clientY};
+  document.body.classList.add('seg-dragging');
+}
+
+function segUiOnMouseUp(e) {
+  var drag = SEG_UI.drag;
+  if(!drag) {
+    return;
+  }
+  SEG_UI.drag = null;
+  document.body.classList.remove('seg-dragging');
+  if(Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 4
+     || !segUiEditable()) {
+    return;
+  }
+  var ch = segUiCharAtPoint(e.clientX, e.clientY);
+  if(ch === null) {
+    return;
+  }
+  var pos = segUiNearestTurnStart(segUiTurns(), ch);
+  if(pos !== null) {
+    segUiMoveBoundary(drag.id, pos);
+  }
+}
+
+
+/*
+ * Emergent segments: confirmation before saving highlights, and recording
+ * of saved highlights as prototypes
+ */
+
+function segBeforeSave(proceed) {
+  var doc = SEG_UI.doc;
+  if(!doc || !doc.result || !segCanEditMeta()) {
+    proceed();
+    return;
+  }
+  var groups = segUiPendingGroups(doc.result.sections, doc.emergent);
+  if(!groups.length) {
+    proceed();
+    return;
+  }
+  segUiStatus(gettext('Checking for similar segments…'));
+  segUiFindMerges(groups, doc.result).then(function() {
+    segUiStatus('');
+    segUiOpenEmergentModal(groups, proceed);
+  });
+}
+
+// Pre-select "merge into Y" when a similar guide segment exists (embeddings
+// are optional here: failures just mean no suggestion)
+function segUiFindMerges(groups, result) {
+  var guide = segUiGuide();
+  if(!guide.length || !result.guideVecs) {
+    return Promise.resolve();
+  }
+  var texts = groups.map(function(g) {
+    return [g.name, g.description, g.question].filter(Boolean).join('. ');
+  });
+  return Promise.resolve().then(function() {
+    return segMakeDeps().embed(texts);
+  }).then(function(vecs) {
+    groups.forEach(function(g, i) {
+      var m = segSimilarSegment(segVecNorm(vecs[i]), guide, result.guideVecs, 0.85);
+      if(m) {
+        g.merge = m;
+        g.choice = 'merge';
+      }
+    });
+  }).then(null, function(err) {
+    console.warn('Similar segment check failed:', segUiErrText(err));
+  });
+}
+
+function segUiOpenEmergentModal(groups, proceed) {
+  var E = SEG_UI.emergent, guide = segUiGuide();
+  E.groups = groups;
+  E.proceed = proceed;
+  E.working = false;
+  document.getElementById('seg-emergent-title').textContent = gettext(
+    '%(n)s new emergent segments will be created in the project guide. Confirm?',
+    {n: groups.length});
+  var rows = document.getElementById('seg-emergent-rows');
+  segUiClear(rows);
+  groups.forEach(function(g, idx) {
+    var row = segUiEl('div', 'seg-emergent-row');
+    row.setAttribute('data-idx', idx);
+    function field(labelText, tag, f, value) {
+      row.appendChild(segUiEl('label', null, labelText));
+      var input = segUiEl(tag, 'form-control form-control-sm');
+      if(tag === 'textarea') {
+        input.rows = 2;
+      }
+      input.value = value;
+      input.setAttribute('data-f', f);
+      row.appendChild(input);
+    }
+    field(gettext('Name'), 'input', 'name', g.name);
+    field(gettext('Description'), 'textarea', 'description', g.description);
+    field(gettext('Question'), 'input', 'question', g.question);
+    if(g.merge) {
+      var target = segUiFindById(guide, g.merge.segId);
+      var box = segUiEl('div', 'seg-merge-choice');
+      [['new', gettext('Create a new segment')],
+       ['merge', gettext('Merge into «%(name)s»', {name: target ? target.name : ''})]
+      ].forEach(function(opt) {
+        var lab = segUiEl('label', 'mr-3');
+        var radio = segUiEl('input');
+        radio.type = 'radio';
+        radio.name = 'seg-em-choice-' + idx;
+        radio.value = opt[0];
+        radio.checked = g.choice === opt[0];
+        radio.setAttribute('data-f', 'choice');
+        lab.appendChild(radio);
+        lab.appendChild(document.createTextNode(' ' + opt[1]));
+        box.appendChild(lab);
+      });
+      row.appendChild(box);
+    }
+    rows.appendChild(row);
+  });
+  segUiEmergentError('');
+  segUiEmergentSetBusy(false);
+  $('#seg-emergent-modal').modal('show');
+}
+
+function segUiEmergentError(msg) {
+  var el = document.getElementById('seg-emergent-error');
+  el.textContent = msg || '';
+  el.style.display = msg ? '' : 'none';
+}
+
+function segUiEmergentSetBusy(busy) {
+  SEG_UI.emergent.working = busy;
+  ['seg-emergent-yes', 'seg-emergent-discard', 'seg-emergent-back'].forEach(function(id) {
+    document.getElementById(id).disabled = busy;
+  });
+}
+
+// Read the rows back into the groups; returns an error message or null
+function segUiReadEmergentRows() {
+  var E = SEG_UI.emergent;
+  var rows = document.getElementById('seg-emergent-rows').children;
+  var seen = {};
+  for(var i = 0; i < E.groups.length; ++i) {
+    var g = E.groups[i], row = rows[i];
+    g.name = row.querySelector('[data-f="name"]').value.trim();
+    g.description = row.querySelector('[data-f="description"]').value.trim();
+    g.question = row.querySelector('[data-f="question"]').value.trim();
+    var checked = row.querySelector('[data-f="choice"]:checked');
+    g.choice = checked ? checked.value : 'new';
+    if(g.choice === 'new') {
+      if(!g.name) {
+        return gettext('Every new segment needs a name.');
+      }
+      if(seen[g.name.toLowerCase()]) {
+        return gettext('Two new segments have the same name: %(name)s', {name: g.name});
+      }
+      seen[g.name.toLowerCase()] = true;
+    }
+  }
+  return null;
+}
+
+function segUiEmergentYes() {
+  var E = SEG_UI.emergent, doc = SEG_UI.doc;
+  if(E.working || !doc || !doc.result) {
+    return;
+  }
+  var problem = segUiReadEmergentRows();
+  if(problem) {
+    segUiEmergentError(problem);
+    return;
+  }
+  segUiEmergentError('');
+  segUiEmergentSetBusy(true);
+  segApiGuide().then(function(current) {
+    var list = current.map(function(s) {
+      return {id: s.id, name: s.name, description: s.description,
+              guide_questions: s.guide_questions, source: s.source};
+    });
+    E.groups.forEach(function(g) {
+      if(g.choice !== 'new' || segUiFindByName(list, g.name)) {
+        return;   // same name as an existing segment: merged into it
+      }
+      list.push({name: g.name, description: g.description,
+                 guide_questions: g.question ? [g.question] : [],
+                 source: g.user ? 'manual' : 'emergent'});
+    });
+    return segApiSaveGuide(list);
+  }).then(function(saved) {
+    window.taguette_thematic_segments = saved;
+    var mapping = {};
+    E.groups.forEach(function(g) {
+      var target = null;
+      if(g.choice === 'merge' && g.merge) {
+        target = segUiFindById(saved, g.merge.segId);
+      }
+      target = target || segUiFindByName(saved, g.name);
+      if(target) {
+        mapping[g.key] = {segId: target.id, name: target.name};
+      }
+    });
+    segUiRemap(doc.result.sections, doc.manual, doc.emergent, mapping);
+    doc.sections = doc.result.sections;
+    segUiRefreshStats(doc.result);
+    // The guide changed: the analysis is rebuilt on the next run
+    doc.resultKey = null;
+    segUiPersist();
+    segRenderSections();
+    segRenderSeparators();
+    segUiEmergentSetBusy(false);
+    var proceed = E.proceed;
+    E.proceed = null;
+    $('#seg-emergent-modal').modal('hide');
+    if(proceed) {
+      proceed();
+    }
+  }, function(err) {
+    segUiEmergentSetBusy(false);
+    segUiEmergentError(segUiErrText(err));
+  });
+}
+
+function segUiEmergentBack() {
+  var E = SEG_UI.emergent;
+  if(E.working) {
+    return;
+  }
+  E.proceed = null;
+  $('#seg-emergent-modal').modal('hide');
+}
+
+function segUiEmergentDiscard() {
+  var E = SEG_UI.emergent;
+  if(E.working) {
+    return;
+  }
+  var proceed = E.proceed;
+  E.proceed = null;
+  $('#seg-emergent-modal').modal('hide');
+  if(proceed) {
+    proceed();
+  }
+}
+
+// Record the vectors and tag co-occurrences of saved suggestions, to improve
+// later documents (prototype extras + tag/segment co-occurrence)
+function segRecordSaved(stagedList) {
+  var doc = SEG_UI.doc, embKey = segUiEmbKey();
+  if(!doc || !doc.result || !embKey || !stagedList || !stagedList.length) {
+    return Promise.resolve();
+  }
+  var units = doc.result.units || [];
+  return Promise.all([segIdbGet('seg|protos|' + embKey), segIdbGet('seg|cooc')])
+    .then(function(r) {
+      var protos = r[0] || {}, cooc = r[1] || {}, n = 0;
+      stagedList.forEach(function(st) {
+        var sec = segSectionAt(st.cStart);
+        if(!sec || sec.segId === null || sec.segId === undefined) {
+          return;
+        }
+        var best = null, bo = 0;
+        units.forEach(function(u) {
+          var o = Math.min(u.end, st.cEnd) - Math.max(u.start, st.cStart);
+          if(o > bo && u.vec) {
+            bo = o;
+            best = u;
+          }
+        });
+        if(!best) {
+          return;
+        }
+        segUiAddPrototype(protos, cooc, sec.segId, doc.docId, best.vec,
+                          (st.tags || []).map(function(t) {
+                            return parseInt(t, 10);
+                          }));
+        ++n;
+      });
+      if(n) {
+        SEG_UI.extrasRaw = {embKey: embKey, protos: protos, cooc: cooc};
+        segIdbPut('seg|protos|' + embKey, protos);
+        segIdbPut('seg|cooc', cooc);
+      }
+    });
+}
+
+
+/*
+ * Script & segments modal
+ */
+
+var SEG_UI_KINDS = {
+  script: 'Script', research_questions: 'Research questions',
+  hypotheses: 'Hypotheses', other: 'Other'
+};
+
+function segUiScriptError(msg) {
+  var el = document.getElementById('seg-script-error');
+  el.textContent = msg || '';
+  el.style.display = msg ? '' : 'none';
+}
+
+function segUiScriptStatus(msg) {
+  document.getElementById('seg-script-status').textContent = msg || '';
+}
+
+function segUiGuideToRows(guide) {
+  return guide.map(function(g) {
+    return {id: g.id, name: g.name, description: g.description || '',
+            questions: (g.guide_questions || []).join('\n'),
+            source: g.source || 'guide'};
+  });
+}
+
+function segUiRowsToGuide(rows) {
+  return rows.map(function(r) {
+    var out = {name: r.name.trim(), description: r.description,
+               guide_questions: r.questions.split('\n').map(function(q) {
+                 return q.trim();
+               }).filter(Boolean), source: r.source || 'guide'};
+    if(r.id !== null && r.id !== undefined) {
+      out.id = r.id;
+    }
+    return out;
+  });
+}
+
+// Client-side check mirroring the server's rules; returns a message or null
+function segUiValidateRows(rows) {
+  var seen = {};
+  for(var i = 0; i < rows.length; ++i) {
+    var name = rows[i].name.trim();
+    if(!name) {
+      return gettext('Segment %(n)s: the name cannot be empty.', {n: i + 1});
+    }
+    if(seen[name.toLowerCase()]) {
+      return gettext('Duplicate segment name: %(name)s', {name: name});
+    }
+    seen[name.toLowerCase()] = true;
+  }
+  return null;
+}
+
+function segUiDocCount(segId) {
+  var n = 0, idx = SEG_UI.script.index || {};
+  for(var d in idx) {
+    if(idx[d].indexOf(segId) !== -1) {
+      ++n;
+    }
+  }
+  return n;
+}
+
+function segUiRenderSupport() {
+  var list = document.getElementById('seg-support-list');
+  segUiClear(list);
+  var docs = window.taguette_support_documents || [];
+  var editable = segCanEditMeta();
+  if(!docs.length) {
+    list.appendChild(segUiEl('li', 'list-group-item text-muted small',
+                             gettext('No support documents yet.')));
+  }
+  docs.forEach(function(d) {
+    var li = segUiEl('li', 'list-group-item d-flex align-items-center py-1');
+    li.appendChild(segUiEl('span', 'mr-auto', d.name));
+    li.appendChild(segUiEl('span', 'badge badge-light mr-2',
+                           gettext(SEG_UI_KINDS[d.kind] || d.kind)));
+    li.appendChild(segUiEl('span', 'text-muted small mr-2',
+                           Math.max(1, Math.round((d.size || 0) / 1024)) + ' KB'));
+    if(editable) {
+      var del = segUiEl('button', 'btn btn-outline-danger btn-sm py-0', '✕');
+      del.type = 'button';
+      del.title = gettext('Delete this document');
+      del.setAttribute('data-act', 'delete-doc');
+      del.setAttribute('data-id', d.id);
+      li.appendChild(del);
+    }
+    list.appendChild(li);
+  });
+}
+
+function segUiRenderGuideRows() {
+  var box = document.getElementById('seg-guide-rows');
+  segUiClear(box);
+  var rows = SEG_UI.script.rows, editable = segCanEditMeta();
+  if(!rows.length) {
+    box.appendChild(segUiEl('p', 'text-muted small',
+      gettext('No segments yet. Add them by hand or generate them from a support document.')));
+  }
+  rows.forEach(function(r, idx) {
+    var el = segUiEl('div', 'seg-guide-row');
+    el.setAttribute('data-idx', idx);
+    var head = segUiEl('div', 'seg-guide-head');
+    head.appendChild(segUiEl('span', 'badge badge-secondary mr-2', r.source));
+    if(r.source === 'emergent' && r.id !== null && r.id !== undefined) {
+      head.appendChild(segUiEl('span', 'text-muted small', gettext(
+        'in %(n)s documents', {n: segUiDocCount(r.id)})));
+    }
+    head.appendChild(segUiEl('span', 'seg-guide-spacer'));
+    if(editable) {
+      [['up', '↑', gettext('Move up')], ['down', '↓', gettext('Move down')],
+       ['merge', gettext('Merge with next'), gettext('Merge with the next segment')],
+       ['delete', '✕', gettext('Delete this segment')]
+      ].forEach(function(b) {
+        var btn = segUiEl('button', 'btn btn-outline-secondary btn-sm', b[1]);
+        btn.type = 'button';
+        btn.setAttribute('data-act', b[0]);
+        btn.title = b[2];
+        if((b[0] === 'up' && idx === 0)
+           || ((b[0] === 'down' || b[0] === 'merge') && idx === rows.length - 1)) {
+          btn.disabled = true;
+        }
+        head.appendChild(btn);
+      });
+    }
+    el.appendChild(head);
+    function field(tag, f, value, placeholder, nrows) {
+      var input = segUiEl(tag, 'form-control form-control-sm mb-1');
+      if(nrows) {
+        input.rows = nrows;
+      }
+      input.value = value;
+      input.placeholder = placeholder;
+      input.setAttribute('data-f', f);
+      input.disabled = !editable;
+      el.appendChild(input);
+    }
+    field('input', 'name', r.name, gettext('Segment name'));
+    field('textarea', 'description', r.description, gettext('Description'), 2);
+    field('textarea', 'questions', r.questions,
+          gettext('Questions of the script, one per line'), 3);
+    box.appendChild(el);
+  });
+}
+
+function segOpenScriptModal() {
+  var S = SEG_UI.script;
+  var editable = segCanEditMeta();
+  S.rows = segUiGuideToRows(segUiGuide());
+  S.dirty = false;
+  S.allowClose = false;
+  S.open = true;
+  segUiScriptError('');
+  segUiScriptStatus('');
+  document.getElementById('seg-script-notice').style.display = 'none';
+  document.getElementById('seg-guide-gen-status').textContent = '';
+  document.getElementById('seg-script-modal').classList.toggle('seg-readonly', !editable);
+  document.getElementById('seg-script-readonly-note').style.display = editable ? 'none' : '';
+  segUiRenderSupport();
+  segUiRenderGuideRows();
+  segIdbGet('seg|index').then(function(index) {
+    S.index = index || {};
+    if(S.open) {
+      segUiRenderGuideRows();
+    }
+  });
+  $('#seg-script-modal').modal({backdrop: 'static'});
+  segApiSupportDocs().then(function(docs) {
+    window.taguette_support_documents = docs;
+    if(S.open) {
+      segUiRenderSupport();
+    }
+  }, function() { /* the page's copy is shown */ });
+}
+
+function segUiScriptCloseGuard(e) {
+  var S = SEG_UI.script;
+  if(S.dirty && !S.allowClose && !window.confirm(gettext(
+       'You have unsaved changes in the segment guide. Close without saving?'))) {
+    e.preventDefault();
+    return;
+  }
+  S.allowClose = false;
+}
+
+function segUiScriptClosed() {
+  SEG_UI.script.open = false;
+  SEG_UI.script.dirty = false;
+}
+
+function segUiRefreshSupportDocs() {
+  return segApiSupportDocs().then(function(docs) {
+    window.taguette_support_documents = docs;
+    segUiRenderSupport();
+  });
+}
+
+function segUiSupportAction(promise, okMsg) {
+  var S = SEG_UI.script;
+  if(S.busy) {
+    return;
+  }
+  S.busy = true;
+  segUiScriptError('');
+  segUiScriptStatus(gettext('Working…'));
+  promise().then(function() {
+    return segUiRefreshSupportDocs();
+  }).then(function() {
+    S.busy = false;
+    segUiScriptStatus(okMsg);
+  }, function(err) {
+    S.busy = false;
+    segUiScriptStatus('');
+    segUiScriptError(segUiErrText(err));
+  });
+}
+
+function segUiUploadSupport() {
+  var input = document.getElementById('seg-support-file');
+  var file = input.files && input.files[0];
+  if(!file) {
+    segUiScriptError(gettext('Choose a file to upload.'));
+    return;
+  }
+  var kind = document.getElementById('seg-upload-kind').value;
+  segUiSupportAction(function() {
+    return segApiUploadSupportFile(file, file.name, kind);
+  }, gettext('Document uploaded.'));
+  input.value = '';
+}
+
+function segUiPasteSupport() {
+  var name = document.getElementById('seg-paste-name').value.trim();
+  var text = document.getElementById('seg-paste-text').value;
+  var kind = document.getElementById('seg-paste-kind').value;
+  if(!name || !text.trim()) {
+    segUiScriptError(gettext('Give the pasted document a name and some text.'));
+    return;
+  }
+  segUiSupportAction(function() {
+    return segApiAddSupportText(name, kind, text);
+  }, gettext('Document added.'));
+  document.getElementById('seg-paste-name').value = '';
+  document.getElementById('seg-paste-text').value = '';
+}
+
+function segUiScriptSave() {
+  var S = SEG_UI.script;
+  if(S.busy || !segCanEditMeta()) {
+    return;
+  }
+  var problem = segUiValidateRows(S.rows);
+  if(problem) {
+    segUiScriptError(problem);
+    return;
+  }
+  S.busy = true;
+  segUiScriptError('');
+  segUiScriptStatus(gettext('Saving…'));
+  segApiSaveGuide(segUiRowsToGuide(S.rows)).then(function(saved) {
+    window.taguette_thematic_segments = saved;
+    S.rows = segUiGuideToRows(saved);
+    S.dirty = false;
+    S.busy = false;
+    document.getElementById('seg-script-notice').style.display = 'none';
+    segUiScriptStatus(gettext('Saved.'));
+    segUiRenderGuideRows();
+    segRenderSections();
+  }, function(err) {
+    S.busy = false;
+    segUiScriptStatus('');
+    segUiScriptError(segUiErrText(err));
+  });
+}
+
+function segUiScriptGenerate() {
+  var S = SEG_UI.script;
+  if(S.generating || !segCanEditMeta()) {
+    return;
+  }
+  var status = document.getElementById('seg-guide-gen-status');
+  var button = document.getElementById('seg-guide-generate');
+  S.generating = true;
+  segUiScriptError('');
+  status.textContent = gettext('Generating…');
+  button.disabled = true;
+  function done() {
+    S.generating = false;
+    status.textContent = '';
+    button.disabled = false;
+  }
+  segApiSupportDocs().then(function(docs) {
+    if(!docs.length) {
+      throw new Error(gettext('Add a support document (for example the interview script) first.'));
+    }
+    return segGenerateGuide(docs, segUiTagList());
+  }).then(function(res) {
+    done();
+    if(S.rows.length && !window.confirm(gettext(
+         'Replace the segments in the editor with the generated ones?'))) {
+      return;
+    }
+    var old = S.rows;
+    S.rows = res.segments.map(function(g) {
+      var match = segUiFindByName(old, g.name);
+      return {id: match ? match.id : null, name: g.name,
+              description: g.description || '',
+              questions: (g.guide_questions || []).join('\n'), source: 'guide'};
+    });
+    S.dirty = true;
+    segUiRenderGuideRows();
+  }, function(err) {
+    done();
+    segUiScriptError(segUiErrText(err));
+  });
+}
+
+function segUiOnGuideRowsClick(e) {
+  var btn = e.target.closest ? e.target.closest('[data-act]') : null;
+  var rowEl = e.target.closest ? e.target.closest('.seg-guide-row') : null;
+  if(!btn || !rowEl || !segCanEditMeta()) {
+    return;
+  }
+  var rows = SEG_UI.script.rows, i = parseInt(rowEl.getAttribute('data-idx'), 10);
+  var act = btn.getAttribute('data-act'), tmp;
+  if(act === 'up' && i > 0) {
+    tmp = rows[i - 1]; rows[i - 1] = rows[i]; rows[i] = tmp;
+  } else if(act === 'down' && i + 1 < rows.length) {
+    tmp = rows[i + 1]; rows[i + 1] = rows[i]; rows[i] = tmp;
+  } else if(act === 'delete') {
+    rows.splice(i, 1);
+  } else if(act === 'merge' && i + 1 < rows.length) {
+    var a = rows[i], b = rows[i + 1];
+    a.description = [a.description, b.description].filter(Boolean).join(' ');
+    a.questions = [a.questions, b.questions].filter(Boolean).join('\n');
+    rows.splice(i + 1, 1);
+  } else {
+    return;
+  }
+  SEG_UI.script.dirty = true;
+  segUiRenderGuideRows();
+}
+
+function segUiOnGuideRowsInput(e) {
+  var f = e.target.getAttribute && e.target.getAttribute('data-f');
+  var rowEl = e.target.closest ? e.target.closest('.seg-guide-row') : null;
+  if(!f || !rowEl) {
+    return;
+  }
+  SEG_UI.script.rows[parseInt(rowEl.getAttribute('data-idx'), 10)][f] = e.target.value;
+  SEG_UI.script.dirty = true;
+}
+
+function segUiOnSupportClick(e) {
+  var btn = e.target.closest ? e.target.closest('[data-act="delete-doc"]') : null;
+  if(!btn || !segCanEditMeta()) {
+    return;
+  }
+  if(!window.confirm(gettext('Delete this support document?'))) {
+    return;
+  }
+  var id = btn.getAttribute('data-id');
+  segUiSupportAction(function() {
+    return segApiDeleteSupportDoc(id);
+  }, gettext('Document deleted.'));
+}
+
+function segUiOnGuideEvent() {
+  var S = SEG_UI.script;
+  if(S.open) {
+    if(S.dirty) {
+      var n = document.getElementById('seg-script-notice');
+      n.textContent = gettext('The segment guide was changed by someone else. Your edits are kept; saving will overwrite their changes.');
+      n.style.display = '';
+    } else {
+      S.rows = segUiGuideToRows(segUiGuide());
+      segUiRenderGuideRows();
+    }
+  }
+  segRenderSections();
+}
+
+function segUiOnSupportEvent() {
+  if(SEG_UI.script.open) {
+    segUiRenderSupport();
+  }
+}
+
+
+/*
+ * Evaluation (settings, Segmentation tab)
+ */
+
+// Rows of the metrics table; ok is true/false for the ones with a target
+function segUiMetricRows(m) {
+  function pct(v) {
+    return Math.round(100 * v) + '%';
+  }
+  function num(v) {
+    return String(Math.round(100 * v) / 100);
+  }
+  return [
+    {label: gettext('Highlights found by suggestions (unit recall)'), value: num(m.unitRecall),
+     target: '≥ 0.7', ok: m.unitRecall >= 0.7},
+    {label: gettext('Median suggestion size (words)'), value: num(m.sizeMedian),
+     target: '50–90', ok: m.sizeMedian >= 50 && m.sizeMedian <= 90},
+    {label: gettext('Right tag in the top 1 / 3 / 5'),
+     value: num(m.hitAt[1]) + ' / ' + num(m.hitAt[3]) + ' / ' + num(m.hitAt[5]),
+     target: gettext('top 3 ≥ 0.5'), ok: m.hitAt[3] >= 0.5},
+    {label: gettext('Text coverage of highlights (recall)'), value: pct(m.charRecall)},
+    {label: gettext('Share of suggested text that is highlighted'), value: pct(m.charPrecision)},
+    {label: gettext('Ticked tags that are right'), value: pct(m.thetaPrecision)},
+    {label: gettext('Tags ticked'), value: String(m.nTicked)},
+    {label: gettext('Sections'), value: String(m.sections)},
+    {label: gettext('Words outside the script'), value: num(m.otherWordsPct) + '%'},
+    {label: gettext('Script segments found / missing'),
+     value: m.coveragePresent + ' / ' + m.coverageMissing},
+    {label: gettext('Suggestions'), value: String(m.nUnits)},
+    {label: gettext('Highlights'), value: String(m.nHighlights)}
+  ];
+}
+
+function segUiEvalReady() {
+  if(!sug_session || !SEG_UI.doc) {
+    return false;
+  }
+  return typeof highlights !== 'undefined' && !!highlights
+    && Object.keys(highlights).length > 0;
+}
+
+function segUiRealHighlights() {
+  var boc = sug_session.byteOfChar, out = [];
+  for(var id in highlights) {
+    var h = highlights[id];
+    out.push({id: h.id, cStart: segByteToChar(boc, h.start_offset),
+              cEnd: segByteToChar(boc, h.end_offset),
+              tagIds: (h.tags || []).map(function(t) {
+                return parseInt(t, 10);
+              })});
+  }
+  return out;
+}
+
+// One evaluation run on the open document with its own highlights hidden
+// from the pipeline; the session's suggestions are not touched
+function segUiEvalRun(overrides, progress) {
+  var deps = segMakeDeps({progress: progress});
+  var hls = segUiRealHighlights();
+  var uses = {};
+  for(var t in tags) {
+    uses[t] = tags[t].count || 0;
+  }
+  var params = segParams(overrides), result;
+  segAiReset();
+  return segUiMakeInput({overrides: overrides, excludeDocId: current_document,
+                         manual: null}).then(function(input) {
+    return segRunAll(input, deps);
+  }).then(function(res) {
+    result = res;
+    function score(theta) {
+      return segEvaluate(result, hls, {tagUseCounts: uses, theta: theta,
+                                       plainText: sug_session.plainText});
+    }
+    var m = score(params.theta);
+    m.rescore = function(theta) {
+      return score(theta);
+    };
+    return m;
+  });
+}
+
+function segUiEvalRenderMetrics(host, m) {
+  var table = segUiEl('table', 'table table-sm seg-eval-table');
+  segUiMetricRows(m).forEach(function(r) {
+    var tr = segUiEl('tr');
+    tr.appendChild(segUiEl('td', null, r.label));
+    tr.appendChild(segUiEl('td', null, r.value));
+    var td = segUiEl('td', 'text-muted', r.target || '');
+    if(r.ok !== undefined) {
+      td.appendChild(document.createTextNode(' '));
+      td.appendChild(segUiEl('span', r.ok ? 'seg-eval-ok' : 'seg-eval-bad',
+                             r.ok ? '✓' : '✗'));
+    }
+    tr.appendChild(td);
+    table.appendChild(tr);
+  });
+  host.appendChild(table);
+}
+
+function segUiEvalRenderGrid(host, grid, onApply) {
+  var rows = grid.rows.slice().sort(function(a, b) {
+    return (b.metrics.unitRecall - a.metrics.unitRecall)
+      || (b.metrics.charPrecision - a.metrics.charPrecision);
+  }).slice(0, 5);
+  var table = segUiEl('table', 'table table-sm seg-eval-table');
+  var head = segUiEl('tr');
+  ['tau', 'kappa', 'lambda', 'theta', gettext('Unit recall'),
+   gettext('Precision'), gettext('Tick precision'), ''].forEach(function(h) {
+    head.appendChild(segUiEl('th', null, h));
+  });
+  table.appendChild(head);
+  function addRow(label, params, m, apply) {
+    var tr = segUiEl('tr');
+    [params.tau, params.kappa, params.lambda, params.theta].forEach(function(v) {
+      tr.appendChild(segUiEl('td', null, String(v)));
+    });
+    [m.unitRecall, m.charPrecision, m.thetaPrecision].forEach(function(v) {
+      tr.appendChild(segUiEl('td', null, String(Math.round(100 * v) / 100)));
+    });
+    var td = segUiEl('td');
+    if(apply) {
+      var b = segUiEl('button', 'btn btn-outline-primary btn-sm py-0', gettext('Apply'));
+      b.type = 'button';
+      b.addEventListener('click', function() {
+        onApply(params);
+      });
+      td.appendChild(b);
+    } else {
+      td.appendChild(segUiEl('em', 'text-muted', label));
+    }
+    tr.appendChild(td);
+    table.appendChild(tr);
+  }
+  if(SEG_UI.evalState.metrics) {
+    addRow(gettext('current'), segParams(), SEG_UI.evalState.metrics, false);
+  }
+  rows.forEach(function(r) {
+    addRow('', r.params, r.metrics, true);
+  });
+  host.appendChild(table);
+  if(grid.fallback) {
+    host.appendChild(segUiEl('p', 'text-muted small', gettext(
+      'No combination reached the minimum precision; the best balance is shown first.')));
+  }
+}
+
+function segEvalPanelBuild(box) {
+  if(typeof document === 'undefined') {
+    return;
+  }
+  segUiClear(box);
+  var ready = segUiEvalReady();
+  box.appendChild(segUiEl('p', 'text-muted small', gettext(
+    'Compare what the segmentation would suggest with the highlights already made in this document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
+  if(!ready) {
+    box.appendChild(segUiEl('p', 'text-muted small', gettext(
+      'Open a document that has highlights and start a suggestion session to evaluate.')));
+  }
+  var btn = segUiEl('button', 'btn btn-outline-primary btn-sm mr-2',
+                    gettext('Evaluate against existing highlights'));
+  btn.type = 'button';
+  var grid = segUiEl('button', 'btn btn-outline-secondary btn-sm',
+                     gettext('Test parameter combinations'));
+  grid.type = 'button';
+  var line = segUiEl('div', 'text-muted small my-2');
+  var out = segUiEl('div');
+  var gridOut = segUiEl('div');
+  box.appendChild(btn);
+  box.appendChild(grid);
+  box.appendChild(line);
+  box.appendChild(out);
+  box.appendChild(gridOut);
+  function setRunning(on) {
+    SEG_UI.evalState.running = on;
+    btn.disabled = on || !ready;
+    grid.disabled = on || !ready;
+  }
+  setRunning(SEG_UI.evalState.running);
+  function renderState() {
+    segUiClear(out);
+    segUiClear(gridOut);
+    if(SEG_UI.evalState.metrics) {
+      segUiEvalRenderMetrics(out, SEG_UI.evalState.metrics);
+    }
+    if(SEG_UI.evalState.grid) {
+      gridOut.appendChild(segUiEl('h6', 'mt-3', gettext('Best parameter combinations')));
+      segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, function(params) {
+        segSaveParams(segParams(params));
+        line.textContent = gettext('Applied. Reopen the settings to see the new values.');
+      });
+    }
+  }
+  function fail(err) {
+    setRunning(false);
+    line.textContent = segUiErrText(err);
+  }
+  btn.addEventListener('click', function() {
+    setRunning(true);
+    line.textContent = gettext('Evaluating…');
+    segUiEvalRun(undefined, function(stage, done, total) {
+      line.textContent = segUiProgressText(stage, done, total);
+    }).then(function(m) {
+      console.log('Segmentation evaluation', m);
+      SEG_UI.evalState.metrics = m;
+      setRunning(false);
+      line.textContent = '';
+      renderState();
+    }, fail);
+  });
+  grid.addEventListener('click', function() {
+    setRunning(true);
+    line.textContent = gettext('Testing parameter combinations…');
+    segUiEvalRun(undefined, null).then(function(m) {
+      SEG_UI.evalState.metrics = m;
+      return segGridSearch(function(over) {
+        return segUiEvalRun(over, null);
+      }, null, 0.35, function(done, total) {
+        line.textContent = gettext('Testing parameter combinations: %(done)s/%(total)s',
+                                   {done: done, total: total});
+      });
+    }).then(function(res) {
+      console.log('Segmentation grid search', res);
+      SEG_UI.evalState.grid = res;
+      setRunning(false);
+      line.textContent = '';
+      renderState();
+    }, fail);
+  });
+  renderState();
+}
+
+
+/*
+ * Wiring (listeners only; nothing runs against the DOM at load time)
+ */
+
+function segUiOn(id, ev, fn) {
+  var el = document.getElementById(id);
+  if(el) {
+    el.addEventListener(ev, fn);
+  }
+}
+
+function segUiWire() {
+  if(SEG_UI.wired || typeof document === 'undefined') {
+    return;
+  }
+  SEG_UI.wired = true;
+  segUiOn('seg-script-btn', 'click', segOpenScriptModal);
+  segUiOn('seg-script-save', 'click', segUiScriptSave);
+  segUiOn('seg-script-close', 'click', function() {
+    $('#seg-script-modal').modal('hide');
+  });
+  segUiOn('seg-support-upload', 'click', segUiUploadSupport);
+  segUiOn('seg-paste-add', 'click', segUiPasteSupport);
+  segUiOn('seg-support-list', 'click', segUiOnSupportClick);
+  segUiOn('seg-guide-add', 'click', function() {
+    SEG_UI.script.rows.push({id: null, name: '', description: '', questions: '',
+                             source: 'guide'});
+    SEG_UI.script.dirty = true;
+    segUiRenderGuideRows();
+  });
+  segUiOn('seg-guide-generate', 'click', segUiScriptGenerate);
+  segUiOn('seg-guide-rows', 'click', segUiOnGuideRowsClick);
+  segUiOn('seg-guide-rows', 'input', segUiOnGuideRowsInput);
+  segUiOn('seg-sections-box', 'click', segUiOnSectionsClick);
+  segUiOn('seg-sections-box', 'change', segUiOnSectionsChange);
+  segUiOn('seg-emergent-yes', 'click', segUiEmergentYes);
+  segUiOn('seg-emergent-back', 'click', segUiEmergentBack);
+  segUiOn('seg-emergent-discard', 'click', segUiEmergentDiscard);
+  if(typeof $ !== 'undefined') {
+    $('#seg-script-modal').on('hide.bs.modal', segUiScriptCloseGuard)
+      .on('hidden.bs.modal', segUiScriptClosed);
+    $('#segments-tab').on('shown.bs.tab', segRenderSections);
+  }
+  document.addEventListener('click', segUiOnDocumentClick, true);
+  document.addEventListener('mousedown', segUiOnMouseDown);
+  document.addEventListener('mouseup', segUiOnMouseUp);
+  document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape' && SEG_UI.splitting) {
+      segUiSetSplitting(null);
+      segUiStatus('');
+    }
+  });
+  segRenderSections();
+}
+
+if(typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('tagu:thematic_segments', segUiOnGuideEvent);
+  document.addEventListener('tagu:support_documents', segUiOnSupportEvent);
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', segUiWire);
+  } else if(document.readyState !== undefined) {
+    segUiWire();
+  }
+}
+
+
+/*
+ * Self-test (Node: scripts/segments_ui_selftest.js; browser: console)
+ */
+
+function segUiSelfTest() {
+  var failures = 0;
+  function assert(cond, msg) {
+    if(!cond) {
+      ++failures;
+      console.error('SEG UI SELFTEST FAIL:', msg);
+    }
+  }
+  function eq(a, b, msg) {
+    assert(JSON.stringify(a) === JSON.stringify(b),
+           msg + ' (got ' + JSON.stringify(a) + ', want ' + JSON.stringify(b) + ')');
+  }
+  var text = 'A: first question here\nB: first answer words\nA: second question\nB: second answer long';
+  var turns = [], pos = 0;
+  text.split('\n').forEach(function(line) {
+    turns.push({start: pos, end: pos + line.length, text: line,
+                contentStart: pos + 3, speaker: null});
+    pos += line.length + 1;
+  });
+  function sec(id, i0, i1, segId, emergent) {
+    return {id: id, start: turns[i0].start,
+            end: i1 + 1 < turns.length ? turns[i1 + 1].start : turns[i1].end, segId: segId,
+            emergent: emergent || null, openingQuestion: null, label: id, name: id,
+            words: 1, codableWords: 1, windowRange: [0, 0], manual: false};
+  }
+
+  // permissions (mirrors Privileges.can_edit_project_meta)
+  var g = (typeof window !== 'undefined') ? window : globalThis;
+  var savedMembers = g.members, savedLogin = g.user_login;
+  g.user_login = 'u1';
+  g.members = {u1: {privileges: 'ADMIN'}};
+  assert(segCanEditMeta() === true, 'admin can edit meta');
+  ['MANAGE_DOCS', 'TAG', 'READ'].forEach(function(p) {
+    g.members = {u1: {privileges: p}};
+    assert(segCanEditMeta() === false, p + ' cannot edit meta');
+  });
+  g.members = {};
+  assert(segCanEditMeta() === false, 'unknown member cannot edit meta');
+  g.members = savedMembers;
+  g.user_login = savedLogin;
+
+  // hashes
+  var guide = [{id: 1, name: 'A', description: 'd', guide_questions: ['q']},
+               {id: 2, name: 'B', description: '', guide_questions: []}];
+  var h1 = segUiGuideHash(guide);
+  assert(h1 === segUiGuideHash(JSON.parse(JSON.stringify(guide))), 'guide hash stable');
+  var guide2 = JSON.parse(JSON.stringify(guide));
+  guide2[0].guide_questions.push('q2');
+  assert(h1 !== segUiGuideHash(guide2), 'guide hash changes with questions');
+  guide2 = JSON.parse(JSON.stringify(guide));
+  guide2[1].name = 'C';
+  assert(h1 !== segUiGuideHash(guide2), 'guide hash changes with names');
+  assert(segUiParamsHash({a: 1, b: 2}) === segUiParamsHash({b: 2, a: 1}), 'params hash order independent');
+  assert(segUiManualHash(null) === segUiManualHash(segUiEmptyManual()), 'empty manual hash');
+
+  // slider overrides do not count as section parameters
+  eq(segUiUnitOverrides({tau: 0.3, theta: 0.5, force: true}), {tau: 0.3, theta: 0.5}, 'unit overrides');
+  assert(segUiUnitOverrides({force: true}) === null && segUiUnitOverrides(null) === null, 'no overrides');
+
+  // candidates
+  var result = {units: [
+    {id: 'u0', sectionId: 'sec0', start: 0, end: 10, tags: [
+      {id: 5, name: 'x', conf: 0.9, source: 's1'}, {id: 6, name: 'y', conf: 0.3, source: 'sim'}]},
+    {id: 'u1', sectionId: 'sec1', start: 12, end: 20, tags: []}]};
+  var cands = segUnitsAsCandidates(result, 0.6);
+  assert(cands.length === 2, 'two candidates');
+  assert(Math.abs(cands[0].raw - 0.95) < 1e-9, 'raw = 0.5 + 0.5 * max conf');
+  eq(cands[0].ticked, [5], 'ticked by theta');
+  assert(cands[1].raw === 0.5 && cands[1].ticked.length === 0, 'no tags -> raw 0.5');
+  assert(cands[0].start === 0 && cands[0].section_id === 'sec0', 'char offsets + section');
+  eq(segUnitsAsCandidates(result, 0.2)[0].ticked, [5, 6], 'lower theta ticks more');
+
+  // manual edit recording
+  var manual = segUiEmptyManual();
+  var key1 = segTurnKey(turns[2]);
+  assert(segUiRecordAssign(manual, turns, turns[2].start + 3, {segId: 2, emergentKey: null}, true),
+         'assign recorded');
+  eq(manual.assign[key1], {segId: 2, emergentKey: null}, 'assign keyed by turn text hash');
+  eq(manual.starts, [key1], 'start pinned');
+  segUiRecordAssign(manual, turns, turns[2].start, {segId: 2, emergentKey: null}, true);
+  assert(manual.starts.length === 1, 'start not duplicated');
+  var dup = turns.concat([turns[0]]);
+  assert(segUiRecordAssign(segUiEmptyManual(), dup, turns[0].start, {segId: 1, emergentKey: null}, true) === false,
+         'non-unique turn text refused');
+  var sp0 = {};
+  sp0[turns[2].start] = true;
+  eq(segUiStartPositions(turns, manual), sp0, 'start positions');
+  segUiForgetKey(manual, key1);
+  assert(!manual.assign[key1] && !manual.starts.length, 'forget key');
+
+  // nearest turn start
+  assert(segUiNearestTurnStart(turns, turns[1].start + 2) === turns[1].start, 'nearest start (inside)');
+  assert(segUiNearestTurnStart(turns, turns[1].end - 1) === turns[2].start, 'nearest start (end)');
+
+  // merge / move / coalesce on plain arrays
+  var secs = [sec('s0', 0, 1, 1), sec('s1', 2, 3, 2)];
+  var merged = segUiMergePair(secs, 0, 1);
+  assert(merged.length === 1 && merged[0].segId === 2 && merged[0].start === 0
+         && merged[0].end === secs[1].end, 'merge keeps chosen label and tiles');
+  var moved = segUiMoveStart(secs, 1, turns[1].start);
+  assert(moved && moved[0].end === turns[1].start && moved[1].start === turns[1].start
+         && moved[1].end === secs[1].end, 'move start keeps tiling');
+  assert(segUiMoveStart(secs, 0, 5) === null && segUiMoveStart(secs, 1, secs[1].end) === null
+         && segUiMoveStart(secs, 1, 0) === null, 'invalid moves refused');
+  var split = [sec('a', 0, 1, 1), sec('b', 2, 2, 1), sec('c', 3, 3, 2)];
+  var co = segUiCoalesce(split, {});
+  assert(co.length === 2 && co[0].end === turns[3].start, 'same segment coalesces');
+  var sp = {};
+  sp[turns[2].start] = true;
+  assert(segUiCoalesce(split, sp).length === 3, 'user boundary keeps sections apart');
+  assert(segUiCoalesce([sec('a', 0, 0, null, {key: 'e1', name: 'x'}), sec('b', 1, 1, null, {key: 'e1', name: 'x'})], {}).length === 1,
+         'same emergent key coalesces');
+  assert(segUiCoalesce([sec('a', 0, 0, null, {key: 'e1', name: 'x'}), sec('b', 1, 1, null, {key: 'e2', name: 'y'})], {}).length === 2,
+         'different emergent keys stay apart');
+
+  // pending groups + remap
+  function em(key) {
+    return {key: key, name: 'Emergent ' + key, description: '', question: '', proposed: false};
+  }
+  var dict = {e1: {name: 'Edited', description: 'dd', question: 'qq', edited: true}};
+  var pend = [sec('p0', 0, 0, 1), sec('p1', 1, 1, null, em('e1')), sec('p2', 2, 2, null, em('e1')),
+              sec('p3', 3, 3, null, em('u9')), sec('whole', 0, 3, null, null)];
+  var groups = segUiPendingGroups(pend.slice(0, 4), dict);
+  assert(groups.length === 2, 'two pending groups (shared emergent key grouped)');
+  eq(groups[0].sectionIds, ['p1', 'p2'], 'group lists its sections');
+  assert(groups[0].name === 'Edited' && groups[0].question === 'qq', 'dict overrides proposal');
+  assert(groups[1].user === true && groups[0].user === false, 'user-created detected');
+  assert(segUiPendingGroups([pend[4]], {}).length === 0, 'whole-document section is not pending');
+  var man2 = {assign: {k1: {segId: null, emergentKey: 'e1'}, k2: {segId: 1, emergentKey: null}}, starts: []};
+  var d2 = {e1: dict.e1, u9: {name: 'Mine'}};
+  var n = segUiRemap(pend.slice(0, 4), man2, d2, {e1: {segId: 7, name: 'Edited'}, u9: {segId: 1, name: 'A'}});
+  assert(n === 3, 'three sections remapped');
+  assert(pend[1].segId === 7 && pend[1].emergent === null && pend[1].name === 'Edited', 'section remapped by name');
+  assert(pend[3].segId === 1, 'merged group -> existing id');
+  eq(man2.assign.k1, {segId: 7, emergentKey: null}, 'manual assignment remapped');
+  assert(!d2.e1 && !d2.u9, 'emergent dict cleaned');
+  var saved = [{id: 3, name: 'Alpha'}, {id: 4, name: ' beta '}];
+  assert(segUiFindByName(saved, 'BETA').id === 4, 'find by name ignores case and spaces');
+
+  // collect emergent keeps user edits
+  var col = segUiCollectEmergent([sec('q', 0, 0, null, {key: 'e1', name: 'N', description: '', question: '', proposed: true})],
+                                 {e1: {name: 'Mine', edited: true}, u1: {name: 'U', user: true}, e7: {name: 'gone'}});
+  assert(col.e1.name === 'Mine' && col.u1.name === 'U' && !col.e7, 'collect emergent');
+
+  // section stats
+  var st = segUiSectionStats({start: 0, end: 40}, [{start: 0, end: 20, speaker: null},
+    {start: 20, end: 40, speaker: 'int'}], [{id: 'int', include: false}],
+    [{cStart: 0, cEnd: 10}, {cStart: 5, cEnd: 15}]);
+  assert(st.codable === 20 && st.covered === 15 && st.count === 2, 'section stats ignore excluded speakers');
+
+  // extras for the core
+  var ex = segUiExtrasFrom({'1': {'10': {sum: [2, 4], n: 2}, '11': {sum: [3, 3], n: 1}}},
+                           {'5': {'1': {'10': 2, '11': 1}}}, 11);
+  eq(ex.protos['1'], [[1, 2]], 'extras exclude a document');
+  assert(ex.cooc['5']['1'] === 2, 'cooc excludes a document');
+  var pr = {}, co2 = {};
+  segUiAddPrototype(pr, co2, 1, 10, new Float32Array([1, 2]), [5]);
+  segUiAddPrototype(pr, co2, 1, 10, [3, 4], [5, 6]);
+  eq(pr['1']['10'], {sum: [4, 6], n: 2}, 'prototype sums');
+  assert(co2['5']['1']['10'] === 2, 'cooc counts');
+
+  // progress text
+  assert(segUiProgressText('embed', 3, 10) === 'Segmenting: embedding windows 3/10', 'progress text');
+
+  // metrics rows
+  var rows = segUiMetricRows({unitRecall: 0.8, sizeMedian: 40, hitAt: {1: 0.2, 3: 0.6, 5: 0.7},
+    charRecall: 0.5, charPrecision: 0.4, thetaPrecision: 0.3, nTicked: 3, sections: 4,
+    otherWordsPct: 10, coveragePresent: 2, coverageMissing: 1, nUnits: 5, nHighlights: 6});
+  assert(rows[0].ok === true && rows[1].ok === false && rows[2].ok === true, 'metric targets');
+
+  // rows <-> guide
+  var rws = segUiGuideToRows(guide);
+  rws[0].questions = ' a \n\n b ';
+  var back = segUiRowsToGuide(rws);
+  eq(back[0].guide_questions, ['a', 'b'], 'questions one per line');
+  assert(back[0].id === 1, 'id kept');
+  assert(segUiValidateRows([{name: 'x'}, {name: 'X'}]) !== null, 'duplicate names rejected');
+  assert(segUiValidateRows([{name: ' '}]) !== null, 'empty name rejected');
+  assert(segUiValidateRows(rws) === null, 'valid rows accepted');
+
+  // segApplyManual + finalize: a recorded start splits a section and tiles
+  var base = [sec('s0', 0, 3, 1)];
+  var man = segUiEmptyManual();
+  segUiRecordAssign(man, turns, turns[2].start, {segId: 2, emergentKey: null}, true);
+  var applied = segApplyManual(base, turns, man, {guide: guide, plainText: text});
+  assert(applied.length === 2 && applied[0].end === turns[2].start && applied[1].segId === 2,
+         'segApplyManual splits at the recorded start');
+  var fin = segUiFinalize(applied, {guide: guide, plainText: text, turns: turns}, man, {});
+  assert(fin.length === 2 && fin[0].name === 'A' && fin[1].name === 'B', 'finalize refreshes names');
+  assert(fin[0].start === 0 && fin[0].end === fin[1].start && fin[1].end === base[0].end,
+         'sections still tile the text');
+
+  return Promise.resolve(failures).then(function(f) {
+    if(f) {
+      console.error('SEG UI SELFTEST: ' + f + ' failure(s)');
+    } else {
+      console.log('SEG UI SELFTEST OK');
+    }
+    return f;
+  });
+}

@@ -1,0 +1,141 @@
+#!/usr/bin/env node
+/*
+ * Checks the segment-based ('segmented') integration in suggest.js under Node:
+ * async run in sugComputePane with stale-result guarding, slider -> (tau,
+ * theta), extra-field preservation, staged tags from the ticked ones.
+ *
+ *   node scripts/suggest_segmented_selftest.js
+ */
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const JS_DIR = path.join(__dirname, '..', 'taguette', 'static', 'js');
+const dummy = {textContent: '', style: {}, value: '', checked: false,
+               addEventListener: () => {}};
+const sandbox = {
+  console: console, setTimeout: setTimeout, clearTimeout: clearTimeout,
+  Promise: Promise,
+  gettext: (m, args) => (args ? m.replace(/%\((\w+)\)s/g, (x, k) => (k in args ? args[k] : x)) : m),
+  taguConfigRegisterTab: () => {}, loadDocument: () => Promise.resolve(),
+  loadTag: () => {},
+  localStorage: {getItem: () => null, setItem: () => {}, removeItem: () => {}},
+};
+sandbox.document = {
+  getElementById: () => dummy, querySelector: () => null,
+  querySelectorAll: () => [], addEventListener: () => {},
+};
+sandbox.window = sandbox;
+sandbox.window.location = {search: ''};
+sandbox.window.addEventListener = () => {};
+vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync(path.join(JS_DIR, 'suggest.js'), 'utf8'), sandbox,
+                {filename: 'suggest.js'});
+
+let failures = 0;
+function assert(c, m) { if(!c) { console.error('FAIL:', m); ++failures; } }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const text = 'x'.repeat(200);
+const boc = []; for(let i = 0; i <= 200; ++i) { boc.push(i); }
+sandbox.boc = boc; sandbox.text = text;
+
+vm.runInContext(`
+  var calls = {analyze: [], refresh: [], render: 0};
+  var analyzeDelay = 30;
+  var segAnalyzeDocument = function(o) {
+    calls.analyze.push(o);
+    return new Promise(function(r) { setTimeout(function() { r({id: 'res'}); }, analyzeDelay); });
+  };
+  var segRefreshUnits = function(o) { calls.refresh.push(o); return Promise.resolve({id: 'res2'}); };
+  var segUnitsAsCandidates = function(res, theta) {
+    return [
+      {start: 0, end: 50, raw: 0.9, section_id: 's1', tags: [{id: 1, name: 'A', conf: 0.9}, {id: 99, name: 'Gone', conf: 0.8}], ticked: [1, 99]},
+      {start: 60, end: 120, raw: 0.5, section_id: 's2', tags: [{id: 2, name: 'B', conf: 0.5}], ticked: []},
+    ];
+  };
+  var tags = {'1': {id: 1, path: 'A'}, '2': {id: 2, path: 'B'}};
+  var current_document = 7;
+  sugRenderPane = function() {}; sugRemoveSuggestionDom = function() {};
+  sugRenderStaged = function() {}; sugUpdateCounts = function() {}; sugHideMenu = function() {};
+  function mkSession() {
+    return {active: true, split: false, aggressiveness: 50, transcription: false,
+      expand: false, rankMode: 'lexical', useEmbeddings: false, plainText: text,
+      byteOfChar: boc, totalBytes: 200, sentences: [],
+      panes: {'': {algo: 'segmented', candidates: null, suggestions: [], clusterLabels: {}}},
+      staged: [], nextSid: 0, nextAid: 0, speakers: [], turns: null, editGen: 0};
+  }
+  sug_session = mkSession();
+`, sandbox);
+
+async function main() {
+  const run = (code) => vm.runInContext(code, sandbox);
+
+  // slider mapping
+  const p = run('sugSegParams(0)');
+  assert(p.tau === 0.05 && p.theta === 0.8, 'slider 0');
+  const p100 = run('sugSegParams(100)');
+  assert(Math.abs(p100.tau - 0.65) < 1e-9 && Math.abs(p100.theta - 0.4) < 1e-9, 'slider 100');
+
+  // merge keeps extras of the higher-raw candidate
+  const m = run(`sugMergeOverlaps([{start:0,end:10,raw:.2,lexPct:.1,cStart:0,cEnd:10,section_id:'a',tags:[1]},
+     {start:5,end:15,raw:.8,lexPct:.5,cStart:5,cEnd:15,section_id:'b',tags:[2]}])`);
+  assert(m.length === 1 && m[0].section_id === 'b' && m[0].end === 15 && m[0].cStart === 0, 'merge extras');
+
+  // async run
+  run("sugComputePane('')");
+  assert(run('sug_session.panes[""].candidates') === null, 'no candidates while running');
+  assert(run('document.getElementById("x").textContent') !== undefined, 'status stub');
+  await sleep(80);
+  let sugs = run("sug_session.panes[''].suggestions");
+  assert(sugs.length === 2, 'two suggestions after async run: ' + sugs.length);
+  assert(sugs[0].section_id === 's1' && sugs[0].tags.length === 2 && sugs[0].ticked.length === 2,
+         'extras copied into suggestion objects');
+  assert(run('calls.analyze.length') === 1 && run('calls.analyze[0].tau') === 0.35, 'analyze with slider params');
+  assert(run("sug_session.panes[''].candidates[1].start") === 60, 'byte offsets');
+  assert(run("document.getElementById('x').textContent") !== '', 'status set');
+
+  // slider -> refresh with new params only
+  run("sug_session.aggressiveness = 100; sugSliderSettled()");
+  await sleep(20);
+  const rc = run('calls.refresh');
+  assert(rc.length === 1 && Math.abs(rc[0].tau - 0.65) < 1e-9 && Math.abs(rc[0].theta - 0.4) < 1e-9,
+         'refresh params ' + JSON.stringify(rc));
+  assert(run('calls.analyze.length') === 1, 'slider does not re-analyze');
+
+  // stale result ignored: algo switched while running
+  run(`sug_session = mkSession(); SUG_ALGO_CACHE = {}; SUG_SEG_VERSION++; calls.analyze = [];`);
+  run("sugComputePane('')");
+  run("sug_session.panes[''].algo = 'textrank'; sug_session.panes[''].runToken++");
+  await sleep(80);
+  assert(run("sug_session.panes[''].candidates") === null, 'stale (algo switch) ignored');
+
+  // stale: editGen bumped
+  run(`sug_session = mkSession(); SUG_ALGO_CACHE = {}; SUG_SEG_VERSION++;`);
+  run("sugComputePane('')");
+  run('sug_session.editGen++');
+  await sleep(80);
+  assert(run("sug_session.panes[''].candidates") === null, 'stale (edit) ignored');
+
+  // rejection -> message in status, empty pane
+  run(`sug_session = mkSession(); SUG_ALGO_CACHE = {}; SUG_SEG_VERSION++;
+       segAnalyzeDocument = function() { return Promise.reject(new Error('no embedding model')); };`);
+  run("sugComputePane('')");
+  await sleep(20);
+  assert(run("document.getElementById('x').textContent") === 'no embedding model', 'error shown');
+  assert(run("sug_session.panes[''].suggestions.length") === 0, 'pane empty on error');
+
+  // accept -> staged.tags from ticked, deleted tag skipped
+  run(`segAnalyzeDocument = function(o) { return Promise.resolve({}); };
+       sug_session = mkSession(); SUG_ALGO_CACHE = {}; SUG_SEG_VERSION++; sugComputePane('')`);
+  await sleep(20);
+  run(`var sid0 = sug_session.panes[''].suggestions[0].sid; sug_session.panes[''].suggestions[0].ticked = [1, 99]; sugAccept(sid0)`);
+  const st = run('sug_session.staged[0]');
+  assert(st.tags.length === 1 && st.tags[0] === 1, 'staged.tags from ticked, unknown skipped: ' + st.tags);
+  assert(st.suggestedTags.length === 1 && st.section_id === 's1', 'suggestedTags kept');
+
+  console.log(failures ? 'SUGGEST SEGMENTED: ' + failures + ' failure(s)' : 'SUGGEST SEGMENTED SELFTEST OK');
+  process.exit(failures);
+}
+main().catch((e) => { console.error(e); process.exit(1); });

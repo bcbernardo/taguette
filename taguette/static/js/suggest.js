@@ -572,7 +572,12 @@ var SUG_ALGOS = {
   rake: {label: 'RAKE', run: sugRake},
 };
 
-var SUG_ALGO_OPTIONS = ['textrank', 'lexrank', 'yake', 'rake'];
+var SUG_ALGO_OPTIONS = ['textrank', 'lexrank', 'yake', 'rake', 'segmented'];
+
+// Textless UI chrome inserted into the document text (speaker badges from
+// this file, section separators from segments-ui.js). Edit/offset walks skip
+// it and teardown removes it
+var SUG_MARKER_SELECTOR = '.sug-speaker-badge, .seg-separator';
 
 // Caches (module-level, so they survive session restarts in the same page):
 // - SUG_ALGO_CACHE: algorithm results per document, so switching back to an
@@ -2010,6 +2015,150 @@ function sugSpeakerPropose() {
  * Scoring helpers
  */
 
+/*
+ * Segment-based suggestions ('segmented' algorithm)
+ *
+ * Unlike the lexical algorithms, running it is asynchronous (embeddings and
+ * decisions over the network, possibly tens of seconds the first time) and
+ * the candidates carry extra fields: tags [{id, name, conf, source}],
+ * section_id and ticked [tagId]. The slider maps to the unit granularity tau
+ * and the tag-tick threshold theta.
+ */
+
+var SUG_SEG_VERSION = 0; // bumped to invalidate the segmented candidates cache
+
+// Slider value v in [0, 100] -> {tau, theta}
+function sugSegParams(v) {
+  v = Math.max(0, Math.min(100, +v || 0));
+  return {
+    tau: Math.round((0.05 + 0.6 * v / 100) * 1000) / 1000,
+    theta: Math.round((0.8 - 0.4 * v / 100) * 1000) / 1000,
+  };
+}
+
+function sugSegCacheKey() {
+  var p = sugSegParams(sug_session ? sug_session.aggressiveness : 50);
+  return 'segmented|' + p.tau + '|' + p.theta + '|v' + SUG_SEG_VERSION;
+}
+
+// Does any pane of the current session use the segmented algorithm?
+function sugHasSegmentedPane() {
+  if(!sug_session) {
+    return false;
+  }
+  return sugPaneKeys().some(function(k) {
+    return sug_session.panes[k] && sug_session.panes[k].algo === 'segmented';
+  });
+}
+
+// Number of tags of a suggestion at or above the tick threshold
+function sugSegTagCount(s, theta) {
+  var n = 0;
+  (s.tags || []).forEach(function(t) {
+    if(t.conf >= theta) {
+      ++n;
+    }
+  });
+  return n;
+}
+
+// Run (or reuse) the segmentation for the session and return the candidates
+// (char offsets) for the slider's current (tau, theta). Concurrent callers
+// with the same parameters share one run. Resolves with null when the session
+// moved on in the meantime.
+function sugSegCandidates() {
+  var sess = sug_session;
+  if(!sess) {
+    return Promise.resolve(null);
+  }
+  if(typeof segAnalyzeDocument !== 'function'
+     || typeof segUnitsAsCandidates !== 'function') {
+    return Promise.reject(new Error(
+      gettext('Segment-based coding is not available.')));
+  }
+  var gen = sess.editGen || 0;
+  var p = sugSegParams(sess.aggressiveness);
+  var key = p.tau + '|' + p.theta;
+  if(!sess.segPending || sess.segPending.key !== key
+     || sess.segPending.gen !== gen) {
+    var prom;
+    if(sess.segResult && sess.segParams && sess.segParams.key === key) {
+      prom = Promise.resolve(sess.segResult);
+    } else if(sess.segResult && typeof segRefreshUnits === 'function') {
+      prom = segRefreshUnits({tau: p.tau, theta: p.theta});
+    } else {
+      prom = segAnalyzeDocument({tau: p.tau, theta: p.theta});
+    }
+    var pending = {key: key, gen: gen};
+    pending.promise = prom.then(function(result) {
+      if(sug_session !== sess || (sess.editGen || 0) !== gen) {
+        return null;
+      }
+      sess.segResult = result;
+      sess.segParams = {key: key};
+      return {cands: segUnitsAsCandidates(result, p.theta), theta: p.theta};
+    });
+    var clear = function() {
+      if(sess.segPending === pending) {
+        sess.segPending = null;
+      }
+    };
+    pending.promise.then(clear, clear);
+    sess.segPending = pending;
+  }
+  return sess.segPending.promise.then(function(out) {
+    // Each caller gets its own copies (the candidates are mutated later)
+    return out && {cands: out.cands.map(function(c) {
+      var o = {};
+      for(var k in c) { o[k] = c[k]; }
+      o.tags = (c.tags || []).slice();
+      o.ticked = (c.ticked || []).slice();
+      return o;
+    }), theta: out.theta};
+  });
+}
+
+// Called by the Sections panel after manual edits: the segmentation changed,
+// drop the cached candidates and recompute the segmented panes
+function sugRecomputeSegmented() {
+  if(!sug_session) {
+    return;
+  }
+  ++SUG_SEG_VERSION;
+  sug_session.segResult = null;
+  sug_session.segParams = null;
+  sug_session.segPending = null;
+  sugPaneKeys().forEach(function(k) {
+    if(sug_session.panes[k].algo === 'segmented') {
+      sugComputePane(k);
+    }
+  });
+}
+
+// Char-offset candidates -> clamped, byte-offset candidates (in place)
+function sugCandidatesToBytes(cands, text, boc) {
+  for(var i = 0; i < cands.length; ++i) {
+    var cStart = Math.max(0, Math.min(cands[i].start, text.length));
+    var cEnd = Math.max(cStart + 1, Math.min(cands[i].end, text.length));
+    cands[i].cStart = cStart;
+    cands[i].cEnd = cEnd;
+    cands[i].start = boc[cStart];
+    cands[i].end = boc[cEnd];
+  }
+  return cands.filter(function(c) { return c.end - c.start >= 3; });
+}
+
+SUG_ALGOS.segmented = {
+  label: gettext('Segment-based coding'),
+  running: gettext('Segmenting the document (this can take a while)...'),
+  // Asynchronous: resolves with char-offset candidates (or null if stale)
+  run: function(text) {
+    return sugSegCandidates().then(function(out) {
+      return out ? out.cands : null;
+    });
+  },
+};
+
 function sugPercentiles(cands) {
   var sorted = cands.slice().sort(function(a, b) { return a.raw - b.raw; });
   var n = sorted.length;
@@ -2034,6 +2183,9 @@ function sugEffPct(cand) {
   return cand.lexPct;
 }
 
+var SUG_MERGE_OWN = {start: 1, end: 1, raw: 1, lexPct: 1, embPct: 1,
+                     cStart: 1, cEnd: 1, _vec: 1};
+
 // Merge overlapping candidates (union span, max raw score); merely adjacent
 // candidates are kept separate
 function sugMergeOverlaps(cands) {
@@ -2042,6 +2194,14 @@ function sugMergeOverlaps(cands) {
   for(var i = 0; i < cands.length; ++i) {
     var last = out.length ? out[out.length - 1] : null;
     if(last && cands[i].start < last.end) {
+      if(cands[i].raw > last.raw) {
+        // Extra fields (tags, section_id, ticked, ...) follow the higher score
+        for(var key in cands[i]) {
+          if(!(key in SUG_MERGE_OWN)) {
+            last[key] = cands[i][key];
+          }
+        }
+      }
       last.end = Math.max(last.end, cands[i].end);
       last.raw = Math.max(last.raw, cands[i].raw);
       last.lexPct = Math.max(last.lexPct, cands[i].lexPct);
@@ -2427,47 +2587,119 @@ function sugAlgoCacheKey(algo) {
   return k;
 }
 
-// Compute (or load from cache) the lexical suggestions for one pane
+// Drop a pane's candidates and suggestions without touching the saved
+// per-algorithm suggestion state
+function sugClearPane(pkey) {
+  var pane = sug_session.panes[pkey];
+  pane.candidates = null;
+  pane.candAlgo = null;
+  pane.suggestions = [];
+  sugRenderPane(pkey);
+}
+
+// Turn raw algorithm output (char offsets) into pane candidates
+function sugFinishCandidates(cands, text, boc) {
+  cands = sugCandidatesToBytes(cands, text, boc);
+  sugPercentiles(cands);
+  return sugMergeOverlaps(cands);
+}
+
+// Compute (or load from cache) the suggestions for one pane. Algorithms may
+// run synchronously or return a Promise of candidates (char offsets); stale
+// results (algorithm switched, session ended, transcript edited, a newer run
+// of the same pane) are ignored.
 function sugComputePane(pkey) {
   var pane = sug_session && sug_session.panes[pkey];
   if(!pane) {
     return; // pane may have disappeared while a computation was queued
   }
   var algo = SUG_ALGOS[pane.algo];
+  var algo_name = pane.algo;
   var akey = sugAlgoCacheKey(pane.algo);
+  var ckey = algo_name === 'segmented' ? sugSegCacheKey() : akey;
   var doc_cache = SUG_ALGO_CACHE[current_document];
   if(!doc_cache) {
     doc_cache = SUG_ALGO_CACHE[current_document] = {};
   }
-  var gen = sug_session.editGen || 0;
+  var sess = sug_session;
+  var gen = sess.editGen || 0;
+  var token = pane.runToken = (pane.runToken || 0) + 1;
+  var live = function() {
+    return sug_session === sess && sess.panes[pkey] === pane
+      && pane.runToken === token && pane.algo === algo_name
+      && (sess.editGen || 0) === gen;
+  };
   var done = function() {
-    if(gen !== (sug_session ? sug_session.editGen : gen)) {
-      return; // a transcript edit superseded this computation
+    if(!live()) {
+      return; // superseded: a transcript edit, algorithm switch or newer run
     }
+    pane.candAlgo = algo_name;
     // Restore the suggestions the user adjusted for this algorithm, if any
     if(pane.savedSuggestions && pane.savedSuggestions[akey]) {
       pane.suggestions = pane.savedSuggestions[akey];
     }
     sugRefilterPane(pkey);
-    if(sug_session.useEmbeddings) {
+    if(sug_session.useEmbeddings && algo_name !== 'segmented') {
       sugEnhanceEmbeddings();
     } else {
       sugSetStatus(sugStatusText());
     }
+    sugUpdateSliderFeedback();
   };
-  if(doc_cache[akey]) {
+  if(doc_cache[ckey]) {
     // Cache hit: no recompute, embedding scores kept on the candidates
-    pane.candidates = doc_cache[akey];
+    pane.candidates = doc_cache[ckey];
     done();
     return;
   }
-  sugSetStatus(gettext('Running %(algo)s...', {algo: algo.label}));
+  var store = function(cands) {
+    cands = sugFinishCandidates(cands, sess.plainText, sess.byteOfChar);
+    if(algo_name === 'segmented') {
+      Object.keys(doc_cache).forEach(function(k) {
+        if(k.indexOf('segmented|') === 0) {
+          delete doc_cache[k]; // other slider settings / versions
+        }
+      });
+    }
+    pane.candidates = cands;
+    doc_cache[ckey] = cands;
+    done();
+  };
+  sugSetStatus(algo.running
+    || gettext('Running %(algo)s...', {algo: algo.label}));
+  if(algo_name === 'segmented') {
+    if(pane.candAlgo !== algo_name) {
+      // Don't show another algorithm's candidates as segment suggestions
+      // while the (slow) first analysis runs
+      sugClearPane(pkey);
+    }
+    var promise;
+    try {
+      promise = Promise.resolve(algo.run(sess.plainText));
+    } catch(error) {
+      promise = Promise.reject(error);
+    }
+    promise.then(function(cands) {
+      if(!live() || !cands) {
+        return;
+      }
+      store(cands);
+    }, function(error) {
+      if(!live()) {
+        return;
+      }
+      console.error('Suggestion algorithm failed:', error);
+      sugClearPane(pkey);
+      sugSetStatus((error && error.message) || gettext('Algorithm failed (see console)'));
+    });
+    return;
+  }
   // setTimeout so the status actually paints
   window.setTimeout(function() {
-    if(!sug_session || !sug_session.panes[pkey]) {
-      return; // session ended while computing
+    if(!live()) {
+      return; // session ended or algorithm switched while computing
     }
-    var text = sug_session.plainText;
+    var text = sess.plainText;
     var cands;
     try {
       cands = algo.run(text);
@@ -2476,33 +2708,25 @@ function sugComputePane(pkey) {
       sugSetStatus(gettext('Algorithm failed (see console)'));
       return;
     }
-    if((pane.algo === 'yake' || pane.algo === 'rake') && sug_session.expand) {
+    if((algo_name === 'yake' || algo_name === 'rake') && sess.expand) {
       // Show the whole sentence/turn containing each keyphrase
-      cands = sugExpandToSentences(cands, sug_session.sentences);
+      cands = sugExpandToSentences(cands, sess.sentences);
     }
-    var boc = sug_session.byteOfChar;
-    for(var i = 0; i < cands.length; ++i) {
-      var cStart = Math.max(0, Math.min(cands[i].start, text.length));
-      var cEnd = Math.max(cStart + 1, Math.min(cands[i].end, text.length));
-      cands[i].cStart = cStart;
-      cands[i].cEnd = cEnd;
-      cands[i].start = boc[cStart];
-      cands[i].end = boc[cEnd];
-    }
-    cands = cands.filter(function(c) { return c.end - c.start >= 3; });
-    sugPercentiles(cands);
-    pane.candidates = sugMergeOverlaps(cands);
-    doc_cache[akey] = pane.candidates;
-    done();
+    store(cands);
   }, 10);
 }
 
 function sugStatusText() {
   var n = 0, themes = 0;
+  var seg_n = 0, seg_sections = {};
   sugPaneKeys().forEach(function(k) {
     var seen = {};
     sug_session.panes[k].suggestions.forEach(function(s) {
       ++n;
+      if(sug_session.panes[k].algo === 'segmented') {
+        ++seg_n;
+        seg_sections[s.section_id === undefined ? '' : s.section_id] = true;
+      }
       if(s.clusterLabel) {
         seen[s.clusterLabel] = true;
       }
@@ -2517,6 +2741,10 @@ function sugStatusText() {
   });
   var suffix = hidden > 0
     ? ' · ' + gettext('%(n)s speaker(s) hidden', {n: hidden}) : '';
+  if(seg_n > 0 && seg_n === n) {
+    return gettext('%(n)s suggestions in %(s)s sections',
+                   {n: n, s: Object.keys(seg_sections).length}) + suffix;
+  }
   if(sug_session.rankMode === 'cluster' && themes > 0) {
     return gettext('%(n)s suggestion(s) in %(k)s theme(s)', {n: n, k: themes})
       + suffix;
@@ -2564,7 +2792,13 @@ function sugRefilterPane(pkey) {
   // percentile cut-off over effective centrality
   var entries; // [{c, sortPct, lexPct, embPct}]
   var groups = null;
-  if(sug_session.rankMode === 'cluster'
+  if(pane.algo === 'segmented') {
+    // Segment units are all shown: the slider already shaped them (tau/theta)
+    entries = cands.map(function(c) {
+      return {c: c, sortPct: sugEffPct(c), lexPct: c.lexPct, embPct: null};
+    });
+    entries.sort(function(a, b) { return a.c.start - b.c.start; });
+  } else if(sug_session.rankMode === 'cluster'
      && pane.clusterLabels && Object.keys(pane.clusterLabels).length) {
     var per = sugClusterPer();
     groups = {};
@@ -2637,6 +2871,13 @@ function sugRefilterPane(pkey) {
       s.embPct = e.embPct;
       s.cluster = c.cluster;
       s.clusterLabel = label;
+      if(c.tags) {
+        s.tags = c.tags;
+        s.section_id = c.section_id;
+        if(!s.tickedEdited) {
+          s.ticked = (c.ticked || []).slice();
+        }
+      }
       return s;
     }
     return {
@@ -2652,6 +2893,9 @@ function sugRefilterPane(pkey) {
       cluster: c.cluster,
       clusterLabel: label,
       modified: false,
+      tags: c.tags,
+      section_id: c.section_id,
+      ticked: c.ticked ? c.ticked.slice() : undefined,
     };
   });
   stash();
@@ -2694,10 +2938,17 @@ function sugEnhanceEmbeddings() {
   // so the two split-screen panes stay comparable
   var all_c = [];
   sugPaneKeys().forEach(function(pkey) {
+    if(sug_session.panes[pkey].algo === 'segmented') {
+      return; // scored by the segmentation itself
+    }
     (sug_session.panes[pkey].candidates || []).forEach(function(c) {
       all_c.push(c);
     });
   });
+  if(!all_c.length) {
+    sugRefilter(); // only segment-based panes: nothing to score
+    return;
+  }
   var cand_texts = all_c.map(function(c) {
     return sug_session.plainText.substring(c.cStart, c.cEnd);
   });
@@ -2930,6 +3181,14 @@ function sugRenderPane(pkey) {
       // Theme badge: CSS-generated content, so text offsets stay intact
       wrapped.first.setAttribute('data-cluster-label', s.clusterLabel);
     }
+    if(s.tags && s.tags.length && wrapped.first) {
+      // Tag-count badge: CSS-generated content, like the theme badge
+      var n_tags = sugSegTagCount(
+        s, sugSegParams(sug_session.aggressiveness).theta);
+      if(n_tags > 0) {
+        wrapped.first.setAttribute('data-tag-count', n_tags);
+      }
+    }
     var attrs = {sid: s.sid, pane: pkey};
     if(s.modified) {
       attrs.modified = '1';
@@ -2984,6 +3243,18 @@ function sugFindSuggestion(sid) {
   return null;
 }
 
+// Tag ids (ints) of `ids` that still exist in the global tags
+function sugKnownTagIds(ids) {
+  var out = [];
+  (ids || []).forEach(function(id) {
+    id = parseInt(id, 10);
+    if(!isNaN(id) && tags['' + id] && out.indexOf(id) === -1) {
+      out.push(id);
+    }
+  });
+  return out;
+}
+
 function sugAccept(sid) {
   var found = sugFindSuggestion(sid);
   if(!found) {
@@ -3003,6 +3274,16 @@ function sugAccept(sid) {
     lexPct: s.lexPct,
     pkey: found.paneKey,
   };
+  if(s.tags && s.tags.length) {
+    // Segment-based suggestion: the ticked tags become the highlight's tags
+    // (tags deleted meanwhile are skipped)
+    st.tags = sugKnownTagIds(s.ticked);
+    st.suggestedTags = s.tags.filter(function(t) {
+      return !!tags['' + t.id];
+    });
+    st.ticked = (s.ticked || []).slice();
+    st.section_id = s.section_id;
+  }
   found.pane.suggestions.splice(found.index, 1);
   sugRemoveSuggestionDom(sid);
   sug_session.staged.push(st);
@@ -3065,6 +3346,9 @@ function sugUnaccept(aid) {
       lexPct: st.lexPct,
       embPct: null,
       modified: st.start !== st.origStart || st.end !== st.origEnd,
+      tags: st.suggestedTags,
+      section_id: st.section_id,
+      ticked: st.ticked ? st.ticked.slice() : undefined,
     });
     pane.suggestions.sort(function(a, b) { return a.start - b.start; });
     sugRenderPane(st.pkey);
@@ -3266,6 +3550,33 @@ function sugShowMenu(html, clientX, clientY, pinned) {
   sug_menu_pinned = !!pinned;
 }
 
+// "Suggested tags" section of a segment-based suggestion's menu (empty when
+// the unit has no tags), preceded by its section label
+function sugSegMenuHtml(s) {
+  var html = '';
+  var sec = (typeof segSectionAt === 'function' && typeof s.cStart === 'number')
+    ? segSectionAt(s.cStart) : null;
+  if(sec && (sec.label || sec.name)) {
+    html += '<div class="sug-menu-section text-muted small">' +
+      escapeHtml(sec.label || sec.name) + '</div>';
+  }
+  var known = (s.tags || []).filter(function(t) { return !!tags['' + t.id]; });
+  if(known.length) {
+    html += '<div class="sug-menu-suggtags">' +
+      '<div class="sug-menu-subtitle">' + gettext('Suggested tags') + '</div>';
+    known.forEach(function(t) {
+      var on = (s.ticked || []).indexOf(t.id) !== -1;
+      html += '<label class="' + (on ? '' : 'sug-tag-off') + '">' +
+        '<input type="checkbox" data-tag-id="' + t.id + '"' +
+        (on ? ' checked' : '') + '> ' + escapeHtml(tags['' + t.id].path) +
+        ' <span class="text-muted">' + Math.round((t.conf || 0) * 100) +
+        '%</span></label>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
 function sugSuggestionMenuHtml(sid) {
   var found = sugFindSuggestion(sid);
   if(!found) {
@@ -3295,6 +3606,7 @@ function sugSuggestionMenuHtml(sid) {
   }
   return (
     '<div class="sug-menu-title">' + title + '</div>' +
+    sugSegMenuHtml(s) +
     '<button type="button" class="btn btn-sm btn-primary" id="sug-menu-accept">' + gettext('Save as highlight') + '</button> ' +
     revert + ' ' +
     '<button type="button" class="btn btn-sm btn-outline-danger" id="sug-menu-discard">' + gettext('Discard suggestion') + '</button>' +
@@ -3316,6 +3628,24 @@ function sugShowSuggestionMenu(sid, clientX, clientY, pinned) {
   if(found && found.s.modified) {
     document.getElementById('sug-menu-revert').addEventListener(
       'click', function() { sugRevertToAlgo(sid); });
+  }
+  // Suggested tags: toggling updates the suggestion's ticked list
+  var boxes = sugMenuEl().querySelectorAll('.sug-menu-suggtags input');
+  for(var bi = 0; bi < boxes.length; ++bi) {
+    boxes[bi].addEventListener('change', function(e) {
+      var f = sugFindSuggestion(sid);
+      if(!f) {
+        return;
+      }
+      var tid = parseInt(e.target.getAttribute('data-tag-id'), 10);
+      var ticked = (f.s.ticked || []).filter(function(x) { return x !== tid; });
+      if(e.target.checked) {
+        ticked.push(tid);
+      }
+      f.s.ticked = ticked;
+      f.s.tickedEdited = true;
+      e.target.parentNode.classList.toggle('sug-tag-off', !e.target.checked);
+    });
   }
   // Theme bulk operations (cluster mode)
   var accept_theme = document.getElementById('sug-menu-accept-theme');
@@ -3387,13 +3717,31 @@ function sugShowTagPicker(aid) {
     return;
   }
   var html = '<div class="sug-menu-title">' + gettext('Add tag') + '</div><div class="sug-menu-taglist">';
-  entries.forEach(function(e) {
-    var id = e[0];
-    html += (
+  var tagLabel = function(id, path, extra) {
+    return (
       '<label><input type="checkbox" value="' + id + '"' +
       (st.tags.indexOf(parseInt(id)) !== -1 ? ' checked' : '') + '> ' +
-      escapeHtml(e[1].path) + '</label>'
+      escapeHtml(path) + (extra || '') + '</label>'
     );
+  };
+  // Tags suggested for this unit first (best confidence first), then the rest
+  var suggested = {};
+  (st.suggestedTags || []).slice().sort(function(a, b) {
+    return (b.conf || 0) - (a.conf || 0);
+  }).forEach(function(t) {
+    if(tags['' + t.id]) {
+      suggested['' + t.id] = true;
+      html += tagLabel(t.id, tags['' + t.id].path,
+        ' <span class="text-muted">' + Math.round((t.conf || 0) * 100) + '%</span>');
+    }
+  });
+  if(Object.keys(suggested).length) {
+    html += '<hr class="sug-menu-divider"/>';
+  }
+  entries.forEach(function(e) {
+    if(!suggested[e[0]]) {
+      html += tagLabel(e[0], e[1].path);
+    }
   });
   html += (
     '</div><button type="button" class="btn btn-sm btn-primary" id="sug-menu-tagapply">' +
@@ -3485,7 +3833,7 @@ function sugSetSplit(on) {
   sugUnwrapClass('sug-span');
   sugUnwrapClass('hl-staged');
   sugUnwrapClass('sug-speaker-block');
-  var sp_badges = document.querySelectorAll('.sug-speaker-badge');
+  var sp_badges = document.querySelectorAll(SUG_MARKER_SELECTOR);
   for(var qb = 0; qb < sp_badges.length; ++qb) {
     if(sp_badges[qb].parentNode) {
       sp_badges[qb].parentNode.removeChild(sp_badges[qb]);
@@ -3531,6 +3879,9 @@ function sugSetSplit(on) {
   ids.forEach(function(id) { setHighlight(highlights[id]); });
   sug_session.staged.forEach(sugRenderStaged);
   sugSpeakerRenderBlocks();
+  if(typeof segRenderSeparators === 'function') {
+    segRenderSeparators(); // separators were removed with the other markers
+  }
   if(on) {
     sugComputePane('R');
   } else {
@@ -3580,7 +3931,7 @@ function sugEditSegments(root, base) {
       if(c.nodeType === 3) {
         push(c, levelEl);
       } else if(c.nodeType === 1) {
-        if(c.classList && c.classList.contains('sug-speaker-badge')) {
+        if(c.matches && c.matches(SUG_MARKER_SELECTOR)) {
           continue; // textless UI chrome
         }
         if(SUG_BLOCK_RE.test(c.tagName)) {
@@ -3613,7 +3964,7 @@ function sugEditTextAtLevel(el) {
       if(c.nodeType === 3) {
         out += c.nodeValue;
       } else if(c.nodeType === 1) {
-        if(c.classList && c.classList.contains('sug-speaker-badge')) {
+        if(c.matches && c.matches(SUG_MARKER_SELECTOR)) {
           continue;
         }
         if(!SUG_BLOCK_RE.test(c.tagName)) {
@@ -3802,7 +4153,7 @@ function sugMaybeEdit(e) {
   if(!contents || !target || !contents.contains(target)) {
     return;
   }
-  if(target.closest('.sug-menu') || target.closest('.sug-speaker-badge')) {
+  if(target.closest('.sug-menu') || target.closest(SUG_MARKER_SELECTOR)) {
     return; // controls, not text
   }
   var chunk = target.closest('[id^="doc-offset-"]');
@@ -4037,6 +4388,13 @@ function sugRebuildAfterReload() {
   sug_session.totalBytes = index.totalBytes;
   sug_session.sentences = sugSplitSentences(index.plainText);
   SUG_ALGO_CACHE[current_document] = {};
+  sug_session.segResult = null;
+  sug_session.segParams = null;
+  sug_session.segPending = null;
+  // Before the panes recompute: the segmented run must see the invalidation
+  if(typeof segOnRebuild === 'function') {
+    segOnRebuild();
+  }
   if(sug_session.speakers && sug_session.speakers.length) {
     // Recompute the turns on the corrected text and re-apply the profile;
     // manual assignments survive through identical turn texts
@@ -4082,6 +4440,7 @@ function sugStart() {
   }
   var trans = sugDetectTranscription(index.plainText);
   SUG_TRANSCRIPTION = trans;
+  ++SUG_SEG_VERSION; // never reuse segmented candidates of an earlier session
   sug_session = {
     active: true,
     split: false,
@@ -4126,6 +4485,9 @@ function sugStart() {
     sugApplySpeakers(sug_session.turns, sug_session.speakers);
     sugSpeakerRenderBlocks();
   }
+  if(typeof segOnSessionStart === 'function') {
+    segOnSessionStart();
+  }
 }
 
 function sugCleanup() {
@@ -4136,6 +4498,9 @@ function sugCleanup() {
     sugExitEdit(true); // never leave a paragraph editable behind
   }
   sugHideMenu();
+  if(typeof segOnSessionEnd === 'function') {
+    segOnSessionEnd();
+  }
   var wasSplit = sug_session.split;
   // Empty the state before the split teardown re-renders anything
   sug_session.staged = [];
@@ -4149,7 +4514,7 @@ function sugCleanup() {
   for(var i = 0; i < brackets.length; ++i) {
     brackets[i].parentNode.removeChild(brackets[i]);
   }
-  var sp_badges = document.querySelectorAll('.sug-speaker-badge');
+  var sp_badges = document.querySelectorAll(SUG_MARKER_SELECTOR);
   for(var qb = 0; qb < sp_badges.length; ++qb) {
     if(sp_badges[qb].parentNode) {
       sp_badges[qb].parentNode.removeChild(sp_badges[qb]);
@@ -4186,6 +4551,18 @@ function sugSaveStaged(done) {
   });
   p.then(function() {
     hideSpinner();
+    if(typeof segRecordSaved === 'function') {
+      try {
+        segRecordSaved(staged.map(function(st) {
+          var o = {};
+          for(var k in st) { o[k] = st[k]; }
+          o.tags = (st.tags || []).slice();
+          return o;
+        }));
+      } catch(error) {
+        console.error('segRecordSaved failed:', error);
+      }
+    }
     done();
   })
   .catch(function(error) {
@@ -4204,7 +4581,14 @@ function sugStopDialog(onDone) {
     $(modal).off('hidden.bs.modal');
   });
   document.getElementById('sug-stop-save').onclick = function() {
-    $(modal).one('hidden.bs.modal', function() { sugSaveStaged(onDone); });
+    $(modal).one('hidden.bs.modal', function() {
+      var save = function() { sugSaveStaged(onDone); };
+      if(typeof segBeforeSave === 'function') {
+        segBeforeSave(save); // may ask to confirm new emergent segments
+      } else {
+        save();
+      }
+    });
     $(modal).modal('hide');
   };
   document.getElementById('sug-stop-discard').onclick = function() {
@@ -4352,6 +4736,7 @@ function sugSyncAlgoSelects() {
       document.getElementById('sug-algo-b').value = sug_session.panes['R'].algo;
     }
     split.checked = sug_session.split;
+    sugUpdateSliderFeedback();
   } else {
     b_wrap.style.display = 'none';
   }
@@ -4367,7 +4752,12 @@ function sugUpdateSliderFeedback() {
     return;
   }
   var v = sug_session.aggressiveness;
-  if(sug_session.rankMode === 'cluster') {
+  if(sugHasSegmentedPane()) {
+    var sp = sugSegParams(v);
+    el.textContent = gettext(
+      'Granularity: %(tau)s · tick tags ≥ %(theta)s',
+      {tau: sp.tau, theta: sp.theta});
+  } else if(sug_session.rankMode === 'cluster') {
     var n = ((sug_session.panes[''] || {}).candidates || []).length;
     el.textContent = gettext('%(k)s themes × %(m)s each',
       {k: sugClusterK(n), m: sugClusterPer()});
@@ -4384,14 +4774,32 @@ function sugApplySlider() {
   }
   SUG_SLIDER_TIMER = setTimeout(function() {
     SUG_SLIDER_TIMER = null;
-    if(!sug_session) {
+    sugSliderSettled();
+  }, 250);
+}
+
+// The slider settled: re-filter lexical panes; segmented panes recompute
+// their units for the new (tau, theta) (sections are not re-labelled)
+function sugSliderSettled() {
+  if(!sug_session) {
+    return;
+  }
+  var seg = [];
+  sugPaneKeys().forEach(function(k) {
+    var pane = sug_session.panes[k];
+    if(pane.algo === 'segmented') {
+      seg.push(k);
       return;
     }
     if(sug_session.rankMode === 'cluster') {
-      sugPaneKeys().forEach(sugReclusterPane);
+      sugReclusterPane(k);
     }
-    sugRefilter();
-  }, 250);
+    sugRefilterPane(k);
+  });
+  if(seg.length < sugPaneKeys().length) {
+    sugSetStatus(sugStatusText());
+  }
+  seg.forEach(sugComputePane);
 }
 
 function sugInit() {
@@ -4436,12 +4844,7 @@ function sugInit() {
     if(SUG_SLIDER_TIMER) {
       clearTimeout(SUG_SLIDER_TIMER);
       SUG_SLIDER_TIMER = null;
-      if(sug_session) {
-        if(sug_session.rankMode === 'cluster') {
-          sugPaneKeys().forEach(sugReclusterPane);
-        }
-        sugRefilter();
-      }
+      sugSliderSettled();
     }
   });
   document.getElementById('sug-trans').addEventListener('change', function(e) {
@@ -4505,8 +4908,10 @@ function sugInit() {
   });
   // Badge clicks are delegated: badges are re-created on every re-render
   document.addEventListener('click', function(e) {
-    var badge = e.target && e.target.closest
-      ? e.target.closest('.sug-speaker-badge') : null;
+    var marker = e.target && e.target.closest
+      ? e.target.closest(SUG_MARKER_SELECTOR) : null;
+    var badge = marker && marker.classList.contains('sug-speaker-badge')
+      ? marker : null;
     if(badge && sug_session && sug_session.turns) {
       e.preventDefault();
       sugSpeakerMenu(parseInt(badge.getAttribute('data-idx'), 10),
@@ -5148,6 +5553,35 @@ function sugSelfTest() {
   assert(sugCutoff() > 0.9, 'conservative slider raises cut-off');
   sug_session = saved;
 
+  // Segment-based suggestions: slider mapping, extra fields through the merge
+  var sp0 = sugSegParams(0), sp50 = sugSegParams(50), sp100 = sugSegParams(100);
+  assert(sp0.tau === 0.05 && sp0.theta === 0.8, 'slider 0 -> tau 0.05, theta 0.8');
+  assert(Math.abs(sp50.tau - 0.35) < 1e-9 && Math.abs(sp50.theta - 0.6) < 1e-9,
+         'slider 50 -> tau 0.35, theta 0.6');
+  assert(Math.abs(sp100.tau - 0.65) < 1e-9 && Math.abs(sp100.theta - 0.4) < 1e-9,
+         'slider 100 -> tau 0.65, theta 0.4');
+  var mc = sugMergeOverlaps([
+    {start: 0, end: 10, raw: 0.6, lexPct: 0.2, cStart: 0, cEnd: 10,
+     tags: [{id: 1}], section_id: 'a', ticked: [1]},
+    {start: 5, end: 20, raw: 0.9, lexPct: 0.5, cStart: 5, cEnd: 20,
+     tags: [{id: 2}], section_id: 'b', ticked: [2]},
+    {start: 30, end: 40, raw: 0.5, lexPct: 0.1, cStart: 30, cEnd: 40,
+     tags: [{id: 3}], section_id: 'c', ticked: []},
+  ]);
+  assert(mc.length === 2 && mc[0].end === 20 && mc[0].raw === 0.9,
+         'merge unions spans');
+  assert(mc[0].section_id === 'b' && mc[0].tags[0].id === 2
+         && mc[0].ticked[0] === 2, 'merge keeps extras of the higher-raw candidate');
+  assert(mc[1].section_id === 'c', 'non-overlapping candidate untouched');
+  assert(typeof SUG_ALGOS.segmented.run === 'function'
+         && SUG_MARKER_SELECTOR.indexOf('.seg-separator') !== -1,
+         'segmented algorithm and marker selector registered');
+
+  if(typeof segAiSelfTest === 'function') {
+    segAiSelfTest().then(function(n) {
+      console.log('segAiSelfTest: ' + n + ' failure(s)');
+    });
+  }
   if(typeof segSelfTest === 'function') {
     segSelfTest().then(function(n) {
       console.log('segSelfTest: ' + n + ' failure(s)');

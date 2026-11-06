@@ -27,6 +27,9 @@
         <li class="nav-item">
           <a class="nav-link" id="tags-tab" data-toggle="tab" href="#tags" role="tab" aria-controls="tags" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans %}Highlights{% endtrans %}</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" id="segments-tab" data-toggle="tab" href="#segments" role="tab" aria-controls="segments" aria-selected="false">{# TRANSLATORS: Left pane tab, keep short #}{% trans %}Sections{% endtrans %}</a>
+        </li>
       </ul>
 
       <div class="tab-content" id="myTabContent">
@@ -49,6 +52,8 @@
           <p><a href="javascript:showMembers()" class="w-100 btn btn-outline-secondary" role="button">{% trans %}Manage collaborators{% endtrans %}</a></p>
 
           {% endif %}
+
+          <p><button type="button" id="seg-script-btn" class="w-100 btn btn-outline-primary">{% trans %}Script &amp; segments{% endtrans %}</button></p>
 
           <p><a href="{{ reverse_url('export_project_sqlite', project.id) }}" class="w-100 btn btn-outline-primary" role="button">{% trans %}Export project{% endtrans %}</a></p>
 
@@ -82,6 +87,11 @@
             <li class="list-group-item disabled">{% trans %}Loading...{% endtrans %}</li>
           </ul>
           <input type="checkbox" id="backlight" class="mt-3" /> <label for="backlight">{% trans %}Backlight{% endtrans %}</label>
+        </div>
+
+        <!-- Thematic sections of the open document -->
+        <div class="tab-pane fade" id="segments" role="tabpanel" aria-labelledby="segments-tab">
+          <div id="seg-sections-box"></div>
         </div>
 
         <!-- List of tags -->
@@ -152,6 +162,7 @@
             <option value="lexrank">LexRank</option>
             <option value="yake">YAKE</option>
             <option value="rake">RAKE</option>
+            <option value="segmented">{% trans %}Segment-based coding{% endtrans %}</option>
           </select>
         </label>
         <span id="sug-algo-b-wrap" style="display: none;">
@@ -161,6 +172,7 @@
               <option value="lexrank">LexRank</option>
               <option value="yake">YAKE</option>
               <option value="rake">RAKE</option>
+              <option value="segmented">{% trans %}Segment-based coding{% endtrans %}</option>
             </select>
           </label>
         </span>
@@ -616,6 +628,91 @@
         <small class="form-text text-muted mr-auto">{% trans %}Patterns match the first line of a turn; the first matching speaker wins. Confirm applies the labels to the transcript.{% endtrans %}</small>
         <button type="button" class="btn btn-outline-secondary" id="sug-speakers-propose">{% trans %}Propose with AI{% endtrans %}</button>
         <button type="button" class="btn btn-primary" id="sug-speakers-confirm">{% trans %}Confirm speakers{% endtrans %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script & segments modal: support documents and the segment guide -->
+<div class="modal" id="seg-script-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg seg-modal-wide" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans %}Script &amp; segments{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small" id="seg-script-readonly-note" style="display: none;">{% trans %}Only project administrators can change the script and the segments.{% endtrans %}</p>
+        <div class="alert alert-warning" id="seg-script-notice" style="display: none;"></div>
+        <div class="alert alert-danger" id="seg-script-error" style="display: none;"></div>
+
+        <h6>{% trans %}Support documents{% endtrans %}</h6>
+        <p class="text-muted small">{% trans %}Interview scripts, research questions and other documents that describe the interviews. They are stored in the project and only sent to your reasoning model to propose segments.{% endtrans %}</p>
+        <ul class="list-group mb-2" id="seg-support-list"></ul>
+        <div class="seg-edit-only mb-3" id="seg-support-edit">
+          <div class="form-row align-items-center mb-2">
+            <div class="col-auto"><input type="file" id="seg-support-file" class="form-control-file" /></div>
+            <div class="col-auto">
+              <select id="seg-upload-kind" class="form-control form-control-sm">
+                <option value="script">{% trans %}Script{% endtrans %}</option>
+                <option value="research_questions">{% trans %}Research questions{% endtrans %}</option>
+                <option value="hypotheses">{% trans %}Hypotheses{% endtrans %}</option>
+                <option value="other">{% trans %}Other{% endtrans %}</option>
+              </select>
+            </div>
+            <div class="col-auto"><button type="button" class="btn btn-outline-primary btn-sm" id="seg-support-upload">{% trans %}Upload{% endtrans %}</button></div>
+          </div>
+          <div class="form-row mb-1">
+            <div class="col"><input type="text" id="seg-paste-name" class="form-control form-control-sm" placeholder="{% trans %}Name of the pasted document{% endtrans %}" /></div>
+            <div class="col-auto">
+              <select id="seg-paste-kind" class="form-control form-control-sm">
+                <option value="script">{% trans %}Script{% endtrans %}</option>
+                <option value="research_questions">{% trans %}Research questions{% endtrans %}</option>
+                <option value="hypotheses">{% trans %}Hypotheses{% endtrans %}</option>
+                <option value="other">{% trans %}Other{% endtrans %}</option>
+              </select>
+            </div>
+          </div>
+          <textarea id="seg-paste-text" class="form-control form-control-sm mb-1" rows="3" placeholder="{% trans %}Paste the text here{% endtrans %}"></textarea>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="seg-paste-add">{% trans %}Add pasted text{% endtrans %}</button>
+        </div>
+
+        <h6 class="mt-3">{% trans %}Segment guide{% endtrans %}</h6>
+        <p class="text-muted small">{% trans %}Broad areas of the interview. Documents are divided into sections that follow these segments, and the questions help recognise them.{% endtrans %}</p>
+        <div id="seg-guide-rows"></div>
+        <div class="seg-edit-only mt-2" id="seg-guide-tools">
+          <button type="button" class="btn btn-outline-primary btn-sm" id="seg-guide-add">{% trans %}Add segment{% endtrans %}</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="seg-guide-generate">{% trans %}Generate guide with AI{% endtrans %}</button>
+          <span class="text-muted small ml-2" id="seg-guide-gen-status"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="text-muted small mr-auto" id="seg-script-status"></span>
+        <button type="button" class="btn btn-primary seg-edit-only" id="seg-script-save">{% trans %}Save{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" id="seg-script-close">{% trans %}Close{% endtrans %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New emergent segments confirmation (before saving suggested highlights) -->
+<div class="modal" id="seg-emergent-modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="seg-emergent-title"></h5>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">{% trans %}These sections do not match any segment of the guide. Confirm to add them to the project's segment guide, or merge them into an existing segment.{% endtrans %}</p>
+        <div id="seg-emergent-rows"></div>
+        <div class="alert alert-danger mt-2 mb-0" id="seg-emergent-error" style="display: none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="seg-emergent-yes">{% trans %}Yes{% endtrans %}</button>
+        <button type="button" class="btn btn-outline-danger" id="seg-emergent-discard">{% trans %}Discard{% endtrans %}</button>
+        <button type="button" class="btn btn-secondary" id="seg-emergent-back">{% trans %}Back{% endtrans %}</button>
       </div>
     </div>
   </div>
