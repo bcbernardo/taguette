@@ -1254,10 +1254,18 @@ function segSimilarityDistribution(items, vecs) {
   return D;
 }
 
+// Continuity questions are rationed: only joins within SEG_AMBIGUOUS_IQR * IQR
+// of the threshold, at most min(SEG_CONTINUITY_MAX, 5% of sentences) per run;
+// beyond that the threshold alone decides.
+var SEG_AMBIGUOUS_IQR = 0.1;
+var SEG_CONTINUITY_MAX = 80;
+var SEG_CONTINUITY_FRACTION = 0.05;
+
 // Greedy cohesion cut, sequential because ambiguous cases may consult the
 // decision model and the unit centroid depends on earlier answers.
 function segGreedyUnits(items, vecs, sections, P, thr, iqr, deps) {
-  var units = [], cur = null, nulls = 0;
+  var units = [], cur = null, nulls = 0, asked = 0;
+  var cap = Math.min(SEG_CONTINUITY_MAX, Math.ceil(SEG_CONTINUITY_FRACTION * items.length));
   function startUnit(j) {
     cur = {i0: j, i1: j + 1, start: items[j].start, end: items[j].end,
            words: items[j].words, sum: segAddInto(null, vecs[j]), sec: items[j].sec};
@@ -1283,8 +1291,9 @@ function segGreedyUnits(items, vecs, sections, P, thr, iqr, deps) {
         continue;
       }
       var c = segCos(vecs[j], cur.sum);
-      var ambiguous = iqr > 0 && Math.abs(c - thr) < 0.25 * iqr;
-      if(ambiguous && nulls < 3 && deps) {
+      var ambiguous = iqr > 0 && Math.abs(c - thr) < SEG_AMBIGUOUS_IQR * iqr;
+      if(ambiguous && nulls < 3 && asked < cap && deps) {
+        ++asked;
         var last = [];
         for(var q = Math.max(cur.i0, cur.i1 - 2); q < cur.i1; ++q) {
           last.push(items[q].text);
@@ -2891,6 +2900,46 @@ function segSelfTest() {
           return x.smallTalk === 0.5;
         }), 'smallTalk probability kept below threshold');
       });
+    });
+  });
+
+  // continuity questions are rationed: cap and narrow band
+  tests.push(function() {
+    var items = [], vecs = [], n = 400;
+    for(var i = 0; i < n; ++i) {
+      items.push({text: 's' + i, words: 3, start: i * 4, end: i * 4 + 3, sec: 0, cut: false});
+      var a = (i * 0.37) % 3.1416;
+      vecs.push(segVecNorm([Math.cos(a), Math.sin(a)]));
+    }
+    var secs = [{label: 'L'}];
+    var P = segParams({unit_max_words: 100000});
+    var asked = 0;
+    var deps = {decide: function() {
+      ++asked;
+      return Promise.resolve({continuity: {choice: 'continues', probabilities: {continues: 0.8, new_point: 0.2}}});
+    }};
+    function run(iqr) {
+      asked = 0;
+      return segGreedyUnits(items, vecs, secs, P, 0.5, iqr, deps).then(function() {
+        return asked;
+      });
+    }
+    var saved = [SEG_CONTINUITY_MAX, SEG_CONTINUITY_FRACTION];
+    return run(2).then(function(capped) {
+      assert(capped === Math.ceil(0.05 * n), 'continuity cap respected (' + capped + ')');
+      SEG_CONTINUITY_MAX = 1e9;
+      SEG_CONTINUITY_FRACTION = 1;
+      return run(2).then(function(wide) {
+        return run(0.4).then(function(narrow) {
+          SEG_CONTINUITY_MAX = saved[0];
+          SEG_CONTINUITY_FRACTION = saved[1];
+          assert(wide > capped && narrow < wide, 'narrower band -> fewer questions (' + narrow + ' < ' + wide + ')');
+        });
+      });
+    }).then(null, function(e) {
+      SEG_CONTINUITY_MAX = saved[0];
+      SEG_CONTINUITY_FRACTION = saved[1];
+      throw e;
     });
   });
 

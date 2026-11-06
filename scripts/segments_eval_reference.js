@@ -4,7 +4,7 @@
  * hand-coded transcript. Contains no data: fixture paths are CLI arguments.
  *
  *   node scripts/segments_eval_reference.js FIXTURE.json GUIDE.json [--grid]
- *       [--emit global|column|hybrid] [--interviewer REGEX] [--interviewee REGEX] [--dim 128] [--bigrams]
+ *       [--emit global|column|hybrid] [--fake-decide] [--interviewer REGEX] [--interviewee REGEX] [--dim 128] [--bigrams]
  *
  * FIXTURE = {docId, plainText, highlights:[{id,cStart,cEnd,tagIds,text}],
  *            tags:[{id,path,description}]}; GUIDE = server-shaped segments.
@@ -195,6 +195,62 @@ function mkInput(params, variant) {
   };
 }
 
+/* Deterministic always-answering decide (--fake-decide): request counts then
+   reflect a real service rather than a null stub. Word overlap stands in for
+   the model's judgement. */
+function contentWords(text) {
+  const out = new Set();
+  for(const t of sugTokenize(text || '')) {
+    if(t.word.length > 2 && !sugIsStop(t.word)) { out.add(t.word); }
+  }
+  return out;
+}
+function overlap(a, b) {
+  let n = 0;
+  for(const w of a) { if(b.has(w)) { ++n; } }
+  return n;
+}
+function fakeDecide(q, state) {
+  state = state || '';
+  const ans = {};
+  const pick = (name, probs) => {
+    const best = Object.keys(probs).sort((x, y) => probs[y] - probs[x])[0];
+    ans[name] = {choice: best, probabilities: probs};
+  };
+  for(const name of Object.keys(q)) {
+    const crit = q[name].criteria || {};
+    if(name === 'continuity') {
+      const m = /Passage so far: ([\s\S]*)\n\nNew sentence: ([\s\S]*)$/.exec(state);
+      const shared = m ? overlap(contentWords(m[1]), contentWords(m[2])) : 0;
+      const pn = shared < 2 ? 0.9 : 0.1;
+      pick(name, {new_point: pn, continues: 1 - pn});
+    } else if(name === 'content') {
+      pick(name, {substantive: 0.95, small_talk: 0.05});
+    } else if(/^t\d/.test(name)) {
+      const o = overlap(contentWords(crit.applies), contentWords(state));
+      const p = Math.min(0.95, 0.1 + 0.2 * o);
+      pick(name, {applies: p, does_not_apply: 1 - p});
+    } else if(name === 'segment') {
+      const sw = contentWords(state);
+      const scores = {};
+      let tot = 0;
+      for(const k of Object.keys(crit)) {
+        scores[k] = (k === 'other_topic' ? 0.5 : 1) + overlap(contentWords(crit[k]), sw);
+        tot += scores[k];
+      }
+      const probs = {};
+      for(const k of Object.keys(crit)) { probs[k] = scores[k] / tot; }
+      pick(name, probs);
+    } else {
+      const keys = Object.keys(crit);
+      const probs = {};
+      keys.forEach((k) => { probs[k] = 1 / keys.length; });
+      pick(name, probs);
+    }
+  }
+  return Promise.resolve(ans);
+}
+
 function counters() {
   const c = {embed: 0, embedTexts: 0, decide: 0, decideQ: 0, byKind: {}, llm: 0};
   const kind = (q) => (q.continuity ? 'continuity'
@@ -205,11 +261,12 @@ function counters() {
     deps(emb, mode) {
       return {
         embed: (t) => { ++c.embed; c.embedTexts += t.length; return emb.embed(t); },
-        decide: (q) => {
+        decide: (q, state) => {
           ++c.decide;
           const k = kind(q);
           c.byKind[k] = (c.byKind[k] || 0) + 1;
           c.decideQ += Object.keys(q).length;
+          if(mode === 'fake') { return fakeDecide(q, state); }
           if(mode === 'uniform') {
             const ans = {};
             for(const name of Object.keys(q)) {
@@ -319,6 +376,9 @@ function report(o, input) {
   const variants = [['embedding-only, no exemplars (excludeDocId)', 'noex', null],
                     ['embedding-only, leave-one-out exemplars', 'loo', null],
                     ['uniform-probability decide, leave-one-out', 'loo', 'uniform']];
+  if(argv.indexOf('--fake-decide') >= 0) {
+    variants.push(['fake always-answering decide, leave-one-out', 'loo', 'fake']);
+  }
   const results = [];
   for(let i = 0; i < variants.length; ++i) {
     results.push(await run(variants[i][0], variants[i][1], variants[i][2], {}, emb, true));
