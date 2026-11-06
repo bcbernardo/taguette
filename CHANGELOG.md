@@ -4,6 +4,43 @@ Changelog
 Unreleased
 ----------
 
+New feature (coding guided by thematic segments):
+* Projects can hold *support documents* (interview script, research
+  questions, hypotheses), uploaded or pasted from the new *Script &
+  segments* dialog (Project tab), and a *segment guide*: the broad
+  thematic segments the semi-structured interview covers, each with a
+  description and its script questions. The guide can be generated from
+  the support documents by an *Advanced LLM* (new settings tab), then
+  reviewed, reordered, merged and saved. Both live on the server (new
+  tables, migration and API) and are copied with the project
+* New *Segment-based coding* suggestion algorithm: the interview is
+  split into sections, each tied to a thematic segment (a segment can
+  recur after a tangent) or to an emergent off-script subject, using
+  embeddings, a Viterbi labelling and, for ambiguous passages, the
+  *Decisions* model (system 1, tab restored in the settings). Inside
+  each section, all codable speech of the included speakers is covered
+  with argument units, and each unit comes with proposed tags from the
+  codebook, checked by the decision model, with the uncertain ones
+  re-checked automatically by the fast LLM when one is configured
+* Suggestion menu: a *Suggested tags* section with confidences; tags
+  above the configured confidence come pre-ticked and are saved with
+  the highlight; the tag picker lists the suggested tags first. In this
+  mode the slider sets the unit granularity and the tick threshold
+* New *Sections* tab next to the document: script coverage, the list of
+  sections (segment name and the interviewer's opening question), with
+  segment reassignment, merge, split, boundary dragging, per-section
+  refinement and discarding emergent sections; separators are painted
+  in the text. Sections and manual edits are kept in the browser and
+  survive transcript edits for unchanged turns
+* Emergent segments join the project guide only when the document's
+  highlights are saved and the user confirms them (editable name,
+  description and generic rephrased question; a "merge into" suggestion
+  when they resemble an existing segment)
+* Settings, *Segmentation* tab: the segmentation parameters, each with
+  a plain-language help text and a restore-default button, plus
+  *Evaluate against existing highlights* and *Test parameter
+  combinations* to calibrate them on an already coded document
+
 Usability (Highlights panel):
 * Tag definitions longer than 200 characters are now capped in the
   left panel, with a "(show more)" note at the end of the capped text

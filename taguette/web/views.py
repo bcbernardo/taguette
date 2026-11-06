@@ -15,6 +15,18 @@ from .. import validate
 from .base import BaseHandler, PromMeasureRequest, _f
 
 
+def script_json(obj, **kwargs):
+    """JSON safe to embed in an inline <script>: escapes <, > and & so that
+    user- or LLM-provided strings (e.g. "</script>") can't end the tag.
+    """
+    return jinja2.Markup(
+        json.dumps(obj, **kwargs)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -500,15 +512,15 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
-        documents_json = jinja2.Markup(json.dumps(
+        documents_json = script_json(
             {
                 str(doc.id): {'id': doc.id, 'name': doc.name,
                               'description': doc.description}
                 for doc in project.documents
             },
             sort_keys=True,
-        ))
-        tags_json = jinja2.Markup(json.dumps(
+        )
+        tags_json = script_json(
             {
                 str(tag.id): {'id': tag.id,
                               'path': tag.path,
@@ -518,22 +530,22 @@ class Project(BaseHandler):
                 for tag in project.tags
             },
             sort_keys=True,
-        ))
-        support_documents_json = jinja2.Markup(json.dumps(
+        )
+        support_documents_json = script_json(
             [doc.to_json(contents=False) for doc in project.support_documents]
-        ))
-        thematic_segments_json = jinja2.Markup(json.dumps(
+        )
+        thematic_segments_json = script_json(
             [seg.to_json() for seg in project.thematic_segments]
-        ))
+        )
         members = (
             self.db.query(database.ProjectMember)
             .filter(database.ProjectMember.project_id == project_id)
         ).all()
         can_delete_project = privileges.can_delete_project()
-        members_json = jinja2.Markup(json.dumps(
+        members_json = script_json(
             {member.user_login: {'privileges': member.privileges.name}
              for member in members}
-        ))
+        )
         _ = self.xsrf_token  # Make sure XSRF cookie is set
         return self.render(
             'project.html',

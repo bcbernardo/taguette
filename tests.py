@@ -2561,6 +2561,24 @@ class TestSupportAndSegments(MyHTTPTestCase):
             db.query(database.ThematicSegment)
             .filter(database.ThematicSegment.project_id == 1).count(), 3)
 
+
+    @gen_test
+    async def test_project_page_escapes_segments(self):
+        # Segment names (LLM- or user-provided) end up in the project page's
+        # inline <script>: they must not be able to close it
+        self.setup_db()
+        await self.login('admin')
+        evil = '</script><script>alert(1)</script>'
+        async with self.aput('/api/project/1/thematic_segments', json={
+            'thematic_segments': [{'name': evil, 'source': 'emergent'}],
+        }) as r:
+            self.assertEqual(r.status, 200)
+        async with self.aget('/project/1') as r:
+            self.assertEqual(r.status, 200)
+            page = await r.text()
+        self.assertNotIn(evil, page)
+        self.assertIn(
+            '\\u003c/script\\u003e\\u003cscript\\u003ealert(1)', page)
     @with_tempdir
     @gen_test
     async def test_copy_and_cascade(self, tmp):
