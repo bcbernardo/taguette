@@ -227,3 +227,16 @@ For the reference interview, its script has to be uploaded as a support document
   3. open a suggestion and check the proposed tags;
   4. save and try the three outcomes of the emergent-segment confirmation (Yes, Back, Discard), checking that the guide changes only on Yes;
   5. in the Segmentation tab of the configuration screen, check the help texts and run the evaluation and the parameter testing.
+
+## Implementation notes (as built)
+
+Where the implementation refines the plan:
+
+- **Files.** `segments.js` is split in three, all sharing the `seg` prefix: `segments.js` (pure pipeline, no DOM or network: windows, Viterbi, sections, units, tags, question builders and parsers, evaluation; runs under Node), `segments-ai.js` (Jev/Laya decision transport, fast/advanced LLM calls, server API helpers, exemplar fetching) and `segments-ui.js` (panels, persistence, session hooks, emergent confirmation, evaluation tab). The pipeline receives its embedder, decision and LLM functions as injected dependencies.
+- **Decisions task.** The speaker feature had removed the `decisions` tab. It is restored, with the `laya` local service, and is the system-1 model used here.
+- **Model-agnostic parameters.** Raw cosine thresholds depend on the embedding model, so the parameters are relative to each document. `τ` and `κ` are quantiles: of the sentence-to-unit similarities and of the per-window best segment scores. Emissions are z-scores, and `λ` is in z units. Switching segments costs `λ` at a turn start, `0.25·λ` at a substantive interviewer question and `1.5·λ` mid-turn. Defaults: `τ` 0.25, `κ` 0.15, `λ` 2. Values are stored in `taguConfig().segmentation_params`.
+- **Requests.** One decision request per unit carries the small-talk question and the K tag questions. Ambiguous windows are capped at min(120, 20% of content windows) and continuity questions at min(80, 5% of sentences). On the reference interview this gives about 320 decision requests, 3–4 embedding batches and about 40 fast-LLM calls.
+- **Evaluation.** Units tile all codable speech, so unit recall is saturated (≈ 1.0). The tab therefore also reports IoU matching (a unit and a highlight with IoU ≥ 0.5) and the recall/F1 of the pre-ticked tags. "Test parameter combinations" optimizes IoU F1 for `τ`, `κ` and `λ`, and ticked-tag F1 for `θ`.
+- **Learning from saved highlights.** When suggestions are saved, the unit vectors and tags are recorded per thematic segment in IndexedDB. Later analyses use them as prototype centroids and as the tag/segment co-occurrence bonus. The document under evaluation is excluded.
+- **Security.** JSON embedded in the project page's inline script is now escaped (`</script>` in a segment name could otherwise break out).
+- **Not validated yet.** The defaults were checked offline only (`scripts/segments_eval_reference.js`), with a TF-IDF/LSA stand-in embedder, a synthetic guide and mock decisions. They should be recalibrated with real models in the configuration tab.
