@@ -301,7 +301,7 @@ function segSafe(fn) {
   }
 }
 
-function segDecide(deps, questions, state) {
+function segDepDecide(deps, questions, state) {
   if(!deps || typeof deps.decide !== 'function') {
     return Promise.resolve(null);
   }
@@ -310,7 +310,7 @@ function segDecide(deps, questions, state) {
   });
 }
 
-function segLLM(deps, prompt, maxTokens) {
+function segDepLLM(deps, prompt, maxTokens) {
   if(!deps || typeof deps.llm !== 'function') {
     return Promise.resolve(null);
   }
@@ -1284,7 +1284,7 @@ function segGreedyUnits(items, vecs, sections, P, thr, iqr, deps) {
           last.push(items[q].text);
         }
         var state = segContinuityState(sections[it.sec].label, last.join(' '), it.text);
-        return segDecide(deps, segContinuityQuestion(), state).then(
+        return segDepDecide(deps, segContinuityQuestion(), state).then(
           function(jj, cc, answers) {
             var p = answers ? segParseContinuity(answers) : null;
             nulls = p === null ? nulls + 1 : 0;
@@ -1399,7 +1399,7 @@ function segBuildUnits(sections, input, deps, infos) {
           break;
         }
       }
-      return segDecide(deps, segSmallTalkQuestion(),
+      return segDepDecide(deps, segSmallTalkQuestion(),
                        segSmallTalkState(sec ? sec.label : '', unit.text))
         .then(function(ans) {
           unit.smallTalk = ans ? segParseSmallTalk(ans) : null;
@@ -1616,7 +1616,7 @@ function segTagRecheck(units, sections, input, deps, P) {
     items.forEach(function(it) {
       pairs += it.tags.length;
     });
-    return segLLM(deps, segTagRecheckPrompt(job.sec.name, items),
+    return segDepLLM(deps, segTagRecheckPrompt(job.sec.name, items),
                   Math.min(4000, 40 * pairs + 100)).then(function(txt) {
       var res = txt ? segParseTagRecheck(txt) : null;
       if(!res) {
@@ -1687,7 +1687,7 @@ function segProposeTags(units, sections, input, deps) {
         ids.push(c.tag.id);
         questions['t' + c.tag.id] = segTagQuestion(c.tag, c.ex >= 0 ? exemplars[c.ex].text : '');
       });
-      return segDecide(deps, questions, segTagState(sec.name, sec.openingQuestion, unit.text))
+      return segDepDecide(deps, questions, segTagState(sec.name, sec.openingQuestion, unit.text))
         .then(function(ans) {
           var probs = ans ? segParseTagAnswers(ans, ids) : {};
           unit.tags = row.map(function(c) {
@@ -2206,7 +2206,7 @@ function segTieBreak(windows, vecs, protos, input, deps, infos, params) {
     });
     var state = segWindowState(windows[w], segLastCueText(windows, w, infos),
                                w > 0 ? windows[w - 1].text : '');
-    return segDecide(deps, segWindowQuestion(top), state).then(function(ans) {
+    return segDepDecide(deps, segWindowQuestion(top), state).then(function(ans) {
       var parsed = ans ? segParseWindowAnswer(ans, guide) : null;
       if(parsed) {
         decisions[w] = parsed;
@@ -2269,7 +2269,7 @@ function segRunSections(input, deps) {
     });
     segProgress(deps, 'emergent', 0, emergent.length);
     return Promise.all(emergent.map(function(s) {
-      return segLLM(deps, segEmergentPrompt(input.plainText.slice(s.start, s.end)), 500)
+      return segDepLLM(deps, segEmergentPrompt(input.plainText.slice(s.start, s.end)), 500)
         .then(function(txt) {
           var p = txt ? segParseEmergent(txt) : null;
           if(p) {
