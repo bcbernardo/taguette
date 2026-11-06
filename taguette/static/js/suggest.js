@@ -2038,7 +2038,10 @@ function sugSegParams(v) {
 
 function sugSegCacheKey() {
   var p = sugSegParams(sug_session ? sug_session.aggressiveness : 50);
-  return 'segmented|' + p.tau + '|' + p.theta + '|v' + SUG_SEG_VERSION;
+  // segResultKey(): text, speakers, guide, section params, manual edits (the
+  // cached units are only valid for the inputs they were computed from)
+  var rk = (typeof segResultKey === 'function') ? segResultKey() : '';
+  return 'segmented|' + p.tau + '|' + p.theta + '|' + rk + '|v' + SUG_SEG_VERSION;
 }
 
 // Does any pane of the current session use the segmented algorithm?
@@ -2081,6 +2084,8 @@ function sugSegCandidates() {
   var key = p.tau + '|' + p.theta;
   if(!sess.segPending || sess.segPending.key !== key
      || sess.segPending.gen !== gen) {
+    // Latest request wins: an older one never writes sess.segResult
+    var seq = sess.segSeq = (sess.segSeq || 0) + 1;
     var prom;
     if(sess.segResult && sess.segParams && sess.segParams.key === key) {
       prom = Promise.resolve(sess.segResult);
@@ -2091,12 +2096,18 @@ function sugSegCandidates() {
     }
     var pending = {key: key, gen: gen};
     pending.promise = prom.then(function(result) {
-      if(sug_session !== sess || (sess.editGen || 0) !== gen) {
+      if(sug_session !== sess || (sess.editGen || 0) !== gen
+         || sess.segSeq !== seq) {
         return null;
       }
       sess.segResult = result;
       sess.segParams = {key: key};
       return {cands: segUnitsAsCandidates(result, p.theta), theta: p.theta};
+    }, function(err) {
+      if(err && err.stale) {
+        return null;   // superseded by a newer run (segments-ui.js)
+      }
+      throw err;
     });
     var clear = function() {
       if(sess.segPending === pending) {
@@ -2128,6 +2139,7 @@ function sugRecomputeSegmented() {
   sug_session.segResult = null;
   sug_session.segParams = null;
   sug_session.segPending = null;
+  sug_session.segSeq = (sug_session.segSeq || 0) + 1;
   sugPaneKeys().forEach(function(k) {
     if(sug_session.panes[k].algo === 'segmented') {
       sugComputePane(k);
@@ -2758,6 +2770,26 @@ function sugRefilter() {
   sugSetStatus(sugStatusText());
 }
 
+// Drop the candidates (byte offsets) of which at least half lies inside
+// accepted (staged) highlights
+function sugDropStagedOverlaps(cands) {
+  var staged = sug_session.staged || [];
+  if(!staged.length) {
+    return cands;
+  }
+  return cands.filter(function(c) {
+    var len = c.end - c.start, ov = 0;
+    if(len <= 0) {
+      return true;
+    }
+    for(var i = 0; i < staged.length; ++i) {
+      ov += Math.max(0, Math.min(c.end, staged[i].end)
+                        - Math.max(c.start, staged[i].start));
+    }
+    return ov * 2 < len;
+  });
+}
+
 function sugRefilterPane(pkey) {
   var pane = sug_session.panes[pkey];
   var akey = sugAlgoCacheKey(pane.algo);
@@ -2788,6 +2820,8 @@ function sugRefilterPane(pkey) {
       return !sugIsExcludedSpan(c.cStart, c.cEnd);
     });
   }
+  // Passages the user already accepted do not come back as suggestions
+  cands = sugDropStagedOverlaps(cands);
   // Selection: either per-theme top-m (cluster mode with vectors), or the
   // percentile cut-off over effective centrality
   var entries; // [{c, sortPct, lexPct, embPct}]
@@ -2900,6 +2934,19 @@ function sugRefilterPane(pkey) {
   });
   stash();
   sugRenderPane(pkey);
+  sugSegPanelRefresh();
+}
+
+// The Sections panel counts the suggestions of the segmented panes and the
+// accepted highlights: redraw it when those change
+function sugSegPanelRefresh() {
+  if(typeof segRenderSections === 'function') {
+    try {
+      segRenderSections();
+    } catch(error) {
+      console.error('segRenderSections failed:', error);
+    }
+  }
 }
 
 // Optional embedding re-scoring: centrality = cosine to document centroid.
@@ -3364,6 +3411,9 @@ function sugUpdateCounts() {
       '%(accepted)s accepted highlight(s), %(pending)s pending suggestion(s)',
       {accepted: sug_session.staged.length,
        pending: sugStatusCountPending()});
+  }
+  if(sug_session) {
+    sugSegPanelRefresh();
   }
 }
 
@@ -4536,14 +4586,20 @@ function sugCleanup() {
   sugSetStatus('');
 }
 
-// POST the staged highlights with the regular API, then clean up
+// POST the staged highlights with the regular API, then clean up. Every
+// highlight that was saved leaves the staged list (the real highlight arrives
+// through the long-poll); the ones that failed stay staged, so saving again
+// never posts a highlight twice. With failures the session stays open and
+// done() is not called.
 function sugSaveStaged(done) {
-  var staged = sug_session ? sug_session.staged.slice() : [];
+  var sess = sug_session;
+  var staged = sess ? sess.staged.slice() : [];
   if(staged.length === 0) {
     done();
     return;
   }
   showSpinner();
+  var saved = [], failed = [], firstError = null;
   var p = Promise.resolve();
   staged.forEach(function(st) {
     p = p.then(function() {
@@ -4551,28 +4607,49 @@ function sugSaveStaged(done) {
         '/api/project/' + project_id + '/document/' + current_document + '/highlight/new',
         {start_offset: st.start, end_offset: st.end, tags: st.tags}
       );
+    }).then(function() {
+      saved.push(st);
+      var at = sess.staged.indexOf(st);
+      if(at !== -1) {
+        sess.staged.splice(at, 1);
+      }
+      if(sug_session === sess) {
+        sugRemoveStagedDom(st.aid);
+      }
+    }, function(error) {
+      console.error('Failed to save a highlight:', error);
+      failed.push(st);
+      firstError = firstError || error;
     });
   });
   p.then(function() {
     hideSpinner();
-    if(typeof segRecordSaved === 'function') {
+    if(sug_session === sess) {
+      sugUpdateCounts();
+    }
+    if(saved.length && typeof segRecordSaved === 'function') {
       try {
-        segRecordSaved(staged.map(function(st) {
+        var rec = segRecordSaved(saved.map(function(st) {
           var o = {};
           for(var k in st) { o[k] = st[k]; }
           o.tags = (st.tags || []).slice();
           return o;
         }));
+        if(rec && rec.then) {
+          rec.then(null, function(error) {
+            console.error('segRecordSaved failed:', error);
+          });
+        }
       } catch(error) {
         console.error('segRecordSaved failed:', error);
       }
     }
-    done();
-  })
-  .catch(function(error) {
-    hideSpinner();
-    console.error('Failed to save highlights:', error);
-    alert(gettext("Couldn't create highlight!") + '\n\n' + error);
+    if(failed.length) {
+      alert(gettext("Couldn't create highlight!") + '\n\n' + firstError
+            + '\n\n' + gettext('%(n)s highlight(s) are still accepted but unsaved.',
+                                {n: failed.length}));
+      return; // stay in the session: the failed ones can be saved again
+    }
     done();
   });
 }

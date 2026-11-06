@@ -27,7 +27,14 @@ var SEG_UI_EXEMPLAR_TTL = 60000;   // ms: refetch exemplars at most this often
 
 var SEG_UI = {
   doc: null,           // state of the open document, see segUiNewDoc()
-  token: 0,            // bumped when a session starts/ends (stale async guard)
+  gen: 0,              // run generation: bumped whenever the inputs of an async
+                       // run change (session start/end, rebuild, manual edits,
+                       // guide/params changes, a new analysis result); see
+                       // segUiToken()
+  unitsSeq: 0,         // latest-wins counter among units-only refreshes
+  active: 0,           // analysis/evaluation runs in flight (AI breakers)
+  indexChain: null,    // serialises the 'seg|index' read-modify-write
+  recomputeTimer: null,
   cacheToken: 0,
   version: 0,          // bumped whenever doc.result changes
   exemplars: null,
@@ -55,6 +62,35 @@ function segUiNewDoc(docId, textHash) {
 
 function segUiEmptyManual() {
   return {assign: {}, starts: []};
+}
+
+/*
+ * Run generation. Every async producer (analysis, units refresh, section
+ * refinement, evaluation) captures segUiToken() before its first await and
+ * drops its result when segUiTokenOk() is false afterwards: the session or
+ * the transcript changed (sug_session / editGen) or SEG_UI.gen was bumped
+ * (segUiInvalidate). Units-only refreshes additionally use SEG_UI.unitsSeq so
+ * that the latest request wins.
+ */
+function segUiToken() {
+  return {sess: sug_session || null,
+          edit: sug_session ? (sug_session.editGen || 0) : 0,
+          gen: SEG_UI.gen};
+}
+
+function segUiTokenOk(tok) {
+  return !!tok.sess && sug_session === tok.sess
+    && (tok.sess.editGen || 0) === tok.edit && SEG_UI.gen === tok.gen;
+}
+
+function segUiInvalidate() {
+  ++SEG_UI.gen;
+}
+
+function segUiStaleError() {
+  var e = new Error(gettext('The suggestion session has ended.'));
+  e.stale = true;
+  return e;
 }
 
 function segUiGuide() {
@@ -318,6 +354,17 @@ function segUiFinalize(sections, ctx, manual, emergentDict) {
     }
   }
   segRefreshSections(out, ctx);
+  var known = {};
+  (ctx.guide || []).forEach(function(g) {
+    known[g.id] = true;
+  });
+  out.forEach(function(sec) {
+    if(sec.segId !== null && sec.segId !== undefined && !known[sec.segId]) {
+      // The segment was removed from the guide (for example merged away)
+      sec.name = gettext('(removed segment)');
+      sec.label = segSectionLabel(sec.name, sec.openingQuestion);
+    }
+  });
   return out;
 }
 
@@ -616,23 +663,34 @@ function segUiPersist() {
     paramsHash: segUiParamsHash(segParams()), sections: segUiStripSections(secs),
     manual: doc.manual, emergent: doc.emergent
   });
-  segIdbGet('seg|index').then(function(index) {
-    index = index || {};
-    var ids = [];
-    (secs || []).forEach(function(s) {
-      if(s.segId !== null && s.segId !== undefined && ids.indexOf(s.segId) === -1) {
-        ids.push(s.segId);
-      }
+  var ids = [];
+  (secs || []).forEach(function(s) {
+    if(s.segId !== null && s.segId !== undefined && ids.indexOf(s.segId) === -1) {
+      ids.push(s.segId);
+    }
+  });
+  var docId = doc.docId;
+  // Read-modify-write of the shared index, one update at a time
+  var step = function() {
+    return Promise.resolve(segIdbGet('seg|index')).then(function(index) {
+      index = index || {};
+      index[docId] = ids;
+      return segIdbPut('seg|index', index);
     });
-    index[doc.docId] = ids;
-    segIdbPut('seg|index', index);
+  };
+  var prev = SEG_UI.indexChain || Promise.resolve();
+  SEG_UI.indexChain = prev.then(step, step).then(null, function(err) {
+    console.warn('Could not update the segment index:', segUiErrText(err));
   });
 }
 
+// Adopt the saved record of the document, unless an analysis already produced
+// a result (then the result's own key decides whether anything is re-run).
+// Returns true when something was adopted.
 function segUiAdoptRecord(rec) {
   var doc = SEG_UI.doc;
-  if(!doc || !rec || rec.version !== 1) {
-    return;
+  if(!doc || !rec || rec.version !== 1 || doc.result) {
+    return false;
   }
   doc.manual = rec.manual || segUiEmptyManual();
   doc.manual.assign = doc.manual.assign || {};
@@ -641,6 +699,7 @@ function segUiAdoptRecord(rec) {
   if(rec.textHash === doc.textHash && rec.sections && rec.sections.length) {
     doc.sections = rec.sections;
   }
+  return true;
 }
 
 
@@ -649,28 +708,35 @@ function segUiAdoptRecord(rec) {
  */
 
 function segOnSessionStart() {
-  SEG_UI.token++;
+  segUiInvalidate();
   SEG_UI.exemplars = null;
   SEG_UI.running = null;
   SEG_UI.splitting = null;
+  SEG_UI.busy = false;
   if(!sug_session) {
     return;
   }
-  var token = SEG_UI.token, docId = current_document;
+  var gen = SEG_UI.gen, docId = current_document;
   SEG_UI.doc = segUiNewDoc(docId, sugTextKey('doc', sug_session.plainText));
   segRenderSections();
   segIdbGet(segUiDocKey(docId)).then(function(rec) {
-    if(token !== SEG_UI.token || !sug_session) {
+    if(gen !== SEG_UI.gen || !sug_session) {
       return;
     }
-    segUiAdoptRecord(rec);
+    var adopted = segUiAdoptRecord(rec);
     segRenderSections();
     segRenderSeparators();
+    if(adopted && typeof sugHasSegmentedPane === 'function'
+       && sugHasSegmentedPane()) {
+      // The user's saved edits change the sections: recompute
+      segUiScheduleRecompute();
+    }
   });
 }
 
 function segOnSessionEnd() {
-  SEG_UI.token++;
+  segUiInvalidate();
+  SEG_UI.busy = false;
   SEG_UI.doc = null;
   SEG_UI.running = null;
   SEG_UI.exemplars = null;
@@ -690,6 +756,8 @@ function segOnRebuild() {
   doc.resultKey = null;
   doc.sections = null;
   doc.unitOverrides = null;
+  segUiInvalidate();
+  SEG_UI.busy = false;
   SEG_UI.exemplars = null;
   SEG_UI.running = null;
   ++SEG_UI.version;
@@ -702,6 +770,18 @@ function segUiResultKey() {
   var doc = SEG_UI.doc;
   return [doc.textHash, doc.speakersHash, segUiGuideHash(segUiGuide()),
           segUiParamsHash(segParams()), segUiManualHash(doc.manual)].join('|');
+}
+
+// Cheap key of everything the sections depend on (text, speakers, guide,
+// section parameters, manual edits; not tau/theta). Used by the suggestion
+// cache and to decide whether the stored result is still valid.
+function segResultKey() {
+  var doc = SEG_UI.doc;
+  if(!doc || !sug_session) {
+    return '';
+  }
+  doc.speakersHash = segUiSpeakersHash(sug_session.speakers, segUiTurns());
+  return segUiResultKey();
 }
 
 function segUiEnsureDoc() {
@@ -801,18 +881,32 @@ function segUiRefreshStats(r) {
   }
 }
 
+// AI circuit breakers are reset when a run starts, but never while another
+// analysis/evaluation is in flight
+function segUiRunBegin() {
+  if(!SEG_UI.active) {
+    segAiReset();
+  }
+  ++SEG_UI.active;
+}
+
+function segUiRunEnd() {
+  SEG_UI.active = Math.max(0, SEG_UI.active - 1);
+}
+
 // Run (or reuse) windows -> sections -> units -> tags for the open session.
 // opts {force, excludeDocId, tau, theta}: tau/theta only change the units
-// stage (the sections cache is not invalidated). Rejects with a readable Error.
+// stage (the sections cache is not invalidated). Concurrent callers share the
+// sections stage; a caller whose tau/theta differ from the shared run's gets
+// its units re-run afterwards. Rejects with a readable Error (e.stale is set
+// when the run was superseded).
 function segAnalyzeDocument(opts) {
   opts = opts || {};
   if(!sug_session) {
     return Promise.reject(new Error(gettext('Start a suggestion session first.')));
   }
   var doc = segUiEnsureDoc();
-  var turns = segUiTurns();
-  doc.speakersHash = segUiSpeakersHash(sug_session.speakers, turns);
-  var key = segUiResultKey();
+  var key = segResultKey();
   var over = segUiUnitOverrides(opts);
   var uncached = opts.excludeDocId !== undefined && opts.excludeDocId !== null;
   if(!uncached && !opts.force && doc.result && doc.resultKey === key) {
@@ -822,38 +916,47 @@ function segAnalyzeDocument(opts) {
     return Promise.resolve(doc.result);
   }
   if(!uncached && !opts.force && SEG_UI.running && SEG_UI.running.key === key) {
-    return SEG_UI.running.promise;
+    var shared = SEG_UI.running;
+    return shared.promise.then(function(res) {
+      if(over && !segUiSameOverrides(over, shared.over)) {
+        return segRefreshUnits(over);
+      }
+      return res;
+    });
   }
-  var token = SEG_UI.token, gen = sug_session.editGen;
-  function stale() {
-    return !sug_session || token !== SEG_UI.token || gen !== sug_session.editGen;
-  }
-  segAiReset();
+  var tok = segUiToken();
+  var turns = segUiTurns();
+  segUiRunBegin();
   var deps = segMakeDeps({progress: segUiProgress});
   var input = null;
+  var used = over || (uncached ? null : doc.unitOverrides);
   var p = segUiMakeInput({excludeDocId: opts.excludeDocId}).then(function(inp) {
+    if(!segUiTokenOk(tok)) {
+      throw segUiStaleError();
+    }
     input = inp;
     return segRunSections(inp, deps);
   }).then(function(sr) {
-    if(stale()) {
-      throw new Error(gettext('The suggestion session has ended.'));
+    if(!segUiTokenOk(tok)) {
+      throw segUiStaleError();
     }
     sr.sections = segUiFinalize(sr.sections, segUiCtx(sr, input), input.manual,
                                 doc.emergent);
     segUiRefreshStats(sr);
     var uin = Object.create(input);
-    uin.params = segParams(over || (uncached ? null : doc.unitOverrides));
+    uin.params = segParams(used);
     return segRunUnits(sr, uin, deps);
   }).then(function(res) {
-    if(stale()) {
-      throw new Error(gettext('The suggestion session has ended.'));
+    if(!segUiTokenOk(tok)) {
+      throw segUiStaleError();
     }
     if(!uncached) {
       doc.emergent = segUiCollectEmergent(res.sections, doc.emergent);
       doc.result = res;
       doc.sections = res.sections;
       doc.resultKey = key;
-      doc.unitOverrides = over || doc.unitOverrides;
+      doc.unitOverrides = used || doc.unitOverrides;
+      segUiInvalidate();   // refreshes started on the previous result drop
       ++SEG_UI.version;
       segUiPersist();
       segRenderSections();
@@ -862,9 +965,10 @@ function segAnalyzeDocument(opts) {
     return res;
   });
   if(!uncached) {
-    SEG_UI.running = {key: key, promise: p};
+    SEG_UI.running = {key: key, promise: p, over: used};
   }
   function clear() {
+    segUiRunEnd();
     if(SEG_UI.running && SEG_UI.running.promise === p) {
       SEG_UI.running = null;
     }
@@ -878,24 +982,38 @@ function segAnalyzeDocument(opts) {
   });
 }
 
-// Re-run only units + tags (sections reused); overrides {tau, theta, ...}
+// Re-run only units + tags (sections reused); overrides {tau, theta, ...}.
+// Falls back to a full analysis when there is no result or its inputs
+// (speakers, guide, params, manual edits, text) changed. The latest request
+// wins: older ones (and any that outlive an edit or the session) reject with
+// a stale error and write nothing.
 function segRefreshUnits(overrides) {
   var doc = SEG_UI.doc;
-  var ready = (doc && doc.result) ? Promise.resolve(doc.result)
-    : segAnalyzeDocument({});
+  if(!doc || !sug_session) {
+    return Promise.reject(segUiStaleError());
+  }
+  if(!doc.result || doc.resultKey !== segResultKey()) {
+    return segAnalyzeDocument(segUiUnitOverrides(overrides) || {});
+  }
+  var tok = segUiToken(), seq = ++SEG_UI.unitsSeq, r = doc.result;
+  function stale() {
+    return !segUiTokenOk(tok) || seq !== SEG_UI.unitsSeq
+      || SEG_UI.doc !== doc || doc.result !== r;
+  }
   var deps = segMakeDeps({progress: segUiProgress});
-  return ready.then(function(r) {
-    return segUiMakeInput({overrides: overrides}).then(function(input) {
-      return segRunUnits(r, input, deps);
-    });
-  }).then(function(res) {
-    var d = SEG_UI.doc;
-    if(d && sug_session) {
-      d.result = res;
-      d.sections = res.sections;
-      d.unitOverrides = overrides || null;
-      ++SEG_UI.version;
+  return segUiMakeInput({overrides: overrides}).then(function(input) {
+    if(stale()) {
+      throw segUiStaleError();
     }
+    return segRunUnits(r, input, deps);
+  }).then(function(res) {
+    if(stale()) {
+      throw segUiStaleError();
+    }
+    doc.result = res;
+    doc.sections = res.sections;
+    doc.unitOverrides = overrides || null;
+    ++SEG_UI.version;
     return res;
   });
 }
@@ -911,6 +1029,7 @@ function segUiCommit() {
   if(!r || !sug_session) {
     return Promise.resolve();
   }
+  segUiInvalidate();   // in-flight analyses/refreshes predate this edit
   var turns = segUiTurns();
   var ctx = {guide: segUiGuide(), windows: r.windows,
              plainText: sug_session.plainText, infos: r.infos, turns: turns};
@@ -920,13 +1039,18 @@ function segUiCommit() {
   r.sections = secs;
   doc.sections = secs;
   segUiRefreshStats(r);
-  doc.resultKey = segUiResultKey();
+  doc.resultKey = segResultKey();
+  ++SEG_UI.version;
   segUiPersist();
   segRenderSections();
   segRenderSeparators();
   SEG_UI.busy = true;
   segUiStatus(gettext('Updating suggestions…'));
+  var tok = segUiToken();
   return segRefreshUnits(doc.unitOverrides).then(function() {
+    if(!segUiTokenOk(tok)) {
+      return;   // superseded: the newer change owns the busy flag
+    }
     SEG_UI.busy = false;
     segUiStatus('');
     segRenderSections();
@@ -934,8 +1058,14 @@ function segUiCommit() {
       sugRecomputeSegmented();
     }
   }, function(err) {
+    if(err && err.stale) {
+      if(!segUiTokenOk(tok)) {
+        return;   // superseded by a newer change, which owns the busy flag
+      }
+      err = null;   // only a newer units refresh took over: not an error
+    }
     SEG_UI.busy = false;
-    segUiStatus(segUiErrText(err));
+    segUiStatus(err ? segUiErrText(err) : '');
     segRenderSections();
   });
 }
@@ -1007,12 +1137,13 @@ function segUiMergeSections(i, keepIdx) {
   var m = merged[i];
   var boundaryKey = segUiUniqueKey(turns, secs[i + 1].start);
   // The dropped boundary is no longer a user boundary; the merged section's
-  // assignment is recorded on both turns so it survives a re-run
+  // assignment is recorded on both turns so it survives a re-run. Nothing is
+  // pinned: merging must not turn an algorithmic boundary into a user one.
   segUiForgetKey(doc.manual, boundaryKey);
   if(boundaryKey !== null) {
     doc.manual.assign[boundaryKey] = segUiAssignmentOf(m);
   }
-  segUiRecordAssign(doc.manual, turns, m.start, segUiAssignmentOf(m), true);
+  segUiRecordAssign(doc.manual, turns, m.start, segUiAssignmentOf(m), false);
   doc.result.sections = merged;
   segUiCommit();
 }
@@ -1040,6 +1171,9 @@ function segUiMoveBoundary(secId, pos) {
     return;
   }
   var secs = doc.result.sections, turns = segUiTurns();
+  if(pos === secs[i].start) {
+    return;   // dropped where it was: nothing to do, nothing to say
+  }
   var moved = segUiMoveStart(secs, i, pos);
   if(!moved) {
     segUiStatus(gettext('A section boundary cannot be moved past its neighbours.'));
@@ -1078,16 +1212,27 @@ function segUiRefineSection(secId) {
   var base = segParams(doc.unitOverrides);
   var over = {tau: segClamp(base.tau + 0.15, 0, 0.9),
               theta: segClamp(base.theta - 0.1, 0, 1)};
+  var tok = segUiToken(), seq = SEG_UI.unitsSeq;
+  function stale() {
+    return !segUiTokenOk(tok) || seq !== SEG_UI.unitsSeq
+      || SEG_UI.doc !== doc || doc.result !== r;
+  }
   SEG_UI.busy = true;
   segUiStatus(gettext('Refining the section…'));
   var deps = segMakeDeps({progress: segUiProgress});
   segUiMakeInput({overrides: over}).then(function(input) {
+    if(stale()) {
+      throw segUiStaleError();
+    }
     return segBuildUnits([sec], input, deps, r.infos).then(function(units) {
       return segProposeTags(units, [sec], input, deps).then(function() {
         return units;
       });
     });
   }).then(function(units) {
+    if(stale()) {
+      throw segUiStaleError();
+    }
     var kept = r.units.filter(function(u) {
       return u.sectionId !== sec.id;
     });
@@ -1104,6 +1249,7 @@ function segUiRefineSection(secId) {
       return a.start - b.start;
     });
     doc.result = res;
+    ++SEG_UI.unitsSeq;   // units refreshes started on the old result drop
     ++SEG_UI.version;
     SEG_UI.busy = false;
     segUiStatus('');
@@ -1112,8 +1258,11 @@ function segUiRefineSection(secId) {
       sugRecomputeSegmented();
     }
   }).then(null, function(err) {
+    if(err && err.stale && !segUiTokenOk(tok)) {
+      return;   // session ended / newer edit: nothing to report
+    }
     SEG_UI.busy = false;
-    segUiStatus(segUiErrText(err));
+    segUiStatus(err && err.stale ? '' : segUiErrText(err));
     segRenderSections();
   });
 }
@@ -1145,12 +1294,21 @@ function segUiSpans() {
   if(!sug_session) {
     return out;
   }
-  var main = sug_session.panes && sug_session.panes[''];
-  if(main) {
-    (main.suggestions || []).forEach(function(s) {
-      out.push({cStart: s.cStart, cEnd: s.cEnd});
+  // Suggestions of every pane that shows segment-based coding (the same unit
+  // in two panes counts once), plus the accepted highlights
+  var seen = {}, panes = sug_session.panes || {};
+  Object.keys(panes).forEach(function(k) {
+    if(panes[k].algo !== 'segmented') {
+      return;
+    }
+    (panes[k].suggestions || []).forEach(function(s) {
+      var id = s.cStart + ':' + s.cEnd;
+      if(!seen[id]) {
+        seen[id] = true;
+        out.push({cStart: s.cStart, cEnd: s.cEnd});
+      }
     });
-  }
+  });
   (sug_session.staged || []).forEach(function(s) {
     out.push({cStart: s.cStart, cEnd: s.cEnd});
   });
@@ -1186,6 +1344,9 @@ function segUiSelectEl(sec, sections, dict, guide) {
   guide.forEach(function(g) {
     add('s:' + g.id, g.name);
   });
+  if(cur.segId !== null && !segUiFindById(guide, cur.segId)) {
+    add('s:' + cur.segId, gettext('(removed segment)'));
+  }
   segUiOptionList(sections, dict).forEach(function(e) {
     add('e:' + e.key, gettext('Emergent: %(name)s', {name: e.name}));
   });
@@ -1209,7 +1370,7 @@ function segUiButton(act, text, title) {
 function segUiNamesOf(ids, guide) {
   return ids.map(function(id) {
     var g = segUiFindById(guide, id);
-    return g ? g.name : String(id);
+    return g ? g.name : gettext('(removed segment)');
   }).join(', ');
 }
 
@@ -1509,6 +1670,10 @@ function segBeforeSave(proceed) {
     proceed();
     return;
   }
+  if(!sug_session || !sug_session.staged || !sug_session.staged.length) {
+    proceed();   // nothing to save: nothing to confirm
+    return;
+  }
   var groups = segUiPendingGroups(doc.result.sections, doc.emergent);
   if(!groups.length) {
     proceed();
@@ -1518,7 +1683,29 @@ function segBeforeSave(proceed) {
   segUiFindMerges(groups, doc.result).then(function() {
     segUiStatus('');
     segUiOpenEmergentModal(groups, proceed);
+  }).then(null, function(err) {
+    // Never leave the stop dialog dead: report and carry on without asking
+    console.error('Emergent segments confirmation failed:', err);
+    segUiStatus(segUiErrText(err));
+    proceed();
   });
+}
+
+// Default names of the new segments must be unique (case-insensitive): the
+// later ones get " (2)", " (3)"...
+function segUiUniqueNames(groups) {
+  var used = {};
+  groups.forEach(function(g) {
+    var base = g.name || '', name = base, n = 1;
+    while(name && used[name.toLowerCase()]) {
+      name = base + ' (' + (++n) + ')';
+    }
+    g.name = name;
+    if(name) {
+      used[name.toLowerCase()] = true;
+    }
+  });
+  return groups;
 }
 
 // Pre-select "merge into Y" when a similar guide segment exists (embeddings
@@ -1548,6 +1735,7 @@ function segUiFindMerges(groups, result) {
 
 function segUiOpenEmergentModal(groups, proceed) {
   var E = SEG_UI.emergent, guide = segUiGuide();
+  segUiUniqueNames(groups);
   E.groups = groups;
   E.proceed = proceed;
   E.working = false;
@@ -1664,26 +1852,37 @@ function segUiEmergentYes() {
     return segApiSaveGuide(list);
   }).then(function(saved) {
     window.taguette_thematic_segments = saved;
-    var mapping = {};
-    E.groups.forEach(function(g) {
-      var target = null;
-      if(g.choice === 'merge' && g.merge) {
-        target = segUiFindById(saved, g.merge.segId);
-      }
-      target = target || segUiFindByName(saved, g.name);
-      if(target) {
-        mapping[g.key] = {segId: target.id, name: target.name};
-      }
-    });
-    segUiRemap(doc.result.sections, doc.manual, doc.emergent, mapping);
-    doc.sections = doc.result.sections;
-    segUiRefreshStats(doc.result);
-    // The guide changed: the analysis is rebuilt on the next run
-    doc.resultKey = null;
-    segUiPersist();
-    segRenderSections();
-    segRenderSeparators();
+    var failure = null;
+    try {
+      var mapping = {};
+      E.groups.forEach(function(g) {
+        var target = null;
+        if(g.choice === 'merge' && g.merge) {
+          target = segUiFindById(saved, g.merge.segId);
+        }
+        target = target || segUiFindByName(saved, g.name);
+        if(target) {
+          mapping[g.key] = {segId: target.id, name: target.name};
+        }
+      });
+      segUiRemap(doc.result.sections, doc.manual, doc.emergent, mapping);
+      doc.sections = doc.result.sections;
+      segUiRefreshStats(doc.result);
+      // The guide changed: the analysis is rebuilt on the next run
+      doc.resultKey = null;
+      segUiPersist();
+      segRenderSections();
+      segRenderSeparators();
+    } catch(err) {
+      console.error('Updating the sections after saving the guide failed:', err);
+      failure = err;
+    }
+    // The guide was saved: whatever happened locally, the save goes on
     segUiEmergentSetBusy(false);
+    if(failure) {
+      segUiEmergentError(segUiErrText(failure));
+      segUiStatus(segUiErrText(failure));
+    }
     var proceed = E.proceed;
     E.proceed = null;
     $('#seg-emergent-modal').modal('hide');
@@ -1725,37 +1924,42 @@ function segRecordSaved(stagedList) {
   if(!doc || !doc.result || !embKey || !stagedList || !stagedList.length) {
     return Promise.resolve();
   }
-  var units = doc.result.units || [];
+  // Everything that depends on the open document is captured NOW: by the time
+  // the IndexedDB reads settle, the session may have ended (save-and-navigate)
+  var units = doc.result.units || [], docId = doc.docId;
+  var items = [];
+  stagedList.forEach(function(st) {
+    var sec = segSectionAt(st.cStart);
+    if(!sec || sec.segId === null || sec.segId === undefined) {
+      return;
+    }
+    var best = null, bo = 0;
+    units.forEach(function(u) {
+      var o = Math.min(u.end, st.cEnd) - Math.max(u.start, st.cStart);
+      if(o > bo && u.vec) {
+        bo = o;
+        best = u;
+      }
+    });
+    if(best) {
+      items.push({segId: sec.segId, vec: best.vec,
+                  tagIds: (st.tags || []).map(function(t) {
+                    return parseInt(t, 10);
+                  })});
+    }
+  });
+  if(!items.length) {
+    return Promise.resolve();
+  }
   return Promise.all([segIdbGet('seg|protos|' + embKey), segIdbGet('seg|cooc')])
     .then(function(r) {
-      var protos = r[0] || {}, cooc = r[1] || {}, n = 0;
-      stagedList.forEach(function(st) {
-        var sec = segSectionAt(st.cStart);
-        if(!sec || sec.segId === null || sec.segId === undefined) {
-          return;
-        }
-        var best = null, bo = 0;
-        units.forEach(function(u) {
-          var o = Math.min(u.end, st.cEnd) - Math.max(u.start, st.cStart);
-          if(o > bo && u.vec) {
-            bo = o;
-            best = u;
-          }
-        });
-        if(!best) {
-          return;
-        }
-        segUiAddPrototype(protos, cooc, sec.segId, doc.docId, best.vec,
-                          (st.tags || []).map(function(t) {
-                            return parseInt(t, 10);
-                          }));
-        ++n;
+      var protos = r[0] || {}, cooc = r[1] || {};
+      items.forEach(function(it) {
+        segUiAddPrototype(protos, cooc, it.segId, docId, it.vec, it.tagIds);
       });
-      if(n) {
-        SEG_UI.extrasRaw = {embKey: embKey, protos: protos, cooc: cooc};
-        segIdbPut('seg|protos|' + embKey, protos);
-        segIdbPut('seg|cooc', cooc);
-      }
+      SEG_UI.extrasRaw = {embKey: embKey, protos: protos, cooc: cooc};
+      segIdbPut('seg|protos|' + embKey, protos);
+      segIdbPut('seg|cooc', cooc);
     });
 }
 
@@ -1960,7 +2164,7 @@ function segUiRefreshSupportDocs() {
   });
 }
 
-function segUiSupportAction(promise, okMsg) {
+function segUiSupportAction(promise, okMsg, onOk) {
   var S = SEG_UI.script;
   if(S.busy) {
     return;
@@ -1969,6 +2173,9 @@ function segUiSupportAction(promise, okMsg) {
   segUiScriptError('');
   segUiScriptStatus(gettext('Working…'));
   promise().then(function() {
+    if(onOk) {
+      onOk();   // clear the form only once the server accepted it
+    }
     return segUiRefreshSupportDocs();
   }).then(function() {
     S.busy = false;
@@ -1990,8 +2197,9 @@ function segUiUploadSupport() {
   var kind = document.getElementById('seg-upload-kind').value;
   segUiSupportAction(function() {
     return segApiUploadSupportFile(file, file.name, kind);
-  }, gettext('Document uploaded.'));
-  input.value = '';
+  }, gettext('Document uploaded.'), function() {
+    input.value = '';
+  });
 }
 
 function segUiPasteSupport() {
@@ -2004,9 +2212,10 @@ function segUiPasteSupport() {
   }
   segUiSupportAction(function() {
     return segApiAddSupportText(name, kind, text);
-  }, gettext('Document added.'));
-  document.getElementById('seg-paste-name').value = '';
-  document.getElementById('seg-paste-text').value = '';
+  }, gettext('Document added.'), function() {
+    document.getElementById('seg-paste-name').value = '';
+    document.getElementById('seg-paste-text').value = '';
+  });
 }
 
 function segUiScriptSave() {
@@ -2096,6 +2305,11 @@ function segUiOnGuideRowsClick(e) {
     rows.splice(i, 1);
   } else if(act === 'merge' && i + 1 < rows.length) {
     var a = rows[i], b = rows[i + 1];
+    if(b.id !== null && b.id !== undefined && !window.confirm(gettext(
+         'Merge «%(b)s» into «%(a)s»? Sections of documents that were assigned to «%(b)s» will be re-segmented.',
+         {a: a.name || '', b: b.name || ''}))) {
+      return;
+    }
     a.description = [a.description, b.description].filter(Boolean).join(' ');
     a.questions = [a.questions, b.questions].filter(Boolean).join('\n');
     rows.splice(i + 1, 1);
@@ -2130,8 +2344,48 @@ function segUiOnSupportClick(e) {
   }, gettext('Document deleted.'));
 }
 
+// Recompute the segmented panes (debounced) when the guide or the section
+// parameters changed under an open session: the cached suggestions are keyed
+// on segResultKey(), so this is a cache miss only when something changed.
+function segUiScheduleRecompute() {
+  if(typeof setTimeout !== 'function') {
+    return;
+  }
+  if(SEG_UI.recomputeTimer) {
+    clearTimeout(SEG_UI.recomputeTimer);
+  }
+  SEG_UI.recomputeTimer = setTimeout(function() {
+    SEG_UI.recomputeTimer = null;
+    var doc = SEG_UI.doc;
+    if(!sug_session || !doc || typeof sugRecomputeSegmented !== 'function'
+       || typeof sugHasSegmentedPane !== 'function' || !sugHasSegmentedPane()) {
+      return;
+    }
+    if(doc.result && doc.resultKey === segResultKey()) {
+      return;   // nothing the sections depend on changed
+    }
+    sugRecomputeSegmented();
+  }, 800);
+}
+
+// The guide or the section parameters changed: in-flight runs used the old
+// ones, so drop them (and the busy flag they held) and recompute
+function segUiInputsChanged() {
+  if(!SEG_UI.doc) {
+    return;
+  }
+  segUiInvalidate();
+  SEG_UI.running = null;
+  if(SEG_UI.busy) {
+    SEG_UI.busy = false;
+    segUiStatus('');
+  }
+  segUiScheduleRecompute();
+}
+
 function segUiOnGuideEvent() {
   var S = SEG_UI.script;
+  segUiInputsChanged();
   if(S.open) {
     if(S.dirty) {
       var n = document.getElementById('seg-script-notice');
@@ -2210,27 +2464,48 @@ function segUiRealHighlights() {
 // from the pipeline; the session's suggestions are not touched
 function segUiEvalRun(overrides, progress) {
   var deps = segMakeDeps({progress: progress});
+  var sess = sug_session, edit = sess ? (sess.editGen || 0) : 0;
+  function ended() {
+    return !sug_session || sug_session !== sess
+      || (sess.editGen || 0) !== edit;
+  }
+  if(ended()) {
+    return Promise.reject(segUiStaleError());
+  }
   var hls = segUiRealHighlights();
   var uses = {};
   for(var t in tags) {
     uses[t] = tags[t].count || 0;
   }
   var params = segParams(overrides), result;
-  segAiReset();
-  return segUiMakeInput({overrides: overrides, excludeDocId: current_document,
-                         manual: null}).then(function(input) {
+  segUiRunBegin();   // breakers reset only when no analysis is in flight
+  var p = segUiMakeInput({overrides: overrides, excludeDocId: current_document,
+                          manual: null}).then(function(input) {
+    if(ended()) {
+      throw segUiStaleError();
+    }
     return segRunAll(input, deps);
   }).then(function(res) {
+    if(ended()) {
+      throw segUiStaleError();
+    }
     result = res;
     function score(theta) {
       return segEvaluate(result, hls, {tagUseCounts: uses, theta: theta,
-                                       plainText: sug_session.plainText});
+                                       plainText: sess.plainText});
     }
     var m = score(params.theta);
     m.rescore = function(theta) {
       return score(theta);
     };
     return m;
+  });
+  return p.then(function(m) {
+    segUiRunEnd();
+    return m;
+  }, function(err) {
+    segUiRunEnd();
+    throw err;
   });
 }
 
@@ -2341,13 +2616,16 @@ function segEvalPanelBuild(box) {
       gridOut.appendChild(segUiEl('h6', 'mt-3', gettext('Best parameter combinations')));
       segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, function(params) {
         segSaveParams(segParams(params));
+        segUiInputsChanged();
         line.textContent = gettext('Applied. Reopen the settings to see the new values.');
       });
     }
   }
   function fail(err) {
     setRunning(false);
-    line.textContent = segUiErrText(err);
+    line.textContent = (err && err.stale)
+      ? gettext('Evaluation stopped: the suggestion session ended.')
+      : segUiErrText(err);
   }
   btn.addEventListener('click', function() {
     setRunning(true);
@@ -2647,7 +2925,163 @@ function segUiSelfTest() {
   assert(fin[0].start === 0 && fin[0].end === fin[1].start && fin[1].end === base[0].end,
          'sections still tile the text');
 
-  return Promise.resolve(failures).then(function(f) {
+  // unique default names for the emergent modal
+  var un = segUiUniqueNames([{name: 'Costs'}, {name: 'costs'}, {name: 'Costs'}, {name: 'Other'}, {name: ''}]);
+  eq(un.map(function(x) { return x.name; }), ['Costs', 'costs (2)', 'Costs (3)', 'Other', ''],
+     'default emergent names are made unique');
+
+  // dangling segment ids are shown as removed
+  var dang = segUiFinalize([sec('d0', 0, 3, 99)], {guide: guide, plainText: text, turns: turns},
+                           segUiEmptyManual(), {});
+  assert(dang[0].name === '(removed segment)', 'dangling segId is named (removed segment)');
+
+  // run generation tokens
+  var savedSess = sug_session, savedDoc = SEG_UI.doc, savedRunning = SEG_UI.running;
+  var savedFns = {mi: segUiMakeInput, ru: segRunUnits, ad: segAnalyzeDocument,
+                  rf: segRefreshUnits, md: segMakeDeps, eb: segUiEmbKey,
+                  ig: segIdbGet, ip: segIdbPut, em: segCanEditMeta};
+  function restore() {
+    sug_session = savedSess;
+    SEG_UI.doc = savedDoc;
+    SEG_UI.running = savedRunning;
+    segUiMakeInput = savedFns.mi; segRunUnits = savedFns.ru;
+    segAnalyzeDocument = savedFns.ad; segRefreshUnits = savedFns.rf;
+    segMakeDeps = savedFns.md; segUiEmbKey = savedFns.eb;
+    segIdbGet = savedFns.ig; segIdbPut = savedFns.ip; segCanEditMeta = savedFns.em;
+  }
+  sug_session = {editGen: 0, staged: [], speakers: [], plainText: text, turns: [], panes: {}};
+  var tk = segUiToken();
+  assert(segUiTokenOk(tk), 'fresh token is valid');
+  segUiInvalidate();
+  assert(!segUiTokenOk(tk), 'token dropped after a generation bump');
+  tk = segUiToken();
+  sug_session.editGen++;
+  assert(!segUiTokenOk(tk), 'token dropped after a transcript edit');
+  tk = segUiToken();
+  sug_session = {editGen: 0, staged: [], speakers: [], plainText: text, turns: [], panes: {}};
+  assert(!segUiTokenOk(tk), 'token dropped for another session');
+  assert(segUiToken().sess === sug_session && segUiTokenOk(segUiToken()), 'token follows the session');
+
+  // sections panel spans: segmented panes + staged, a shared unit counts once
+  sug_session.panes = {
+    '': {algo: 'segmented', suggestions: [{cStart: 0, cEnd: 5}, {cStart: 6, cEnd: 9}]},
+    'b': {algo: 'segmented', suggestions: [{cStart: 0, cEnd: 5}]},
+    'c': {algo: 'textrank', suggestions: [{cStart: 20, cEnd: 30}]}};
+  sug_session.staged = [{cStart: 40, cEnd: 50}];
+  eq(segUiSpans().map(function(x) { return x.cStart; }), [0, 6, 40], 'spans from segmented panes and staged');
+  sug_session.panes = {};
+  sug_session.staged = [];
+
+  var doc = SEG_UI.doc = segUiNewDoc(1, 'h');
+  doc.result = {sections: [], units: []};
+  doc.resultKey = segResultKey();
+  assert(doc.resultKey !== '' && segResultKey() === doc.resultKey, 'segResultKey is stable');
+  doc.manual.assign['k'] = {segId: 1, emergentKey: null};
+  assert(segResultKey() !== doc.resultKey, 'segResultKey follows manual edits');
+  doc.manual = segUiEmptyManual();
+  doc.speakersHash = null;
+  var rk0 = segResultKey();
+  sug_session.speakers = [{id: 'a', include: false}];
+  assert(segResultKey() !== rk0, 'segResultKey follows speaker roles');
+  sug_session.speakers = [];
+  doc.resultKey = segResultKey();
+
+  var seen = [];
+  segMakeDeps = function() { return {}; };
+  segUiMakeInput = function(o) { return Promise.resolve({overrides: o.overrides}); };
+  var delays = [25, 2];
+  segRunUnits = function(r, input) {
+    var d = delays[seen.length];
+    seen.push(input.overrides);
+    return new Promise(function(res) {
+      setTimeout(function() { res({sections: [], units: [], tag: input.overrides.tau}); }, d);
+    });
+  };
+  var settle = function(p) {
+    return p.then(function(v) { return {ok: v}; }, function(e) { return {err: e}; });
+  };
+  var t = Promise.resolve();
+  t = t.then(function() {
+    var a = settle(segRefreshUnits({tau: 0.1}));
+    var b = settle(segRefreshUnits({tau: 0.2}));
+    return Promise.all([a, b]).then(function(r) {
+      assert(r[0].err && r[0].err.stale, 'older units refresh is dropped');
+      assert(r[1].ok && r[1].ok.tag === 0.2 && doc.result.tag === 0.2,
+             'newest units refresh wins even though it finished first');
+      assert(doc.unitOverrides.tau === 0.2, 'overrides follow the winner');
+    });
+  }).then(function() {
+    delays = [10];
+    seen = [];
+    var before = doc.result;
+    var p = settle(segRefreshUnits({tau: 0.3}));
+    segUiInvalidate();   // e.g. a manual edit while the units were computed
+    return p.then(function(r) {
+      assert(r.err && r.err.stale && doc.result === before, 'refresh dropped after an invalidation');
+    });
+  }).then(function() {
+    // a changed result key (guide, speakers, params...) falls back to a full analysis
+    var called = [];
+    segAnalyzeDocument = function(o) { called.push(o); return Promise.resolve('full'); };
+    doc.resultKey = 'old';
+    return segRefreshUnits({tau: 0.4, theta: 0.5}).then(function(r) {
+      assert(r === 'full' && called.length === 1 && called[0].tau === 0.4, 'key mismatch -> full analysis');
+    });
+  }).then(function() {
+    // in-flight sharing covers the sections only: other tau/theta re-run the units
+    segAnalyzeDocument = savedFns.ad;
+    var refreshed = [];
+    segRefreshUnits = function(o) { refreshed.push(o); return Promise.resolve('refreshed'); };
+    doc.result = null;
+    SEG_UI.running = {key: segResultKey(), promise: Promise.resolve('shared'),
+                      over: {tau: 0.1, theta: 0.5}};
+    return segAnalyzeDocument({tau: 0.1, theta: 0.5}).then(function(r) {
+      assert(r === 'shared' && !refreshed.length, 'same overrides share the run');
+      return segAnalyzeDocument({tau: 0.3, theta: 0.5});
+    }).then(function(r) {
+      assert(r === 'refreshed' && refreshed.length === 1 && refreshed[0].tau === 0.3,
+             'different overrides re-run the units after the shared run');
+      SEG_UI.running = null;
+    });
+  }).then(function() {
+    // save-and-navigate: the vectors are captured before the session ends
+    segRefreshUnits = savedFns.rf;
+    var mem = {};
+    segUiEmbKey = function() { return 'ek'; };
+    segIdbGet = function(k) { return Promise.resolve(mem[k] || null); };
+    segIdbPut = function(k, v) { mem[k] = v; };
+    SEG_UI.doc = doc = segUiNewDoc(7, 'h');
+    doc.result = {sections: [sec('x0', 0, 3, 1)], units: [{start: 0, end: 30, vec: [1, 2]}], tag: 'x'};
+    var p = segRecordSaved([{cStart: 2, cEnd: 20, tags: ['5']}]);
+    SEG_UI.doc = null;   // done() -> sugCleanup -> segOnSessionEnd
+    return p.then(function() {
+      assert(mem['seg|protos|ek'] && mem['seg|protos|ek']['1'] && mem['seg|protos|ek']['1']['7'],
+             'segRecordSaved records after the session ended');
+    });
+  }).then(function() {
+    // segBeforeSave: nothing staged -> no prompt; failures never kill the dialog
+    segCanEditMeta = function() { return true; };
+    SEG_UI.doc = doc = segUiNewDoc(7, 'h');
+    doc.result = {sections: [sec('e0', 0, 1, null, {key: 'e1', name: 'N', description: '', question: ''}),
+                             sec('e1', 2, 3, 1)], units: []};
+    var n = 0;
+    segBeforeSave(function() { ++n; });
+    assert(n === 1, 'segBeforeSave proceeds directly when nothing is staged');
+    sug_session.staged = [{aid: 1}];
+    var m = 0;
+    segBeforeSave(function() { ++m; });
+    assert(m === 0, 'segBeforeSave asks when something is staged and emergent segments are pending');
+    return new Promise(function(r) { setTimeout(r, 20); }).then(function() {
+      // (the modal needs the DOM: the failure path must still proceed, once)
+      assert(m === 1, 'segBeforeSave proceeds once if the confirmation cannot be shown');
+    });
+  });
+  return t.then(null, function(err) {
+    assert(false, 'async self-test error: ' + (err && err.stack || err));
+  }).then(function() {
+    restore();
+    return failures;
+  }).then(function(f) {
     if(f) {
       console.error('SEG UI SELFTEST: ' + f + ' failure(s)');
     } else {

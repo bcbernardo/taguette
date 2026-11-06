@@ -135,6 +135,69 @@ async function main() {
   assert(st.tags.length === 1 && st.tags[0] === 1, 'staged.tags from ticked, unknown skipped: ' + st.tags);
   assert(st.suggestedTags.length === 1 && st.section_id === 's1', 'suggestedTags kept');
 
+  // cache key follows segResultKey(): new guide / speakers / params -> new key
+  run(`var segKeyValue = 'k1'; var segResultKey = function() { return segKeyValue; };`);
+  const k1 = run('sugSegCacheKey()');
+  run("segKeyValue = 'k2'");
+  assert(k1 !== run('sugSegCacheKey()') && k1.indexOf('k1') !== -1, 'cache key includes segResultKey');
+
+  // stale sugSegCandidates: an older request never writes sess.segResult
+  run(`sug_session = mkSession(); SUG_ALGO_CACHE = {};
+       var slow = {};
+       segAnalyzeDocument = function(o) {
+         return new Promise(function(r) { slow[o.tau] = r; });
+       };
+       segRefreshUnits = function(o) { return Promise.resolve({id: 'x'}); };
+       sug_session.aggressiveness = 50; var pA = sugSegCandidates();
+       sug_session.aggressiveness = 0; var pB = sugSegCandidates();`);
+  run("slow[0.05]({id: 'B'}); slow[0.35]({id: 'A'});");
+  const outs = await Promise.all([run('pA'), run('pB')]);
+  assert(outs[0] === null && outs[1] && outs[1].cands.length === 2, 'older candidates request dropped');
+  assert(run('sug_session.segResult.id') === 'B', 'segResult is the newest');
+  run(`segAnalyzeDocument = function() {
+         var e = new Error('stale'); e.stale = true; return Promise.reject(e);
+       };
+       sug_session = mkSession();`);
+  assert((await run('sugSegCandidates()')) === null, 'stale rejection resolves to null');
+
+  // staged highlights do not come back as suggestions (>= 50% overlap), any algorithm
+  run(`sug_session = mkSession(); SUG_ALGO_CACHE = {}; sug_session.panes[''].algo = 'textrank';
+       sug_session.panes[''].candidates = [
+         {start: 0, end: 10, cStart: 0, cEnd: 10, raw: 1, lexPct: 1},
+         {start: 20, end: 30, cStart: 20, cEnd: 30, raw: 1, lexPct: 1},
+         {start: 40, end: 50, cStart: 40, cEnd: 50, raw: 1, lexPct: 1}];
+       sug_session.aggressiveness = 100;
+       sug_session.staged = [{aid: 1, start: 0, end: 10}, {aid: 2, start: 25, end: 30}, {aid: 3, start: 48, end: 60}];
+       sugRefilterPane('');`);
+  const starts = run("sug_session.panes[''].suggestions.map(function(x) { return x.start; })");
+  assert(JSON.stringify(starts) === '[40]', 'staged-overlap filter (>= 50% dropped, 20% kept) got ' + JSON.stringify(starts));
+
+  // sugSaveStaged: saved items leave the staged list, failed ones stay
+  run(`sug_session = mkSession();
+       var project_id = 1, posted = [], alerts = [], recorded = [], doneCalls = 0;
+       var showSpinner = function() {}, hideSpinner = function() {};
+       var alert = function(m) { alerts.push(m); };
+       sugRemoveStagedDom = function() {}; var failAt = {20: true};
+       var postJSON = function(url, body) {
+         posted.push(body.start_offset);
+         return failAt[body.start_offset] ? Promise.reject(new Error('boom')) : Promise.resolve({});
+       };
+       var segRecordSaved = function(list) { recorded.push(list.map(function(x) { return x.start; })); return Promise.resolve(); };
+       sug_session.staged = [{aid: 1, start: 0, end: 10, tags: [1]}, {aid: 2, start: 20, end: 30, tags: []},
+                             {aid: 3, start: 40, end: 50, tags: []}];
+       sugSaveStaged(function() { doneCalls++; });`);
+  await sleep(30);
+  assert(JSON.stringify(run('posted')) === '[0,20,40]', 'all posted once');
+  assert(JSON.stringify(run('sug_session.staged.map(function(x) { return x.aid; })')) === '[2]', 'only the failed item stays staged');
+  assert(JSON.stringify(run('recorded')) === '[[0,40]]', 'segRecordSaved gets only the saved items');
+  assert(run('doneCalls') === 0 && run('alerts.length') === 1, 'failure: alert, session kept, done not called');
+  run(`failAt = {}; posted = []; sugSaveStaged(function() { doneCalls++; });`);
+  await sleep(30);
+  assert(JSON.stringify(run('posted')) === '[20]', 'second save posts only what is left');
+  assert(run('sug_session.staged.length') === 0 && run('doneCalls') === 1, 'success: staged empty, done called');
+  run(`posted = []; sugSaveStaged(function() { doneCalls++; });`);
+  assert(run('posted.length') === 0 && run('doneCalls') === 2, 'nothing staged: done directly, no posts');
+
   console.log(failures ? 'SUGGEST SEGMENTED: ' + failures + ' failure(s)' : 'SUGGEST SEGMENTED SELFTEST OK');
   process.exit(failures);
 }
