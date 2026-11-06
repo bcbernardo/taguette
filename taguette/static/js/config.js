@@ -80,6 +80,12 @@ var TAGU_LOCALS = {
       + 'ghcr.io/huggingface/text-embeddings-inference '
       + '--model-id BAAI/bge-small-en-v1.5</code>',
   },
+  laya: {
+    label: 'Laya', url: 'http://localhost:8000', probe: '/',
+    path: '/v1/systemone', kind: 'decisions',
+    install: 'Install and run the local server: '
+      + '<code>pip install "laya[serve]"</code> then <code>laya-serve</code>',
+  },
 };
 
 /*
@@ -519,12 +525,233 @@ taguConfigRegisterTab({
 });
 
 /*
+ * Decisions tab: the fast decision model (system 1) used by thematic
+ * segmentation. Both providers speak the Jev /v1/systemone wire protocol:
+ * Laya (local) and Jev (through OpenRouter or a compatible endpoint). The
+ * transport lives in segments-ai.js (resolved at call time).
+ */
+function taguDecisionsResolvedCfg(resolved) {
+  if(resolved.local) {
+    return {provider: 'laya', url: resolved.url};
+  }
+  return {provider: 'jev', url: resolved.url, key: resolved.token,
+          model: resolved.model || '~typesafe/jev-latest',
+          authHeader: resolved.authHeader, authScheme: resolved.authScheme};
+}
+
+function taguDecisionsTabBuild(el) {
+  el.appendChild(taguEl('p', 'text-muted', gettext(
+    'Fast decision model (system 1) used by thematic segmentation: ambiguous segment assignments, unit continuity, small talk, and checking proposed tags. Laya runs locally; Jev is served through OpenRouter or any compatible endpoint.')));
+  taguTaskPanel(el, {
+    task: 'decisions',
+    locals: ['laya'],
+    defaultSource: 'local:laya',
+    defaultPath: function(key) {
+      return typeof segDecisionsDefaultPath === 'function'
+        ? segDecisionsDefaultPath(key) : '';
+    },
+    modelPlaceholder: function(src) {
+      return src.indexOf('local:') === 0 ? gettext('built-in')
+        : '~typesafe/jev-latest';
+    },
+    test: function(resolved) {
+      if(typeof segDecideRaw !== 'function') {
+        return Promise.reject(new Error('Segmentation code is not loaded'));
+      }
+      return segDecideRaw(taguDecisionsResolvedCfg(resolved), {
+        probe: {type: 'choice', instructions: 'Is this sentence a question?',
+                criteria: {yes: 'it asks something', no: 'it does not'}},
+      }, 'So, how did you first get involved in this?');
+    },
+  });
+}
+
+taguConfigRegisterTab({
+  id: 'decisions', title: gettext('Decisions'), order: 300,
+  build: taguDecisionsTabBuild,
+});
+
+/*
+ * Advanced LLM tab ('reasoning' task): a long-context, more capable chat
+ * model that generates the project's segment guide from the support
+ * documents.
+ */
+function taguReasoningTabBuild(el) {
+  el.appendChild(taguEl('p', 'text-muted', gettext(
+    'Chat model that generates the project\'s segment guide from the support documents. It receives the full text of those documents in a single call, so it needs a long context window and should be a more capable model than the one used for suggestions. Any OpenAI-compatible /chat/completions endpoint works — pick one of your API keys, a local server, or a custom endpoint. The generated guide is always reviewed before it is saved.')));
+  taguHint(el, gettext(
+    'Privacy: the text of the support documents is sent straight from your browser to the chosen service (never to the Taguette server).'));
+  taguTaskPanel(el, {
+    task: 'reasoning',
+    locals: ['ollama_chat', 'llamacpp_chat'],
+    defaultPath: '/chat/completions',
+    modelPlaceholder: function(src) {
+      if(src === 'local:ollama_chat') {
+        return 'llama3.1';
+      }
+      if(src === 'local:llamacpp_chat') {
+        return 'llama3.1-8b';
+      }
+      return null;
+    },
+    test: function(resolved) {
+      return tagAiChat(resolved, 'Reply with the single word: ok', 20);
+    },
+  });
+}
+
+taguConfigRegisterTab({
+  id: 'reasoning', title: gettext('Advanced LLM'), order: 260,
+  build: taguReasoningTabBuild,
+});
+
+/*
  * Segmentation tab (speaker segmentation for the suggested-highlights
  * feature; the profile itself is proposed and reviewed in the document's
  * "Speakers" dialog, see suggest.js): the chat model that proposes speaker
- * label patterns from a few document excerpts. The old 'decisions' task
- * was removed; data in tasks.decisions stays in the store, inert.
+ * label patterns from a few document excerpts, plus the thematic segment
+ * and unit parameters (SEG_PARAM_DEFS in segments.js, stored as the
+ * top-level segmentation_params override object). The 'decisions' task
+ * is the fast decision model of thematic segmentation (tab above).
  */
+function taguSegParamsBuild(el) {
+  if(typeof SEG_PARAM_DEFS === 'undefined' || typeof segParams !== 'function') {
+    return;
+  }
+  var defs = SEG_PARAM_DEFS;
+  var section = taguEl('div', 'mt-4');
+  section.appendChild(taguEl('h5', null,
+    gettext('Thematic segments and units')));
+  el.appendChild(section);
+
+  function current() {
+    return segParams();
+  }
+
+  function groups() {
+    // [{defs: [def, ...]}] in order; entries sharing a pair are one group
+    var out = [], by_pair = {};
+    defs.forEach(function(d) {
+      if(d.pair) {
+        if(by_pair[d.pair]) {
+          by_pair[d.pair].defs.push(d);
+          return;
+        }
+        by_pair[d.pair] = {defs: [d]};
+        out.push(by_pair[d.pair]);
+      } else {
+        out.push({defs: [d]});
+      }
+    });
+    return out;
+  }
+
+  function saveAll(inputs) {
+    var all = {};
+    defs.forEach(function(d) {
+      var v = inputs[d.key] ? Number(inputs[d.key].value) : NaN;
+      if(isFinite(v)) {
+        all[d.key] = v;
+      }
+    });
+    segSaveParams(all);
+  }
+
+  var inputs = {};
+  var restorers = [];
+
+  function refresh() {
+    var p = current();
+    defs.forEach(function(d) {
+      if(inputs[d.key] && document.activeElement !== inputs[d.key]) {
+        inputs[d.key].value = p[d.key];
+      }
+    });
+    restorers.forEach(function(r) { r(p); });
+  }
+
+  function buildGroup(g, parent) {
+    var first = g.defs[0];
+    var row = taguEl('div', 'form-group');
+    row.appendChild(taguEl('label', null, gettext(first.label)));
+    var line = taguEl('div', 'form-inline');
+    var restore = taguEl('button', 'btn btn-link btn-sm',
+      gettext('restore default'));
+    restore.type = 'button';
+    g.defs.forEach(function(d, i) {
+      if(g.defs.length > 1) {
+        line.appendChild(taguEl('span', 'text-muted mr-1 ml-' + (i ? 3 : 0),
+          i === 0 ? gettext('min') : gettext('max')));
+      }
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.className = 'form-control form-control-sm';
+      input.style.width = '6em';
+      input.min = d.min;
+      input.max = d.max;
+      input.step = d.step;
+      input.value = current()[d.key];
+      input.addEventListener('change', function() {
+        var v = Number(input.value);
+        if(input.value === '' || !isFinite(v) || v < d.min || v > d.max) {
+          input.classList.add('is-invalid');
+          return;
+        }
+        input.classList.remove('is-invalid');
+        saveAll(inputs);
+        refresh();
+      });
+      inputs[d.key] = input;
+      line.appendChild(input);
+    });
+    restore.addEventListener('click', function(e) {
+      e.preventDefault();
+      g.defs.forEach(function(d) {
+        inputs[d.key].value = d.def;
+        inputs[d.key].classList.remove('is-invalid');
+      });
+      saveAll(inputs);
+      refresh();
+    });
+    restorers.push(function(p) {
+      var differs = g.defs.some(function(d) { return p[d.key] !== d.def; });
+      restore.style.display = differs ? '' : 'none';
+    });
+    line.appendChild(restore);
+    row.appendChild(line);
+    row.appendChild(taguEl('small', 'form-text text-muted',
+      gettext(first.help)));
+    parent.appendChild(row);
+  }
+
+  var adv = taguEl('details', 'mb-3');
+  adv.appendChild(taguEl('summary', null, gettext('Advanced')));
+  var adv_body = taguEl('div', 'mt-2');
+  adv.appendChild(adv_body);
+  var has_adv = false;
+  groups().forEach(function(g) {
+    if(g.defs[0].advanced) {
+      has_adv = true;
+      buildGroup(g, adv_body);
+    } else {
+      buildGroup(g, section);
+    }
+  });
+  if(has_adv) {
+    section.appendChild(adv);
+  }
+  refresh();
+
+  var eval_title = taguEl('h5', 'mt-4', gettext('Evaluation'));
+  section.appendChild(eval_title);
+  var box = taguEl('div', null, '');
+  box.id = 'seg-eval-box';
+  section.appendChild(box);
+  if(typeof segEvalPanelBuild === 'function') {
+    segEvalPanelBuild(box);
+  }
+}
+
 function taguSegmentationTabBuild(el) {
   var intro = taguEl('p', 'text-muted', gettext(
     'Chat model that proposes speaker label patterns for the suggested-highlights feature: it receives a few random excerpts of the document and answers once with the speakers it recognizes. Any OpenAI-compatible /chat/completions endpoint works — pick one of your API keys, a local server, or a custom endpoint. The proposed speakers are always reviewed in the document before anything is applied.'));
@@ -548,6 +775,7 @@ function taguSegmentationTabBuild(el) {
       return tagAiChat(resolved, 'Reply with the single word: ok', 20);
     },
   });
+  taguSegParamsBuild(el);
 }
 
 taguConfigRegisterTab({

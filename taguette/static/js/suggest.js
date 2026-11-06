@@ -5116,6 +5116,17 @@ function sugSelfTest() {
     assert(sugLoadConfig() === null, 'off embeddings resolves to null');
     assert(tagAiLLMConfig('segmentation') === null,
            'off segmentation resolves to null');
+    ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
+      tasks: {decisions: {source: 'local:laya'}},
+      segmentation_params: {tau: 0.4}}));
+    var dec_res = taguTaskResolve('decisions', '');
+    assert(dec_res && dec_res.local && dec_res.local.kind === 'decisions'
+           && dec_res.url === 'http://localhost:8000/v1/systemone',
+           'local:laya resolves to the system-one endpoint');
+    taguConfigSave(taguConfig());
+    assert(taguConfig().segmentation_params
+           && taguConfig().segmentation_params.tau === 0.4,
+           'segmentation_params survives a config save round trip');
   } finally {
     if(saved_store !== null) {
       ls.setItem('taguette_config', saved_store);
@@ -5136,6 +5147,12 @@ function sugSelfTest() {
   sug_session = {aggressiveness: 0};
   assert(sugCutoff() > 0.9, 'conservative slider raises cut-off');
   sug_session = saved;
+
+  if(typeof segSelfTest === 'function') {
+    segSelfTest().then(function(n) {
+      console.log('segSelfTest: ' + n + ' failure(s)');
+    });
+  }
 
   console.log(failures === 0
     ? 'SELFTEST OK'
