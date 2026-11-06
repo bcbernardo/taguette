@@ -748,7 +748,59 @@ function sugIsPrefixLine(text) {
       && new RegExp('[\\[(]\\s*' + SUG_TS + '\\s*[\\])]').test(t)) {
     return true;
   }
-  return false;
+  // Unbracketed timestamp + name-like label, either order: "0:00 - Huw
+  // Evans (kayaguides.com)", "Speaker 1  0:03", "Maria Silva - 00:12:34"
+  return sugTimedLabel(t) !== null;
+}
+
+// Lowercase words allowed inside a name ("Maria da Silva")
+var SUG_NAME_PARTICLES = {da: 1, de: 1, di: 1, 'do': 1, dos: 1, das: 1,
+                          del: 1, della: 1, van: 1, von: 1, der: 1, den: 1,
+                          la: 1, le: 1, du: 1, bin: 1, al: 1, e: 1};
+
+// Short name-like label: <= 6 words outside parentheses, each capitalized,
+// a digit ("Speaker 1") or a name particle; parenthesized affiliations
+// ("(kayaguides.com)") are allowed. Rejects ordinary sentences
+// ("We met at", "and then at").
+function sugNameLike(label) {
+  var bare = label.replace(/\([^()]*\)/g, ' ').trim();
+  if(!bare || /[()[\]:]/.test(bare)) {
+    return false;
+  }
+  var words = bare.split(/\s+/);
+  if(words.length > 6) {
+    return false;
+  }
+  for(var i = 0; i < words.length; ++i) {
+    var w = words[i], c = w.charAt(0);
+    if(/[0-9]/.test(c) || (c !== c.toLowerCase())) {
+      continue;
+    }
+    if(i > 0 && SUG_NAME_PARTICLES[w]) {
+      continue;
+    }
+    return false;
+  }
+  return /[A-Za-zÀ-ɏͰ-῿_]/.test(bare);
+}
+
+// Line made of an unbracketed (or bracketed) timestamp and a name-like
+// label, in either order, with an optional dash separator. Returns the
+// label without its parenthesized affiliation, or null.
+function sugTimedLabel(line) {
+  var t = line.trim();
+  if(t.length === 0 || t.length > 80) {
+    return null;
+  }
+  var ts = '[\\[(]?' + SUG_TS + '[\\])]?';
+  var sep = '(?:\\s*[-\\u2013\\u2014|]\\s*|\\s+)';
+  var m = new RegExp('^' + ts + sep + '(.+?)\\s*:?$').exec(t)
+    || new RegExp('^(.+?)' + sep + ts + '\\s*:?$').exec(t);
+  if(!m || !sugNameLike(m[1])) {
+    return null;
+  }
+  var lab = m[1].replace(/\([^()]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  return lab || null;
 }
 
 // Inline speaker label opening a line: "NAME:", "NAME [00:12]:",
@@ -758,7 +810,7 @@ function sugIsPrefixLine(text) {
 function sugInlineLabel(line) {
   var m = new RegExp('^\\s*(?:[\\[]\\s*' + SUG_TS + '\\s*[\\]])?\\s*'
     + '([^\\n:()[\\]]{1,40}?)\\s*(?:[\\[]\\s*' + SUG_TS
-    + '\\s*[\\]])?\\s*:').exec(line);
+    + '\\s*[\\]])?\\s*:(?!\\d{2})').exec(line);
   if(!m) {
     return null;
   }
@@ -770,7 +822,7 @@ function sugInlineLabel(line) {
 // ("NAME [00:20]", "[00:12] NAME") that only appear on lines of their own.
 // Permissive — it feeds the pre-scan hint, never a decision on its own.
 function sugPrefixLabel(line) {
-  var lab = sugInlineLabel(line);
+  var lab = sugTimedLabel(line) || sugInlineLabel(line);
   if(lab) {
     return lab;
   }
@@ -814,29 +866,64 @@ function sugMergePrefixBlocks(blocks, plain) {
   return merged;
 }
 
+// The label part of a block: its folded prefix line when it has one (in
+// rendered documents paragraphs are not newline-separated in plainText, so
+// the "first line" would run on into the speech), else its first line
+function sugTurnHead(b) {
+  if(b.contentStart !== undefined && b.contentStart > b.start) {
+    return b.text.slice(0, b.contentStart - b.start).trim();
+  }
+  return b.text.split('\n', 1)[0];
+}
+
 // Absorb continuation paragraphs into the open speaker turn: a turn
 // starts at a prefix line (speaker/timestamp label on its own line) or at
 // a line beginning with a speaker label ("John: …"), and runs until the
 // next turn start — the common transcript layout where one label opens
 // several paragraphs. Text before the first label stays standalone.
 // Offsets index the same plainText, so highlight byte offsets stay valid.
+//
+// Only corroborated starts absorb: the label line carries a timestamp, or
+// its label recurs elsewhere in the document. A one-off label-looking line
+// (a header such as "VIEW RECORDING - 119 mins:", a sentence ending in a
+// colon) closes the open turn but stands alone, so a single false
+// positive can never swallow the rest of the document.
 function sugAbsorbContinuations(blocks, plain) {
+  var tsRe = new RegExp(SUG_TS);
+  var info = blocks.map(function(b) {
+    var first = sugTurnHead(b);
+    var candidate = (b.contentStart !== undefined)
+      || sugIsPrefixLine(b.text)
+      || !!sugTimedLabel(first)
+      || !!sugInlineLabel(first);
+    if(!candidate) {
+      return null;
+    }
+    var label = sugPrefixLabel(first);
+    return {timed: tsRe.test(first),
+            key: label ? label.toLowerCase() : null};
+  });
+  var counts = {};
+  info.forEach(function(c) {
+    if(c && c.key) {
+      counts[c.key] = (counts[c.key] || 0) + 1;
+    }
+  });
   var turns = [];
   var open = null;
-  blocks.forEach(function(b) {
-    var starts = (b.contentStart !== undefined)
-      || sugIsPrefixLine(b.text)
-      || (!!sugInlineLabel(b.text.split('\n', 1)[0]));
-    if(starts || !open) {
-      turns.push({start: b.start, end: b.end,
-                  contentStart: (b.contentStart !== undefined)
-                    ? b.contentStart : b.start,
-                  text: plain.slice(b.start, b.end)});
-      open = turns[turns.length - 1];
-    } else {
-      open.end = b.end;
+  blocks.forEach(function(b, i) {
+    var c = info[i];
+    if(!c && open) {
+      open.end = b.end; // continuation paragraph
       open.text = plain.slice(open.start, open.end);
+      return;
     }
+    turns.push({start: b.start, end: b.end,
+                contentStart: (b.contentStart !== undefined)
+                  ? b.contentStart : b.start,
+                text: plain.slice(b.start, b.end)});
+    var strong = c && (c.timed || (c.key && counts[c.key] >= 2));
+    open = strong ? turns[turns.length - 1] : null;
   });
   return turns;
 }
@@ -994,7 +1081,7 @@ function sugPreScanPrefixes(turns) {
   var counts = {};
   var covered = 0;
   turns.forEach(function(b) {
-    var label = sugPrefixLabel(b.text.split('\n', 1)[0]);
+    var label = sugPrefixLabel(sugTurnHead(b));
     if(!label) {
       return; // no name in it (bare timestamps, cue ranges, numbers)
     }
@@ -4662,9 +4749,11 @@ function sugSelfTest() {
     + 'And we lost everything in it.\n'
     + 'John: I helped with the pump\n'
     + 'again after midnight\n'
-    + 'John: and again at dawn';
+    + 'John: and again at dawn\n'
+    + 'Interviewer:\nThank you.\n'
+    + 'Maria:\nYou are welcome.';
   var abs_turns = sugTurnsOfText(abs_plain);
-  assert(abs_turns.length === 5, 'turns absorb continuations, got '
+  assert(abs_turns.length === 7, 'turns absorb continuations, got '
          + abs_turns.length);
   assert(abs_turns[0].text === 'Preamble about the project.',
          'text before the first label stays standalone');
@@ -4685,6 +4774,67 @@ function sugSelfTest() {
                                 + 'Q: and then?');
   assert(qa_turns.length === 3, 'single-letter labels turn too, got '
          + qa_turns.length);
+
+  // "0:00 - Name (affiliation)" transcripts (Fathom/Zoom exports) with a
+  // header line ending in a colon: every timed label opens a turn, the
+  // header never swallows the document
+  var timed_plain = 'Huw and Jacintha - October 22\n'
+    + 'VIEW RECORDING - 119 mins (No highlights):\n'
+    + '---\n'
+    + '0:00 - Huw Evans (kayaguides.com)\n'
+    + 'I think that anyone reading this.\n'
+    + 'A second paragraph from Huw.\n'
+    + '0:38 - Jacintha Baas (Charity Entrepreneurship)\n'
+    + 'Cool. Call me after this call.\n'
+    + '0:57 - Huw Evans (kayaguides.com)\n'
+    + 'Wonderful.';
+  var timed_turns = sugTurnsOfText(timed_plain);
+  assert(timed_turns.length === 5, 'timed labels open turns, got '
+         + timed_turns.length);
+  assert(timed_turns[0].text === 'Huw and Jacintha - October 22',
+         'title stays standalone');
+  assert(timed_turns[1].text.indexOf('VIEW RECORDING') === 0
+         && timed_turns[1].text.indexOf('Huw') === -1,
+         'a one-off header label does not absorb the transcript');
+  assert(timed_turns[2].text.indexOf('second paragraph') !== -1
+         && timed_turns[2].contentStart
+            === timed_plain.indexOf('I think that'),
+         'timed turn absorbs its paragraphs, rectangle skips the label');
+  assert(sugPrefixLabel('0:00 - Huw Evans (kayaguides.com)') === 'Huw Evans',
+         'timed label drops the affiliation');
+  assert(sugPrefixLabel('Speaker 1  0:03') === 'Speaker 1',
+         'name + unbracketed timestamp');
+  assert(sugIsPrefixLine('Maria da Silva - 00:12:34'),
+         'name particles and trailing timestamp');
+  assert(!sugIsPrefixLine('We met at 10:30')
+         && !sugIsPrefixLine('10:30 we left the house'),
+         'sentences around a time are not timed labels');
+  // Rendered documents: paragraphs sit back to back in plainText (no
+  // newline), blocks come from the DOM walk
+  var dom_paras = ['Notes:', 'Intro', '0:00 - Ana Lima (x.org)', 'Hello',
+                   'More from Ana', '0:05 - Ben (y)', 'Hi', '0:09 - Ana Lima (x.org)',
+                   'Bye'];
+  var dom_plain = dom_paras.join('');
+  var dom_blocks = [], dom_pos = 0;
+  dom_paras.forEach(function(p) {
+    dom_blocks.push({start: dom_pos, end: dom_pos + p.length, text: p});
+    dom_pos += p.length;
+  });
+  var dom_turns = sugAbsorbContinuations(
+    sugMergePrefixBlocks(dom_blocks, dom_plain), dom_plain);
+  assert(dom_turns.length === 4 && dom_turns[1].text
+         === '0:00 - Ana Lima (x.org)HelloMore from Ana',
+         'DOM turns absorb without newlines, got ' + dom_turns.length);
+  var dom_scan = sugPreScanPrefixes(dom_turns);
+  assert(dom_scan.labels[0].label === 'Ana Lima'
+         && dom_scan.labels[0].count === 2,
+         'pre-scan reads the folded prefix in DOM turns');
+  var preamble = sugTurnsOfText('Notes:\nFirst preamble paragraph\n'
+    + 'Second preamble paragraph\nAna:\nHello\nBen:\nHi\nAna:\nBye');
+  assert(preamble.length === 5 && preamble[1].text
+         === 'Second preamble paragraph',
+         'preamble paragraphs never absorb each other, got '
+         + preamble.length);
 
   assert(seg_blocks[0].start === 0, 'merged turn starts at the prefix');
   assert(seg_plain.slice(seg_blocks[1].start, seg_blocks[1].end)

@@ -282,6 +282,23 @@ turns with no speaker count as included).
   `sugSpeakerTurns()` are the turn-level entry points; the outline and
   badge cover the whole turn (wrapped per text fragment when it spans
   block elements, like suggestions do).
+- **Timed labels**: a short line made of a timestamp and a name-like label
+  in either order, with or without brackets/dash, is a prefix line too —
+  "0:00 - Huw Evans (kayaguides.com)" (Fathom/Zoom exports), "Speaker 1
+  0:03" (Otter), "Maria da Silva - 00:12:34". `sugNameLike()` keeps it to
+  <= 6 capitalized words (name particles and a parenthesized affiliation
+  allowed), so sentences that mention a time ("We met at 10:30") never
+  match; `sugTimedLabel()` returns the label without the affiliation.
+- **Only corroborated starts absorb**: a candidate start opens an
+  absorbing turn only if its label line carries a timestamp or its label
+  recurs in the document. A one-off label-looking line — a header such as
+  "VIEW RECORDING - 119 mins (No highlights):", a sentence ending in a
+  colon — closes the open turn but stands alone, so a single false
+  positive never swallows the rest of the document (it did: a long
+  transcript whose real labels went unrecognized collapsed into two
+  turns). Labels are read from `sugTurnHead()` — the folded prefix when
+  there is one, since rendered paragraphs are not newline-separated in
+  plainText.
 - **Local pre-scan** (no LLM): `sugPreScanPrefixes()` counts the most
   frequent candidate labels on the turns' first lines and the share of
   turns that carry one — a hint for the model and the basis for building

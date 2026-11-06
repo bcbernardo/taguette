@@ -129,7 +129,10 @@ New feature (speaker segmentation):
   speaker/timestamp prefix (or the next inline label like "John: …"), so
   continuation paragraphs are labelled with their speaker instead of
   becoming separate unlabelled turns; text before the first label stays
-  standalone
+  standalone. Timestamped labels without brackets ("0:00 - Name
+  (affiliation)", "Speaker 1  0:03") are recognized, and only labels that
+  carry a timestamp or recur in the document open multi-paragraph turns,
+  so a one-off header ending in a colon can no longer swallow a transcript
 * The suggestion filter now chooses which speakers are included (one
   checkbox per speaker) instead of the old answers-only switch; turns with
   no speaker stay included
