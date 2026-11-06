@@ -584,7 +584,8 @@ function segEmissions(windows, vecs, protos, params) {
 }
 
 // Maximise the summed emissions with a uniform switch penalty (cheaper when
-// the new window opens a substantive interviewer question). O(n*S): the best
+// the new window opens a substantive interviewer question, dearer in the
+// middle of a turn). O(n*S): the best
 // predecessor is shared by all switching moves. Ties -> lower state index.
 function segViterbi(E, windows, params) {
   var n = E.length;
@@ -595,7 +596,8 @@ function segViterbi(E, windows, params) {
   var dp = E[0].slice(), back = [], s, w;
   for(w = 1; w < n; ++w) {
     var win = windows[w];
-    var cost = (win.cue && win.substantive && win.firstOfTurn) ? 0.25 * lam : lam;
+    var cost = (win.cue && win.substantive && win.firstOfTurn) ? 0.25 * lam
+      : (win.firstOfTurn ? lam : 1.5 * lam);
     var best = -Infinity, bi = 0;
     for(s = 0; s < S; ++s) {
       if(dp[s] > best) {
@@ -636,10 +638,14 @@ function segViterbi(E, windows, params) {
 }
 
 // Windows whose best two emissions are within 0.3: candidates for the
-// decision model (at most 60, smallest margin first)
+// decision model (smallest margin first; at most min(120, 20% of the
+// content windows))
 function segAmbiguous(E, windows) {
-  var out = [];
+  var out = [], content = 0;
   for(var w = 0; w < windows.length; ++w) {
+    if(!windows[w].cue) {
+      ++content;
+    }
     if(windows[w].cue || windows[w].weight < 0.5 || E[w].length < 2) {
       continue;
     }
@@ -659,7 +665,7 @@ function segAmbiguous(E, windows) {
   out.sort(function(a, b) {
     return (a.margin - b.margin) || (a.w - b.w);
   });
-  return out.slice(0, 60);
+  return out.slice(0, Math.min(120, Math.ceil(0.2 * content)));
 }
 
 // Top-3 guide segments (not `other`) by current emission
@@ -1358,7 +1364,8 @@ function segMergeSmallUnits(units, items, P) {
   return units;
 }
 
-// -> Promise<Unit[]> (array has `.dropped` = number of small-talk units)
+// -> Promise<Unit[]> (array has `.dropped` = number of small-talk units; with
+// a codebook the small-talk check is deferred to segProposeTags)
 function segBuildUnits(sections, input, deps, infos) {
   var P = input.params || segParams();
   infos = infos || segTurnInfos(input);
@@ -1391,6 +1398,15 @@ function segBuildUnits(sections, input, deps, infos) {
       });
     }
     segProgress(deps, 'units', 0, out.length);
+    if((input.tags || []).length) {
+      // segProposeTags asks the small-talk question together with the tags
+      // (one request per unit) and drops the small-talk units there
+      out.forEach(function(u, i) {
+        u.id = 'u' + i;
+      });
+      out.dropped = 0;
+      return out;
+    }
     return segBatched(out, 8, function(unit) {
       var sec = null;
       for(var s = 0; s < sections.length; ++s) {
@@ -1682,7 +1698,7 @@ function segProposeTags(units, sections, input, deps) {
     var done = 0;
     return segBatched(units, 8, function(unit, i) {
       var row = cands[i], sec = secById[unit.sectionId] || {name: '', openingQuestion: null};
-      var questions = {}, ids = [];
+      var questions = {content: segSmallTalkQuestion().content}, ids = [];
       row.forEach(function(c) {
         ids.push(c.tag.id);
         questions['t' + c.tag.id] = segTagQuestion(c.tag, c.ex >= 0 ? exemplars[c.ex].text : '');
@@ -1690,6 +1706,7 @@ function segProposeTags(units, sections, input, deps) {
       return segDepDecide(deps, questions, segTagState(sec.name, sec.openingQuestion, unit.text))
         .then(function(ans) {
           var probs = ans ? segParseTagAnswers(ans, ids) : {};
+          unit.smallTalk = ans ? segParseSmallTalk(ans) : null;
           unit.tags = row.map(function(c) {
             var p = probs[c.tag.id];
             var has = typeof p === 'number';
@@ -1703,6 +1720,16 @@ function segProposeTags(units, sections, input, deps) {
         });
     });
   }).then(function() {
+    // drop small talk (answered together with the tags), keep the rest
+    var kept = units.filter(function(u) {
+      return u.smallTalk === null || u.smallTalk < 0.7;
+    });
+    units.dropped = (units.dropped || 0) + units.length - kept.length;
+    units.length = 0;
+    kept.forEach(function(u, i) {
+      u.id = 'u' + i;
+      units.push(u);
+    });
     return segTagRecheck(units, sections, input, deps, P);
   }).then(function() {
     units.forEach(function(u) {
@@ -2010,7 +2037,7 @@ function segEvaluate(result, realHighlights, opts) {
     return out;
   }
   // hit@k
-  var hits = {1: 0, 3: 0, 5: 0}, denom = 0;
+  var hits = {1: 0, 3: 0, 5: 0}, denom = 0, tagPairs = 0, tagTicked = 0;
   for(i = 0; i < hls.length; ++i) {
     var elig = (hls[i].tagIds || []).filter(function(t) {
       return (uses[t] || 0) >= 2;
@@ -2030,6 +2057,15 @@ function segEvaluate(result, realHighlights, opts) {
     if(!best) {
       continue;
     }
+    elig.forEach(function(t) {
+      ++tagPairs;
+      for(var q = 0; q < (best.tags || []).length; ++q) {
+        if(best.tags[q].id === t && best.tags[q].conf >= theta) {
+          ++tagTicked;
+          break;
+        }
+      }
+    });
     [1, 3, 5].forEach(function(k) {
       var top = (best.tags || []).slice(0, k);
       for(var q = 0; q < top.length; ++q) {
@@ -2040,6 +2076,34 @@ function segEvaluate(result, realHighlights, opts) {
       }
     });
   }
+  // IoU >= 0.5 matching (units are disjoint, so a plain scan is enough)
+  var iouHl = 0, iouU = 0;
+  for(i = 0; i < hls.length; ++i) {
+    var hl = hls[i], hlen = hl.cEnd - hl.cStart;
+    if(hlen <= 0) {
+      continue;
+    }
+    var cu = overlappingUnits(hl.cStart, hl.cEnd);
+    for(var q2 = 0; q2 < cu.length; ++q2) {
+      var o2 = Math.min(cu[q2].end, hl.cEnd) - Math.max(cu[q2].start, hl.cStart);
+      if(o2 / (hlen + (cu[q2].end - cu[q2].start) - o2) >= 0.5) {
+        ++iouHl;
+        break;
+      }
+    }
+  }
+  for(i = 0; i < units.length; ++i) {
+    var ul = units[i].end - units[i].start;
+    var oh = overlappingHighlightsOf(hls, units[i]);
+    for(var q3 = 0; q3 < oh.length; ++q3) {
+      if(oh[q3].o / (ul + (oh[q3].hl.cEnd - oh[q3].hl.cStart) - oh[q3].o) >= 0.5) {
+        ++iouU;
+        break;
+      }
+    }
+  }
+  var iouRecall = valid ? iouHl / valid : 0;
+  var iouPrecision = units.length ? iouU / units.length : 0;
   // precision of the ticked (conf >= theta) tags
   var ticked = 0, right = 0;
   for(i = 0; i < units.length; ++i) {
@@ -2068,7 +2132,8 @@ function segEvaluate(result, realHighlights, opts) {
     return x.words;
   });
   var cov = result.coverage || {present: [], missing: []};
-  return {
+  var tP = ticked ? right / ticked : 0, tR = tagPairs ? tagTicked / tagPairs : 0;
+  var out = {
     unitRecall: valid ? covered / valid : 0,
     charRecall: hLen ? inter / hLen : 0,
     charPrecision: uLen ? inter / uLen : 0,
@@ -2076,12 +2141,18 @@ function segEvaluate(result, realHighlights, opts) {
     sizeQ3: segQuantile(sizes, 0.75),
     hitAt: {1: denom ? hits[1] / denom : 0, 3: denom ? hits[3] / denom : 0,
             5: denom ? hits[5] / denom : 0},
+    iouRecall: iouRecall, iouPrecision: iouPrecision,
+    iouF1: iouRecall + iouPrecision ? 2 * iouRecall * iouPrecision / (iouRecall + iouPrecision) : 0,
     thetaPrecision: ticked ? right / ticked : 0, nTicked: ticked,
+    thetaRecall: tagPairs ? tagTicked / tagPairs : 0,
+    thetaF1: 0,
     sections: (result.sections || []).length,
     otherWordsPct: result.stats ? (result.stats.otherWordsPct || 0) : 0,
     coveragePresent: cov.present.length, coverageMissing: cov.missing.length,
     nUnits: units.length, nHighlights: hls.length
   };
+  out.thetaF1 = tP + tR ? 2 * tP * tR / (tP + tR) : 0;
+  return out;
 }
 
 // Highlights overlapping a unit, with overlap length (linear in highlights
@@ -2144,28 +2215,42 @@ function segGridSearch(runFn, grid, minPrecision, progress) {
     });
   }
   return next(0).then(function() {
-    var best = null, fallback = false, i;
-    for(i = 0; i < rows.length; ++i) {
-      var m = rows[i].metrics;
-      if(m.charPrecision >= minPrecision && (!best
-         || m.unitRecall > best.metrics.unitRecall + 1e-12
-         || (Math.abs(m.unitRecall - best.metrics.unitRecall) <= 1e-12
-             && m.thetaPrecision > best.metrics.thetaPrecision + 1e-12))) {
-        best = rows[i];
-      }
+    // tau / kappa / lambda: best iouF1 (tie: hit@3, then grid order) among
+    // the combos meeting the precision constraint (else ignore it); theta:
+    // best thetaF1 for that combo (re-scoring only).
+    function val(m, k) {
+      return typeof m[k] === 'number' ? m[k] : 0;
     }
-    if(!best) {
-      fallback = true;
-      var bf = -1;
-      for(i = 0; i < rows.length; ++i) {
-        var mm = rows[i].metrics, s = mm.charRecall + mm.charPrecision;
-        var f1 = s ? 2 * mm.charRecall * mm.charPrecision / s : 0;
-        if(f1 > bf + 1e-12) {
-          bf = f1;
-          best = rows[i];
+    function hit3(m) {
+      return m.hitAt ? val(m.hitAt, 3) : 0;
+    }
+    function pickBest(constrained) {
+      var pick = null;
+      for(var i = 0; i < rows.length; i += g.theta.length) {
+        var m = rows[i].metrics;
+        if(constrained && val(m, 'charPrecision') < minPrecision) {
+          continue;
+        }
+        if(!pick || val(m, 'iouF1') > val(pick.metrics, 'iouF1') + 1e-12
+           || (Math.abs(val(m, 'iouF1') - val(pick.metrics, 'iouF1')) <= 1e-12
+               && hit3(m) > hit3(pick.metrics) + 1e-12)) {
+          pick = rows[i];
         }
       }
+      return pick;
     }
+    var fallback = false, structural = pickBest(true);
+    if(!structural) {
+      fallback = true;
+      structural = pickBest(false);
+    }
+    var best = structural, sp = structural.params;
+    rows.forEach(function(r) {
+      if(r.params.tau === sp.tau && r.params.kappa === sp.kappa && r.params.lambda === sp.lambda
+         && val(r.metrics, 'thetaF1') > val(best.metrics, 'thetaF1') + 1e-12) {
+        best = r;
+      }
+    });
     return {best: best, rows: rows, fallback: fallback};
   });
 }
@@ -3019,15 +3104,15 @@ function segSelfTest() {
     var runs = 0;
     function metricsFor(p) {
       var prec = p.tau >= 0.35 ? 0.2 : 0.5;
-      var rec = p.tau === 0.25 ? 0.8 : 0.6;
-      var mm = {unitRecall: rec + (p.kappa === 0.2 ? 0.05 : 0), charRecall: rec, charPrecision: prec,
-                thetaPrecision: p.theta === 0.7 ? 0.9 : 0.5};
+      var f1 = p.tau === 0.25 ? 0.8 : 0.6;
+      var mm = {iouF1: f1 + (p.kappa === 0.2 ? 0.05 : 0), charPrecision: prec,
+                hitAt: {3: 0.5}, thetaF1: p.theta === 0.7 ? 0.9 : 0.5};
       mm.rescore = function(th) {
         var c = {};
         for(var k in mm) {
           c[k] = mm[k];
         }
-        c.thetaPrecision = th === 0.7 ? 0.9 : 0.5;
+        c.thetaF1 = th === 0.7 ? 0.9 : 0.5;
         return c;
       };
       return mm;
@@ -3036,16 +3121,68 @@ function segSelfTest() {
       ++runs;
       return Promise.resolve(metricsFor(p));
     }, null, 0.35).then(function(g) {
-      assert(g.best.params.tau === 0.25 && g.best.params.kappa === 0.2 && g.best.params.theta === 0.7 && !g.fallback,
-             'grid best under precision constraint, theta tie-break ' + JSON.stringify(g.best.params));
+      assert(g.best.params.tau === 0.25 && g.best.params.kappa === 0.2 && g.best.params.lambda === 1
+             && g.best.params.theta === 0.7 && !g.fallback,
+             'grid best by iouF1 under precision constraint, theta by thetaF1 ' + JSON.stringify(g.best.params));
       assert(runs === 18 && g.rows.length === 54, 'theta-only re-scoring avoids re-runs (' + runs + ' runs)');
       var runs2 = 0;
       return segGridSearch(function(p) {
         ++runs2;
-        return Promise.resolve({unitRecall: 0.5, charRecall: p.lambda === 2 ? 0.9 : 0.4, charPrecision: 0.1, thetaPrecision: 0});
+        return Promise.resolve({iouF1: p.lambda === 2 ? 0.9 : 0.4, charPrecision: 0.1, thetaF1: 0});
       }, {tau: [0.25], kappa: [0.1], lambda: [1, 2], theta: [0.5, 0.6]}, 0.35).then(function(g2) {
-        assert(g2.fallback && g2.best.params.lambda === 2, 'fallback to best F1');
+        assert(g2.fallback && g2.best.params.lambda === 2, 'fallback ignores the constraint');
         assert(runs2 === 4, 'no rescore -> re-run per theta');
+      });
+    });
+  });
+
+  // IoU / theta-recall metrics, mid-turn switch cost, ambiguous cap, merged request
+  tests.push(function() {
+    var units = [{start: 0, end: 100, words: 20, tags: [{id: 1, conf: 0.7}]},
+                 {start: 100, end: 300, words: 40, tags: []}];
+    var hl = [{id: 1, cStart: 0, cEnd: 80, tagIds: [1]}, {id: 2, cStart: 150, cEnd: 210, tagIds: [1]}];
+    var m = segEvaluate({units: units}, hl, {tagUseCounts: {1: 2}, theta: 0.6});
+    assert(near(m.iouRecall, 0.5) && near(m.iouPrecision, 0.5) && near(m.iouF1, 0.5), 'IoU recall/precision/F1');
+    assert(near(m.thetaRecall, 0.5) && near(m.thetaPrecision, 1) && near(m.thetaF1, 2 / 3), 'theta recall/F1');
+    var win = function(first) {
+      return {cue: false, substantive: false, firstOfTurn: first, weight: 1};
+    };
+    var E = [[1, -5], [0, 1.2]];
+    assert(segViterbi(E, [win(true), win(false)], {lambda: 1}).join() === '0,0', 'mid-turn switch costs 1.5 lambda');
+    assert(segViterbi(E, [win(true), win(true)], {lambda: 1}).join() === '0,1', 'turn-start switch costs lambda');
+    function many(n) {
+      var w = [], e = [];
+      for(var i = 0; i < n; ++i) {
+        w.push(win(true));
+        e.push([0, 0, 0]);
+      }
+      return segAmbiguous(e, w).length;
+    }
+    assert(many(1000) === 120 && many(100) === 20, 'ambiguous cap = min(120, 20% of content windows)');
+    var doc = segTestDoc([{sp: 'I', text: segTestQuestion(SEG_TEST_VOCAB.A, 0)},
+                          {sp: 'P', text: segTestAnswer(SEG_TEST_VOCAB.A, 0)}]);
+    var inp = segTestInput(doc, {speakers: [{id: 'I', name: 'I', include: false}, {id: 'P', name: 'P', include: true}],
+      tags: [{id: 1, path: 'Work', description: 'jobs'}]});
+    var reqs = [];
+    return segRunAll(inp, segTestDeps({decide: function(qs) {
+      reqs.push(Object.keys(qs));
+      return Promise.resolve(qs.content ? {content: {choice: 'small_talk', probabilities: {small_talk: 0.9, substantive: 0.1}}} : null);
+    }})).then(function(res) {
+      var withContent = reqs.filter(function(k) {
+        return k.indexOf('content') >= 0;
+      });
+      assert(withContent.length > 0 && withContent.every(function(k) {
+        return k.indexOf('t1') >= 0;
+      }), 'small-talk question rides with the tag question');
+      assert(res.units.length === 0 && res.stats.droppedSmallTalk > 0, 'small-talk units dropped after the merged request');
+      var reqs2 = [];
+      return segRunAll(segTestInput(doc, {speakers: inp.speakers, tags: []}), segTestDeps({decide: function(qs) {
+        reqs2.push(Object.keys(qs));
+        return Promise.resolve(null);
+      }})).then(function() {
+        assert(reqs2.some(function(k) {
+          return k.length === 1 && k[0] === 'content';
+        }), 'standalone small-talk question without a codebook');
       });
     });
   });
