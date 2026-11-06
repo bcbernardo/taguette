@@ -251,53 +251,79 @@ Modal opened from the session toolbar ("Embedding settings"):
 Persisted in `localStorage["taguette_suggest_config"]`; a "Use embeddings"
 toggle in the toolbar is only enabled when the last test succeeded.
 
-## 8. Interviewer / interviewee (Q/A) classification
+## 8. Speaker segmentation (who speaks in each turn)
 
-Interview transcripts: speaker turns spoken by the interviewer (questions) are
-excluded from suggestions, so only the interviewees' answers are highlighted.
+Interview/focus-group transcripts: instead of a binary interviewer vs
+interviewee classification, each speaker turn is labeled with the person
+speaking in it, for any number of speakers. Suggestions can then be
+restricted to any subset of speakers (one include checkbox per speaker;
+turns with no speaker count as included).
 
-- **Blocks**: `sugBlocks()` walks the same `doc-offset-` chunks as
+- **Turns**: `sugBlocks()` walks the same `doc-offset-` chunks as
   `sugBuildPlainIndex`, breaking at block-level elements (`<p>`, `<br>`,
-  `<li>`, …) and newlines inside text nodes. Blocks are `{start, end, text}`
+  `<li>`, ...) and newlines inside text nodes. Blocks are `{start, end, text}`
   spans *into the existing plainText* — nothing is inserted, so highlight
   byte offsets stay valid. `sugBlocksOfText()` is the pure line-based
   variant used in self-tests.
 - **Prefix lines**: a short line that is just a speaker label and/or a
   timestamp ("Interviewer:", "Dr. Silva [00:12]:", "RESPONDENT [00:20]",
   "Maria Silva (12:34)", "[00:12:33]", "00:00 --> 00:05") is folded into
-  the block that follows it during preprocessing, so the classifier sees
-  the label together with the spoken text. The merged block records
+  the block that follows it during preprocessing. The merged block records
   `contentStart` at the spoken text: the transcript rectangle wraps the
-  speech, not the label line.
-- **Decision model**: both providers speak the same Jev decision wire
-  protocol (`{state, questions}` in, `{answers}` out), so one client serves
-  both:
-  - **Laya**, installed locally: `pip install "laya[serve]"`, `laya-serve`
-    (default `http://localhost:8000`, `/v1/systemone`). Free, offline,
-    multilingual.
-  - **Jev** through any API key (typically OpenRouter, model
-    `~typesafe/jev-latest`, endpoint `https://openrouter.ai/api/alpha/decisions`)
-    or a custom endpoint — all configured in the configuration screen's
-    *Decisions* tab.
-  - Each turn gets one `choice` question (interviewer vs interviewee; the
-    instructions mention the possible label/timestamp prefix).
-- **UI**: `Q / A` button in the panel opens the configuration screen's
-  *Decisions* tab (service, model, local-service check, test connection);
-  with a session running the tab also hosts the answers-only checkbox and
-  the *Classify speaker turns* action, with its progress/summary line. Review happens in the transcript
-  itself: every turn's spoken text is outlined by a colored rectangle
-  (gray for Q, green for A, border only — no fill, so it never reads as a
-  highlight) with a Q/A badge beside it; click the badge any time to flip
-  a misclassification, suggestions re-filter immediately. The badge
-  carries no text content (CSS paints it), so `plainText` offsets are
-  never polluted.
-- **Filtering**: in `sugRefilterPane`, candidates with more than half their
-  span inside turns labeled `Q` are dropped (cluster and percentile modes
-  both; compared on `cStart/cEnd` char offsets, which is what blocks are
-  indexed in). The panel status shows `· answers only` while active.
-- **Caching**: decisions cached in `SUG_QA_CACHE` (memory) and the IndexedDB
-  store (keyed by provider+model+URL and the text hash), so re-running the
-  classification — or reopening the document — costs no requests.
+  speech, not the label line, and `sugSpeakerPrefix()` exposes the label
+  part. Inline labels ("John: hello") stay part of the first line.
+- **Local pre-scan** (no LLM): `sugPreScanPrefixes()` counts the most
+  frequent candidate labels on the turns' first lines and the share of
+  turns that carry one — a hint for the model and the basis for building
+  speakers by hand.
+- **Proposal (one LLM call)**: the `segmentation` task of the
+  configuration screen (any OpenAI-compatible chat endpoint, or a local
+  Ollama/llama.cpp server) receives ~30 random excerpts (~300 characters
+  each) plus the pre-scanned labels and answers once with strict JSON:
+  `{speakers: [{name, role?, rules: [{type: 'literal'|'regex', pattern,
+  example}]}], notes}`. Patterns are matched against the FIRST LINE of a
+  turn (at most 80 characters), never the whole text. A privacy notice in
+  the tab reminds that excerpts are sent straight from the browser to the
+  chosen service.
+- **Validation (the model is untrusted)**: regexes are syntax-checked
+  inside try/catch, capped at 200 characters and rejected when a
+  quantifier is applied to a group that already ends in one (ReDoS risk);
+  every rule must match the example the model cited or at least one real
+  turn, and patterns without a match are dropped (rule-less speakers too).
+- **Review before anything is applied**: the *Speakers* dialog lists the
+  proposed speakers with name, color, editable patterns, live match
+  counts and real examples; speakers can be renamed, recolored, merged,
+  removed and added, and unmatched turns (with example first lines) stay
+  visible. *Confirm* commits the profile and applies it.
+- **Deterministic assignment**: each turn gets the FIRST speaker whose
+  rule matches (`turn.speaker`, `turn.source: 'auto'`); unlabelled turns
+  get `speaker: null` (grey "?" badge). Clicking a badge opens a menu of
+  speakers and marks the turn `source: 'manual'`, so re-applying rules,
+  re-proposing or editing the transcript never overwrites it (manual
+  assignments are inherited by identical turn text after an edit).
+- **Rendering**: every turn is outlined in the speaker's color (border
+  only — no fill, so it never reads as a highlight) with a badge carrying
+  the speaker's name; the badge is textless (CSS paints
+  `attr(data-speaker)`), so `plainText` offsets are never polluted.
+  Colors travel as an inline `--sug-speaker-color` custom property from
+  an 8-color palette.
+- **Filtering**: in `sugRefilterPane`, candidates with more than half
+  their span inside turns of speakers whose *include* checkbox is off are
+  dropped (`sugIsExcludedSpan`; cluster and percentile modes both;
+  compared on `cStart/cEnd` char offsets, which is what blocks are indexed
+  in). The panel status shows `· N speaker(s) hidden` while any speaker is
+  excluded.
+- **Persistence**: the confirmed profile (names, colors, rules, include
+  flags) lives in the browser only — `localStorage` under
+  `taguette_speaker_profile_<document id>`; no table, no migration, no
+  endpoint. Reopening the document re-applies the rules for free, with no
+  LLM call; `sugRebuildAfterReload()` recomputes the turns after a
+  transcript edit and re-applies them.
+- **Phase 2 hook (out of scope)**: transcripts with few or no labels keep
+  their unmatched turns visible with a "Propose with AI" retry (re-running
+  the single call costs nothing); an optional later phase may classify
+  windows of neighbouring turns among the unmatched ones with the same
+  speaker profile.
 
 ## 9. Transcript edit mode (server-side)
 

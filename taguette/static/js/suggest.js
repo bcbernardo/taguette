@@ -584,7 +584,6 @@ var SUG_ALGO_OPTIONS = ['textrank', 'lexrank', 'yake', 'rake'];
 var SUG_ALGO_CACHE = {};     // document_id -> { algo: candidates[] }
 var SUG_EMB_CACHE = {};      // embKey -> { text: vector }
 var SUG_CENTROID_CACHE = {}; // document_id + '|' + embKey -> vector
-var SUG_QA_CACHE = {};       // decision key + '|' + text hash -> {role, prob}
 
 function sugEmbKey(cfg) {
   return cfg.url + '|' + (cfg.model || '');
@@ -695,72 +694,6 @@ function sugTextKey(emb_key, text) {
 }
 
 
-/*
- * Interviewer/interviewee classification. Speaker turns (non-empty lines)
- * are labeled question or answer by a decision model, so suggestions can be
- * restricted to the answers. Both supported providers speak the same Jev
- * /v1/systemone wire protocol:
- *   - Laya, installed and served locally (`pip install "laya[serve]"`,
- *     `laya-serve`, http://localhost:8000)
- *   - Jev through OpenRouter (https://openrouter.ai/api/alpha/decisions,
- *     model ~typesafe/jev-latest)
- */
-
-// The one question asked about every speaker turn
-function sugQaQuestion() {
-  return {
-    speaker: {
-      type: 'choice',
-      instructions: 'In an interview transcript, is this block spoken by '
-        + 'the interviewer or the interviewee? The block may start with a '
-        + 'speaker label or timestamp prefix.',
-      criteria: {
-        interviewer: 'the interviewer asking, probing, prompting or reading '
-          + 'out a question',
-        interviewee: 'the interviewee answering, explaining or narrating '
-          + 'their own experience',
-      },
-    },
-  };
-}
-
-// Cache-isolation key: decisions from different servers/models never mix.
-// cfg is the resolved wire config (see sugQaResolved).
-function sugQaBase(cfg) {
-  if(cfg.provider === 'laya') {
-    return 'laya|' + (cfg.url || '');
-  }
-  return 'jev|' + (cfg.url || '') + '|' + (cfg.model || '');
-}
-
-// The Jev decisions endpoint for OpenRouter keys (absolute: it does not
-// live under the OpenAI-compatible /v1 base); other providers have no
-// known default, so the task's URL must be filled in
-function sugQaDefaultPath(key) {
-  return key && key.provider === 'openrouter'
-    ? 'https://openrouter.ai/api/alpha/decisions'
-    : '';
-}
-
-// Resolve the stored decisions task into the wire config used by
-// sugQaClassifyOne: {provider: 'laya'|'jev', url, key, authHeader,
-// authScheme, model}. null when the task is off/unusable.
-function sugQaResolved() {
-  var r = taguTaskResolve('decisions', sugQaDefaultPath);
-  if(!r || (r.local && r.local.kind !== 'decisions')) {
-    return null;
-  }
-  if(r.local) {
-    return {provider: 'laya', url: r.url};
-  }
-  var cfg = {provider: 'jev', url: r.url, key: r.token,
-             model: r.model || '~typesafe/jev-latest'};
-  if(r.authHeader) {
-    cfg.authHeader = r.authHeader;
-    cfg.authScheme = r.authScheme;
-  }
-  return cfg;
-}
 
 // Speaker turns as {start, end, text} blocks over plainText. Block
 // boundaries: newlines inside text nodes (verbatim .txt) and block-level
@@ -916,104 +849,1016 @@ function sugBlocks() {
   return sugMergePrefixBlocks(blocks, plain);
 }
 
-// One turn -> Promise<{role: 'Q'|'A', prob}>. Memory, then IndexedDB, then a
-// single systemone request; the result is cached in both layers.
-function sugQaClassifyOne(text, cfg) {
-  var key = sugTextKey(sugQaBase(cfg), text);
-  if(SUG_QA_CACHE[key]) {
-    return Promise.resolve(SUG_QA_CACHE[key]);
-  }
-  return sugIdbGetMany([key]).then(function(stored) {
-    if(stored[key]) {
-      SUG_QA_CACHE[key] = stored[key];
-      return stored[key];
+/*
+ * Speaker segmentation
+ *
+ * Who speaks in each turn, for any number of speakers. A chat model (the
+ * 'segmentation' task of the configuration screen) receives random
+ * excerpts of the document and proposes, in ONE call, the speakers it
+ * recognizes as label patterns; the patterns are validated (regex safety,
+ * grounding in real turns), reviewed by the user in the "Speakers" modal,
+ * and only then applied deterministically to every turn. Nothing reaches
+ * the server: the confirmed profile (names, colors, rules, include flags)
+ * lives in this browser's localStorage, keyed by document.
+ *
+ * Turn shape: {start, end, text, contentStart?, speaker: <id|null>,
+ * source: 'auto'|'manual'|null}. sug_session.speakers is the ordered
+ * profile; the FIRST speaker whose rule matches a turn's first line wins.
+ * Unlabelled turns get speaker === null (grey "?" badge).
+ */
+
+var SUG_SPEAKER_COLORS = ['#4e79a7', '#f28e2b', '#59a14f', '#e15759',
+                          '#76b7b2', '#b07aa1', '#a67c00', '#9c755f'];
+var SUG_SPEAKER_STORE = 'taguette_speaker_profile_'; // + document id
+var SUG_SPEAKER_DRAFT = null;  // working copy edited by the review modal
+var SUG_SPEAKER_COUNT_TIMER = null;
+
+// Profile persistence: tiny JSON in this browser only (no table, no
+// endpoint), so reopening the document re-applies the rules for free
+function sugSpeakerProfileSave() {
+  try {
+    window.localStorage.setItem(SUG_SPEAKER_STORE + current_document,
+      JSON.stringify({version: 1, speakers: sug_session.speakers}));
+  } catch(e) { /* private mode: the profile just won't persist */ }
+}
+
+function sugSpeakerProfileLoad(document_id) {
+  try {
+    var raw = window.localStorage.getItem(SUG_SPEAKER_STORE + document_id);
+    var parsed = raw ? JSON.parse(raw) : null;
+    if(parsed && parsed.version === 1 && parsed.speakers
+       && typeof parsed.speakers.forEach === 'function') {
+      return parsed.speakers;
     }
-    var headers = {'Content-Type': 'application/json'};
-    var body = {state: text, questions: sugQaQuestion()};
-    if(cfg.provider === 'laya') {
-      // Local server, no key
-    } else {
-      if(cfg.key) {
-        headers[cfg.authHeader || 'Authorization'] =
-          (cfg.authScheme != null ? cfg.authScheme : 'Bearer ') + cfg.key;
+  } catch(e) { /* corrupted store: start fresh */ }
+  return [];
+}
+
+// The label part of a turn: the merged prefix line, if any ('' otherwise —
+// an inline label like "John: hi" is part of the first line and is only
+// seen by the rules, not by this getter)
+function sugSpeakerPrefix(b) {
+  return (b.contentStart !== undefined && b.contentStart > b.start)
+    ? b.text.slice(0, b.contentStart - b.start) : '';
+}
+
+// What speaker rules are tested against: the first line of the turn,
+// capped — labels live at the start of a turn, never deep in the text
+function sugSpeakerTarget(b) {
+  return b.text.split('\n', 1)[0].slice(0, 80);
+}
+
+// Local pre-scan (no LLM): count repeated candidate speaker labels on the
+// turns' first lines, and how many turns carry one. A hint for the model
+// and the basis for building speakers by hand.
+function sugPreScanPrefixes(turns) {
+  var counts = {};
+  var covered = 0;
+  var ts = '\\d{1,2}:\\d{2}(?::\\d{2})?(?:[.,]\\d{1,3})?';
+  var patterns = [
+    // "NAME:" — also accepts an optional bracketed timestamp before the
+    // colon ("Dr. Silva [00:12]:")
+    new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*([\\[]' + ts + '[\\]])?\\s*:'),
+    // "NAME [00:20]" / "NAME (12:34)" — bracketed time, no colon
+    new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*[\\[(]\\s*' + ts
+      + '\\s*[\\])]\\s*$'),
+    // "[00:12] NAME" — leading timestamp
+    new RegExp('^\\s*[\\[]\\s*' + ts + '\\s*[\\]]\\s+([^\\n:()[\\]]{1,40}?)'
+      + '(\\s*[\\[]' + ts + '[\\]])?\\s*:?\\s*$'),
+  ];
+  turns.forEach(function(b) {
+    var line = b.text.split('\n', 1)[0];
+    var label = null;
+    for(var p = 0; p < patterns.length && !label; ++p) {
+      var m = patterns[p].exec(line);
+      if(m) {
+        label = (m[1] || '').trim();
       }
-      body.model = cfg.model || '~typesafe/jev-latest';
     }
-    return fetch(cfg.url, {method: 'POST', mode: 'cors', headers: headers,
-                           body: JSON.stringify(body)})
-      .then(function(resp) {
-        if(resp.status != 200) {
-          throw new Error('HTTP ' + resp.status);
-        }
-        return resp.json();
-      })
-      .then(function(json) {
-        var ans = json && json.answers && json.answers.speaker;
-        if(!ans || !ans.choice) {
-          throw new Error('Unexpected response shape');
-        }
-        var prob = (typeof ans.answer_confidence === 'number')
-          ? ans.answer_confidence
-          : (ans.probabilities && ans.probabilities[ans.choice]) || 0;
-        var r = {role: ans.choice === 'interviewer' ? 'Q' : 'A',
-                 prob: Math.round(prob * 100) / 100};
-        SUG_QA_CACHE[key] = r;
-        sugIdbPutMany([{key: key, vec: r}]); // fire-and-forget persistence
-        return r;
-      });
+    if(!label || label.length < 2
+       || !/[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(label)) {
+      return; // no name in it (bare timestamps, cue ranges, numbers)
+    }
+    var k = label.toLowerCase();
+    if(!counts[k]) {
+      counts[k] = {label: label, count: 0};
+    }
+    counts[k].count++;
+    ++covered;
+  });
+  var labels = Object.keys(counts).map(function(k) { return counts[k]; });
+  labels.sort(function(a, b) { return b.count - a.count; });
+  return {labels: labels.slice(0, 15), covered: covered, total: turns.length};
+}
+
+// Random excerpts for the proposal: n turns (default 30, ~len characters
+// each), shuffled so the model sees the whole document, first lines
+// intact — that is where the labels live
+function sugSpeakerSample(turns, n, len) {
+  n = n || 30;
+  len = len || 300;
+  var idx = turns.map(function(_, i) { return i; });
+  for(var i = idx.length - 1; i > 0; --i) { // Fisher-Yates
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = idx[i];
+    idx[i] = idx[j];
+    idx[j] = tmp;
+  }
+  return idx.slice(0, n).map(function(i) {
+    return turns[i].text.slice(0, len);
   });
 }
 
-// All turns, a few requests at a time. on_done(i, role, prob) after each.
-function sugQaClassifyAll(blocks, cfg, on_done) {
-  var next = 0;
-  function worker() {
-    if(next >= blocks.length) {
-      return Promise.resolve();
-    }
-    var i = next++;
-    if(blocks[i].role) {
-      return Promise.resolve().then(worker); // already classified/inherited
-    }
-    return sugQaClassifyOne(blocks[i].text, cfg)
-      .then(function(r) {
-        if(on_done) {
-          on_done(i, r.role, r.prob);
-        }
-      })
-      .then(worker);
-  }
-  var workers = [];
-  for(var w = 0; w < Math.min(4, blocks.length); ++w) {
-    workers.push(worker());
-  }
-  return Promise.all(workers);
+function sugSpeakerPrompt(excerpts, scan) {
+  var listed = scan.labels.map(function(l) {
+    return l.label + ' (' + l.count + ' turns)';
+  }).join(', ');
+  return 'You are helping a qualitative researcher label the speakers of '
+    + 'one interview/focus-group/meeting transcript in Taguette.\n'
+    + '\n'
+    + 'Below are ' + excerpts.length + ' random excerpts from the document'
+    + (listed
+       ? ', followed by the speaker labels that appear most often at the '
+         + 'start of its lines'
+       : '')
+    + '. Infer how many DIFFERENT speakers there are and how each one can '
+      + 'be recognized from the beginning of a turn.\n'
+    + '\n'
+    + 'Answer with STRICT JSON only — no markdown fences, no commentary:\n'
+    + '{"speakers":[{"name":"Name","role":"optional role in a few words",'
+    + '"rules":[{"type":"literal","pattern":"John:",'
+    + '"example":"John: good point"},{"type":"regex",'
+    + '"pattern":"^\\\\[?\\\\d{1,2}:\\\\d{2}\\\\]?\\\\s+John",'
+    + '"example":"[00:12] John: good point"}]}],'
+    + '"notes":"short free-text observation or empty"}\n'
+    + '\n'
+    + 'Rules:\n'
+    + '- A rule pattern is tested against the FIRST LINE of a turn (at '
+      + 'most 80 characters), never the whole text.\n'
+    + '- "literal" patterns match the start of that line, '
+      + 'case-insensitively; "regex" patterns are JavaScript RegExp '
+      + '(applied case-insensitively, no flags), at most 200 characters, '
+      + 'and should start with ^.\n'
+    + '- Give every speaker at least one rule that uses the exact spelling '
+      + 'found in the document; prefer literal rules when a label is a '
+      + 'plain name.\n'
+    + '- Every rule MUST include an "example": a real beginning of a line '
+      + 'from the excerpts that the pattern matches.\n'
+    + '- Do NOT invent speakers you have no evidence for; if the transcript '
+      + 'has no speaker labels at all, return {"speakers":[],"notes":"..."}.\n'
+    + '\n'
+    + 'Random excerpts:\n'
+    + excerpts.map(function(t, i) {
+        return '--- #' + (i + 1) + '\n' + t;
+      }).join('\n')
+    + (listed ? '\n\nMost frequent line-start labels: ' + listed : '')
+    + '\n';
 }
 
-// >half of [start, end) lies in a block labeled 'Q'
-function sugIsQuestionSpan(start, end) {
-  var blocks = sug_session && sug_session.roles ? sug_session.roles : null;
-  if(!blocks) {
+// Extract the JSON object from a model answer: strip reasoning blocks and
+// markdown fences, then parse the outermost {...}
+function sugSpeakerParseJson(text) {
+  var t = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '');
+  var start = t.indexOf('{');
+  var end = t.lastIndexOf('}');
+  if(start === -1 || end <= start) {
+    throw new Error(gettext('The model answer contains no JSON object.'));
+  }
+  var parsed = JSON.parse(t.slice(start, end + 1)); // may throw SyntaxError
+  if(!parsed || !parsed.speakers
+     || typeof parsed.speakers.forEach !== 'function') {
+    throw new Error(gettext('Unexpected JSON shape.'));
+  }
+  return parsed;
+}
+
+// Reject regex patterns that could hang the browser (ReDoS): anything
+// longer than 200 characters, or a quantifier applied to a group that
+// already ends in one ((a+)+, (a*)* ...). Character classes count as one
+// atom; deliberately conservative — a rejected correct pattern is easy to
+// rewrite, and the user reviews every rule anyway.
+function sugRuleSafeRegex(pattern) {
+  if(typeof pattern !== 'string' || pattern.length === 0
+     || pattern.length > 200) {
+    return false;
+  }
+  var flat = pattern.replace(/\\[\s\S]/g, '.')
+    .replace(/\[[^\]]*\]/g, 'X');
+  return !/[*+}]\s*\)\s*[*+{]/.test(flat);
+}
+
+// One rule from the model (or the user) -> normalized {type, pattern,
+// example}, or null when unusable. Regexes are syntax- and ReDoS-checked
+// here; grounding (matching something real) is checked by the caller.
+function sugValidateRule(rule) {
+  if(!rule || typeof rule !== 'object') {
+    return null;
+  }
+  var type = rule.type === 'regex' ? 'regex' : 'literal';
+  var pattern = String(rule.pattern || '').trim();
+  if(!pattern) {
+    return null;
+  }
+  if(type === 'literal') {
+    if(pattern.length > 80) {
+      return null;
+    }
+    return {type: 'literal', pattern: pattern,
+            example: String(rule.example || '')};
+  }
+  if(!sugRuleSafeRegex(pattern)) {
+    return null;
+  }
+  try {
+    new RegExp(pattern, 'i');
+  } catch(e) {
+    return null;
+  }
+  return {type: 'regex', pattern: pattern,
+          example: String(rule.example || '')};
+}
+
+function sugRuleMatches(rule, target) {
+  if(!rule || !rule.pattern || !target) {
+    return false;
+  }
+  if(rule.type === 'regex') {
+    try {
+      return new RegExp(rule.pattern, 'i').test(target);
+    } catch(e) {
+      return false;
+    }
+  }
+  return target.toLowerCase().indexOf(rule.pattern.toLowerCase()) === 0;
+}
+
+// The first speaker (profile order) with a matching rule wins; null when
+// none does
+function sugSpeakerOf(turn, speakers) {
+  var target = sugSpeakerTarget(turn);
+  for(var i = 0; i < speakers.length; ++i) {
+    var rules = speakers[i].rules || [];
+    for(var r = 0; r < rules.length; ++r) {
+      if(sugRuleMatches(rules[r], target)) {
+        return speakers[i].id;
+      }
+    }
+  }
+  return null;
+}
+
+// Validated, grounded speakers out of the model's JSON. Every rule must
+// match the example the model cited or at least one real turn, else it is
+// dropped; speakers left without rules are dropped too. Profile speakers
+// with the same (case-insensitive) name keep their id, color and include
+// flag, so manual turn assignments survive a re-proposal.
+function sugSpeakersFromProposal(parsed, turns) {
+  var prev = {};
+  ((sug_session && sug_session.speakers) || []).forEach(function(s) {
+    var k = String(s.name || '').trim().toLowerCase();
+    if(k) {
+      prev[k] = s;
+    }
+  });
+  var used = {};
+  var out = [];
+  var next_id = 1;
+  (parsed.speakers || []).forEach(function(sp) {
+    if(!sp || typeof sp !== 'object' || out.length >= 12) {
+      return;
+    }
+    var name = String(sp.name || '').trim().slice(0, 60);
+    if(!name) {
+      return;
+    }
+    var rules = [];
+    (Array.isArray(sp.rules) ? sp.rules : []).forEach(function(raw) {
+      var rule = sugValidateRule(raw);
+      if(!rule) {
+        return;
+      }
+      // Grounding: the pattern must match the example the model cited or
+      // at least one real turn
+      var ok = rule.example
+        && sugRuleMatches(rule, rule.example.split('\n', 1)[0].slice(0, 80));
+      for(var t = 0; t < turns.length && !ok; ++t) {
+        ok = sugRuleMatches(rule, sugSpeakerTarget(turns[t]));
+      }
+      if(ok) {
+        rules.push(rule);
+      }
+    });
+    if(!rules.length) {
+      return;
+    }
+    var old = prev[name.toLowerCase()];
+    if(old && used[old.id]) {
+      old = null; // two proposed speakers with the same name
+    }
+    if(old) {
+      used[old.id] = true;
+    }
+    out.push({
+      id: old ? old.id : 'sp' + (next_id++) + '_' + Date.now(),
+      name: name,
+      color: old ? old.color
+                 : SUG_SPEAKER_COLORS[out.length % SUG_SPEAKER_COLORS.length],
+      include: old ? old.include !== false : true,
+      rules: rules,
+    });
+  });
+  return out;
+}
+
+// Deterministic assignment over the whole turn list: the first matching
+// speaker wins. Turns already assigned by hand (source 'manual') are kept
+// as-is, and so are manual assignments inherited by identical text
+// (inherited: {turn text -> speaker id}) after a transcript edit.
+function sugApplySpeakers(turns, speakers, inherited) {
+  var known = {};
+  speakers.forEach(function(s) { known[s.id] = true; });
+  turns.forEach(function(t) {
+    if(t.source === 'manual' && (t.speaker === null || known[t.speaker])) {
+      return; // hands off the user's corrections
+    }
+    if(inherited && inherited[t.text] && known[inherited[t.text]]) {
+      t.speaker = inherited[t.text];
+      t.source = 'manual';
+      return;
+    }
+    t.speaker = sugSpeakerOf(t, speakers);
+    t.source = t.speaker ? 'auto' : null;
+  });
+  return turns;
+}
+
+// >half of [start, end) lies in turns of speakers whose "include" flag is
+// off. Turns with no speaker count as included.
+function sugIsExcludedSpan(start, end) {
+  var turns = (sug_session && sug_session.turns) || null;
+  if(!turns || !sug_session.speakers) {
+    return false;
+  }
+  var excluded = {};
+  var any = false;
+  sug_session.speakers.forEach(function(s) {
+    if(s.include === false) {
+      excluded[s.id] = true;
+      any = true;
+    }
+  });
+  if(!any) {
     return false;
   }
   var total = end - start;
   if(total <= 0) {
     return false;
   }
-  var q = 0;
-  for(var i = 0; i < blocks.length; ++i) {
-    var b = blocks[i];
-    if(b.role !== 'Q' || b.start >= end || b.end <= start) {
+  var hit = 0;
+  for(var i = 0; i < turns.length; ++i) {
+    var b = turns[i];
+    if(!b.speaker || !excluded[b.speaker] || b.start >= end || b.end <= start) {
       continue;
     }
-    q += Math.min(end, b.end) - Math.max(start, b.start);
-    if(2 * q > total) {
+    hit += Math.min(end, b.end) - Math.max(start, b.start);
+    if(2 * hit > total) {
       return true;
     }
   }
   return false;
 }
 
+// Short badge text: the speaker's name, trimmed to fit
+function sugSpeakerBadgeLabel(s) {
+  var name = (s && s.name ? s.name : '?').trim();
+  return name.length > 14 ? name.slice(0, 13) + '\u2026' : name;
+}
+
+// Render the speaker turns in the transcript: a light outline per turn in
+// the speaker's color plus a badge with the speaker's name. The badge is
+// textless (CSS paints attr(data-speaker)), so plainText offsets stay
+// clean; click it to re-assign the turn by hand.
+function sugSpeakerRenderBlocks() {
+  sugUnwrapClass('sug-speaker-block');
+  var old = document.querySelectorAll('.sug-speaker-badge');
+  for(var i = 0; i < old.length; ++i) {
+    if(old[i].parentNode) {
+      old[i].parentNode.removeChild(old[i]);
+    }
+  }
+  if(!sug_session || !sug_session.turns || !sug_session.speakers
+     || !sug_session.speakers.length) {
+    return;
+  }
+  var boc = sug_session.byteOfChar;
+  var byId = {};
+  sug_session.speakers.forEach(function(s) { byId[s.id] = s; });
+  sug_session.turns.forEach(function(b, i) {
+    var sp = b.speaker ? byId[b.speaker] : null;
+    var color = sp ? sp.color : '';
+    var mk = function() {
+      var span = document.createElement('span');
+      span.className = 'sug-speaker-block';
+      span.setAttribute('data-idx', i);
+      span.setAttribute('data-speaker-id', b.speaker || '');
+      if(color) {
+        span.style.setProperty('--sug-speaker-color', color);
+      }
+      span.title = sp ? ''
+        : gettext('No speaker — click the badge to assign one');
+      return span;
+    };
+    var boxStart = (b.contentStart !== undefined) ? b.contentStart : b.start;
+    var span = sugWrapOne('', boc[boxStart], boc[b.end], mk);
+    if(!span) {
+      // Range straddles an element edge (e.g. a suggestion crossing the
+      // block): border the text fragments individually instead
+      var wrapped = sugWrapRange('', boc[boxStart], boc[b.end], mk);
+      span = wrapped && wrapped.first;
+    }
+    if(span) {
+      var badge = document.createElement('i');
+      badge.className = 'sug-speaker-badge';
+      badge.setAttribute('data-idx', i);
+      badge.setAttribute('data-speaker', sugSpeakerBadgeLabel(sp));
+      badge.setAttribute('data-speaker-id', b.speaker || '');
+      if(color) {
+        badge.style.setProperty('--sug-speaker-color', color);
+      }
+      span.parentNode.insertBefore(badge, span);
+    }
+  });
+}
+
+// Update one turn's outline + badge after a manual re-assignment
+function sugSpeakerSetBlockDom(i) {
+  var turn = sug_session && sug_session.turns && sug_session.turns[i];
+  if(!turn) {
+    return;
+  }
+  var sp = null;
+  sug_session.speakers.forEach(function(s) {
+    if(s.id === turn.speaker) {
+      sp = s;
+    }
+  });
+  var color = sp ? sp.color : '';
+  var label = sugSpeakerBadgeLabel(sp);
+  var sel = '[data-idx="' + i + '"]';
+  var spans = document.querySelectorAll('.sug-speaker-block' + sel);
+  for(var s = 0; s < spans.length; ++s) {
+    spans[s].setAttribute('data-speaker-id', turn.speaker || '');
+    if(color) {
+      spans[s].style.setProperty('--sug-speaker-color', color);
+    } else {
+      spans[s].style.removeProperty('--sug-speaker-color');
+    }
+  }
+  var badges = document.querySelectorAll('.sug-speaker-badge' + sel);
+  for(var b = 0; b < badges.length; ++b) {
+    badges[b].setAttribute('data-speaker', label);
+    badges[b].setAttribute('data-speaker-id', turn.speaker || '');
+    if(color) {
+      badges[b].style.setProperty('--sug-speaker-color', color);
+    } else {
+      badges[b].style.removeProperty('--sug-speaker-color');
+    }
+  }
+}
+
+function sugSpeakerEscape(text) {
+  var el = document.createElement('div');
+  el.textContent = String(text);
+  return el.innerHTML;
+}
+
+// Manual correction: the badge opens a menu of speakers. Assigning by hand
+// marks the turn 'manual', so rule re-application and proposals never
+// overwrite it.
+function sugSpeakerMenu(i, clientX, clientY) {
+  if(!sug_session || !sug_session.turns || !sug_session.turns[i]) {
+    return;
+  }
+  var turn = sug_session.turns[i];
+  var html = '<div class="sug-menu-title">'
+    + gettext('Who speaks in this turn?') + '</div>';
+  html += '<button type="button" class="btn btn-sm '
+    + (turn.speaker === null ? 'btn-primary' : 'btn-outline-secondary')
+    + ' sug-menu-speaker" data-spid=""'
+    + ' style="display:block;margin-bottom:4px;">'
+    + gettext('No speaker') + '</button>';
+  sug_session.speakers.forEach(function(s) {
+    var active = turn.speaker === s.id;
+    html += '<button type="button" class="btn btn-sm '
+      + (active ? 'btn-primary' : 'btn-outline-secondary')
+      + ' sug-menu-speaker" data-spid="' + sugSpeakerEscape(s.id)
+      + '" style="display:block;margin-bottom:4px;">'
+      + '<span style="display:inline-block;width:0.8em;height:0.8em;'
+      + 'border-radius:2px;background:' + s.color
+      + ';margin-right:4px;"></span>'
+      + sugSpeakerEscape(s.name) + '</button>';
+  });
+  html += '<button type="button" '
+    + 'class="btn btn-sm btn-outline-primary sug-menu-speaker-edit" '
+    + 'style="display:block;margin-top:4px;">'
+    + gettext('Edit speakers\u2026') + '</button>';
+  sugShowMenu(html, clientX, clientY, true);
+  var menu = sugMenuEl();
+  var buttons = menu.querySelectorAll('.sug-menu-speaker');
+  for(var b = 0; b < buttons.length; ++b) {
+    buttons[b].addEventListener('click', function() {
+      var spid = this.getAttribute('data-spid') || null;
+      turn.speaker = spid;
+      turn.source = 'manual';
+      sugSpeakerSetBlockDom(i);
+      sugRefilter();
+      sugHideMenu();
+    });
+  }
+  var edit = menu.querySelector('.sug-menu-speaker-edit');
+  if(edit) {
+    edit.addEventListener('click', function() {
+      sugHideMenu();
+      sugOpenSpeakersModal();
+    });
+  }
+}
+
+/*
+ * Speakers review modal: the model proposes, the user edits and confirms,
+ * and only then are turns assigned. The draft is a working copy — Confirm
+ * commits it to the session (and to the per-document profile), closing
+ * the modal discards it.
+ */
+
+// The toolbar "Speakers" button. No session: straight to the model
+// settings; with a session, the review modal (propose / edit / confirm)
+function sugOpenSpeakers() {
+  if(!sug_session) {
+    taguOpenConfig('segmentation');
+    return;
+  }
+  sugOpenSpeakersModal();
+}
+
+function sugOpenSpeakersModal() {
+  if(!sug_session) {
+    return;
+  }
+  if(!sug_session.turns) {
+    sug_session.turns = sugBlocks();
+  }
+  SUG_SPEAKER_DRAFT = JSON.parse(JSON.stringify(sug_session.speakers));
+  sugSpeakerRenderDraft();
+  var modal = document.getElementById('suggest-speakers-modal');
+  $(modal).modal({backdrop: 'static'}).on('hidden.bs.modal', function() {
+    $(modal).off('hidden.bs.modal');
+    SUG_SPEAKER_DRAFT = null;
+  });
+  $(modal).modal('show');
+}
+
+// Live counts while editing the draft: per-speaker matched turns and the
+// unassigned remainder, computed exactly like the final assignment (first
+// matching speaker wins; manual assignments untouched)
+function sugSpeakerDraftStats() {
+  var speakers = SUG_SPEAKER_DRAFT || [];
+  var turns = (sug_session && sug_session.turns) || [];
+  var per = {};
+  var examples = {};
+  var unassigned = 0;
+  var unassigned_eg = [];
+  turns.forEach(function(t) {
+    var manual = t.source === 'manual'
+      && (t.speaker === null
+          || speakers.some(function(s) { return s.id === t.speaker; }));
+    var spid = manual ? t.speaker : sugSpeakerOf(t, speakers);
+    if(spid) {
+      per[spid] = (per[spid] || 0) + 1;
+      if(!examples[spid]) {
+        examples[spid] = [];
+      }
+      if(examples[spid].length < 3) {
+        examples[spid].push(sugSpeakerTarget(t));
+      }
+    } else {
+      ++unassigned;
+      if(unassigned_eg.length < 3) {
+        unassigned_eg.push(sugSpeakerTarget(t));
+      }
+    }
+  });
+  return {per: per, examples: examples, unassigned: unassigned,
+          unassigned_eg: unassigned_eg, total: turns.length};
+}
+
+// Refresh the modal's counters without re-rendering the inputs (kept
+// cheap enough to run while typing, debounced below)
+function sugSpeakerFillCounts() {
+  var stats_el = document.getElementById('sug-speakers-stats');
+  var un_el = document.getElementById('sug-speakers-unassigned');
+  if(!stats_el || !SUG_SPEAKER_DRAFT || !sug_session || !sug_session.turns) {
+    return;
+  }
+  var stats = sugSpeakerDraftStats();
+  var assigned = stats.total - stats.unassigned;
+  var pct = stats.total ? Math.round(100 * assigned / stats.total) : 0;
+  stats_el.textContent = gettext(
+    '%(total)s turn(s): %(assigned)s assigned (%(pct)s% coverage), '
+    + '%(none)s with no speaker',
+    {total: stats.total, assigned: assigned, pct: pct,
+     none: stats.unassigned});
+  if(stats.unassigned === 0) {
+    un_el.textContent = gettext('Every turn has a speaker.');
+  } else if(stats.unassigned_eg.length) {
+    un_el.textContent = gettext('Turns with no speaker, e.g.:')
+      + ' ' + stats.unassigned_eg.map(function(t) {
+          return '"' + t.slice(0, 40) + '"';
+        }).join(', ');
+  } else {
+    un_el.textContent = '';
+  }
+  SUG_SPEAKER_DRAFT.forEach(function(sp) {
+    var el = stats_el.parentNode.querySelector(
+      '.sug-speaker-count[data-count-for="' + sp.id + '"]');
+    if(!el) {
+      return;
+    }
+    var n = stats.per[sp.id] || 0;
+    var text = n + ' ' + gettext('turn(s)');
+    var eg = stats.examples[sp.id];
+    if(eg && eg.length) {
+      text += ' \u00b7 ' + gettext('e.g.') + ' ' + eg.map(function(t) {
+        return '"' + t.slice(0, 30) + '"';
+      }).join(', ');
+    } else {
+      text += ' \u00b7 ' + gettext('no match yet');
+    }
+    el.textContent = text;
+  });
+}
+
+function sugSpeakerQueueCounts() {
+  if(SUG_SPEAKER_COUNT_TIMER) {
+    window.clearTimeout(SUG_SPEAKER_COUNT_TIMER);
+  }
+  SUG_SPEAKER_COUNT_TIMER = window.setTimeout(function() {
+    SUG_SPEAKER_COUNT_TIMER = null;
+    sugSpeakerFillCounts();
+  }, 300);
+}
+
+// Full re-render of the modal's speaker rows. Structural changes (add,
+// remove, merge, propose) go through here; text edits update the draft in
+// place and only refresh the counters.
+function sugSpeakerRenderDraft() {
+  var box = document.getElementById('sug-speakers-list');
+  if(!box || !SUG_SPEAKER_DRAFT) {
+    return;
+  }
+  var error_el = document.getElementById('sug-speakers-error');
+  if(error_el) {
+    error_el.style.display = 'none';
+    error_el.textContent = '';
+  }
+  var speakers = SUG_SPEAKER_DRAFT;
+  box.textContent = '';
+  if(!speakers.length) {
+    box.appendChild(taguEl('p', 'text-muted', gettext(
+      'No speakers yet: propose them from the document with AI, or add '
+      + 'them by hand.')));
+  }
+  speakers.forEach(function(sp) {
+    var row = taguEl('div', 'sug-speaker-row');
+    row.setAttribute('data-sid', sp.id);
+
+    var head = taguEl('div', 'form-row align-items-center');
+    var col_color = taguEl('div', 'col-auto');
+    var color = document.createElement('input');
+    color.type = 'color';
+    color.className = 'sug-speaker-color';
+    color.value = sp.color;
+    color.title = gettext('Color');
+    color.addEventListener('change', function() {
+      sp.color = color.value;
+    });
+    col_color.appendChild(color);
+    head.appendChild(col_color);
+
+    var col_name = taguEl('div', 'col');
+    var name = taguEl('input', 'form-control form-control-sm');
+    name.type = 'text';
+    name.value = sp.name;
+    name.placeholder = gettext('Speaker name');
+    name.addEventListener('change', function() {
+      var v = name.value.trim();
+      if(v) {
+        sp.name = v;
+        name.value = v;
+      } else {
+        name.value = sp.name;
+      }
+    });
+    col_name.appendChild(name);
+    head.appendChild(col_name);
+
+    var col_inc = taguEl('div', 'col-auto');
+    var inc_label = taguEl('label', 'form-check-label mb-0');
+    inc_label.title = gettext('Unchecked: highlights mostly inside this '
+      + "speaker's turns are not suggested");
+    var inc = document.createElement('input');
+    inc.type = 'checkbox';
+    inc.className = 'form-check-input';
+    inc.checked = sp.include !== false;
+    inc.addEventListener('change', function() {
+      sp.include = inc.checked;
+      sugSpeakerFillCounts();
+    });
+    inc_label.appendChild(inc);
+    inc_label.appendChild(document.createTextNode(' ' + gettext('Include')));
+    col_inc.appendChild(inc_label);
+    head.appendChild(col_inc);
+
+    var col_rm = taguEl('div', 'col-auto');
+    var rm = taguEl('button', 'btn btn-sm btn-outline-danger', '\u00d7');
+    rm.type = 'button';
+    rm.title = gettext('Remove this speaker');
+    rm.addEventListener('click', function() {
+      sugSpeakerRemoveDraft(sp.id);
+    });
+    col_rm.appendChild(rm);
+    head.appendChild(col_rm);
+    row.appendChild(head);
+
+    var rules_box = taguEl('div', 'mt-1');
+    (sp.rules || []).forEach(function(rule) {
+      rules_box.appendChild(sugSpeakerRuleRow(sp, rule));
+    });
+    row.appendChild(rules_box);
+
+    var add_rule = taguEl('button', 'btn btn-sm btn-outline-secondary',
+      gettext('+ pattern'));
+    add_rule.type = 'button';
+    add_rule.addEventListener('click', function() {
+      sp.rules.push({type: 'literal', pattern: '', example: ''});
+      sugSpeakerRenderDraft();
+    });
+    row.appendChild(add_rule);
+
+    var foot = taguEl('div', 'sug-speaker-count text-muted mt-1');
+    foot.setAttribute('data-count-for', sp.id);
+    row.appendChild(foot);
+
+    // Merge menu: moves this speaker's rules (and its manual turns) into
+    // another one
+    if(speakers.length > 1) {
+      var merge = taguEl('select', 'form-control form-control-sm mt-1');
+      merge.title = gettext('Merge this speaker into another');
+      var opt0 = taguEl('option', null, gettext('Merge into\u2026'));
+      opt0.value = '';
+      merge.appendChild(opt0);
+      speakers.forEach(function(other) {
+        if(other.id !== sp.id) {
+          var o = taguEl('option', null, other.name || '?');
+          o.value = other.id;
+          merge.appendChild(o);
+        }
+      });
+      merge.addEventListener('change', function() {
+        if(merge.value) {
+          sugSpeakerMergeDraft(sp.id, merge.value);
+        }
+      });
+      row.appendChild(merge);
+    }
+
+    box.appendChild(row);
+  });
+  sugSpeakerFillCounts();
+}
+
+// One pattern row: type (literal text / regex) + pattern + remove. Input
+// events update the draft in place (no re-render, so typing keeps focus);
+// the change event also refreshes the counters.
+function sugSpeakerRuleRow(sp, rule) {
+  var rrow = taguEl('div', 'sug-speaker-rule');
+  var type = taguEl('select', 'form-control form-control-sm');
+  [['literal', gettext('text')], ['regex', gettext('regex')]]
+    .forEach(function(pair) {
+      var option = taguEl('option', null, pair[1]);
+      option.value = pair[0];
+      type.appendChild(option);
+    });
+  type.value = rule.type === 'regex' ? 'regex' : 'literal';
+  type.addEventListener('change', function() {
+    rule.type = type.value;
+    pat.placeholder = rule.type === 'regex'
+      ? '^regex against the first line'
+      : gettext('text at the start of the first line');
+    sugSpeakerFillCounts();
+  });
+  rrow.appendChild(type);
+  var pat = taguEl('input', 'form-control form-control-sm');
+  pat.type = 'text';
+  pat.value = rule.pattern;
+  pat.placeholder = rule.type === 'regex'
+    ? '^regex against the first line'
+    : gettext('text at the start of the first line');
+  pat.addEventListener('input', function() {
+    rule.pattern = pat.value.trim();
+    pat.classList.toggle('sug-speaker-bad',
+      !!rule.pattern && !sugValidateRule(rule));
+    sugSpeakerQueueCounts();
+  });
+  pat.addEventListener('change', function() {
+    rule.pattern = pat.value.trim();
+    pat.classList.toggle('sug-speaker-bad',
+      !!rule.pattern && !sugValidateRule(rule));
+    sugSpeakerFillCounts();
+  });
+  rrow.appendChild(pat);
+  var del = taguEl('button', 'btn btn-sm btn-outline-secondary', '\u00d7');
+  del.type = 'button';
+  del.title = gettext('Remove this pattern');
+  del.addEventListener('click', function() {
+    sp.rules.splice(sp.rules.indexOf(rule), 1);
+    sugSpeakerRenderDraft();
+  });
+  rrow.appendChild(del);
+  return rrow;
+}
+
+function sugSpeakerAddDraft() {
+  if(!SUG_SPEAKER_DRAFT) {
+    return;
+  }
+  SUG_SPEAKER_DRAFT.push({
+    id: 'sp_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name: gettext('Speaker') + ' ' + (SUG_SPEAKER_DRAFT.length + 1),
+    color: SUG_SPEAKER_COLORS[SUG_SPEAKER_DRAFT.length
+           % SUG_SPEAKER_COLORS.length],
+    include: true,
+    rules: [{type: 'literal', pattern: '', example: ''}],
+  });
+  sugSpeakerRenderDraft();
+}
+
+// Merge one draft speaker into another: the rules move over, manual turn
+// assignments re-point, the excluded flag pulls down
+function sugSpeakerMergeDraft(fromId, intoId) {
+  var draft = SUG_SPEAKER_DRAFT;
+  if(!draft) {
+    return;
+  }
+  var from = null, into = null, from_idx = -1;
+  draft.forEach(function(sp, i) {
+    if(sp.id === fromId) {
+      from = sp;
+      from_idx = i;
+    }
+    if(sp.id === intoId) {
+      into = sp;
+    }
+  });
+  if(!from || !into) {
+    return;
+  }
+  into.rules = (into.rules || []).concat(from.rules || []);
+  if(from.include === false) {
+    into.include = false;
+  }
+  draft.splice(from_idx, 1);
+  if(sug_session && sug_session.turns) {
+    sug_session.turns.forEach(function(t) {
+      if(t.source === 'manual' && t.speaker === fromId) {
+        t.speaker = intoId;
+      }
+    });
+  }
+  sugSpeakerRenderDraft();
+}
+
+function sugSpeakerRemoveDraft(id) {
+  var draft = SUG_SPEAKER_DRAFT;
+  if(!draft) {
+    return;
+  }
+  var idx = -1;
+  draft.forEach(function(sp, i) {
+    if(sp.id === id) {
+      idx = i;
+    }
+  });
+  if(idx === -1) {
+    return;
+  }
+  if(!window.confirm(gettext(
+      'Remove speaker %(name)s? Its turns become "no speaker".',
+      {name: draft[idx].name || '?'}))) {
+    return;
+  }
+  draft.splice(idx, 1);
+  if(sug_session && sug_session.turns) {
+    sug_session.turns.forEach(function(t) {
+      if(t.source === 'manual' && t.speaker === id) {
+        t.speaker = null;
+      }
+    });
+  }
+  sugSpeakerRenderDraft();
+}
+
+// Commit the draft: validate once more, store the profile, apply the
+// rules to every turn and re-render. Manual assignments survive.
+function sugSpeakerConfirm() {
+  if(!sug_session) {
+    return;
+  }
+  var draft = SUG_SPEAKER_DRAFT || [];
+  draft.forEach(function(sp) {
+    if(!String(sp.name || '').trim()) {
+      sp.name = gettext('Speaker');
+    }
+    sp.rules = (sp.rules || []).filter(function(r) {
+      return !!sugValidateRule(r);
+    });
+  });
+  sug_session.speakers = draft.filter(function(sp) {
+    return sp.rules.length;
+  });
+  SUG_SPEAKER_DRAFT = null;
+  sugSpeakerProfileSave();
+  if(!sug_session.turns) {
+    sug_session.turns = sugBlocks();
+  }
+  sugApplySpeakers(sug_session.turns, sug_session.speakers);
+  sugSpeakerRenderBlocks();
+  sugRefilter();
+  $(document.getElementById('suggest-speakers-modal')).modal('hide');
+}
+
+// One LLM call: random excerpts + the pre-scanned labels in, validated
+// speaker rules out. The answer is untrusted: everything is re-checked
+// before it reaches the draft.
+function sugSpeakerPropose() {
+  var error_el = document.getElementById('sug-speakers-error');
+  var propose_btn = document.getElementById('sug-speakers-propose');
+  if(!sug_session || !error_el) {
+    return;
+  }
+  var cfg = tagAiLLMConfig('segmentation');
+  if(!cfg) {
+    error_el.className = 'text-danger mb-0 mt-2';
+    error_el.textContent = gettext(
+      'Pick a chat model first: open \u2699 Settings \u2192 Segmentation.');
+    error_el.style.display = '';
+    return;
+  }
+  if(!sug_session.turns) {
+    sug_session.turns = sugBlocks();
+  }
+  var turns = sug_session.turns;
+  if(!turns.length) {
+    error_el.className = 'text-danger mb-0 mt-2';
+    error_el.textContent = gettext(
+      "No speaker turns found: put each speaker's text on its own line "
+      + 'first.');
+    error_el.style.display = '';
+    return;
+  }
+  var scan = sugPreScanPrefixes(turns);
+  if(scan.total && scan.covered / scan.total < 0.2) {
+    console.warn('Suggest: only ' + scan.covered + '/' + scan.total
+      + ' turns carry a recognizable label; the proposal may be weak');
+  }
+  propose_btn.disabled = true;
+  propose_btn.textContent = gettext('Proposing\u2026');
+  error_el.className = 'text-muted mb-0 mt-2';
+  error_el.textContent = gettext('Asking the model for speaker patterns\u2026');
+  error_el.style.display = '';
+  tagAiChat(cfg, sugSpeakerPrompt(sugSpeakerSample(turns, 30, 300), scan),
+            2000)
+    .then(function(answer) {
+      var proposed = sugSpeakersFromProposal(
+        sugSpeakerParseJson(answer), turns);
+      if(!proposed.length) {
+        throw new Error(gettext(
+          'The model found no usable speaker patterns.'));
+      }
+      SUG_SPEAKER_DRAFT = proposed;
+      sugSpeakerRenderDraft();
+    })
+    .catch(function(error) {
+      error_el.className = 'text-danger mb-0 mt-2';
+      error_el.textContent = gettext('Failed:') + ' ' + error + ' '
+        + gettext('You can add speakers by hand below.');
+      console.error('Speaker proposal failed:', error);
+    })
+    .then(function() {
+      propose_btn.disabled = false;
+      propose_btn.textContent = gettext('Propose with AI');
+    });
+}
 
 /*
  * Scoring helpers
@@ -1518,15 +2363,19 @@ function sugStatusText() {
     });
     themes += Object.keys(seen).length;
   });
-  var answers_only = !!(sug_session.roles && sug_session.answersOnly);
+  var hidden = 0;
+  (sug_session.speakers || []).forEach(function(s) {
+    if(s.include === false) {
+      ++hidden;
+    }
+  });
+  var suffix = hidden > 0
+    ? ' · ' + gettext('%(n)s speaker(s) hidden', {n: hidden}) : '';
   if(sug_session.rankMode === 'cluster' && themes > 0) {
-    var t = gettext('%(n)s suggestion(s) in %(k)s theme(s)', {n: n, k: themes});
-    return answers_only ? t + ' · ' + gettext('answers only') : t;
+    return gettext('%(n)s suggestion(s) in %(k)s theme(s)', {n: n, k: themes})
+      + suffix;
   }
-  if(answers_only) {
-    return gettext('%(n)s suggestion(s)', {n: n}) + ' · ' + gettext('answers only');
-  }
-  return gettext('%(n)s suggestion(s)', {n: n});
+  return gettext('%(n)s suggestion(s)', {n: n}) + suffix;
 }
 
 // Re-apply the slider cut-off (no recomputation) and re-render
@@ -1550,12 +2399,19 @@ function sugRefilterPane(pkey) {
     sugRenderPane(pkey);
     return;
   }
-  // Answers-only: drop candidates that mostly sit inside speaker turns
-  // labeled as interviewer questions
+  // Speaker filter: drop candidates that mostly sit inside the turns of
+  // speakers excluded from the suggestions (turns with no speaker count
+  // as included)
   var cands = pane.candidates;
-  if(sug_session.roles && sug_session.answersOnly) {
+  var any_excluded = false;
+  (sug_session.speakers || []).forEach(function(s) {
+    if(s.include === false) {
+      any_excluded = true;
+    }
+  });
+  if(any_excluded) {
     cands = cands.filter(function(c) {
-      return !sugIsQuestionSpan(c.cStart, c.cEnd);
+      return !sugIsExcludedSpan(c.cStart, c.cEnd);
     });
   }
   // Selection: either per-theme top-m (cluster mode with vectors), or the
@@ -2482,11 +3338,11 @@ function sugSetSplit(on) {
   // Clear all session rendering (real highlights are handled below)
   sugUnwrapClass('sug-span');
   sugUnwrapClass('hl-staged');
-  sugUnwrapClass('sug-qa-block');
-  var qa_badges = document.querySelectorAll('.sug-qa-badge');
-  for(var qb = 0; qb < qa_badges.length; ++qb) {
-    if(qa_badges[qb].parentNode) {
-      qa_badges[qb].parentNode.removeChild(qa_badges[qb]);
+  sugUnwrapClass('sug-speaker-block');
+  var sp_badges = document.querySelectorAll('.sug-speaker-badge');
+  for(var qb = 0; qb < sp_badges.length; ++qb) {
+    if(sp_badges[qb].parentNode) {
+      sp_badges[qb].parentNode.removeChild(sp_badges[qb]);
     }
   }
   var brackets = document.querySelectorAll('.sug-bracket');
@@ -2528,7 +3384,7 @@ function sugSetSplit(on) {
   // Real highlights wrap in every pane via highlightSelection
   ids.forEach(function(id) { setHighlight(highlights[id]); });
   sug_session.staged.forEach(sugRenderStaged);
-  sugQaRenderBlocks();
+  sugSpeakerRenderBlocks();
   if(on) {
     sugComputePane('R');
   } else {
@@ -2578,7 +3434,7 @@ function sugEditSegments(root, base) {
       if(c.nodeType === 3) {
         push(c, levelEl);
       } else if(c.nodeType === 1) {
-        if(c.classList && c.classList.contains('sug-qa-badge')) {
+        if(c.classList && c.classList.contains('sug-speaker-badge')) {
           continue; // textless UI chrome
         }
         if(SUG_BLOCK_RE.test(c.tagName)) {
@@ -2611,7 +3467,7 @@ function sugEditTextAtLevel(el) {
       if(c.nodeType === 3) {
         out += c.nodeValue;
       } else if(c.nodeType === 1) {
-        if(c.classList && c.classList.contains('sug-qa-badge')) {
+        if(c.classList && c.classList.contains('sug-speaker-badge')) {
           continue;
         }
         if(!SUG_BLOCK_RE.test(c.tagName)) {
@@ -2800,7 +3656,7 @@ function sugMaybeEdit(e) {
   if(!contents || !target || !contents.contains(target)) {
     return;
   }
-  if(target.closest('.sug-menu') || target.closest('.sug-qa-badge')) {
+  if(target.closest('.sug-menu') || target.closest('.sug-speaker-badge')) {
     return; // controls, not text
   }
   var chunk = target.closest('[id^="doc-offset-"]');
@@ -3020,11 +3876,12 @@ function sugSyncPaneB() {
 
 // Recompute the session state after the document changed underneath it
 function sugRebuildAfterReload() {
+  // Manual speaker assignments are inherited by identical turn text
   var oldByText = {};
-  if(sug_session.roles) {
-    sug_session.roles.forEach(function(r) {
-      if(r.role) {
-        oldByText[r.text] = r.role;
+  if(sug_session.turns) {
+    sug_session.turns.forEach(function(t) {
+      if(t.speaker) {
+        oldByText[t.text] = t.speaker;
       }
     });
   }
@@ -3034,32 +3891,21 @@ function sugRebuildAfterReload() {
   sug_session.totalBytes = index.totalBytes;
   sug_session.sentences = sugSplitSentences(index.plainText);
   SUG_ALGO_CACHE[current_document] = {};
-  if(sug_session.roles) {
-    var blocks = sugBlocks();
-    blocks.forEach(function(b) {
-      b.role = oldByText[b.text] || null;
-      b.prob = null;
-    });
-    sug_session.roles = blocks;
-    var cfg = sugQaResolved();
-    if(cfg) {
-      var gen = sug_session.editGen;
-      sugQaClassifyAll(blocks, cfg, function(i, role, prob) {
-        if(!sug_session || sug_session.editGen !== gen) {
-          return; // superseded by a later edit
-        }
-        blocks[i].role = role;
-        blocks[i].prob = prob;
-        sugQaSetBlockDom(i);
-      });
-    }
+  if(sug_session.speakers && sug_session.speakers.length) {
+    // Recompute the turns on the corrected text and re-apply the profile;
+    // manual assignments survive through identical turn texts
+    var turns = sugBlocks();
+    sugApplySpeakers(turns, sug_session.speakers, oldByText);
+    sug_session.turns = turns;
+  } else {
+    sug_session.turns = null;
   }
   Object.keys(sug_session.panes).forEach(function(pk) {
     sug_session.panes[pk].candidates = null;
     sugComputePane(pk);
   });
   sug_session.staged.forEach(sugRenderStaged);
-  sugQaRenderBlocks();
+  sugSpeakerRenderBlocks();
 }
 
 
@@ -3107,9 +3953,9 @@ function sugStart() {
     staged: [],
     nextSid: 0,
     nextAid: 0,
-    roles: null,          // classified speaker turns: [{start, end, text, role, prob}]
-    answersOnly: true,
-    editGen: 0,           // bumped on every document edit; guards async work
+    speakers: [],        // speaker profile: [{id, name, color, include, rules}]
+    turns: null,         // speaker turns: [{start, end, text, speaker, source}]
+    editGen: 0,          // bumped on every document edit; guards async work
   };
   document.getElementById('suggest-launch').style.display = 'none';
   document.getElementById('suggest-panel').style.display = '';
@@ -3125,6 +3971,15 @@ function sugStart() {
     sugSetStatus(gettext('Transcription mode detected'));
   }
   sugComputePane('');
+  // A saved speaker profile re-applies for free: the turns are recomputed
+  // and the rules matched again, with no LLM call
+  var profile = sugSpeakerProfileLoad(current_document);
+  if(profile.length) {
+    sug_session.speakers = profile;
+    sug_session.turns = sugBlocks();
+    sugApplySpeakers(sug_session.turns, sug_session.speakers);
+    sugSpeakerRenderBlocks();
+  }
 }
 
 function sugCleanup() {
@@ -3143,15 +3998,15 @@ function sugCleanup() {
   });
   sugUnwrapClass('sug-span');
   sugUnwrapClass('hl-staged');
-  sugUnwrapClass('sug-qa-block');
+  sugUnwrapClass('sug-speaker-block');
   var brackets = document.querySelectorAll('.sug-bracket');
   for(var i = 0; i < brackets.length; ++i) {
     brackets[i].parentNode.removeChild(brackets[i]);
   }
-  var qa_badges = document.querySelectorAll('.sug-qa-badge');
-  for(var qb = 0; qb < qa_badges.length; ++qb) {
-    if(qa_badges[qb].parentNode) {
-      qa_badges[qb].parentNode.removeChild(qa_badges[qb]);
+  var sp_badges = document.querySelectorAll('.sug-speaker-badge');
+  for(var qb = 0; qb < sp_badges.length; ++qb) {
+    if(sp_badges[qb].parentNode) {
+      sp_badges[qb].parentNode.removeChild(sp_badges[qb]);
     }
   }
   if(wasSplit) {
@@ -3234,212 +4089,6 @@ function sugStopBeforeNavigate(next) {
 }
 
 
-/*
- * Q/A (interviewer vs interviewee) — decisions tab of the configuration
- * screen (registered below), plus the classification run itself
- */
-
-// The suggest toolbar "Q / A" button opens the configuration screen on the
-// decisions tab (the old dedicated modal was folded into that screen)
-function sugOpenQa() {
-  taguOpenConfig('decisions');
-}
-
-// The tab itself: task panel + session actions (classify, answers-only)
-function sugQaTabBuild(el) {
-  var intro = taguEl('p', 'text-muted', gettext(
-    'Decision model that classifies each speaker turn as an interviewer question or an interviewee answer (used by Q / A). Both providers speak the same Jev wire protocol: Laya runs locally, Jev is served through OpenRouter (or any compatible endpoint).'));
-  el.appendChild(intro);
-  taguTaskPanel(el, {
-    task: 'decisions',
-    locals: ['laya'],
-    defaultSource: 'local:laya',
-    defaultPath: sugQaDefaultPath,
-    modelPlaceholder: function(src) {
-      return src.indexOf('local:') === 0 ? gettext('built-in')
-        : '~typesafe/jev-latest';
-    },
-    test: function(resolved) {
-      return sugQaClassifyOne('So, how did you first get involved in this?',
-                              resolved.local
-                                ? {provider: 'laya', url: resolved.url}
-                                : {provider: 'jev', url: resolved.url,
-                                   key: resolved.token, model: resolved.model,
-                                   authHeader: resolved.authHeader,
-                                   authScheme: resolved.authScheme});
-    },
-    extra: function(box, readTask, saveTask) {
-      if(!sug_session) {
-        var off = taguEl('p', 'text-muted mb-0', gettext(
-          'Start a suggestion session to classify the turns of the loaded document.'));
-        box.appendChild(off);
-        return;
-      }
-      var check = taguEl('div', 'form-check');
-      var label = taguEl('label', 'form-check-label');
-      var input = document.createElement('input');
-      input.type = 'checkbox';
-      input.className = 'form-check-input';
-      input.checked = !!sug_session.answersOnly;
-      input.addEventListener('change', function(e) {
-        sug_session.answersOnly = e.target.checked;
-        sugRefilter();
-      });
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(' '
-        + gettext('Suggest highlights only from answers')));
-      check.appendChild(label);
-      box.appendChild(check);
-      var run = taguEl('button', 'btn btn-primary mt-2',
-        gettext('Classify speaker turns'));
-      run.type = 'button';
-      run.addEventListener('click', function(e) {
-        e.preventDefault();
-        sugQaRun();
-      });
-      box.appendChild(run);
-      box.appendChild(taguEl('p', 'mt-2 mb-0', '')).id = 'sug-qa-summary';
-    },
-  });
-}
-
-taguConfigRegisterTab({
-  id: 'decisions', title: gettext('Decisions'), order: 300,
-  build: sugQaTabBuild,
-});
-
-// Progress line lives inside the decisions tab, which can be closed
-// mid-run: write through this null-safe helper
-function sugQaSetSummary(text) {
-  var el = document.getElementById('sug-qa-summary');
-  if(el) {
-    el.textContent = text;
-  }
-}
-
-// Classify every speaker turn with the configured decision model
-function sugQaRun() {
-  if(!sug_session) {
-    return;
-  }
-  var cfg = sugQaResolved();
-  if(!cfg) {
-    sugQaSetSummary(gettext('Pick a decision model first.'));
-    return;
-  }
-  var blocks = sugBlocks();
-  if(blocks.length < 2) {
-    sugQaSetSummary(gettext('No speaker turns found: put each speaker\'s text on its own line first.'));
-    sug_session.roles = null;
-    sugQaRenderBlocks();
-    sugRefilter();
-    return;
-  }
-  var done = 0;
-  blocks.forEach(function(b) { b.role = null; b.prob = null; });
-  sug_session.roles = blocks; // role stays null until classified; null never filters
-  sugQaSetSummary(gettext('Classifying %(n)s speaker turn(s)...', {n: blocks.length}));
-  sugQaRenderBlocks();
-  sugQaClassifyAll(blocks, cfg, function(i, role, prob) {
-    blocks[i].role = role;
-    blocks[i].prob = prob;
-    ++done;
-    sugQaSetBlockDom(i);
-    sugQaSetSummary(gettext('Classifying %(n)s speaker turn(s)... %(d)s done',
-                            {n: blocks.length, d: done}));
-  })
-  .then(function() {
-    sugQaSummaryText();
-    sugRefilter();
-  })
-  .catch(function(error) {
-    sugQaSetSummary(gettext('Failed:') + ' ' + error);
-  });
-}
-
-function sugQaSummaryText() {
-  if(!sug_session || !sug_session.roles) {
-    sugQaSetSummary('');
-    return;
-  }
-  var q = 0;
-  sug_session.roles.forEach(function(b) {
-    if(b.role === 'Q') {
-      ++q;
-    }
-  });
-  sugQaSetSummary(gettext('%(n)s speaker turn(s): %(q)s interviewer, %(a)s interviewee',
-    {n: sug_session.roles.length, q: q,
-     a: sug_session.roles.length - q}));
-}
-
-// Render the classified turns in the document itself: a light-shaded span
-// per block plus a Q/A badge beside the text. The badge carries no text
-// content (CSS paints it), so plainText offsets are never polluted.
-function sugQaRenderBlocks() {
-  sugUnwrapClass('sug-qa-block');
-  var old = document.querySelectorAll('.sug-qa-badge');
-  for(var i = 0; i < old.length; ++i) {
-    if(old[i].parentNode) {
-      old[i].parentNode.removeChild(old[i]);
-    }
-  }
-  if(!sug_session || !sug_session.roles) {
-    return;
-  }
-  var boc = sug_session.byteOfChar;
-  sug_session.roles.forEach(function(b, i) {
-    var mk = function() {
-      var span = document.createElement('span');
-      span.className = 'sug-qa-block';
-      span.setAttribute('data-idx', i);
-      span.setAttribute('data-role', b.role || '\u2026');
-      span.title = b.role ? '' : gettext('Classifying...');
-      return span;
-    };
-    var boxStart = (b.contentStart !== undefined) ? b.contentStart : b.start;
-    var span = sugWrapOne('', boc[boxStart], boc[b.end], mk);
-    if(!span) {
-      // Range straddles an element edge (e.g. a suggestion crossing the
-      // block): border the text fragments individually instead
-      var wrapped = sugWrapRange('', boc[boxStart], boc[b.end], mk);
-      span = wrapped && wrapped.first;
-    }
-    if(span) {
-      var badge = document.createElement('i');
-      badge.className = 'sug-qa-badge';
-      badge.setAttribute('data-idx', i);
-      badge.setAttribute('data-role', b.role || '\u2026');
-      badge.title = gettext('Click to flip');
-      span.parentNode.insertBefore(badge, span);
-    }
-  });
-}
-
-// Update one block's DOM (shading + badge) after its role changes
-function sugQaSetBlockDom(i) {
-  var role = sug_session.roles[i].role || '\u2026';
-  var spans = document.querySelectorAll('.sug-qa-block[data-idx="' + i + '"]');
-  for(var s = 0; s < spans.length; ++s) {
-    spans[s].setAttribute('data-role', role);
-  }
-  var badges = document.querySelectorAll('.sug-qa-badge[data-idx="' + i + '"]');
-  for(var b = 0; b < badges.length; ++b) {
-    badges[b].setAttribute('data-role', role);
-  }
-}
-
-// Fix a misclassification by hand; suggestions re-filter immediately
-function sugFlipRole(i) {
-  var b = sug_session.roles[i];
-  if(!b || !b.role) {
-    return;
-  }
-  b.role = b.role === 'Q' ? 'A' : 'Q';
-  sugQaSetBlockDom(i);
-  sugQaSummaryText();
-  sugRefilter();
-}
 
 /*
  * Config screen: the "Embeddings" button in the suggest toolbar and the
@@ -3694,16 +4343,28 @@ function sugInit() {
     e.preventDefault();
     sugOpenConfig();
   });
-  document.getElementById('sug-qa-btn').addEventListener('click', function(e) {
+  document.getElementById('sug-speakers-btn').addEventListener('click', function(e) {
     e.preventDefault();
-    sugOpenQa();
+    sugOpenSpeakers();
+  });
+  // Speakers review modal (static markup, wired once)
+  document.getElementById('sug-speakers-add').addEventListener('click', function() {
+    sugSpeakerAddDraft();
+  });
+  document.getElementById('sug-speakers-propose').addEventListener('click', function() {
+    sugSpeakerPropose();
+  });
+  document.getElementById('sug-speakers-confirm').addEventListener('click', function() {
+    sugSpeakerConfirm();
   });
   // Badge clicks are delegated: badges are re-created on every re-render
   document.addEventListener('click', function(e) {
-    var badge = e.target && e.target.closest ? e.target.closest('.sug-qa-badge') : null;
-    if(badge && sug_session && sug_session.roles) {
+    var badge = e.target && e.target.closest
+      ? e.target.closest('.sug-speaker-badge') : null;
+    if(badge && sug_session && sug_session.turns) {
       e.preventDefault();
-      sugFlipRole(parseInt(badge.getAttribute('data-idx'), 10));
+      sugSpeakerMenu(parseInt(badge.getAttribute('data-idx'), 10),
+                     e.clientX + 8, e.clientY + 8);
     }
   });
   document.getElementById('sug-stop').addEventListener('click', function(e) {
@@ -3911,21 +4572,39 @@ function sugSelfTest() {
   assert(sugTextKey('http://x|m1', 'a').length > 'http://x|m1|'.length,
          'text key includes hashes');
 
-  // Speaker-role classification helpers
-  var qa_plain = 'Q: how did it start?\n\nA: well we noticed the floods in 2019 and the city did nothing\nQ: and then what happened?\nA: so we organized the neighborhood committee ourselves';
-  var qa_blocks = sugBlocksOfText(qa_plain);
-  assert(qa_blocks.length === 4, 'one block per non-empty line');
-  assert(qa_plain.slice(qa_blocks[1].start, qa_blocks[1].end)
-         === 'A: well we noticed the floods in 2019 and the city did nothing',
-         'block offsets point at trimmed text');
+  // Speaker segmentation helpers: prefixes, pre-scan, rules, assignment
+  var seg_plain = 'Interviewer:\nCan you tell me about the flood?\n'
+    + 'Maria:\nIt destroyed our ground floor in 2019\n'
+    + 'Interviewer:\nAnd then what happened?\n'
+    + '[00:20] JOHN\nThe water rose fast\n'
+    + 'Maria:\nWe organized the committee ourselves';
+  var seg_blocks = sugBlocksOfText(seg_plain);
+  assert(seg_blocks.length === 5, 'one turn per label+content pair, got '
+         + seg_blocks.length);
+  assert(sugSpeakerPrefix(seg_blocks[0]) === 'Interviewer:\n'
+         && sugSpeakerPrefix(seg_blocks[1]) === 'Maria:\n',
+         'sugSpeakerPrefix exposes the merged prefix line');
+  var inline_blocks = sugBlocksOfText('John: hello there\nMaria: hi there');
+  assert(inline_blocks.length === 2, 'inline labels keep one turn per line');
+  assert(inline_blocks[0].contentStart === undefined
+         && sugSpeakerPrefix(inline_blocks[0]) === '',
+         'inline-labelled turns have no separate prefix');
+  assert(sugSpeakerTarget(inline_blocks[0]) === 'John: hello there',
+         'rules see the first line of the turn');
+  assert(sugSpeakerTarget({text: 'x'.repeat(100) + '\nmore'}).length === 80,
+         'rules never see more than 80 characters');
 
-  // Prefix lines (speaker label / timestamp) merge into the next block
+  assert(seg_blocks[0].start === 0, 'merged turn starts at the prefix');
+  assert(seg_plain.slice(seg_blocks[1].start, seg_blocks[1].end)
+         === 'Maria:\nIt destroyed our ground floor in 2019',
+         'turn offsets point at trimmed text');
+
+  // Prefix lines (speaker label / timestamp) still fold into the next turn
   var pre = sugBlocksOfText('Interviewer:\nCan you tell me about the flood?\n'
     + 'Respondent:\nIt destroyed our ground floor');
   assert(pre.length === 2, 'prefix lines merge forward: ' + pre.length);
   assert(pre[0].text === 'Interviewer:\nCan you tell me about the flood?',
          'merged block keeps prefix text');
-  assert(pre[0].start === 0, 'merged block starts at the prefix');
   assert(pre[0].contentStart === 13, 'contentStart points at spoken text');
   assert(sugBlocksOfText('We met at 10:30\nand talked for hours').length === 2,
          'plain sentence with a time is not a prefix');
@@ -3942,32 +4621,152 @@ function sugSelfTest() {
   assert(!sugIsPrefixLine('The water rose fast that year.'), 'sentence is not a prefix');
   assert(!sugIsPrefixLine('Well the drains failed, obviously'),
          'colon-free line is not a prefix');
-  var saved_roles = sug_session;
-  sug_session = {roles: [qa_blocks[0], qa_blocks[1]]};
-  qa_blocks[0].role = 'Q';
-  qa_blocks[1].role = 'A';
-  assert(sugIsQuestionSpan(0, 10), 'span inside Q block is a question');
-  assert(!sugIsQuestionSpan(qa_blocks[1].start, qa_blocks[1].end),
-         'span inside A block is not');
-  assert(sugIsQuestionSpan(0, qa_blocks[1].start + 1),
-         'majority-overlap span counts as question');
-  assert(!sugIsQuestionSpan(0, qa_blocks[1].end),
-         'minority-overlap span does not');
-  sug_session = null;
-  assert(!sugIsQuestionSpan(0, 10), 'no roles means no filtering');
-  sug_session = saved_roles;
-  var qq = sugQaQuestion();
-  assert(qq.speaker.type === 'choice' && qq.speaker.criteria.interviewer
-         && qq.speaker.criteria.interviewee, 'systemone choice question shape');
-  assert(sugQaBase({provider: 'laya', url: 'http://x'})
-         !== sugQaBase({provider: 'jev', url: 'http://x', model: 'm'}),
-         'qa cache keys differ per provider');
-  assert(sugQaBase({provider: 'jev', url: 'http://x', model: 'm'})
-         !== sugQaBase({provider: 'jev', url: 'http://x', model: 'm2'}),
-         'qa cache keys differ per model');
+
+  var scan = sugPreScanPrefixes(seg_blocks);
+  var by_label = {};
+  scan.labels.forEach(function(l) {
+    by_label[l.label.toLowerCase()] = l.count;
+  });
+  assert(by_label['maria'] === 2 && by_label['interviewer'] === 2
+         && by_label['john'] === 1, 'pre-scan counts the labels');
+  assert(scan.covered === 5 && scan.total === 5,
+         'pre-scan coverage counts labelled turns');
+  var scan2 = sugPreScanPrefixes(sugBlocksOfText(
+    'Just prose, no labels at all here.\nSecond line also plain.'));
+  assert(scan2.covered === 0, 'label-free prose produces no candidates');
+
+  // Rule validation (the model is untrusted)
+  assert(sugValidateRule({type: 'regex',
+                          pattern: '^\\[?\\d{1,2}:\\d{2}\\]?\\s+JOHN'})
+         !== null, 'valid regex rule accepted');
+  assert(sugValidateRule({type: 'regex', pattern: '([a+]+)+'}) === null,
+         'nested-quantifier regex rejected (ReDoS)');
+  assert(sugValidateRule({type: 'regex', pattern: '([unclosed'}) === null,
+         'syntactically invalid regex rejected');
+  assert(sugValidateRule({type: 'regex', pattern: 'x'.repeat(201)}) === null,
+         'over-long regex rejected');
+  var lit = sugValidateRule({type: 'literal', pattern: 'John:',
+                             example: 'John: hi'});
+  assert(lit && lit.type === 'literal' && lit.pattern === 'John:',
+         'literal rule normalized');
+  assert(sugValidateRule({type: 'literal', pattern: ''}) === null,
+         'empty literal rejected');
+  assert(sugValidateRule({type: 'literal', pattern: 'x'.repeat(81)}) === null,
+         'over-long literal rejected');
+  assert(sugRuleMatches({type: 'literal', pattern: 'John'}, 'John: hello'),
+         'literal matches the start, case-insensitively');
+  assert(!sugRuleMatches({type: 'literal', pattern: 'John'}, 'Dr. John:'),
+         'literal does not match mid-line');
+  assert(!sugRuleMatches({type: 'literal', pattern: ''}, 'anything'),
+         'empty patterns match nothing');
+  assert(sugRuleMatches({type: 'regex',
+                         pattern: '^\\[?\\d{1,2}:\\d{2}\\]?\\s+John'},
+                        '[00:20] John'), 'regex rule matches');
+
+  // Proposal parsing and grounding
+  var parsed = sugSpeakerParseJson('Sure!\n```json\n'
+    + '{"speakers":[{"name":"X","rules":[{"type":"literal",'
+    + '"pattern":"X:","example":"X: hi"}]}]}\n```\nDone');
+  assert(parsed.speakers.length === 1, 'JSON extracted from a fenced answer');
+  var threw = false;
+  try {
+    sugSpeakerParseJson('no json at all');
+  } catch(e) {
+    threw = true;
+  }
+  assert(threw, 'missing JSON raises');
+  var built = sugSpeakersFromProposal({speakers: [
+    {name: 'Ghost', rules: [{type: 'literal', pattern: 'GHOSTLY:',
+                             example: 'nope'}]},
+    {name: 'Real', rules: [{type: 'literal', pattern: 'Maria:',
+                            example: 'Maria: ok'}]},
+  ]}, seg_blocks);
+  assert(built.length === 1 && built[0].name === 'Real',
+         'ungrounded rules and speakers are dropped');
+
+  // Deterministic assignment, first match wins, manual assignments kept
+  var speakers = [
+    {id: 's1', name: 'Interviewer', color: '#4e79a7', include: true,
+     rules: [{type: 'literal', pattern: 'Interviewer'}]},
+    {id: 's2', name: 'Maria', color: '#59a14f', include: true,
+     rules: [{type: 'literal', pattern: 'Maria'}]},
+    {id: 's3', name: 'John', color: '#f28e2b', include: true,
+     rules: [{type: 'regex', pattern: '^\\[?\\d{1,2}:\\d{2}\\]?\\s+JOHN'}]},
+  ];
+  sugApplySpeakers(seg_blocks, speakers);
+  assert(seg_blocks[0].speaker === 's1' && seg_blocks[2].speaker === 's1',
+         'assignment: interviewer turns');
+  assert(seg_blocks[1].speaker === 's2' && seg_blocks[4].speaker === 's2',
+         'assignment: Maria turns');
+  assert(seg_blocks[3].speaker === 's3',
+         'assignment: regex rule catches the timestamped label');
+  var dup = [
+    {id: 'a', name: 'M1', color: '#111', include: true,
+     rules: [{type: 'literal', pattern: 'Maria'}]},
+    {id: 'b', name: 'M2', color: '#222', include: true,
+     rules: [{type: 'literal', pattern: 'Maria'}]},
+  ];
+  assert(sugSpeakerOf(seg_blocks[1], dup) === 'a',
+         'first matching speaker wins');
+  seg_blocks[4].speaker = 's3';
+  seg_blocks[4].source = 'manual';
+  sugApplySpeakers(seg_blocks, speakers);
+  assert(seg_blocks[4].speaker === 's3' && seg_blocks[4].source === 'manual',
+         'manual assignment not overwritten');
+  seg_blocks[0].speaker = null;
+  seg_blocks[0].source = 'manual';
+  sugApplySpeakers(seg_blocks, speakers);
+  assert(seg_blocks[0].speaker === null, 'manual no-speaker kept');
+  seg_blocks[0].speaker = 's1';
+  seg_blocks[0].source = null;
+  var inherited = {};
+  inherited[seg_blocks[1].text] = 's3';
+  sugApplySpeakers(seg_blocks, speakers, inherited);
+  assert(seg_blocks[1].speaker === 's3' && seg_blocks[1].source === 'manual',
+         'identical text inherits the manual assignment');
+  seg_blocks[1].speaker = 's2';
+  seg_blocks[1].source = 'auto';
+
+  // Merging a speaker into another re-points manual turns and moves rules
+  sug_session = {speakers: [], turns: seg_blocks};
+  SUG_SPEAKER_DRAFT = [
+    {id: 's2', name: 'Maria', color: '#59a14f', include: true,
+     rules: [{type: 'literal', pattern: 'Maria'}]},
+    {id: 's3', name: 'John', color: '#f28e2b', include: true,
+     rules: [{type: 'literal', pattern: 'JOHN'}]},
+  ];
+  sugSpeakerMergeDraft('s3', 's2');
+  assert(SUG_SPEAKER_DRAFT.length === 1
+         && SUG_SPEAKER_DRAFT[0].rules.length === 2,
+         'merge moves the rules into the target');
+  assert(seg_blocks[4].speaker === 's2',
+         'merge re-points manual assignments');
+  SUG_SPEAKER_DRAFT = null;
+
+  // Per-speaker filter: >half of the span in an excluded speaker's turns
+  var saved_s = sug_session;
+  sug_session = {speakers: speakers, turns: seg_blocks};
+  speakers[1].include = false; // Maria excluded
+  var m_start = seg_blocks[1].start, m_end = seg_blocks[1].end;
+  assert(sugIsExcludedSpan(m_start, m_end),
+         'span inside an excluded speaker is excluded');
+  assert(!sugIsExcludedSpan(seg_blocks[0].start, seg_blocks[0].end),
+         'span in an included speaker is kept');
+  assert(sugIsExcludedSpan(m_start - 1, m_end),
+         'majority overlap counts as excluded');
+  assert(!sugIsExcludedSpan(m_end - 1, m_end + 40),
+         'minority overlap does not');
+  seg_blocks[3].speaker = null;
+  assert(!sugIsExcludedSpan(seg_blocks[3].start, seg_blocks[3].end),
+         'turns with no speaker stay included');
+  seg_blocks[3].speaker = 's3';
+  speakers[1].include = true;
+  sug_session = saved_s;
+  assert(!sugIsExcludedSpan(0, 10), 'no session state means no filtering');
 
   // Configuration screen: migration, task resolution, auth headers
   assert(typeof taguTaskResolve === 'function', 'config.js is loaded');
+  assert(typeof tagAiLLMConfig === 'function', 'tags-ai.js is loaded');
   var provs = Object.keys(TAGU_PROVIDERS);
   ['anthropic', 'deepseek', 'gemini', 'minimax', 'openai', 'openrouter',
    'qwen', 'zai', 'custom'].forEach(function(p) {
@@ -4023,24 +4822,33 @@ function sugSelfTest() {
            && emb.token === 'tA' && emb.model === 'm'
            && emb.authHeader === 'Authorization',
            'embeddings task resolves a key to base + /embeddings');
-  assert(taguResolveTask({source: 'key:kA'}, sugQaDefaultPath).url
-         === 'https://openrouter.ai/api/alpha/decisions',
-         'openrouter keys default to the absolute alpha decisions endpoint');
-    assert(sugQaResolved() === null,
-           'decisions via a key without a known default endpoint and no URL '
-           + 'resolves to null');
+    ls.setItem('taguette_config', JSON.stringify({version: 1,
+      keys: [{id: 'kA', provider: 'openrouter', name: 'OR', token: 'tA'}],
+      tasks: {segmentation: {source: 'key:kA', url: '', token: '',
+                             model: ''}}}));
+    var seg_res = taguResolveTask(taguConfig().tasks.segmentation,
+                                  '/chat/completions');
+    assert(seg_res
+           && seg_res.url === 'https://openrouter.ai/api/v1/chat/completions'
+           && seg_res.token === 'tA',
+           'segmentation keys default to the OpenAI-compatible chat endpoint');
+    var seg_cfg = tagAiLLMConfig('segmentation');
+    assert(seg_cfg
+           && seg_cfg.url === 'https://openrouter.ai/api/v1/chat/completions'
+           && typeof seg_cfg.temperature === 'number',
+           'tagAiLLMConfig generalizes to the segmentation task');
+    assert(tagAiLLMConfig('llm') === null, 'the AI-tags task stays independent');
     ls.setItem('taguette_config', JSON.stringify({version: 1,
       keys: [{id: 'kB', provider: 'custom', name: 'Mine', token: 'tB',
               baseUrl: 'https://my.example/v1', headerFormat: 'x-api-key'}],
-      tasks: {decisions: {source: 'key:kB',
-                          url: 'https://my.example/decisions', token: '',
-                          model: ''}}}));
-    var dec = sugQaResolved();
-    assert(dec && dec.provider === 'jev'
-           && dec.url === 'https://my.example/decisions'
-           && dec.key === 'tB' && dec.authHeader === 'x-api-key'
-           && dec.model === '~typesafe/jev-latest',
-           'decisions task resolves a custom key with a URL override');
+      tasks: {segmentation: {source: 'key:kB',
+                             url: 'https://my.example/v1/chat', token: '',
+                             model: 'm9'}}}));
+    seg_cfg = tagAiLLMConfig('segmentation');
+    assert(seg_cfg && seg_cfg.url === 'https://my.example/v1/chat'
+           && seg_cfg.token === 'tB' && seg_cfg.authHeader === 'x-api-key'
+           && seg_cfg.model === 'm9',
+           'segmentation task resolves a custom key with a URL override');
     ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
       tasks: {embeddings: {source: 'local:ollama', url: '', token: '',
                            model: 'all-minilm'}}}));
@@ -4053,15 +4861,19 @@ function sugSelfTest() {
     assert(sugLoadConfig() === null, 'a local service without an embeddings '
            + 'path cannot resolve for embeddings');
     ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
-      tasks: {decisions: {source: 'local:laya', url: '', token: '', model: ''}}}));
-    dec = sugQaResolved();
-    assert(dec && dec.provider === 'laya'
-           && dec.url === 'http://localhost:8000/v1/systemone',
-           'local laya resolves to the systemone endpoint');
+      tasks: {segmentation: {source: 'local:ollama_chat', url: '', token: '',
+                             model: 'llama3.1'}}}));
+    seg_cfg = tagAiLLMConfig('segmentation');
+    assert(seg_cfg && seg_cfg.url
+           === 'http://localhost:11434/v1/chat/completions'
+           && seg_cfg.model === 'llama3.1',
+           'local chat services resolve for segmentation');
     ls.setItem('taguette_config', JSON.stringify({version: 1, keys: [],
-      tasks: {embeddings: {source: '', url: '', token: '', model: ''}}}));
+      tasks: {embeddings: {source: '', url: '', token: '', model: ''},
+              segmentation: {source: '', url: '', token: '', model: ''}}}));
     assert(sugLoadConfig() === null, 'off embeddings resolves to null');
-    assert(sugQaResolved() === null, 'no decisions task resolves to null');
+    assert(tagAiLLMConfig('segmentation') === null,
+           'off segmentation resolves to null');
   } finally {
     if(saved_store !== null) {
       ls.setItem('taguette_config', saved_store);

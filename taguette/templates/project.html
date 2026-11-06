@@ -179,7 +179,7 @@
           </select>
         </label>
         <button id="sug-config-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Embedding settings (opens the configuration screen){% endtrans %}">&#9881; {% trans %}Embeddings{% endtrans %}</button>
-        <button id="sug-qa-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Decision model settings — opens the configuration screen{% endtrans %}">{% trans %}Q / A{% endtrans %}</button>
+        <button id="sug-speakers-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Speakers: label who speaks in each turn (model settings open the configuration screen){% endtrans %}">{% trans %}Speakers{% endtrans %}</button>
         <button id="sug-stop" class="btn btn-sm btn-warning">{% trans %}Stop{% endtrans %}</button>
         <span id="sug-status"></span>
       </div>
@@ -589,6 +589,33 @@
         <button type="button" class="btn btn-primary" id="sug-stop-save">{% trans %}Save highlights{% endtrans %}</button>
         <button type="button" class="btn btn-danger" id="sug-stop-discard">{% trans %}Discard all{% endtrans %}</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Continue session{% endtrans %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Speakers review modal (suggested highlights): the model proposes,
+     the user edits and confirms, then the turns are labelled -->
+<div class="modal" id="suggest-speakers-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans %}Speakers{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-1" id="sug-speakers-stats"></p>
+        <p class="text-muted mb-2" id="sug-speakers-unassigned"></p>
+        <div id="sug-speakers-list"></div>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="sug-speakers-add">{% trans %}Add a speaker{% endtrans %}</button>
+        <p class="text-danger mb-0 mt-2" id="sug-speakers-error" style="display: none;"></p>
+      </div>
+      <div class="modal-footer">
+        <small class="form-text text-muted mr-auto">{% trans %}Patterns match the first line of a turn; the first matching speaker wins. Confirm applies the labels to the transcript.{% endtrans %}</small>
+        <button type="button" class="btn btn-outline-secondary" id="sug-speakers-propose">{% trans %}Propose with AI{% endtrans %}</button>
+        <button type="button" class="btn btn-primary" id="sug-speakers-confirm">{% trans %}Confirm speakers{% endtrans %}</button>
       </div>
     </div>
   </div>

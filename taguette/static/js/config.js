@@ -7,9 +7,9 @@
  * browser's localStorage and are never sent to the Taguette server.
  *
  * Tabs are registered by any script through taguConfigRegisterTab(); the
- * keys tab lives here, feature tabs (embeddings, decisions, ...) are
- * registered by the feature that owns them (see suggest.js), and future
- * tabs (more AI tasks, non-AI settings) only need a registry entry.
+ * keys tab lives here, feature tabs (embeddings, segmentation, ...) are
+ * registered by the feature that owns them (see suggest.js and tags-ai.js),
+ * and future tabs (more AI tasks, non-AI settings) only need a registry entry.
  *
  * Storage (localStorage["taguette_config"]):
  *   {version: 1,
@@ -79,12 +79,6 @@ var TAGU_LOCALS = {
     install: 'Run Hugging Face\'s serving container: <code>docker run -p 8080:80 '
       + 'ghcr.io/huggingface/text-embeddings-inference '
       + '--model-id BAAI/bge-small-en-v1.5</code>',
-  },
-  laya: {
-    label: 'Laya', url: 'http://localhost:8000', probe: '/',
-    path: '/v1/systemone', kind: 'decisions',
-    install: 'Install and run the local server: '
-      + '<code>pip install "laya[serve]"</code> then <code>laya-serve</code>',
   },
 };
 
@@ -525,7 +519,44 @@ taguConfigRegisterTab({
 });
 
 /*
- * Task tab panel (embeddings, decisions, future AI tasks): pick a source
+ * Segmentation tab (speaker segmentation for the suggested-highlights
+ * feature; the profile itself is proposed and reviewed in the document's
+ * "Speakers" dialog, see suggest.js): the chat model that proposes speaker
+ * label patterns from a few document excerpts. The old 'decisions' task
+ * was removed; data in tasks.decisions stays in the store, inert.
+ */
+function taguSegmentationTabBuild(el) {
+  var intro = taguEl('p', 'text-muted', gettext(
+    'Chat model that proposes speaker label patterns for the suggested-highlights feature: it receives a few random excerpts of the document and answers once with the speakers it recognizes. Any OpenAI-compatible /chat/completions endpoint works — pick one of your API keys, a local server, or a custom endpoint. The proposed speakers are always reviewed in the document before anything is applied.'));
+  el.appendChild(intro);
+  taguHint(el, gettext(
+    'Privacy: excerpts of the document are sent straight from your browser to the chosen service (never to the Taguette server).'));
+  taguTaskPanel(el, {
+    task: 'segmentation',
+    locals: ['ollama_chat', 'llamacpp_chat'],
+    defaultPath: '/chat/completions',
+    modelPlaceholder: function(src) {
+      if(src === 'local:ollama_chat') {
+        return 'llama3.1';
+      }
+      if(src === 'local:llamacpp_chat') {
+        return 'llama3.1-8b';
+      }
+      return null;
+    },
+    test: function(resolved) {
+      return tagAiChat(resolved, 'Reply with the single word: ok', 20);
+    },
+  });
+}
+
+taguConfigRegisterTab({
+  id: 'segmentation', title: gettext('Segmentation'), order: 310,
+  build: taguSegmentationTabBuild,
+});
+
+/*
+ * Task tab panel (embeddings, segmentation, future AI tasks): pick a source
  * (one of the keys, a local service, or a custom endpoint), then model and
  * optional endpoint override. Saves on every change; opts:
  *   task           task id in the store ('embeddings', ...)
