@@ -371,6 +371,13 @@ function segTurnInfos(input) {
     var t = turns[i];
     var cs = (typeof t.contentStart === 'number' && t.contentStart >= t.start)
       ? Math.min(t.contentStart, t.end) : t.start;
+    // The speaker label is never spoken content: start after labelEnd too
+    if(typeof t.labelEnd === 'number' && t.labelEnd > cs) {
+      cs = Math.min(t.labelEnd, t.end);
+    }
+    while(cs < t.end && /\s/.test(plain.charAt(cs))) {
+      ++cs;
+    }
     var text = plain.slice(cs, t.end);
     var sents = sugSplitSentences(text);
     var words = segCountWords(text);
@@ -1155,9 +1162,10 @@ function segRefreshSections(sections, ctx) {
  * Units
  */
 
-// All codable sentences of every section, in document order. Substantive
-// interviewer turns and section starts are hard cuts; other cue turns and
-// backchannel turns are transparent.
+// All codable sentences of every section, in document order. Every turn
+// boundary and section start is a hard cut: a unit lives inside one turn's
+// spoken content (so it never contains a speaker label). Backchannel-only
+// and cue turns yield no sentences.
 function segCollectSentences(sections, input, infos) {
   var turns = input.turns || [], plain = input.plainText, items = [];
   for(var si = 0; si < sections.length; ++si) {
@@ -1169,13 +1177,8 @@ function segCollectSentences(sections, input, infos) {
       if(b <= a) {
         continue;
       }
-      if(info.cue) {
-        if(info.substantive) {
-          pendingCut = true;
-        }
-        continue;
-      }
-      if(info.backchannel) {
+      pendingCut = true;
+      if(info.cue || info.backchannel) {
         continue;
       }
       var sents = (a === info.cs && b === t.end)
@@ -1184,7 +1187,7 @@ function segCollectSentences(sections, input, infos) {
         items.push({
           start: a + sents[q].start, end: a + sents[q].end,
           text: sents[q].text, words: segCountWords(sents[q].text),
-          sec: si, cut: pendingCut
+          sec: si, cut: pendingCut, turn: ti
         });
         pendingCut = false;
       }
@@ -1331,7 +1334,8 @@ function segMergeSmallUnits(units, items, P) {
   var limit = 1.25 * P.unit_max_words;
   var stuck = [];
   function canJoin(a, b) {
-    return a.sec === b.sec && !items[b.i0].cut && a.words + b.words <= limit;
+    return a.sec === b.sec && items[a.i0].turn === items[b.i0].turn
+      && !items[b.i0].cut && a.words + b.words <= limit;
   }
   for(;;) {
     var pick = -1, w = Infinity, i;
@@ -2844,6 +2848,13 @@ function segSelfTest() {
         ok = ok && u.text.indexOf('Interviewer:') === -1;
       });
       assert(secOk, 'units inside sections');
+      assert(units.every(function(u) {
+        return doc.turns.every(function(t) {
+          return u.end <= t.start || u.start >= t.contentStart;
+        }) && doc.turns.filter(function(t) {
+          return u.start >= t.contentStart && u.end <= t.end;
+        }).length === 1;
+      }), 'units never contain a turn label nor span turns');
       assert(ok, 'unit text excludes interviewer questions, sizes respect max');
       // one unit per answer (hard cut at each question)
       var answers = doc.turns.filter(function(t) {
@@ -2862,7 +2873,7 @@ function segSelfTest() {
         }) , 'max words respected (single sentences may exceed)');
       });
     }).then(function() {
-      // backchannel from the other speaker transparent: unit spans answer parts
+      // backchannel turns yield no units and (like every turn boundary) cut
       var d = segTestInterview([['A', 2]], {backchannels: true});
       var r0 = {sections: [{id: 's0', start: 0, end: d.plainText.length, label: 'L', name: 'L'}]};
       var inp = segTestInput(d);
@@ -2871,6 +2882,41 @@ function segSelfTest() {
           return x.text.indexOf('Mm-hm') === -1;
         }), 'backchannel turns never become units');
         assert(u.length === 2, 'backchannel does not add units (' + u.length + ')');
+      });
+    }).then(function() {
+      // inline labels: labelEnd is respected, units never span a turn and
+      // never contain a label; small units are not merged across turns
+      var plain = '', turns = [], labels = [];
+      for(var k = 0; k < 4; ++k) {
+        var lab = k === 1 ? '0:38 - Huw Evans: ' : 'Huw: ';
+        var st = plain.length;
+        plain += lab + segTestAnswer(SEG_TEST_VOCAB.A, k, 2);
+        turns.push({start: st, end: plain.length, text: plain.slice(st),
+                    contentStart: st, labelEnd: st + lab.length, speaker: 'P'});
+        labels.push([st, st + lab.length]);
+        plain += '\n';
+      }
+      var d = {plainText: plain, turns: turns,
+               speakers: [{id: 'P', name: 'Huw', include: true}]};
+      var secs = [{id: 's0', start: 0, end: plain.length, label: 'L', name: 'L'}];
+      var inp = segTestInput(d, {params: segParams({tau: 0.9, unit_min_words: 60, unit_max_words: 300})});
+      return segBuildUnits(secs, inp, segTestDeps()).then(function(u) {
+        assert(u.length >= turns.length, 'no merging across turns (' + u.length + ' units)');
+        var clean = u.every(function(x) {
+          return labels.every(function(l) {
+            return x.end <= l[0] || x.start >= l[1];
+          });
+        });
+        assert(clean, 'no unit intersects a speaker label');
+        var oneTurn = u.every(function(x) {
+          return turns.filter(function(t) {
+            return x.start >= t.start && x.end <= t.end;
+          }).length === 1;
+        });
+        assert(oneTurn, 'every unit lies inside a single turn');
+        assert(u.every(function(x) {
+          return /^[A-Za-z]/.test(x.text) && x.text.indexOf('Huw') === -1;
+        }), 'unit text starts at spoken content');
       });
     }).then(function() {
       // short units merged: two short same-point sentences in one answer

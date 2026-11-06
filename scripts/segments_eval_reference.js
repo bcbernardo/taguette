@@ -179,6 +179,16 @@ turns.forEach((t) => {
   const first = plain.slice(t.start, t.end).split('\n')[0];
   const m = /^\s*(?:\d+:)?\d+:\d+\s*-\s*(.*)$/.exec(first);
   t.speaker = m ? (RE_I.test(m[1]) ? 'I' : (RE_P.test(m[1]) ? 'P' : null)) : null;
+  // labelEnd mimics the UI's speaker-label detection: a label-only first line
+  // ends at contentStart; inline labels end after "[time - ]Name:" or
+  // "time - Name (Org)"
+  const rest = plain.slice(t.start, t.end);
+  let le = typeof t.contentStart === 'number' ? t.contentStart : t.start;
+  const m1 = /^\s*(?:\d+:\d\d(?::\d\d)?\s*-\s*)?[^:\n]{1,60}:\s/.exec(rest);
+  const m2 = /^\d+:\d\d(?::\d\d)? - [^\n(]+\([^)\n]*\)\s*/.exec(rest);
+  if(m1) { le = Math.max(le, t.start + m1[0].length); }
+  if(m2) { le = Math.max(le, t.start + m2[0].length); }
+  if(le > t.start) { t.labelEnd = Math.min(le, t.end); }
 });
 const hls = fx.highlights;
 const uses = {};
@@ -342,6 +352,11 @@ function report(o, input) {
          && res.infos[i].cs >= u.start && t.end <= u.end) { ++withCue; }
     });
   });
+  let withLabel = 0;
+  res.units.forEach((u) => {
+    if(input.turns.some((t) => t.labelEnd > t.start && t.start < u.end && t.labelEnd > u.start)) { ++withLabel; }
+  });
+  console.log('units containing a label %d', withLabel);
   console.log('sanity: section gaps/overlaps %d (first start %d, last end %d of %d); units outside section %d; units containing a whole interviewer question %d',
     gaps, secs[0].start, secs[secs.length - 1].end, plain.length, cross, withCue);
   const turnStarts = new Set(input.turns.map((t) => t.start));
