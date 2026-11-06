@@ -3,6 +3,7 @@ import functools
 import json
 import logging
 import math
+import os
 import prometheus_client
 from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
@@ -1207,6 +1208,273 @@ class ImportProject(BaseHandler):
         self.db.commit()
 
         return await self.send_json({'project_id': new_project_id})
+
+
+"""
+Support documents and thematic segments (project-level resources)
+"""
+
+SUPPORT_DOCUMENT_MAX_CONTENTS = 2000000
+SEGMENT_MAX_COUNT = 500
+SEGMENT_MAX_NAME = 512
+SEGMENT_MAX_DESCRIPTION = 20000
+SEGMENT_MAX_QUESTIONS = 200
+SEGMENT_MAX_QUESTION_LENGTH = 2000
+TEXT_EXTENSIONS = ('.txt', '.md', '.markdown', '.text')
+
+
+class SupportDocuments(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('support_documents_list')
+    def get(self, project_id):
+        project, _ = self.get_project(project_id)
+        docs = (
+            self.db.query(database.SupportDocument)
+            .filter(database.SupportDocument.project_id == project.id)
+            .order_by(database.SupportDocument.id)
+        ).all()
+        return self.send_json({
+            'support_documents': [doc.to_json() for doc in docs],
+        })
+
+    @api_auth
+    @PROM_REQUESTS.async_('support_documents_add')
+    async def post(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_project_meta():
+            return await self.send_error_json(403, "Unauthorized")
+
+        content_type = self.request.headers.get('Content-Type', '')
+        if content_type.startswith('application/json'):
+            # Pasted text
+            obj = self.get_json()
+            if not isinstance(obj, dict):
+                return await self.send_error_json(400, "Expected an object")
+            name = obj.get('name')
+            kind = obj.get('kind', 'other')
+            text = obj.get('text')
+            if not isinstance(text, str):
+                return await self.send_error_json(400, "Missing text")
+        else:
+            # File upload
+            try:
+                file = self.request.files['file'][0]
+            except (KeyError, IndexError):
+                raise MissingArgumentError('file')
+            name = self.get_body_argument('name', None) or file.filename
+            kind = self.get_body_argument('kind', None) or 'other'
+            try:
+                filename = validate.filename(file.filename)
+            except ValueError:
+                return await self.send_error_json(400, "Invalid file name")
+            ext = os.path.splitext(filename)[1].lower()
+            try:
+                if ext in TEXT_EXTENSIONS:
+                    try:
+                        text = file.body.decode('utf-8-sig')
+                    except UnicodeDecodeError:
+                        text = file.body.decode('latin-1')
+                else:
+                    html = await convert.to_html_chunks(
+                        file.body, file.content_type, filename,
+                        self.application.config,
+                    )
+                    text = convert.html_to_text(html)
+            except convert.ConversionError as err:
+                return await self.send_error_json(400, str(err))
+
+        if not isinstance(name, str) or not name.strip():
+            return await self.send_error_json(400, "Name cannot be empty")
+        name = name.strip()
+        if len(name) > 512:
+            return await self.send_error_json(400, "Name is too long")
+        if kind not in database.SUPPORT_DOCUMENT_KINDS:
+            return await self.send_error_json(400, "Invalid kind")
+        if not text.strip():
+            return await self.send_error_json(400, "Document is empty")
+        if len(text) > SUPPORT_DOCUMENT_MAX_CONTENTS:
+            return await self.send_error_json(400, "Document is too long")
+
+        doc = database.SupportDocument(
+            project_id=project.id, name=name, kind=kind, contents=text,
+        )
+        self.db.add(doc)
+        self.db.flush()
+        self._notify(project)
+        return await self.send_json(doc.to_json(contents=False))
+
+    def _notify(self, project):
+        self.db.flush()
+        docs = (
+            self.db.query(database.SupportDocument)
+            .filter(database.SupportDocument.project_id == project.id)
+            .order_by(database.SupportDocument.id)
+        ).all()
+        cmd = database.Command.support_documents(
+            self.current_user, project.id, docs,
+        )
+        self.db.add(cmd)
+        self.db.commit()
+        self.db.refresh(cmd)
+        self.application.notify_project(project.id, cmd)
+
+
+class SupportDocumentUpdate(BaseHandler):
+    @api_auth
+    @PROM_REQUESTS.sync('support_documents_delete')
+    def delete(self, project_id, doc_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_project_meta():
+            return self.send_error_json(403, "Unauthorized")
+        doc = self.db.query(database.SupportDocument).get(int(doc_id))
+        if doc is None or doc.project_id != project.id:
+            raise HTTPError(404)
+        self.db.delete(doc)
+        self.db.flush()
+        docs = (
+            self.db.query(database.SupportDocument)
+            .filter(database.SupportDocument.project_id == project.id)
+            .order_by(database.SupportDocument.id)
+        ).all()
+        cmd = database.Command.support_documents(
+            self.current_user, project.id, docs,
+        )
+        self.db.add(cmd)
+        self.db.commit()
+        self.db.refresh(cmd)
+        self.application.notify_project(project.id, cmd)
+        self.set_status(204)
+        return self.finish()
+
+
+class ThematicSegments(BaseHandler):
+    def _list(self, project):
+        return (
+            self.db.query(database.ThematicSegment)
+            .filter(database.ThematicSegment.project_id == project.id)
+            .order_by(database.ThematicSegment.position,
+                      database.ThematicSegment.id)
+        ).all()
+
+    @api_auth
+    @PROM_REQUESTS.sync('thematic_segments_list')
+    def get(self, project_id):
+        project, _ = self.get_project(project_id)
+        return self.send_json({
+            'thematic_segments': [s.to_json() for s in self._list(project)],
+        })
+
+    @staticmethod
+    def _validate(items):
+        """Validate the request; returns (cleaned items, error message).
+
+        Each guide question is stripped and blank ones dropped; a question
+        containing a newline is split into several questions.
+        """
+        if not isinstance(items, list):
+            return None, "thematic_segments must be a list"
+        if len(items) > SEGMENT_MAX_COUNT:
+            return None, "Too many segments (max %d)" % SEGMENT_MAX_COUNT
+        cleaned = []
+        names = set()
+        ids = set()
+        for i, item in enumerate(items):
+            where = "Segment %d: " % (i + 1)
+            if not isinstance(item, dict):
+                return None, where + "expected an object"
+            seg_id = item.get('id')
+            if seg_id is not None:
+                if isinstance(seg_id, bool) or not isinstance(seg_id, int):
+                    return None, where + "invalid id"
+                if seg_id in ids:
+                    return None, where + "duplicate id"
+                ids.add(seg_id)
+            name = item.get('name')
+            if not isinstance(name, str) or not name.strip():
+                return None, where + "name cannot be empty"
+            name = name.strip()
+            if len(name) > SEGMENT_MAX_NAME:
+                return None, where + "name is too long"
+            if name.lower() in names:
+                return None, where + "duplicate name %r" % name
+            names.add(name.lower())
+            description = item.get('description', '')
+            if not isinstance(description, str):
+                return None, where + "invalid description"
+            if len(description) > SEGMENT_MAX_DESCRIPTION:
+                return None, where + "description is too long"
+            questions = item.get('guide_questions', [])
+            if not isinstance(questions, list) or not all(
+                isinstance(q, str) for q in questions
+            ):
+                return None, where + "guide_questions must be a list of strings"
+            flat = []
+            for q in questions:
+                for line in q.splitlines():
+                    line = line.strip()
+                    if line:
+                        flat.append(line)
+            if len(flat) > SEGMENT_MAX_QUESTIONS:
+                return None, where + "too many guide questions"
+            if any(len(q) > SEGMENT_MAX_QUESTION_LENGTH for q in flat):
+                return None, where + "guide question is too long"
+            source = item.get('source', 'manual')
+            if source not in database.THEMATIC_SEGMENT_SOURCES:
+                return None, where + "invalid source"
+            cleaned.append({
+                'id': seg_id, 'name': name, 'description': description,
+                'guide_questions': '\n'.join(flat), 'source': source,
+            })
+        return cleaned, None
+
+    @api_auth
+    @PROM_REQUESTS.sync('thematic_segments_put')
+    def put(self, project_id):
+        project, privileges = self.get_project(project_id)
+        if not privileges.can_edit_project_meta():
+            return self.send_error_json(403, "Unauthorized")
+        obj = self.get_json()
+        if not isinstance(obj, dict):
+            return self.send_error_json(400, "Expected an object")
+        cleaned, error = self._validate(obj.get('thematic_segments'))
+        if error:
+            return self.send_error_json(400, error)
+
+        existing = {s.id: s for s in self._list(project)}
+        for item in cleaned:
+            if item['id'] is not None and item['id'] not in existing:
+                return self.send_error_json(
+                    400, "Unknown segment id %d" % item['id'],
+                )
+
+        kept = set()
+        for position, item in enumerate(cleaned):
+            seg = existing.get(item['id'])
+            if seg is None:
+                seg = database.ThematicSegment(project_id=project.id)
+                self.db.add(seg)
+            else:
+                kept.add(seg.id)
+            seg.position = position
+            seg.name = item['name']
+            seg.description = item['description']
+            seg.guide_questions = item['guide_questions']
+            seg.source = item['source']
+        for seg_id, seg in existing.items():
+            if seg_id not in kept:
+                self.db.delete(seg)
+        self.db.flush()
+        segments = self._list(project)
+        cmd = database.Command.thematic_segments(
+            self.current_user, project.id, segments,
+        )
+        self.db.add(cmd)
+        self.db.commit()
+        self.db.refresh(cmd)
+        self.application.notify_project(project.id, cmd)
+        return self.send_json({
+            'thematic_segments': [s.to_json() for s in self._list(project)],
+        })
 
 
 class ProjectEvents(BaseHandler):

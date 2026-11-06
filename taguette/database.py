@@ -142,6 +142,14 @@ class Project(Base):
                              passive_deletes=True)
     tags = relationship('Tag', cascade='all,delete-orphan', order_by='Tag.id',
                         passive_deletes=True)
+    support_documents = relationship('SupportDocument',
+                                     cascade='all,delete-orphan',
+                                     order_by='SupportDocument.id',
+                                     passive_deletes=True)
+    thematic_segments = relationship('ThematicSegment',
+                                     cascade='all,delete-orphan',
+                                     order_by='ThematicSegment.position',
+                                     passive_deletes=True)
 
     def __repr__(self):
         return '<%s.%s %r %r>' % (
@@ -150,6 +158,64 @@ class Project(Base):
             self.id,
             self.name,
         )
+
+
+SUPPORT_DOCUMENT_KINDS = ('script', 'research_questions', 'hypotheses',
+                          'other')
+THEMATIC_SEGMENT_SOURCES = ('guide', 'emergent', 'manual')
+
+
+class SupportDocument(Base):
+    """Plain-text project material (script, research questions, ...).
+
+    Kept apart from `documents` so it never shows up in document lists,
+    exports or coding.
+    """
+    __tablename__ = 'support_documents'
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
+                        nullable=False, index=True)
+    name = Column(String(512), nullable=False)
+    kind = Column(String(32), nullable=False)
+    contents = Column(Text, nullable=False)
+    created = Column(DateTime, nullable=False,
+                     default=lambda: datetime.utcnow())
+
+    def to_json(self, contents=True):
+        obj = {'id': self.id, 'name': self.name, 'kind': self.kind,
+               'created': self.created.isoformat(),
+               'size': len(self.contents)}
+        if contents:
+            obj['contents'] = self.contents
+        return obj
+
+
+class ThematicSegment(Base):
+    """A broad area of the project's semi-structured interview guide."""
+    __tablename__ = 'thematic_segments'
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey('projects.id', ondelete='CASCADE'),
+                        nullable=False, index=True)
+    position = Column(Integer, nullable=False)
+    name = Column(String(512), nullable=False)
+    description = Column(Text, nullable=False, default='')
+    # One question per line
+    guide_questions = Column(Text, nullable=False, default='')
+    source = Column(String(16), nullable=False)
+    created = Column(DateTime, nullable=False,
+                     default=lambda: datetime.utcnow())
+
+    def to_json(self):
+        return {
+            'id': self.id, 'position': self.position, 'name': self.name,
+            'description': self.description,
+            'guide_questions': [q for q in self.guide_questions.split('\n')
+                                if q.strip()],
+            'source': self.source,
+            'created': self.created.isoformat(),
+        }
 
 
 class Privileges(enum.Enum):
@@ -304,7 +370,8 @@ class Command(Base):
     TYPES = {'project_meta', 'document_add', 'document_delete',
              'document_edit', 'highlight_add', 'highlight_delete',
              'tag_add', 'tag_delete', 'tag_merge', 'tag_move', 'member_add',
-             'member_remove', 'project_import'}
+             'member_remove', 'project_import', 'support_documents',
+             'thematic_segments'}
 
     for n in TYPES:
         PROM_COMMAND.labels(n).inc(0)
@@ -351,6 +418,36 @@ class Command(Base):
             payload={'type': 'document_edit',  # keep in sync above
                      'document_name': document.name,
                      'deleted_highlights': deleted_highlights},
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['support_documents'],
+    )
+    def support_documents(cls, user_login, project_id, documents):
+        """Full current list of support documents (metadata only)."""
+        return cls(
+            user_login=user_login,
+            project_id=project_id,
+            payload={'type': 'support_documents',  # keep in sync above
+                     'support_documents': [
+                         doc.to_json(contents=False) for doc in documents
+                     ]},
+        )
+
+    @classmethod
+    @command_fields(
+        columns=['project_id'],
+        payload_fields=['thematic_segments'],
+    )
+    def thematic_segments(cls, user_login, project_id, segments):
+        """Full current list of thematic segments."""
+        return cls(
+            user_login=user_login,
+            project_id=project_id,
+            payload={'type': 'thematic_segments',  # keep in sync above
+                     'thematic_segments': [seg.to_json() for seg in segments]},
         )
 
     @classmethod
@@ -862,6 +959,20 @@ def copy_project(
         mapping=mapping_tags,
     )
 
+    # Copy support documents and thematic segments
+    copy(
+        SupportDocument, 'id',
+        dict(project_id=mapping_project),
+        20,
+        condition=SupportDocument.project_id == project_id,
+    )
+    copy(
+        ThematicSegment, 'id',
+        dict(project_id=mapping_project),
+        50,
+        condition=ThematicSegment.project_id == project_id,
+    )
+
     # Copy highlights
     mapping_highlights = copy(
         Highlight, 'id',
@@ -930,6 +1041,8 @@ def copy_project(
             src_tag_id=lambda v: isinstance(v, int),
             dest_tag_id=lambda v: isinstance(v, int),
             parent_id=lambda v: v is None or isinstance(v, int),
+            support_documents=lambda v: isinstance(v, list),
+            thematic_segments=lambda v: isinstance(v, list),
             member=validate.user_login,
             privileges=lambda v: v in Privileges.__members__,
         )

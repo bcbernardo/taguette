@@ -4459,6 +4459,14 @@ function longPollForEvents() {
         addMember(event.member, event.privileges);
       } else if(event.type === 'member_remove') {
         removeMember(event.member);
+      } else if(event.type === 'support_documents') {
+        window.taguette_support_documents = event.support_documents;
+        document.dispatchEvent(new CustomEvent('tagu:support_documents',
+                                               {detail: event.support_documents}));
+      } else if(event.type === 'thematic_segments') {
+        window.taguette_thematic_segments = event.thematic_segments;
+        document.dispatchEvent(new CustomEvent('tagu:thematic_segments',
+                                               {detail: event.thematic_segments}));
       }
 
       if('tag_count_changes' in event) {

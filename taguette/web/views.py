@@ -519,6 +519,12 @@ class Project(BaseHandler):
             },
             sort_keys=True,
         ))
+        support_documents_json = jinja2.Markup(json.dumps(
+            [doc.to_json(contents=False) for doc in project.support_documents]
+        ))
+        thematic_segments_json = jinja2.Markup(json.dumps(
+            [seg.to_json() for seg in project.thematic_segments]
+        ))
         members = (
             self.db.query(database.ProjectMember)
             .filter(database.ProjectMember.project_id == project_id)
@@ -541,5 +547,7 @@ class Project(BaseHandler):
             ),
             tags=tags_json,
             members=members_json,
+            support_documents=support_documents_json,
+            thematic_segments=thematic_segments_json,
             can_delete_project=can_delete_project,
         )
