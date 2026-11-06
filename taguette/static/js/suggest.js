@@ -3845,6 +3845,8 @@ function sugSetSplit(on) {
   }
   // Unwrap real highlights, rebuild pane B, re-render everything
   var ids = Object.keys(highlights);
+  // removeHighlight() also deletes the record: keep the objects to re-add
+  var saved_highlights = ids.map(function(id) { return highlights[id]; });
   ids.forEach(removeHighlight);
   if(on) {
     if(!paneB) {
@@ -3876,7 +3878,7 @@ function sugSetSplit(on) {
   }
   sug_session.split = on;
   // Real highlights wrap in every pane via highlightSelection
-  ids.forEach(function(id) { setHighlight(highlights[id]); });
+  saved_highlights.forEach(function(h) { setHighlight(h); });
   sug_session.staged.forEach(sugRenderStaged);
   sugSpeakerRenderBlocks();
   if(typeof segRenderSeparators === 'function') {
@@ -4367,8 +4369,10 @@ function sugSyncPaneB() {
   }
   // Unwrap and re-wrap the real highlights so both panes carry them
   var ids = Object.keys(highlights);
+  // removeHighlight() also deletes the record: keep the objects to re-add
+  var saved_highlights = ids.map(function(id) { return highlights[id]; });
   ids.forEach(removeHighlight);
-  ids.forEach(function(id) { setHighlight(highlights[id]); });
+  saved_highlights.forEach(function(h) { setHighlight(h); });
 }
 
 // Recompute the session state after the document changed underneath it
