@@ -125,6 +125,11 @@ New feature (speaker segmentation):
   survive re-proposals and transcript edits. The confirmed speaker profile
   is stored in the browser per document and re-applies for free (no model
   call) when the document is reopened
+* A speaker turn spans every paragraph from its label to the next
+  speaker/timestamp prefix (or the next inline label like "John: …"), so
+  continuation paragraphs are labelled with their speaker instead of
+  becoming separate unlabelled turns; text before the first label stays
+  standalone
 * The suggestion filter now chooses which speakers are included (one
   checkbox per speaker) instead of the old answers-only switch; turns with
   no speaker stay included

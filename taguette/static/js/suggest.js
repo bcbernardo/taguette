@@ -751,6 +751,47 @@ function sugIsPrefixLine(text) {
   return false;
 }
 
+// Inline speaker label opening a line: "NAME:", "NAME [00:12]:",
+// "[00:12] NAME:" — the label before the colon. Lines whose whole text is
+// just such a label are prefix lines (sugIsPrefixLine); this also matches
+// label + spoken text on one line ("John: hello there").
+function sugInlineLabel(line) {
+  var m = new RegExp('^\\s*(?:[\\[]\\s*' + SUG_TS + '\\s*[\\]])?\\s*'
+    + '([^\\n:()[\\]]{1,40}?)\\s*(?:[\\[]\\s*' + SUG_TS
+    + '\\s*[\\]])?\\s*:').exec(line);
+  if(!m) {
+    return null;
+  }
+  var lab = (m[1] || '').trim();
+  return (lab && /[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(lab)) ? lab : null;
+}
+
+// Any speaker label a line carries, including the standalone forms
+// ("NAME [00:20]", "[00:12] NAME") that only appear on lines of their own.
+// Permissive — it feeds the pre-scan hint, never a decision on its own.
+function sugPrefixLabel(line) {
+  var lab = sugInlineLabel(line);
+  if(lab) {
+    return lab;
+  }
+  var patterns = [
+    new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*[\\[(]\\s*' + SUG_TS
+      + '\\s*[\\])]\\s*$'),
+    new RegExp('^\\s*[\\[]\\s*' + SUG_TS + '\\s*[\\]]\\s+'
+      + '([^\\n:()[\\]]{1,40}?)(\\s*[\\[]' + SUG_TS + '[\\]])?\\s*:?\\s*$'),
+  ];
+  for(var p = 0; p < patterns.length; ++p) {
+    var m = patterns[p].exec(line);
+    if(m && m[1]) {
+      var lab2 = m[1].trim();
+      if(lab2 && /[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(lab2)) {
+        return lab2;
+      }
+    }
+  }
+  return null;
+}
+
 // Fold prefix lines into the block that follows them. The merged block
 // keeps contentStart pointing at the spoken text: classification sees the
 // whole turn (label included), but the rectangle drawn in the transcript
@@ -773,6 +814,33 @@ function sugMergePrefixBlocks(blocks, plain) {
   return merged;
 }
 
+// Absorb continuation paragraphs into the open speaker turn: a turn
+// starts at a prefix line (speaker/timestamp label on its own line) or at
+// a line beginning with a speaker label ("John: …"), and runs until the
+// next turn start — the common transcript layout where one label opens
+// several paragraphs. Text before the first label stays standalone.
+// Offsets index the same plainText, so highlight byte offsets stay valid.
+function sugAbsorbContinuations(blocks, plain) {
+  var turns = [];
+  var open = null;
+  blocks.forEach(function(b) {
+    var starts = (b.contentStart !== undefined)
+      || sugIsPrefixLine(b.text)
+      || (!!sugInlineLabel(b.text.split('\n', 1)[0]));
+    if(starts || !open) {
+      turns.push({start: b.start, end: b.end,
+                  contentStart: (b.contentStart !== undefined)
+                    ? b.contentStart : b.start,
+                  text: plain.slice(b.start, b.end)});
+      open = turns[turns.length - 1];
+    } else {
+      open.end = b.end;
+      open.text = plain.slice(open.start, open.end);
+    }
+  });
+  return turns;
+}
+
 // Line-based blocks for plain text (no DOM): one per non-empty line
 function sugBlocksOfText(plain) {
   var blocks = [];
@@ -788,6 +856,11 @@ function sugBlocksOfText(plain) {
     }
   }
   return sugMergePrefixBlocks(blocks, plain);
+}
+
+// Speaker turns over plain text (blocks + prefix folding + absorption)
+function sugTurnsOfText(plain) {
+  return sugAbsorbContinuations(sugBlocksOfText(plain), plain);
 }
 
 // DOM-based blocks: walk the document chunks in order, break at
@@ -847,6 +920,12 @@ function sugBlocks() {
   }
   close();
   return sugMergePrefixBlocks(blocks, plain);
+}
+
+// The session's speaker turns over the loaded document (same block walk,
+// plus continuation absorption — see sugAbsorbContinuations)
+function sugSpeakerTurns() {
+  return sugAbsorbContinuations(sugBlocks(), sug_session.plainText);
 }
 
 /*
@@ -914,29 +993,9 @@ function sugSpeakerTarget(b) {
 function sugPreScanPrefixes(turns) {
   var counts = {};
   var covered = 0;
-  var ts = '\\d{1,2}:\\d{2}(?::\\d{2})?(?:[.,]\\d{1,3})?';
-  var patterns = [
-    // "NAME:" — also accepts an optional bracketed timestamp before the
-    // colon ("Dr. Silva [00:12]:")
-    new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*([\\[]' + ts + '[\\]])?\\s*:'),
-    // "NAME [00:20]" / "NAME (12:34)" — bracketed time, no colon
-    new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*[\\[(]\\s*' + ts
-      + '\\s*[\\])]\\s*$'),
-    // "[00:12] NAME" — leading timestamp
-    new RegExp('^\\s*[\\[]\\s*' + ts + '\\s*[\\]]\\s+([^\\n:()[\\]]{1,40}?)'
-      + '(\\s*[\\[]' + ts + '[\\]])?\\s*:?\\s*$'),
-  ];
   turns.forEach(function(b) {
-    var line = b.text.split('\n', 1)[0];
-    var label = null;
-    for(var p = 0; p < patterns.length && !label; ++p) {
-      var m = patterns[p].exec(line);
-      if(m) {
-        label = (m[1] || '').trim();
-      }
-    }
-    if(!label || label.length < 2
-       || !/[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(label)) {
+    var label = sugPrefixLabel(b.text.split('\n', 1)[0]);
+    if(!label) {
       return; // no name in it (bare timestamps, cue ranges, numbers)
     }
     var k = label.toLowerCase();
@@ -1406,7 +1465,7 @@ function sugOpenSpeakersModal() {
     return;
   }
   if(!sug_session.turns) {
-    sug_session.turns = sugBlocks();
+    sug_session.turns = sugSpeakerTurns();
   }
   SUG_SPEAKER_DRAFT = JSON.parse(JSON.stringify(sug_session.speakers));
   sugSpeakerRenderDraft();
@@ -1789,7 +1848,7 @@ function sugSpeakerConfirm() {
   SUG_SPEAKER_DRAFT = null;
   sugSpeakerProfileSave();
   if(!sug_session.turns) {
-    sug_session.turns = sugBlocks();
+    sug_session.turns = sugSpeakerTurns();
   }
   sugApplySpeakers(sug_session.turns, sug_session.speakers);
   sugSpeakerRenderBlocks();
@@ -1815,7 +1874,7 @@ function sugSpeakerPropose() {
     return;
   }
   if(!sug_session.turns) {
-    sug_session.turns = sugBlocks();
+    sug_session.turns = sugSpeakerTurns();
   }
   var turns = sug_session.turns;
   if(!turns.length) {
@@ -3894,7 +3953,7 @@ function sugRebuildAfterReload() {
   if(sug_session.speakers && sug_session.speakers.length) {
     // Recompute the turns on the corrected text and re-apply the profile;
     // manual assignments survive through identical turn texts
-    var turns = sugBlocks();
+    var turns = sugSpeakerTurns();
     sugApplySpeakers(turns, sug_session.speakers, oldByText);
     sug_session.turns = turns;
   } else {
@@ -3976,7 +4035,7 @@ function sugStart() {
   var profile = sugSpeakerProfileLoad(current_document);
   if(profile.length) {
     sug_session.speakers = profile;
-    sug_session.turns = sugBlocks();
+    sug_session.turns = sugSpeakerTurns();
     sugApplySpeakers(sug_session.turns, sug_session.speakers);
     sugSpeakerRenderBlocks();
   }
@@ -4578,14 +4637,14 @@ function sugSelfTest() {
     + 'Interviewer:\nAnd then what happened?\n'
     + '[00:20] JOHN\nThe water rose fast\n'
     + 'Maria:\nWe organized the committee ourselves';
-  var seg_blocks = sugBlocksOfText(seg_plain);
+  var seg_blocks = sugTurnsOfText(seg_plain);
   assert(seg_blocks.length === 5, 'one turn per label+content pair, got '
          + seg_blocks.length);
   assert(sugSpeakerPrefix(seg_blocks[0]) === 'Interviewer:\n'
          && sugSpeakerPrefix(seg_blocks[1]) === 'Maria:\n',
          'sugSpeakerPrefix exposes the merged prefix line');
   var inline_blocks = sugBlocksOfText('John: hello there\nMaria: hi there');
-  assert(inline_blocks.length === 2, 'inline labels keep one turn per line');
+  assert(inline_blocks.length === 2, 'inline labels keep one block per line');
   assert(inline_blocks[0].contentStart === undefined
          && sugSpeakerPrefix(inline_blocks[0]) === '',
          'inline-labelled turns have no separate prefix');
@@ -4593,6 +4652,39 @@ function sugSelfTest() {
          'rules see the first line of the turn');
   assert(sugSpeakerTarget({text: 'x'.repeat(100) + '\nmore'}).length === 80,
          'rules never see more than 80 characters');
+
+  // Continuation paragraphs absorb into the open turn until the next
+  // speaker/timestamp prefix (or inline label)
+  var abs_plain = 'Preamble about the project.\n'
+    + 'Interviewer:\nFirst question, tell me more.\n'
+    + 'Still the interviewer, a second paragraph.\n'
+    + 'Maria:\nSure, the basement flooded.\n'
+    + 'And we lost everything in it.\n'
+    + 'John: I helped with the pump\n'
+    + 'again after midnight\n'
+    + 'John: and again at dawn';
+  var abs_turns = sugTurnsOfText(abs_plain);
+  assert(abs_turns.length === 5, 'turns absorb continuations, got '
+         + abs_turns.length);
+  assert(abs_turns[0].text === 'Preamble about the project.',
+         'text before the first label stays standalone');
+  assert(abs_turns[1].text.indexOf('second paragraph') !== -1
+         && abs_turns[1].contentStart === abs_plain.indexOf('First question'),
+         'a turn runs until the next prefix line');
+  assert(abs_turns[2].text.indexOf('lost everything') !== -1,
+         'the next prefix opens a new turn that absorbs again');
+  assert(abs_turns[3].text === 'John: I helped with the pump\n'
+         + 'again after midnight',
+         'inline labels open turns that absorb continuations');
+  assert(abs_turns[4].text === 'John: and again at dawn',
+         'each inline-labelled line starts its own turn');
+  assert(sugSpeakerPrefix(abs_turns[1]) === 'Interviewer:\n'
+         && sugSpeakerPrefix(abs_turns[3]) === '',
+         'absorbed turns keep their prefix exposed');
+  var qa_turns = sugTurnsOfText('Q: how did it start?\nA: with the rains\n'
+                                + 'Q: and then?');
+  assert(qa_turns.length === 3, 'single-letter labels turn too, got '
+         + qa_turns.length);
 
   assert(seg_blocks[0].start === 0, 'merged turn starts at the prefix');
   assert(seg_plain.slice(seg_blocks[1].start, seg_blocks[1].end)

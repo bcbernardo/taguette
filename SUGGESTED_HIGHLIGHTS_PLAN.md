@@ -271,7 +271,17 @@ turns with no speaker count as included).
   the block that follows it during preprocessing. The merged block records
   `contentStart` at the spoken text: the transcript rectangle wraps the
   speech, not the label line, and `sugSpeakerPrefix()` exposes the label
-  part. Inline labels ("John: hello") stay part of the first line.
+  part.
+- **One label opens the whole turn**: `sugAbsorbContinuations()` merges
+  every following paragraph into the turn until the next turn start — a
+  new prefix line, or a paragraph beginning with a speaker label
+  ("John: …"; single letters like "Q:"/"A:" count too). Text before the
+  first label stays standalone, so a turn runs from its speaker/timing
+  prefix across all its paragraphs — the common transcript layout where
+  one label opens several paragraphs. `sugTurnsOfText()` and
+  `sugSpeakerTurns()` are the turn-level entry points; the outline and
+  badge cover the whole turn (wrapped per text fragment when it spans
+  block elements, like suggestions do).
 - **Local pre-scan** (no LLM): `sugPreScanPrefixes()` counts the most
   frequent candidate labels on the turns' first lines and the share of
   turns that carry one — a hint for the model and the basis for building
