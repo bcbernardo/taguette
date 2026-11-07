@@ -522,3 +522,26 @@ def html_to(html, extension, config):
 def html_to_plaintext(html):
     soup = bs4.BeautifulSoup(html, 'html5lib')
     return soup.get_text(' ', strip=True)
+
+
+_TEXT_BLOCK_TAGS = ('p', 'div', 'li', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5',
+                    'h6', 'blockquote', 'pre', 'ul', 'ol', 'table')
+
+
+def html_to_text(html):
+    """Convert HTML to plain text, keeping paragraph/line breaks.
+
+    Unlike `html_to_plaintext()`, which flattens everything into one line,
+    this puts a newline after each block element and `<br>`.
+    """
+    soup = bs4.BeautifulSoup(html, 'html5lib')
+    for br in soup.find_all('br'):
+        br.replace_with('\n')
+    for tag in soup.find_all(_TEXT_BLOCK_TAGS):
+        tag.append('\n')
+    text = soup.get_text('')
+    lines = [line.rstrip() for line in text.replace('\r', '').split('\n')]
+    text = '\n'.join(lines)
+    while '\n\n\n' in text:
+        text = text.replace('\n\n\n', '\n\n')
+    return text.strip()

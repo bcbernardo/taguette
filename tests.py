@@ -2249,6 +2249,370 @@ class TestMultiuser(MyHTTPTestCase):
         self.assertTrue(fut.cancel())
 
 
+class TestSupportAndSegments(MyHTTPTestCase):
+    get_app = TestMultiuser.get_app
+
+    def tearDown(self):
+        super(TestSupportAndSegments, self).tearDown()
+        close_all_sessions()
+        engine = sqlalchemy.create_engine(DATABASE_URI)
+        database.Base.metadata.drop_all(bind=engine)
+
+    async def login(self, login):
+        self.http_client.cookie_jar.clear()  # Log out
+        async with self.apost('/cookies', data=dict()) as response:
+            self.assertEqual(response.status, 302)
+        async with self.aget('/login') as response:
+            self.assertEqual(response.status, 200)
+        async with self.apost(
+            '/login',
+            data=dict(next='/', login=login, password='hackme'),
+        ) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/')
+
+    def xsrf_params(self):
+        cookies = self.http_client.cookie_jar.filter_cookies(
+            self.get_url('/'))
+        return {'_xsrf': cookies['_xsrf'].value}
+
+    def adelete(self, url):
+        return self.http_client.delete(
+            self.get_url(url), params=self.xsrf_params(),
+            allow_redirects=False,
+        )
+
+    def aput(self, url, **kwargs):
+        return self.http_client.put(
+            self.get_url(url), params=self.xsrf_params(),
+            allow_redirects=False, **kwargs
+        )
+
+    def setup_db(self):
+        db = self.application.DBSession()
+        for login in ('bob', 'eve', 'reader'):
+            user = database.User(login=login)
+            user.set_password('hackme')
+            db.add(user)
+        for num in (1, 2):
+            db.add(database.Project(name='proj%d' % num, description=''))
+        db.flush()
+        db.add(database.ProjectMember(
+            user_login='admin', project_id=1,
+            privileges=database.Privileges.ADMIN))
+        db.add(database.ProjectMember(
+            user_login='admin', project_id=2,
+            privileges=database.Privileges.ADMIN))
+        db.add(database.ProjectMember(
+            user_login='bob', project_id=1,
+            privileges=database.Privileges.TAG))
+        db.add(database.ProjectMember(
+            user_login='reader', project_id=1,
+            privileges=database.Privileges.READ))
+        db.commit()
+        return db
+
+    async def commands(self, db, project_id=1):
+        db.expire_all()
+        return [
+            cmd.payload for cmd in db.query(database.Command)
+            .filter(database.Command.project_id == project_id)
+            .order_by(database.Command.id)
+        ]
+
+    @gen_test
+    async def test_support_documents(self):
+        db = self.setup_db()
+        await self.login('admin')
+
+        async with self.aget('/api/project/1/support_documents') as r:
+            self.assertEqual(r.status, 200)
+            self.assertEqual(await r.json(), {'support_documents': []})
+
+        # Pasted text
+        async with self.apost(
+            '/api/project/1/support_documents',
+            json=dict(name='Script', kind='script', text='Q1?\nQ2?'),
+        ) as r:
+            self.assertEqual(r.status, 200)
+            doc = await r.json()
+        self.assertEqual(doc['id'], 1)
+        self.assertEqual(doc['name'], 'Script')
+        self.assertEqual(doc['kind'], 'script')
+        self.assertEqual(doc['size'], 7)
+        self.assertNotIn('contents', doc)
+
+        # Text file upload, default name and kind
+        async with self.apost(
+            '/api/project/1/support_documents',
+            data={},
+            files=dict(file=('hyp.txt', 'text/plain', b'H1\nH2\n')),
+        ) as r:
+            self.assertEqual(r.status, 200)
+            doc2 = await r.json()
+        self.assertEqual((doc2['id'], doc2['name'], doc2['kind']),
+                         (2, 'hyp.txt', 'other'))
+
+        # HTML upload, with kind and name
+        async with self.apost(
+            '/api/project/1/support_documents',
+            data=dict(name='RQs', kind='research_questions'),
+            files=dict(file=('rq.html', 'text/html',
+                             b'<p>First <b>one</b></p><p>Second</p>')),
+        ) as r:
+            self.assertEqual(r.status, 200)
+            self.assertEqual((await r.json())['kind'], 'research_questions')
+
+        async with self.aget('/api/project/1/support_documents') as r:
+            listing = (await r.json())['support_documents']
+        self.assertEqual([d['id'] for d in listing], [1, 2, 3])
+        self.assertEqual(listing[0]['contents'], 'Q1?\nQ2?')
+        self.assertEqual(listing[1]['contents'], 'H1\nH2\n')
+        self.assertEqual(listing[2]['contents'], 'First one\nSecond')
+
+        # Validation
+        for body in (
+            dict(name='', kind='script', text='x'),
+            dict(name='n', kind='bogus', text='x'),
+            dict(name='n', kind='script', text='  \n'),
+            dict(name='n' * 513, kind='script', text='x'),
+            dict(name='n', kind='script'),
+            dict(name='n', kind='script', text='x' * 2000001),
+        ):
+            async with self.apost(
+                '/api/project/1/support_documents', json=body,
+            ) as r:
+                self.assertEqual(r.status, 400, body.get('name', '')[:5])
+
+        # Not in the documents table / project page lists metadata only
+        self.assertEqual(db.query(database.Document).count(), 0)
+        async with self.aget('/project/1') as r:
+            body = await r.text()
+        self.assertIn('window.taguette_support_documents = [{', body)
+        self.assertNotIn('Q1?', body)
+        self.assertIn('window.taguette_thematic_segments = [];', body)
+
+        # Commands
+        cmds = await self.commands(db)
+        self.assertEqual([c['type'] for c in cmds],
+                         ['support_documents'] * 3)
+        self.assertEqual(
+            [d['id'] for d in cmds[-1]['support_documents']], [1, 2, 3])
+        self.assertEqual(
+            set(cmds[-1]['support_documents'][0]),
+            {'id', 'name', 'kind', 'created', 'size'})
+
+        # Delete; other project's doc is a 404
+        async with self.apost(
+            '/api/project/2/support_documents',
+            json=dict(name='Other', kind='other', text='zzz'),
+        ) as r:
+            self.assertEqual(r.status, 200)
+            other_id = (await r.json())['id']
+        async with self.adelete(
+            '/api/project/1/support_documents/%d' % other_id,
+        ) as r:
+            self.assertEqual(r.status, 404)
+        async with self.adelete('/api/project/1/support_documents/2') as r:
+            self.assertEqual(r.status, 204)
+        async with self.adelete('/api/project/1/support_documents/2') as r:
+            self.assertEqual(r.status, 404)
+        async with self.aget('/api/project/1/support_documents') as r:
+            self.assertEqual(
+                [d['id'] for d in (await r.json())['support_documents']],
+                [1, 3])
+        cmds = await self.commands(db)
+        self.assertEqual(
+            [d['id'] for d in cmds[-1]['support_documents']], [1, 3])
+
+        # Permissions: member with TAG privileges can read, not write
+        await self.login('bob')
+        async with self.aget('/api/project/1/support_documents') as r:
+            self.assertEqual(r.status, 200)
+        async with self.apost(
+            '/api/project/1/support_documents',
+            json=dict(name='n', kind='script', text='x'),
+        ) as r:
+            self.assertEqual(r.status, 403)
+        async with self.adelete('/api/project/1/support_documents/1') as r:
+            self.assertEqual(r.status, 403)
+        # Non-member can't read (project is hidden: 404)
+        await self.login('eve')
+        async with self.aget('/api/project/1/support_documents') as r:
+            self.assertEqual(r.status, 404)
+        async with self.apost(
+            '/api/project/1/support_documents',
+            json=dict(name='n', kind='script', text='x'),
+        ) as r:
+            self.assertEqual(r.status, 404)
+        self.assertEqual(db.query(database.SupportDocument).count(), 3)
+
+    @gen_test
+    async def test_thematic_segments(self):
+        db = self.setup_db()
+        await self.login('admin')
+        url = '/api/project/1/thematic_segments'
+
+        async with self.aget(url) as r:
+            self.assertEqual(r.status, 200)
+            self.assertEqual(await r.json(), {'thematic_segments': []})
+
+        # Create
+        async with self.aput(url, json={'thematic_segments': [
+            {'name': 'Intro', 'description': 'Opening',
+             'guide_questions': ['  Who are you? ', '', 'What do you do?'],
+             'source': 'guide'},
+            {'name': 'Funding'},
+            {'name': 'Emergent', 'source': 'emergent', 'id': None},
+        ]}) as r:
+            self.assertEqual(r.status, 200)
+            result = (await r.json())['thematic_segments']
+        self.assertEqual([s['id'] for s in result], [1, 2, 3])
+        self.assertEqual([s['position'] for s in result], [0, 1, 2])
+        self.assertEqual(result[0]['guide_questions'],
+                         ['Who are you?', 'What do you do?'])
+        self.assertEqual(result[0]['source'], 'guide')
+        self.assertEqual(result[1]['source'], 'manual')
+        self.assertEqual(result[1]['description'], '')
+        self.assertEqual(result[1]['guide_questions'], [])
+        self.assertEqual(
+            set(result[0]),
+            {'id', 'position', 'name', 'description', 'guide_questions',
+             'source', 'created'})
+        async with self.aget(url) as r:
+            self.assertEqual((await r.json())['thematic_segments'], result)
+
+        # Update in place, reorder, delete missing (2), create new
+        async with self.aput(url, json={'thematic_segments': [
+            {'id': 3, 'name': 'Emergent renamed', 'source': 'emergent'},
+            {'id': 1, 'name': 'Intro', 'description': 'New'},
+            {'name': 'Brand new'},
+        ]}) as r:
+            self.assertEqual(r.status, 200)
+            result = (await r.json())['thematic_segments']
+        self.assertEqual([(s['id'], s['name'], s['position'])
+                          for s in result],
+                         [(3, 'Emergent renamed', 0), (1, 'Intro', 1),
+                          (4, 'Brand new', 2)])
+        self.assertEqual(result[1]['description'], 'New')
+        self.assertEqual(result[1]['guide_questions'], [])
+
+        before = result
+
+        # Validation errors leave data unchanged
+        ok = {'name': 'ok'}
+        bad_bodies = [
+            {'thematic_segments': 'nope'},
+            {'thematic_segments': [{'name': '  '}]},
+            {'thematic_segments': [{'name': 'a'}, {'name': 'A'}]},
+            {'thematic_segments': [{'name': 'a', 'source': 'robot'}]},
+            {'thematic_segments': [ok, {'id': 99, 'name': 'foreign'}]},
+            {'thematic_segments': [{'id': 1, 'name': 'a'},
+                                   {'id': 1, 'name': 'b'}]},
+            {'thematic_segments': [{'name': 'n' * 513}]},
+            {'thematic_segments': [{'name': 'a', 'description': 'd' * 20001}]},
+            {'thematic_segments': [{'name': 'a', 'guide_questions': 'q'}]},
+            {'thematic_segments': [{'name': 'a', 'guide_questions': [1]}]},
+            {'thematic_segments': [{'name': 'a',
+                                    'guide_questions': ['q'] * 201}]},
+            {'thematic_segments': [{'name': str(i)} for i in range(501)]},
+        ]
+        for body in bad_bodies:
+            async with self.aput(url, json=body) as r:
+                self.assertEqual(r.status, 400, str(body)[:80])
+                self.assertIn('error', await r.json())
+        # An id belonging to another project
+        async with self.apost(
+            '/api/project/2/support_documents',
+            json=dict(name='x', kind='other', text='x'),
+        ) as r:
+            self.assertEqual(r.status, 200)
+        async with self.aput('/api/project/2/thematic_segments', json={
+            'thematic_segments': [{'name': 'p2 segment'}],
+        }) as r:
+            self.assertEqual(r.status, 200)
+            foreign_id = (await r.json())['thematic_segments'][0]['id']
+        async with self.aput(url, json={'thematic_segments': [
+            {'id': foreign_id, 'name': 'steal'},
+        ]}) as r:
+            self.assertEqual(r.status, 400)
+        async with self.aget(url) as r:
+            self.assertEqual((await r.json())['thematic_segments'], before)
+
+        # Commands
+        cmds = await self.commands(db)
+        self.assertEqual([c['type'] for c in cmds],
+                         ['thematic_segments'] * 2)
+        self.assertEqual(cmds[-1]['thematic_segments'], before)
+
+        # Permissions
+        await self.login('bob')
+        async with self.aget(url) as r:
+            self.assertEqual(r.status, 200)
+        async with self.aput(url, json={'thematic_segments': []}) as r:
+            self.assertEqual(r.status, 403)
+        await self.login('eve')
+        async with self.aget(url) as r:
+            self.assertEqual(r.status, 404)
+        async with self.aput(url, json={'thematic_segments': []}) as r:
+            self.assertEqual(r.status, 404)
+        db.expire_all()
+        self.assertEqual(
+            db.query(database.ThematicSegment)
+            .filter(database.ThematicSegment.project_id == 1).count(), 3)
+
+
+    @gen_test
+    async def test_project_page_escapes_segments(self):
+        # Segment names (LLM- or user-provided) end up in the project page's
+        # inline <script>: they must not be able to close it
+        self.setup_db()
+        await self.login('admin')
+        evil = '</script><script>alert(1)</script>'
+        async with self.aput('/api/project/1/thematic_segments', json={
+            'thematic_segments': [{'name': evil, 'source': 'emergent'}],
+        }) as r:
+            self.assertEqual(r.status, 200)
+        async with self.aget('/project/1') as r:
+            self.assertEqual(r.status, 200)
+            page = await r.text()
+        self.assertNotIn(evil, page)
+        self.assertIn(
+            '\\u003c/script\\u003e\\u003cscript\\u003ealert(1)', page)
+    @with_tempdir
+    @gen_test
+    async def test_copy_and_cascade(self, tmp):
+        db = self.setup_db()
+        db.add(database.SupportDocument(
+            project_id=1, name='S', kind='script', contents='abc'))
+        for pos, name in enumerate(['B', 'A']):
+            db.add(database.ThematicSegment(
+                project_id=1, position=pos, name=name, description='d',
+                guide_questions='q1\nq2', source='guide'))
+        db.commit()
+
+        dest = database.connect('sqlite:///' + os.path.join(tmp, 'd.sqlite3'))()
+        dest.add(database.User(login='bob'))
+        dest.commit()
+        new_id = database.copy_project(db, dest, 1, 'bob')
+        docs = dest.query(database.SupportDocument).all()
+        self.assertEqual([(d.project_id, d.name, d.kind, d.contents)
+                          for d in docs], [(new_id, 'S', 'script', 'abc')])
+        segs = (dest.query(database.ThematicSegment)
+                .order_by(database.ThematicSegment.position).all())
+        self.assertEqual(
+            [(s.project_id, s.position, s.name, s.guide_questions, s.source)
+             for s in segs],
+            [(new_id, 0, 'B', 'q1\nq2', 'guide'),
+             (new_id, 1, 'A', 'q1\nq2', 'guide')])
+
+        # Deleting the project cascades
+        db.delete(db.query(database.Project).get(1))
+        db.commit()
+        self.assertEqual(db.query(database.SupportDocument).count(), 0)
+        self.assertEqual(db.query(database.ThematicSegment).count(), 0)
+
+
 class TestSingleuser(MyHTTPTestCase):
     def get_app(self):
         with mock.patch.object(web.Application, '_set_password',

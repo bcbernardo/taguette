@@ -134,6 +134,12 @@ def make_app(config, debug=False, xsrf_cookies=True):
             URLSpec('/api/project/([0-9]+)/tag/new', api.TagAdd),
             URLSpec('/api/project/([0-9]+)/tag/([0-9]+)', api.TagUpdate),
             URLSpec('/api/project/([0-9]+)/tag/merge', api.TagMerge),
+            URLSpec('/api/project/([0-9]+)/support_documents',
+                    api.SupportDocuments),
+            URLSpec('/api/project/([0-9]+)/support_documents/([0-9]+)',
+                    api.SupportDocumentUpdate),
+            URLSpec('/api/project/([0-9]+)/thematic_segments',
+                    api.ThematicSegments),
             URLSpec('/api/project/([0-9]+)/members', api.MembersUpdate),
             URLSpec('/api/project/([0-9]+)/events', api.ProjectEvents),
 
