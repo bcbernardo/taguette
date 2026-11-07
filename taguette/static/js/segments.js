@@ -2379,13 +2379,33 @@ function segRunSections(input, deps) {
 
 // Units + tags on top of a segRunSections result (re-runnable when only
 // tau / theta / top_k / unit sizes change)
-function segRunUnits(sr, input, deps) {
+// opts.tags: true (default) proposes tags with the LLM recheck; 'fast' uses
+// the system-1 confidences only (deps.llm is never called for tags); false
+// skips tag proposals entirely (every unit gets tags: [])
+function segRunUnits(sr, input, deps, opts) {
   var params = input.params || segParams();
+  var tagMode = opts && opts.tags !== undefined ? opts.tags : true;
   input = Object.create(input);
   input.params = params;
   var infos = sr.infos || segTurnInfos(input);
   return segBuildUnits(sr.sections, input, deps, infos).then(function(units) {
-    return segProposeTags(units, sr.sections, input, deps).then(function() {
+    var tagged;
+    if(tagMode === false) {
+      units.forEach(function(u) {
+        u.tags = [];
+      });
+      tagged = Promise.resolve();
+    } else if(tagMode === 'fast') {
+      var fast = {};
+      for(var d in deps) {
+        fast[d] = deps[d];
+      }
+      fast.llm = null;
+      tagged = segProposeTags(units, sr.sections, input, fast);
+    } else {
+      tagged = segProposeTags(units, sr.sections, input, deps);
+    }
+    return tagged.then(function() {
       var stats = {};
       for(var k in sr.stats) {
         stats[k] = sr.stats[k];
@@ -2401,9 +2421,9 @@ function segRunUnits(sr, input, deps) {
   });
 }
 
-function segRunAll(input, deps) {
+function segRunAll(input, deps, opts) {
   return segRunSections(input, deps).then(function(sr) {
-    return segRunUnits(sr, input, deps);
+    return segRunUnits(sr, input, deps, opts);
   });
 }
 
