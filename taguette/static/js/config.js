@@ -541,7 +541,7 @@ function taguDecisionsResolvedCfg(resolved) {
 
 function taguDecisionsTabBuild(el) {
   el.appendChild(taguEl('p', 'text-muted', gettext(
-    'Fast decision model (system 1) used by thematic segmentation: ambiguous segment assignments, unit continuity, small talk, and checking proposed tags. Laya runs locally; Jev is served through OpenRouter or any compatible endpoint.')));
+    'Fast decision model (system 1) used by thematic segmentation: ambiguous topic assignments, suggested-highlight continuity, small talk, and checking proposed tags. Laya runs locally; Jev is served through OpenRouter or any compatible endpoint.')));
   taguTaskPanel(el, {
     task: 'decisions',
     locals: ['laya'],
@@ -578,7 +578,7 @@ taguConfigRegisterTab({
  */
 function taguReasoningTabBuild(el) {
   el.appendChild(taguEl('p', 'text-muted', gettext(
-    'Chat model that generates the project\'s segment guide from the support documents. It receives the full text of those documents in a single call, so it needs a long context window and should be a more capable model than the one used for suggestions. Any OpenAI-compatible /chat/completions endpoint works — pick one of your API keys, a local server, or a custom endpoint. The generated guide is always reviewed before it is saved.')));
+    'Chat model that generates the project\'s topic guide from the support documents. It receives the full text of those documents in a single call, so it needs a long context window and should be a more capable model than the one used for suggestions. Any OpenAI-compatible /chat/completions endpoint works — pick one of your API keys, a local server, or a custom endpoint. The generated guide is always reviewed before it is saved.')));
   taguHint(el, gettext(
     'Privacy: the text of the support documents is sent straight from your browser to the chosen service (never to the Taguette server).'));
   taguTaskPanel(el, {
@@ -621,7 +621,7 @@ function taguSegParamsBuild(el) {
   var defs = SEG_PARAM_DEFS;
   var section = taguEl('div', 'mt-4');
   section.appendChild(taguEl('h5', null,
-    gettext('Thematic segments and units')));
+    gettext('Topics, segments and suggested highlights')));
   el.appendChild(section);
 
   function current() {

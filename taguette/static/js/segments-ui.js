@@ -204,8 +204,8 @@ function segUiStatus(msg) {
 var SEG_UI_STAGE_PLAN = [
   {id: 'embed', weight: 0.15, label: 'embedding windows'},
   {id: 'decide', weight: 0.20, label: 'checking ambiguous passages'},
-  {id: 'emergent', weight: 0.05, label: 'naming new segments'},
-  {id: 'units', weight: 0.15, label: 'cutting suggestions'},
+  {id: 'emergent', weight: 0.05, label: 'naming new topics'},
+  {id: 'units', weight: 0.15, label: 'cutting suggested highlights'},
   // segments.js reports tag verification and LLM rechecks under 'tags'
   {id: 'tags', weight: 0.45, label: 'proposing and checking tags'}
 ];
@@ -532,7 +532,7 @@ function segUiFinalize(sections, ctx, manual, emergentDict) {
   out.forEach(function(sec) {
     if(sec.segId !== null && sec.segId !== undefined && !known[sec.segId]) {
       // The segment was removed from the guide (for example merged away)
-      sec.name = gettext('(removed segment)');
+      sec.name = gettext('(removed topic)');
       sec.label = segSectionLabel(sec.name, sec.openingQuestion);
     }
   });
@@ -1575,7 +1575,7 @@ function segUiNewEmergentKey() {
 }
 
 function segUiNotUnique() {
-  segUiStatus(gettext('This section starts at a turn whose text appears more than once, so the change cannot be remembered.'));
+  segUiStatus(gettext('This segment starts at a turn whose text appears more than once, so the change cannot be remembered.'));
 }
 
 function segUiAssignSection(secId, value) {
@@ -1588,7 +1588,7 @@ function segUiAssignSection(secId, value) {
   }
   var sec = doc.result.sections[i], assignment;
   if(value === 'new') {
-    var name = window.prompt(gettext('Name of the new segment'), '');
+    var name = window.prompt(gettext('Name of the new topic'), '');
     if(!name || !name.trim()) {
       segRenderSections();
       return;
@@ -1641,7 +1641,7 @@ function segUiSplitAt(secId, pos) {
   }
   var sec = doc.result.sections[i];
   if(pos <= sec.start || pos >= sec.end) {
-    segUiStatus(gettext('Click inside the section, away from its first turn.'));
+    segUiStatus(gettext('Click inside the segment, away from its first turn.'));
     return;
   }
   if(!segUiRecordAssign(doc.manual, segUiTurns(), pos, segUiAssignmentOf(sec), true)) {
@@ -1662,7 +1662,7 @@ function segUiMoveBoundary(secId, pos) {
   }
   var moved = segUiMoveStart(secs, i, pos);
   if(!moved) {
-    segUiStatus(gettext('A section boundary cannot be moved past its neighbours.'));
+    segUiStatus(gettext('A segment boundary cannot be moved past its neighbours.'));
     return;
   }
   if(segUiUniqueKey(turns, pos) === null) {
@@ -1704,7 +1704,7 @@ function segUiRefineSection(secId) {
       || SEG_UI.doc !== doc || doc.result !== r;
   }
   SEG_UI.busy = true;
-  segUiStatus(gettext('Refining the section…'));
+  segUiStatus(gettext('Refining the segment…'));
   var deps = segMakeDeps({progress: segUiProgress});
   var metered = true;
   function mstop() {
@@ -1842,7 +1842,7 @@ function segUiSelectEl(sec, sections, dict, guide) {
     add('s:' + g.id, g.name);
   });
   if(cur.segId !== null && !segUiFindById(guide, cur.segId)) {
-    add('s:' + cur.segId, gettext('(removed segment)'));
+    add('s:' + cur.segId, gettext('(removed topic)'));
   }
   segUiOptionList(sections, dict).forEach(function(e) {
     add('e:' + e.key, gettext('Emergent: %(name)s', {name: e.name}));
@@ -1850,7 +1850,7 @@ function segUiSelectEl(sec, sections, dict, guide) {
   if(cur.segId === null && cur.emergentKey === null) {
     add('none', gettext('Unassigned'));
   }
-  add('new', gettext('New segment…'));
+  add('new', gettext('New topic…'));
   sel.value = cur.segId !== null ? 's:' + cur.segId
     : (cur.emergentKey !== null ? 'e:' + cur.emergentKey : 'none');
   return sel;
@@ -1867,7 +1867,7 @@ function segUiButton(act, text, title) {
 function segUiNamesOf(ids, guide) {
   return ids.map(function(id) {
     var g = segUiFindById(guide, id);
-    return g ? g.name : gettext('(removed segment)');
+    return g ? g.name : gettext('(removed topic)');
   }).join(', ');
 }
 
@@ -1916,12 +1916,12 @@ function segUiRenderList(box, sections, editable) {
       var ctl = segUiEl('div', 'seg-row-controls');
       ctl.appendChild(segUiSelectEl(sec, sections, dict, guide));
       if(idx + 1 < sections.length) {
-        ctl.appendChild(segUiButton('merge', '⇣', gettext('Merge with the next section')));
+        ctl.appendChild(segUiButton('merge', '⇣', gettext('Merge with the next segment')));
       }
-      ctl.appendChild(segUiButton('split', '✂', gettext('Split this section (then click in the text)')));
-      ctl.appendChild(segUiButton('refine', '⟳', gettext('Refine this section (shorter suggestions)')));
+      ctl.appendChild(segUiButton('split', '✂', gettext('Split this segment (then click in the text)')));
+      ctl.appendChild(segUiButton('refine', '⟳', gettext('Refine this segment (shorter suggested highlights)')));
       if(sec.emergent && sections.length > 1) {
-        ctl.appendChild(segUiButton('discard', '✕', gettext('Discard as emergent: merge into the neighbouring section')));
+        ctl.appendChild(segUiButton('discard', '✕', gettext('Discard as emergent: merge into the neighbouring segment')));
       }
       row.appendChild(ctl);
       var st = segUiSectionStats(sec, turns, speakers, spans);
@@ -1957,7 +1957,7 @@ function segRenderSections() {
     }
     if(!doc.result) {
       box.appendChild(segUiEl('p', 'text-muted small', gettext(
-        'Saved sections from an earlier analysis. Run Segment-based coding to update them.')));
+        'Saved segments from an earlier analysis. Run Segment-based coding to update them.')));
     }
     segUiRenderList(box, secs, segUiEditable());
     return;
@@ -2058,7 +2058,7 @@ function segUiSetSplitting(secId) {
   }
   if(secId) {
     document.body.classList.add('seg-splitting');
-    segUiStatus(gettext('Click in the text where the new section should start (Esc cancels).'));
+    segUiStatus(gettext('Click in the text where the new segment should start (Esc cancels).'));
   } else {
     document.body.classList.remove('seg-splitting');
   }
@@ -2221,7 +2221,7 @@ function segBeforeSave(proceed) {
     proceed();
     return;
   }
-  segUiStatus(gettext('Checking for similar segments…'));
+  segUiStatus(gettext('Checking for similar topics…'));
   segUiFindMerges(groups, doc.result).then(function() {
     segUiStatus('');
     segUiOpenEmergentModal(groups, proceed);
@@ -2282,7 +2282,7 @@ function segUiOpenEmergentModal(groups, proceed) {
   E.proceed = proceed;
   E.working = false;
   document.getElementById('seg-emergent-title').textContent = gettext(
-    '%(n)s new emergent segments will be created in the project guide. Confirm?',
+    '%(n)s new emergent topics will be created in the project guide. Confirm?',
     {n: groups.length});
   var rows = document.getElementById('seg-emergent-rows');
   segUiClear(rows);
@@ -2305,7 +2305,7 @@ function segUiOpenEmergentModal(groups, proceed) {
     if(g.merge) {
       var target = segUiFindById(guide, g.merge.segId);
       var box = segUiEl('div', 'seg-merge-choice');
-      [['new', gettext('Create a new segment')],
+      [['new', gettext('Create a new topic')],
        ['merge', gettext('Merge into «%(name)s»', {name: target ? target.name : ''})]
       ].forEach(function(opt) {
         var lab = segUiEl('label', 'mr-3');
@@ -2355,10 +2355,10 @@ function segUiReadEmergentRows() {
     g.choice = checked ? checked.value : 'new';
     if(g.choice === 'new') {
       if(!g.name) {
-        return gettext('Every new segment needs a name.');
+        return gettext('Every new topic needs a name.');
       }
       if(seen[g.name.toLowerCase()]) {
-        return gettext('Two new segments have the same name: %(name)s', {name: g.name});
+        return gettext('Two new topics have the same name: %(name)s', {name: g.name});
       }
       seen[g.name.toLowerCase()] = true;
     }
@@ -2553,10 +2553,10 @@ function segUiValidateRows(rows) {
   for(var i = 0; i < rows.length; ++i) {
     var name = rows[i].name.trim();
     if(!name) {
-      return gettext('Segment %(n)s: the name cannot be empty.', {n: i + 1});
+      return gettext('Topic %(n)s: the name cannot be empty.', {n: i + 1});
     }
     if(seen[name.toLowerCase()]) {
-      return gettext('Duplicate segment name: %(name)s', {name: name});
+      return gettext('Duplicate topic name: %(name)s', {name: name});
     }
     seen[name.toLowerCase()] = true;
   }
@@ -2607,7 +2607,7 @@ function segUiRenderGuideRows() {
   var rows = SEG_UI.script.rows, editable = segCanEditMeta();
   if(!rows.length) {
     box.appendChild(segUiEl('p', 'text-muted small',
-      gettext('No segments yet. Add them by hand or generate them from a support document.')));
+      gettext('No topics yet. Add them by hand or generate them from a support document.')));
   }
   rows.forEach(function(r, idx) {
     var el = segUiEl('div', 'seg-guide-row');
@@ -2621,8 +2621,8 @@ function segUiRenderGuideRows() {
     head.appendChild(segUiEl('span', 'seg-guide-spacer'));
     if(editable) {
       [['up', '↑', gettext('Move up')], ['down', '↓', gettext('Move down')],
-       ['merge', gettext('Merge with next'), gettext('Merge with the next segment')],
-       ['delete', '✕', gettext('Delete this segment')]
+       ['merge', gettext('Merge with next'), gettext('Merge with the next topic')],
+       ['delete', '✕', gettext('Delete this topic')]
       ].forEach(function(b) {
         var btn = segUiEl('button', 'btn btn-outline-secondary btn-sm', b[1]);
         btn.type = 'button';
@@ -2647,7 +2647,7 @@ function segUiRenderGuideRows() {
       input.disabled = !editable;
       el.appendChild(input);
     }
-    field('input', 'name', r.name, gettext('Segment name'));
+    field('input', 'name', r.name, gettext('Topic name'));
     field('textarea', 'description', r.description, gettext('Description'), 2);
     field('textarea', 'questions', r.questions,
           gettext('Questions of the script, one per line'), 3);
@@ -2688,7 +2688,7 @@ function segOpenScriptModal() {
 function segUiScriptCloseGuard(e) {
   var S = SEG_UI.script;
   if(S.dirty && !S.allowClose && !window.confirm(gettext(
-       'You have unsaved changes in the segment guide. Close without saving?'))) {
+       'You have unsaved changes in the topic guide. Close without saving?'))) {
     e.preventDefault();
     return;
   }
@@ -2814,7 +2814,7 @@ function segUiScriptGenerate() {
   }).then(function(res) {
     done();
     if(S.rows.length && !window.confirm(gettext(
-         'Replace the segments in the editor with the generated ones?'))) {
+         'Replace the topics in the editor with the generated ones?'))) {
       return;
     }
     var old = S.rows;
@@ -2849,7 +2849,7 @@ function segUiOnGuideRowsClick(e) {
   } else if(act === 'merge' && i + 1 < rows.length) {
     var a = rows[i], b = rows[i + 1];
     if(b.id !== null && b.id !== undefined && !window.confirm(gettext(
-         'Merge «%(b)s» into «%(a)s»? Sections of documents that were assigned to «%(b)s» will be re-segmented.',
+         'Merge «%(b)s» into «%(a)s»? Segments of documents that were assigned to «%(b)s» will be reassigned.',
          {a: a.name || '', b: b.name || ''}))) {
       return;
     }
@@ -2932,7 +2932,7 @@ function segUiOnGuideEvent() {
   if(S.open) {
     if(S.dirty) {
       var n = document.getElementById('seg-script-notice');
-      n.textContent = gettext('The segment guide was changed by someone else. Your edits are kept; saving will overwrite their changes.');
+      n.textContent = gettext('The topic guide was changed by someone else. Your edits are kept; saving will overwrite their changes.');
       n.style.display = '';
     } else {
       S.rows = segUiGuideToRows(segUiGuide());
@@ -3556,7 +3556,7 @@ function segUiSelfTest() {
   // dangling segment ids are shown as removed
   var dang = segUiFinalize([sec('d0', 0, 3, 99)], {guide: guide, plainText: text, turns: turns},
                            segUiEmptyManual(), {});
-  assert(dang[0].name === '(removed segment)', 'dangling segId is named (removed segment)');
+  assert(dang[0].name === '(removed topic)', 'dangling segId is named (removed topic)');
 
   // run generation tokens
   var savedSess = sug_session, savedDoc = SEG_UI.doc, savedRunning = SEG_UI.running;

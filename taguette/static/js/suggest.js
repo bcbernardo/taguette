@@ -2898,7 +2898,7 @@ function sugStatusText() {
   var suffix = hidden > 0
     ? ' · ' + gettext('%(n)s speaker(s) hidden', {n: hidden}) : '';
   if(seg_n > 0 && seg_n === n) {
-    return gettext('%(n)s suggestions in %(s)s sections',
+    return gettext('%(n)s suggestions in %(s)s segments',
                    {n: n, s: Object.keys(seg_sections).length}) + suffix;
   }
   if(sug_session.rankMode === 'cluster' && themes > 0) {
@@ -4984,7 +4984,7 @@ function sugUpdateSliderFeedback() {
   });
   if(seg_key !== null) {
     var seg_pane = sug_session.panes[seg_key];
-    el.textContent = gettext('Showing %(n)s of %(total)s units',
+    el.textContent = gettext('Showing %(n)s of %(total)s suggested highlights',
       {n: seg_pane.suggestions.length, total: seg_pane.candidates.length});
   } else if(sug_session.rankMode === 'cluster') {
     var n = ((sug_session.panes[''] || {}).candidates || []).length;

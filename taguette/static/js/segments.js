@@ -27,25 +27,25 @@
 
 var SEG_PARAM_DEFS = [
   {key: 'window_max_words', label: 'Maximum window size (words)',
-   help: 'Longest stretch of text that is assigned to a single segment at once. Long answers are cut into windows of at most this size.',
+   help: 'Longest stretch of text that is assigned to a single topic at once. Long answers are cut into windows of at most this size.',
    def: 80, min: 20, max: 400, step: 5, advanced: false},
-  {key: 'section_min_words', label: 'Minimum section size (codable words)',
-   help: 'Sections with fewer words are merged into the neighbouring section they most resemble.',
+  {key: 'section_min_words', label: 'Minimum segment size (codable words)',
+   help: 'Segments with fewer words are merged into the neighbouring segment they most resemble.',
    def: 150, min: 0, max: 2000, step: 10, advanced: false},
-  {key: 'emergent_min_words', label: 'Minimum emergent segment size (words)',
-   help: 'A subject outside the guide must span at least this many words to be proposed as an emergent segment.',
+  {key: 'emergent_min_words', label: 'Minimum emergent topic size (words)',
+   help: 'A subject outside the guide must span at least this many words to be proposed as an emergent topic.',
    def: 250, min: 0, max: 3000, step: 10, advanced: false},
-  {key: 'unit_min_words', label: 'Suggested unit size (min/max words)',
+  {key: 'unit_min_words', label: 'Suggested highlight size (min/max words)',
    help: 'Smallest and largest size of the suggested passages to code.',
    def: 25, min: 5, max: 200, step: 5, advanced: false, pair: 'unit_words'},
-  {key: 'unit_max_words', label: 'Suggested unit size (min/max words)',
+  {key: 'unit_max_words', label: 'Suggested highlight size (min/max words)',
    help: 'Smallest and largest size of the suggested passages to code.',
    def: 150, min: 20, max: 600, step: 5, advanced: false, pair: 'unit_words'},
-  {key: 'tau', label: 'Unit granularity',
-   help: 'Higher values cut sections into more, shorter units; lower values give fewer, longer units.',
+  {key: 'tau', label: 'Suggested highlight granularity',
+   help: 'Higher values cut segments into more, shorter suggested highlights; lower values give fewer, longer ones.',
    def: 0.25, min: 0, max: 0.9, step: 0.05, advanced: false},
   {key: 'top_k', label: 'Tags checked per suggestion',
-   help: 'How many of the most similar tags are checked for each suggested unit.',
+   help: 'How many of the most similar tags are checked for each suggested highlight.',
    def: 8, min: 1, max: 20, step: 1, advanced: false},
   {key: 'theta', label: 'Minimum confidence to tick a tag',
    help: 'Tags proposed with at least this confidence are pre-selected.',
@@ -57,10 +57,10 @@ var SEG_PARAM_DEFS = [
    help: 'Tags whose confidence falls inside this band are double-checked by the fast language model.',
    def: 0.6, min: 0, max: 1, step: 0.05, advanced: false, pair: 'band'},
   {key: 'kappa', label: 'Advanced: tolerance for off-script subjects',
-   help: 'Higher values make it easier for a passage to be labelled as an off-script subject instead of a guide segment.',
+   help: 'Higher values make it easier for a passage to be labelled as an off-script subject instead of a guide topic.',
    def: 0.15, min: 0, max: 0.9, step: 0.05, advanced: true},
-  {key: 'lambda', label: 'Advanced: resistance to switching segments',
-   help: 'Higher values give fewer, longer sections; lower values follow the conversation more closely.',
+  {key: 'lambda', label: 'Advanced: resistance to switching topics',
+   help: 'Higher values give fewer, longer segments; lower values follow the conversation more closely.',
    def: 2.0, min: 0, max: 10, step: 0.25, advanced: true}
 ];
 
@@ -1905,7 +1905,7 @@ function segParseGuide(text) {
   var v = segParseLooseJson(text);
   var list = Array.isArray(v) ? v : (v && Array.isArray(v.segments) ? v.segments : null);
   if(!list) {
-    throw new Error('The model reply did not contain a list of segments.');
+    throw new Error('The model reply did not contain a list of topics.');
   }
   var out = [], byName = {};
   for(var i = 0; i < list.length && out.length < 100; ++i) {
@@ -1939,7 +1939,7 @@ function segParseGuide(text) {
     }
   }
   if(!out.length) {
-    throw new Error('The model reply did not contain any usable segment.');
+    throw new Error('The model reply did not contain any usable topic.');
   }
   return {segments: out};
 }
