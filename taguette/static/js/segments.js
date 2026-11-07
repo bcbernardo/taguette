@@ -2165,6 +2165,11 @@ function segEvaluate(result, realHighlights, opts) {
     nUnits: units.length, nHighlights: hls.length
   };
   out.thetaF1 = tP + tR ? 2 * tP * tR / (tP + tR) : 0;
+  // headline metrics: precision of the ticked tags, text coverage of the
+  // highlights, and their harmonic mean
+  out.precision = out.thetaPrecision;
+  out.recall = out.charRecall;
+  out.f1 = out.precision + out.recall ? 2 * out.precision * out.recall / (out.precision + out.recall) : 0;
   return out;
 }
 
@@ -2184,9 +2189,8 @@ function overlappingHighlightsOf(hls, unit) {
 // runFn(paramsOverride) -> Promise<metrics>. Theta never changes the units,
 // so each (tau, kappa, lambda) is run once; other thetas are re-scored with
 // `metrics.rescore(theta)` when the runner supplies it (else re-run).
-function segGridSearch(runFn, grid, minPrecision, progress) {
+function segGridSearch(runFn, grid, progress) {
   grid = grid || {};
-  minPrecision = minPrecision === undefined ? 0.35 : minPrecision;
   var g = {
     tau: grid.tau || [0.15, 0.25, 0.35], kappa: grid.kappa || [0.1, 0.2],
     lambda: grid.lambda || [1, 2, 3], theta: grid.theta || [0.5, 0.6, 0.7]
@@ -2228,43 +2232,17 @@ function segGridSearch(runFn, grid, minPrecision, progress) {
     });
   }
   return next(0).then(function() {
-    // tau / kappa / lambda: best iouF1 (tie: hit@3, then grid order) among
-    // the combos meeting the precision constraint (else ignore it); theta:
-    // best thetaF1 for that combo (re-scoring only).
-    function val(m, k) {
-      return typeof m[k] === 'number' ? m[k] : 0;
-    }
-    function hit3(m) {
-      return m.hitAt ? val(m.hitAt, 3) : 0;
-    }
-    function pickBest(constrained) {
-      var pick = null;
-      for(var i = 0; i < rows.length; i += g.theta.length) {
-        var m = rows[i].metrics;
-        if(constrained && val(m, 'charPrecision') < minPrecision) {
-          continue;
-        }
-        if(!pick || val(m, 'iouF1') > val(pick.metrics, 'iouF1') + 1e-12
-           || (Math.abs(val(m, 'iouF1') - val(pick.metrics, 'iouF1')) <= 1e-12
-               && hit3(m) > hit3(pick.metrics) + 1e-12)) {
-          pick = rows[i];
-        }
-      }
-      return pick;
-    }
-    var fallback = false, structural = pickBest(true);
-    if(!structural) {
-      fallback = true;
-      structural = pickBest(false);
-    }
-    var best = structural, sp = structural.params;
+    // best = highest metrics.f1 (harmonic mean of tick precision and text
+    // recall) over ALL rows; ties go to the earliest row in grid order.
+    var best = null;
     rows.forEach(function(r) {
-      if(r.params.tau === sp.tau && r.params.kappa === sp.kappa && r.params.lambda === sp.lambda
-         && val(r.metrics, 'thetaF1') > val(best.metrics, 'thetaF1') + 1e-12) {
+      var f = r.metrics && typeof r.metrics.f1 === 'number' ? r.metrics.f1 : 0;
+      var bf = best && best.metrics && typeof best.metrics.f1 === 'number' ? best.metrics.f1 : 0;
+      if(!best || f > bf + 1e-12) {
         best = r;
       }
     });
-    return {best: best, rows: rows, fallback: fallback};
+    return {best: best, rows: rows};
   });
 }
 
@@ -3196,36 +3174,33 @@ function segSelfTest() {
     var e = segEvaluate({units: []}, [], {});
     assert(e.unitRecall === 0 && e.nUnits === 0 && e.sizeMedian === 0, 'empty evaluation');
 
+    assert(near(m.precision, m.thetaPrecision) && near(m.recall, m.charRecall)
+           && near(m.f1, 2 * m.precision * m.recall / (m.precision + m.recall)), 'precision/recall/f1');
+    assert(e.f1 === 0 && e.precision === 0 && e.recall === 0, 'empty evaluation f1 = 0');
+
     var runs = 0;
     function metricsFor(p) {
-      var prec = p.tau >= 0.35 ? 0.2 : 0.5;
-      var f1 = p.tau === 0.25 ? 0.8 : 0.6;
-      var mm = {iouF1: f1 + (p.kappa === 0.2 ? 0.05 : 0), charPrecision: prec,
-                hitAt: {3: 0.5}, thetaF1: p.theta === 0.7 ? 0.9 : 0.5};
+      var f1 = (p.tau === 0.25 ? 0.6 : 0.4) + (p.kappa === 0.2 ? 0.05 : 0) + (p.theta === 0.7 ? 0.1 : 0);
+      var mm = {f1: f1};
       mm.rescore = function(th) {
-        var c = {};
-        for(var k in mm) {
-          c[k] = mm[k];
-        }
-        c.thetaF1 = th === 0.7 ? 0.9 : 0.5;
-        return c;
+        return {f1: f1 - (p.theta === 0.7 ? 0.1 : 0) + (th === 0.7 ? 0.1 : 0)};
       };
       return mm;
     }
     return segGridSearch(function(p) {
       ++runs;
       return Promise.resolve(metricsFor(p));
-    }, null, 0.35).then(function(g) {
+    }, null).then(function(g) {
       assert(g.best.params.tau === 0.25 && g.best.params.kappa === 0.2 && g.best.params.lambda === 1
-             && g.best.params.theta === 0.7 && !g.fallback,
-             'grid best by iouF1 under precision constraint, theta by thetaF1 ' + JSON.stringify(g.best.params));
+             && g.best.params.theta === 0.7 && g.fallback === undefined,
+             'grid best by f1 over all rows, ties in grid order ' + JSON.stringify(g.best.params));
       assert(runs === 18 && g.rows.length === 54, 'theta-only re-scoring avoids re-runs (' + runs + ' runs)');
       var runs2 = 0;
       return segGridSearch(function(p) {
         ++runs2;
-        return Promise.resolve({iouF1: p.lambda === 2 ? 0.9 : 0.4, charPrecision: 0.1, thetaF1: 0});
-      }, {tau: [0.25], kappa: [0.1], lambda: [1, 2], theta: [0.5, 0.6]}, 0.35).then(function(g2) {
-        assert(g2.fallback && g2.best.params.lambda === 2, 'fallback ignores the constraint');
+        return Promise.resolve({f1: p.lambda === 2 ? 0.9 : 0.4});
+      }, {tau: [0.25], kappa: [0.1], lambda: [1, 2], theta: [0.5, 0.6]}).then(function(g2) {
+        assert(g2.best.params.lambda === 2 && g2.best.params.theta === 0.5, 'tie -> earliest row');
         assert(runs2 === 4, 'no rescore -> re-run per theta');
       });
     });

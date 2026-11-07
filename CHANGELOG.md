@@ -36,6 +36,9 @@ New feature (coding guided by thematic segments):
   highlights are saved and the user confirms them (editable name,
   description and generic rephrased question; a "merge into" suggestion
   when they resemble an existing segment)
+* Segmentation tab evaluation shows precision (ticked tags that are right)
+  and recall (text coverage of the highlights); the parameter test marks
+  the combination with the best F1
 * Settings, *Segmentation* tab: the segmentation parameters, each with
   a plain-language help text and a restore-default button, plus
   *Evaluate against existing highlights* and *Test parameter

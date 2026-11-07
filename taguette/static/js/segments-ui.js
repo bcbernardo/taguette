@@ -2953,32 +2953,15 @@ function segUiOnSupportEvent() {
  * Evaluation (settings, Segmentation tab)
  */
 
-// Rows of the metrics table; ok is true/false for the ones with a target
+// Rows of the metrics table: precision and recall only
+function segUiPct(v) {
+  return Math.round(100 * v) + '%';
+}
+
 function segUiMetricRows(m) {
-  function pct(v) {
-    return Math.round(100 * v) + '%';
-  }
-  function num(v) {
-    return String(Math.round(100 * v) / 100);
-  }
   return [
-    {label: gettext('Highlights found by suggestions (unit recall)'), value: num(m.unitRecall),
-     target: '≥ 0.7', ok: m.unitRecall >= 0.7},
-    {label: gettext('Median suggestion size (words)'), value: num(m.sizeMedian),
-     target: '50–90', ok: m.sizeMedian >= 50 && m.sizeMedian <= 90},
-    {label: gettext('Right tag in the top 1 / 3 / 5'),
-     value: num(m.hitAt[1]) + ' / ' + num(m.hitAt[3]) + ' / ' + num(m.hitAt[5]),
-     target: gettext('top 3 ≥ 0.5'), ok: m.hitAt[3] >= 0.5},
-    {label: gettext('Text coverage of highlights (recall)'), value: pct(m.charRecall)},
-    {label: gettext('Share of suggested text that is highlighted'), value: pct(m.charPrecision)},
-    {label: gettext('Ticked tags that are right'), value: pct(m.thetaPrecision)},
-    {label: gettext('Tags ticked'), value: String(m.nTicked)},
-    {label: gettext('Sections'), value: String(m.sections)},
-    {label: gettext('Words outside the script'), value: num(m.otherWordsPct) + '%'},
-    {label: gettext('Script segments found / missing'),
-     value: m.coveragePresent + ' / ' + m.coverageMissing},
-    {label: gettext('Suggestions'), value: String(m.nUnits)},
-    {label: gettext('Highlights'), value: String(m.nHighlights)}
+    {label: gettext('Precision — ticked tags that are right'), value: segUiPct(m.precision)},
+    {label: gettext('Recall — text coverage of highlights'), value: segUiPct(m.recall)}
   ];
 }
 
@@ -3081,66 +3064,71 @@ function segUiEvalRenderMetrics(host, m) {
     var tr = segUiEl('tr');
     tr.appendChild(segUiEl('td', null, r.label));
     tr.appendChild(segUiEl('td', null, r.value));
-    var td = segUiEl('td', 'text-muted', r.target || '');
-    if(r.ok !== undefined) {
-      td.appendChild(document.createTextNode(' '));
-      td.appendChild(segUiEl('span', r.ok ? 'seg-eval-ok' : 'seg-eval-bad',
-                             r.ok ? '✓' : '✗'));
-    }
-    tr.appendChild(td);
     table.appendChild(tr);
   });
   host.appendChild(table);
 }
 
 function segUiEvalRenderGrid(host, grid, onApply) {
-  var rows = grid.rows.slice().sort(function(a, b) {
-    return (b.metrics.unitRecall - a.metrics.unitRecall)
-      || (b.metrics.charPrecision - a.metrics.charPrecision);
-  }).slice(0, 5);
+  var order = grid.rows.map(function(r, i) {
+    return {r: r, i: i};
+  });
+  order.sort(function(a, b) {
+    return ((b.r.metrics.f1 || 0) - (a.r.metrics.f1 || 0)) || (a.i - b.i);
+  });
+  var rows = order.slice(0, 5).map(function(o) {
+    return o.r;
+  });
+  var cur = segParams();
+  function same(a, b) {
+    return ['tau', 'kappa', 'lambda', 'theta'].every(function(k) {
+      return Math.abs(a[k] - b[k]) < 1e-9;
+    });
+  }
   var table = segUiEl('table', 'table table-sm seg-eval-table');
   var head = segUiEl('tr');
-  ['tau', 'kappa', 'lambda', 'theta', gettext('Unit recall'),
-   gettext('Precision'), gettext('Tick precision'), ''].forEach(function(h) {
+  ['tau', 'kappa', 'lambda', 'theta', gettext('Precision'), gettext('Recall'), '', ''].forEach(function(h) {
     head.appendChild(segUiEl('th', null, h));
   });
   table.appendChild(head);
-  function addRow(label, params, m, apply) {
+  function addRow(row, isCurrent) {
+    var params = row.params, m = row.metrics;
     var tr = segUiEl('tr');
     [params.tau, params.kappa, params.lambda, params.theta].forEach(function(v) {
       tr.appendChild(segUiEl('td', null, String(v)));
     });
-    [m.unitRecall, m.charPrecision, m.thetaPrecision].forEach(function(v) {
-      tr.appendChild(segUiEl('td', null, String(Math.round(100 * v) / 100)));
-    });
+    tr.appendChild(segUiEl('td', null, segUiPct(m.precision || 0)));
+    tr.appendChild(segUiEl('td', null, segUiPct(m.recall || 0)));
+    var note = segUiEl('td');
+    if(!isCurrent && grid.best && (row === grid.best || (grid.best.params && same(row.params, grid.best.params)))) {
+      note.appendChild(segUiEl('span', 'badge badge-success', gettext('best')));
+    }
+    tr.appendChild(note);
     var td = segUiEl('td');
-    if(apply) {
+    if(isCurrent || same(params, cur)) {
+      td.appendChild(segUiEl('em', 'text-muted', gettext('current')));
+    } else {
       var b = segUiEl('button', 'btn btn-outline-primary btn-sm py-0', gettext('Apply'));
       b.type = 'button';
       b.addEventListener('click', function() {
-        onApply(params);
+        onApply(row);
       });
       td.appendChild(b);
-    } else {
-      td.appendChild(segUiEl('em', 'text-muted', label));
     }
     tr.appendChild(td);
     table.appendChild(tr);
   }
   if(SEG_UI.evalState.metrics) {
-    addRow(gettext('current'), segParams(), SEG_UI.evalState.metrics, false);
+    addRow({params: cur, metrics: SEG_UI.evalState.metrics}, true);
   }
   rows.forEach(function(r) {
-    addRow('', r.params, r.metrics, true);
+    addRow(r, false);
   });
   host.appendChild(table);
-  if(grid.fallback) {
-    host.appendChild(segUiEl('p', 'text-muted small', gettext(
-      'No combination reached the minimum precision; the best balance is shown first.')));
-  }
 }
 
-function segEvalPanelBuild(box) {
+function segEvalPanelBuild(box, opts) {
+  opts = opts || {};
   if(typeof document === 'undefined') {
     return;
   }
@@ -3188,6 +3176,20 @@ function segEvalPanelBuild(box) {
     grid.disabled = on;
   }
   setRunning(SEG_UI.evalState.running);
+  var applied = '';
+  function onApply(row) {
+    var params = segParams(row.params);
+    segSaveParams(params);
+    SEG_UI.evalState.metrics = row.metrics;
+    segUiInputsChanged();
+    applied = gettext('Applied: tau %(tau)s, kappa %(kappa)s, lambda %(lambda)s, theta %(theta)s. Suggestions are being recomputed.',
+                      {tau: params.tau, kappa: params.kappa, lambda: params.lambda, theta: params.theta});
+    renderState();
+    console.info('Segmentation parameters applied', params);
+    if(opts.onParamsApplied) {
+      opts.onParamsApplied(params);
+    }
+  }
   function renderState() {
     segUiClear(out);
     segUiClear(gridOut);
@@ -3196,11 +3198,10 @@ function segEvalPanelBuild(box) {
     }
     if(SEG_UI.evalState.grid) {
       gridOut.appendChild(segUiEl('h6', 'mt-3', gettext('Best parameter combinations')));
-      segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, function(params) {
-        segSaveParams(segParams(params));
-        segUiInputsChanged();
-        message(gettext('Applied. Reopen the settings to see the new values.'));
-      });
+      segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, onApply);
+      if(applied) {
+        gridOut.appendChild(segUiEl('p', 'small text-success', applied));
+      }
     }
   }
   function fail(err) {
@@ -3268,7 +3269,7 @@ function segEvalPanelBuild(box) {
       SEG_UI.evalState.metrics = m;
       return segGridSearch(function(over) {
         return segUiEvalRun(over, null);
-      }, null, 0.35, function(done, total) {
+      }, null, function(done, total) {
         meter.set(gettext('Testing parameter combinations: %(done)s/%(total)s',
                           {done: done, total: total}),
                   total ? (done + 1) / (total + 1) : undefined);
@@ -3521,10 +3522,9 @@ function segUiSelfTest() {
   assert(segUiProgressText('embed', 3, 10) === 'Segmenting: embedding windows 3/10', 'progress text');
 
   // metrics rows
-  var rows = segUiMetricRows({unitRecall: 0.8, sizeMedian: 40, hitAt: {1: 0.2, 3: 0.6, 5: 0.7},
-    charRecall: 0.5, charPrecision: 0.4, thetaPrecision: 0.3, nTicked: 3, sections: 4,
-    otherWordsPct: 10, coveragePresent: 2, coverageMissing: 1, nUnits: 5, nHighlights: 6});
-  assert(rows[0].ok === true && rows[1].ok === false && rows[2].ok === true, 'metric targets');
+  var rows = segUiMetricRows({precision: 0.3, recall: 0.5});
+  assert(rows.length === 2 && rows[0].value === '30%' && rows[1].value === '50%'
+         && /Precision/.test(rows[0].label) && /Recall/.test(rows[1].label), 'metric rows');
 
   // rows <-> guide
   var rws = segUiGuideToRows(guide);

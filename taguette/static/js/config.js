@@ -748,7 +748,7 @@ function taguSegParamsBuild(el) {
   box.id = 'seg-eval-box';
   section.appendChild(box);
   if(typeof segEvalPanelBuild === 'function') {
-    segEvalPanelBuild(box);
+    segEvalPanelBuild(box, {onParamsApplied: refresh});
   }
 }
 
