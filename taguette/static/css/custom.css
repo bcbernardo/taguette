@@ -1282,3 +1282,11 @@ body.seg-splitting #document-contents {
   color: #a94442;
   font-weight: bold;
 }
+#sug-spinner, .seg-spinner {
+  vertical-align: -0.125em;
+}
+@media (prefers-reduced-motion: reduce) {
+  #sug-spinner, .seg-spinner {
+    animation: none;
+  }
+}

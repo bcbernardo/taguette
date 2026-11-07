@@ -157,6 +157,20 @@ function segUiTurns() {
   return sug_session.turns || [];
 }
 
+// Copies of the turns carrying labelEnd (where the spoken text starts), for
+// the pipeline: speaker labels are never part of a section's content
+function segUiTurnsWithLabels() {
+  return segUiTurns().map(function(t) {
+    var o = {};
+    for(var k in t) {
+      o[k] = t[k];
+    }
+    o.labelEnd = (typeof sugTurnLabelEnd === 'function')
+      ? sugTurnLabelEnd(t) : Math.max(t.contentStart || t.start, t.start);
+    return o;
+  });
+}
+
 function segUiTagList() {
   var out = [];
   var all = (typeof tags !== 'undefined' && tags) ? tags : {};
@@ -180,14 +194,43 @@ function segUiStatus(msg) {
   } catch(e) { /* status line is best effort */ }
 }
 
-var SEG_UI_STAGES = {
-  embed: 'embedding windows', decide: 'checking ambiguous passages',
-  emergent: 'naming new segments', units: 'cutting suggestions',
-  tags: 'proposing tags'
-};
+// Pipeline stages in order, with the share of the overall cost each one is
+// assumed to take (the percent estimate is monotonic and only approximate)
+var SEG_UI_STAGE_PLAN = [
+  {id: 'embed', weight: 0.15, label: 'embedding windows'},
+  {id: 'decide', weight: 0.20, label: 'checking ambiguous passages'},
+  {id: 'emergent', weight: 0.05, label: 'naming new segments'},
+  {id: 'units', weight: 0.15, label: 'cutting suggestions'},
+  // segments.js reports tag verification and LLM rechecks under 'tags'
+  {id: 'tags', weight: 0.45, label: 'proposing and checking tags'}
+];
+
+function segUiStageIndex(stage) {
+  for(var i = 0; i < SEG_UI_STAGE_PLAN.length; ++i) {
+    if(SEG_UI_STAGE_PLAN[i].id === stage) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Overall fraction [0, 1] reached at (stage, done, total); null if unknown
+function segUiOverallFraction(stage, done, total) {
+  var idx = segUiStageIndex(stage);
+  if(idx < 0) {
+    return null;
+  }
+  var before = 0;
+  for(var i = 0; i < idx; ++i) {
+    before += SEG_UI_STAGE_PLAN[i].weight;
+  }
+  var frac = total ? Math.max(0, Math.min(1, done / total)) : 0;
+  return before + SEG_UI_STAGE_PLAN[idx].weight * frac;
+}
 
 function segUiProgressText(stage, done, total) {
-  var label = gettext(SEG_UI_STAGES[stage] || stage);
+  var idx = segUiStageIndex(stage);
+  var label = gettext(idx >= 0 ? SEG_UI_STAGE_PLAN[idx].label : stage);
   if(total) {
     return gettext('Segmenting: %(stage)s %(done)s/%(total)s',
                    {stage: label, done: done, total: total});
@@ -195,8 +238,131 @@ function segUiProgressText(stage, done, total) {
   return gettext('Segmenting: %(stage)s', {stage: label});
 }
 
+function segUiFmtElapsed(secs) {
+  var m = Math.floor(secs / 60), r = secs % 60;
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+
+// A progress meter: text + percent + elapsed seconds, re-rendered every
+// second, with a spinner shown while it runs. sink = {text(str), busy(bool),
+// alive() -> bool, current() -> str}. Reference counted: nested start()s share
+// one clock; the meter stops when every start() has a stop().
+function segUiMeterNew(sink) {
+  var m = {users: 0, t0: 0, timer: null, text: '', pct: null, shown: ''};
+  function show() {
+    var parts = [m.text];
+    if(m.pct !== null) {
+      parts.push(Math.min(99, Math.round(100 * m.pct)) + '%');
+    }
+    parts.push(segUiFmtElapsed(Math.floor((Date.now() - m.t0) / 1000)));
+    m.shown = parts.join(' · ');
+    sink.text(m.shown);
+  }
+  function finish() {
+    m.users = 0;
+    if(m.timer !== null) {
+      clearInterval(m.timer);
+      m.timer = null;
+    }
+    sink.busy(false);
+    var was = m.shown;
+    m.shown = '';
+    if(was && sink.current() === was) {
+      sink.text('');
+    }
+  }
+  m.start = function(text) {
+    if(m.users++ === 0) {
+      m.t0 = Date.now();
+      m.pct = 0;
+      m.text = text || gettext('Segmenting…');
+      sink.busy(true);
+      m.timer = setInterval(function() {
+        if(!sink.alive()) {
+          finish();
+          return;
+        }
+        show();
+      }, 1000);
+    }
+    show();
+  };
+  m.stop = function() {
+    if(m.users > 0 && --m.users === 0) {
+      finish();
+    }
+  };
+  m.abort = function() {
+    if(m.users > 0) {
+      finish();
+    }
+  };
+  // Set the text and (optionally) a fraction; never goes backwards
+  m.set = function(text, frac) {
+    if(!m.users) {
+      return;
+    }
+    m.text = text;
+    if(typeof frac === 'number') {
+      m.pct = Math.max(m.pct || 0, Math.min(1, frac));
+    }
+    show();
+  };
+  m.progress = function(stage, done, total) {
+    m.set(segUiProgressText(stage, done, total),
+          segUiOverallFraction(stage, done, total) === null
+            ? undefined : segUiOverallFraction(stage, done, total));
+  };
+  m.running = function() {
+    return m.users > 0;
+  };
+  return m;
+}
+
+// The suggestion toolbar's status line (#sug-status) with its spinner
+var SEG_UI_STATUS_METER = segUiMeterNew({
+  text: function(str) {
+    segUiStatus(str);
+  },
+  busy: function(on) {
+    try {
+      var sp = document.getElementById('sug-spinner');
+      if(sp) {
+        sp.classList.toggle('d-none', !on);
+      }
+    } catch(e) { /* best effort */ }
+  },
+  alive: function() {
+    return !!sug_session;
+  },
+  current: function() {
+    try {
+      var el = document.getElementById('sug-status');
+      return el ? el.textContent : '';
+    } catch(e) {
+      return '';
+    }
+  }
+});
+
+// Keep the status meter running while `promise` is pending
+function segUiMetered(promise) {
+  SEG_UI_STATUS_METER.start();
+  return promise.then(function(v) {
+    SEG_UI_STATUS_METER.stop();
+    return v;
+  }, function(e) {
+    SEG_UI_STATUS_METER.stop();
+    throw e;
+  });
+}
+
 function segUiProgress(stage, done, total) {
-  segUiStatus(segUiProgressText(stage, done, total));
+  if(SEG_UI_STATUS_METER.running()) {
+    SEG_UI_STATUS_METER.progress(stage, done, total);
+  } else {
+    segUiStatus(segUiProgressText(stage, done, total));
+  }
 }
 
 function segUiAssignmentOf(sec) {
@@ -480,7 +646,7 @@ function segUnitsAsCandidates(result, theta) {
     }
     out.push({
       start: u.start, end: u.end,
-      raw: best >= 0 ? 0.5 + 0.5 * best : 0.5,
+      raw: (best >= 0 ? best : 0) * (1 - 0.5 * (u.smallTalk || 0)),
       tags: ts, section_id: u.sectionId,
       ticked: ts.filter(function(x) {
         return x.conf >= theta;
@@ -735,6 +901,7 @@ function segOnSessionStart() {
 }
 
 function segOnSessionEnd() {
+  SEG_UI_STATUS_METER.abort();
   segUiInvalidate();
   SEG_UI.busy = false;
   SEG_UI.doc = null;
@@ -844,11 +1011,36 @@ function segUiExtras(excludeDocId) {
     });
 }
 
+var SEG_UI_INPUT_TIMEOUT = 20000;
+
+// Resolves with `fallback` when `promise` has not settled after ms (a hung
+// request or IndexedDB must not stall a run forever)
+function segUiTimeout(promise, ms, fallback) {
+  return new Promise(function(resolve, reject) {
+    var done = false;
+    var timer = setTimeout(function() {
+      if(!done) {
+        done = true;
+        console.warn('Segmentation: input preparation timed out, continuing without it');
+        resolve(fallback);
+      }
+    }, ms);
+    Promise.resolve(promise).then(function(v) {
+      if(!done) { done = true; clearTimeout(timer); resolve(v); }
+    }, function(e) {
+      if(!done) { done = true; clearTimeout(timer); reject(e); }
+    });
+  });
+}
+
 // opts: {overrides, excludeDocId, manual (null = none; default: the user's)}
 function segUiMakeInput(opts) {
   opts = opts || {};
   var excl = (opts.excludeDocId === undefined) ? null : opts.excludeDocId;
-  return Promise.all([segUiExemplars(), segUiExtras(excl)]).then(function(r) {
+  return Promise.all([
+    segUiTimeout(segUiExemplars(), SEG_UI_INPUT_TIMEOUT, []),
+    segUiTimeout(segUiExtras(excl), SEG_UI_INPUT_TIMEOUT, {protos: {}, cooc: {}})
+  ]).then(function(r) {
     if(!sug_session) {
       throw new Error(gettext('The suggestion session has ended.'));
     }
@@ -856,7 +1048,7 @@ function segUiMakeInput(opts) {
     var manual = opts.manual !== undefined ? opts.manual
       : (doc ? doc.manual : null);
     return {
-      plainText: sug_session.plainText, turns: segUiTurns(),
+      plainText: sug_session.plainText, turns: segUiTurnsWithLabels(),
       speakers: sug_session.speakers || [], guide: segUiGuide(),
       params: segParams(opts.overrides), tags: segUiTagList(),
       exemplars: r[0], docId: current_document, excludeDocId: excl,
@@ -973,13 +1165,13 @@ function segAnalyzeDocument(opts) {
       SEG_UI.running = null;
     }
   }
-  return p.then(function(res) {
+  return segUiMetered(p.then(function(res) {
     clear();
     return res;
   }, function(err) {
     clear();
     throw err;
-  });
+  }));
 }
 
 // Re-run only units + tags (sections reused); overrides {tau, theta, ...}.
@@ -1001,7 +1193,7 @@ function segRefreshUnits(overrides) {
       || SEG_UI.doc !== doc || doc.result !== r;
   }
   var deps = segMakeDeps({progress: segUiProgress});
-  return segUiMakeInput({overrides: overrides}).then(function(input) {
+  return segUiMetered(segUiMakeInput({overrides: overrides}).then(function(input) {
     if(stale()) {
       throw segUiStaleError();
     }
@@ -1015,7 +1207,7 @@ function segRefreshUnits(overrides) {
     doc.unitOverrides = overrides || null;
     ++SEG_UI.version;
     return res;
-  });
+  }));
 }
 
 
@@ -1220,6 +1412,14 @@ function segUiRefineSection(secId) {
   SEG_UI.busy = true;
   segUiStatus(gettext('Refining the section…'));
   var deps = segMakeDeps({progress: segUiProgress});
+  var metered = true;
+  function mstop() {
+    if(metered) {
+      metered = false;
+      SEG_UI_STATUS_METER.stop();
+    }
+  }
+  SEG_UI_STATUS_METER.start();
   segUiMakeInput({overrides: over}).then(function(input) {
     if(stale()) {
       throw segUiStaleError();
@@ -1230,6 +1430,7 @@ function segUiRefineSection(secId) {
       });
     });
   }).then(function(units) {
+    mstop();
     if(stale()) {
       throw segUiStaleError();
     }
@@ -1258,6 +1459,7 @@ function segUiRefineSection(secId) {
       sugRecomputeSegmented();
     }
   }).then(null, function(err) {
+    mstop();
     if(err && err.stale && !segUiTokenOk(tok)) {
       return;   // session ended / newer edit: nothing to report
     }
@@ -2439,12 +2641,23 @@ function segUiMetricRows(m) {
   ];
 }
 
-function segUiEvalReady() {
-  if(!sug_session || !SEG_UI.doc) {
-    return false;
-  }
+function segUiHasHighlights() {
   return typeof highlights !== 'undefined' && !!highlights
     && Object.keys(highlights).length > 0;
+}
+
+// Why an evaluation cannot start right now (null when it can)
+function segUiEvalBlocker() {
+  if(!sug_session) {
+    return gettext('Start a suggestion session on a document first.');
+  }
+  if(!segUiHasHighlights()) {
+    return gettext('This document has no highlights to compare with.');
+  }
+  if(!segUiEnsureDoc()) {
+    return gettext('The segmentation data isn\'t ready yet; start a session again.');
+  }
+  return null;
 }
 
 function segUiRealHighlights() {
@@ -2472,15 +2685,27 @@ function segUiEvalRun(overrides, progress) {
   if(ended()) {
     return Promise.reject(segUiStaleError());
   }
-  var hls = segUiRealHighlights();
-  var uses = {};
-  for(var t in tags) {
-    uses[t] = tags[t].count || 0;
+  var hls, uses = {}, params;
+  try {
+    hls = segUiRealHighlights();
+    for(var t in tags) {
+      uses[t] = tags[t].count || 0;
+    }
+    params = segParams(overrides);
+  } catch(err) {
+    return Promise.reject(err);
   }
-  var params = segParams(overrides), result;
+  var result;
   segUiRunBegin();   // breakers reset only when no analysis is in flight
-  var p = segUiMakeInput({overrides: overrides, excludeDocId: current_document,
-                          manual: null}).then(function(input) {
+  var p;
+  try {
+    p = segUiMakeInput({overrides: overrides, excludeDocId: current_document,
+                        manual: null});
+  } catch(err) {
+    segUiRunEnd();
+    return Promise.reject(err);
+  }
+  p = p.then(function(input) {
     if(ended()) {
       throw segUiStaleError();
     }
@@ -2579,31 +2804,47 @@ function segEvalPanelBuild(box) {
     return;
   }
   segUiClear(box);
-  var ready = segUiEvalReady();
   box.appendChild(segUiEl('p', 'text-muted small', gettext(
     'Compare what the segmentation would suggest with the highlights already made in this document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
-  if(!ready) {
-    box.appendChild(segUiEl('p', 'text-muted small', gettext(
-      'Open a document that has highlights and start a suggestion session to evaluate.')));
-  }
   var btn = segUiEl('button', 'btn btn-outline-primary btn-sm mr-2',
                     gettext('Evaluate against existing highlights'));
   btn.type = 'button';
   var grid = segUiEl('button', 'btn btn-outline-secondary btn-sm',
                      gettext('Test parameter combinations'));
   grid.type = 'button';
+  var hint = segUiEl('p', 'text-muted small mt-2 mb-0', gettext(
+    'Runs the evaluation for several parameter values; this can take a while.'));
   var line = segUiEl('div', 'text-muted small my-2');
+  var spinner = segUiEl('span',
+    'spinner-border spinner-border-sm text-muted mr-1 d-none seg-spinner');
+  spinner.setAttribute('role', 'status');
+  spinner.setAttribute('aria-hidden', 'true');
+  var lineText = segUiEl('span');
+  line.appendChild(spinner);
+  line.appendChild(lineText);
   var out = segUiEl('div');
   var gridOut = segUiEl('div');
   box.appendChild(btn);
   box.appendChild(grid);
+  box.appendChild(hint);
   box.appendChild(line);
   box.appendChild(out);
   box.appendChild(gridOut);
+  function message(text, kind) {
+    line.className = 'small my-2 ' + (kind === 'warn' ? 'text-warning'
+      : kind === 'error' ? 'text-danger' : 'text-muted');
+    lineText.textContent = text;
+  }
+  var meter = segUiMeterNew({
+    text: function(str) { message(str); },
+    busy: function(on) { spinner.classList.toggle('d-none', !on); },
+    alive: function() { return true; },
+    current: function() { return lineText.textContent; }
+  });
   function setRunning(on) {
     SEG_UI.evalState.running = on;
-    btn.disabled = on || !ready;
-    grid.disabled = on || !ready;
+    btn.disabled = on;
+    grid.disabled = on;
   }
   setRunning(SEG_UI.evalState.running);
   function renderState() {
@@ -2617,47 +2858,85 @@ function segEvalPanelBuild(box) {
       segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, function(params) {
         segSaveParams(segParams(params));
         segUiInputsChanged();
-        line.textContent = gettext('Applied. Reopen the settings to see the new values.');
+        message(gettext('Applied. Reopen the settings to see the new values.'));
       });
     }
   }
   function fail(err) {
+    meter.abort();
     setRunning(false);
-    line.textContent = (err && err.stale)
-      ? gettext('Evaluation stopped: the suggestion session ended.')
-      : segUiErrText(err);
+    if(err && err.stale) {
+      console.info('Segmentation evaluation stopped: the session ended or the text changed');
+      message(gettext('Evaluation stopped: the suggestion session ended.'), 'warn');
+    } else {
+      console.error('Segmentation evaluation failed:', err);
+      message(segUiErrText(err), 'error');
+    }
+  }
+  function finish() {
+    meter.abort();
+    setRunning(false);
+    message('');
+    renderState();
+  }
+  // Checks readiness at click time; shows why it cannot start otherwise
+  function begin(label) {
+    if(SEG_UI.evalState.running) {
+      return false;
+    }
+    var why;
+    try {
+      why = segUiEvalBlocker();
+    } catch(err) {
+      fail(err);
+      return false;
+    }
+    if(why) {
+      console.info('Segmentation evaluation: not started. ' + why);
+      message(why, 'warn');
+      return false;
+    }
+    console.info('Segmentation evaluation: starting' + (label ? ' (' + label + ')' : ''));
+    setRunning(true);
+    meter.start(gettext('Evaluating…'));
+    return true;
   }
   btn.addEventListener('click', function() {
-    setRunning(true);
-    line.textContent = gettext('Evaluating…');
-    segUiEvalRun(undefined, function(stage, done, total) {
-      line.textContent = segUiProgressText(stage, done, total);
+    if(!begin()) {
+      return;
+    }
+    // Promise.resolve().then: a synchronous throw becomes a visible failure
+    Promise.resolve().then(function() {
+      return segUiEvalRun(undefined, function(stage, done, total) {
+        meter.progress(stage, done, total);
+      });
     }).then(function(m) {
       console.log('Segmentation evaluation', m);
       SEG_UI.evalState.metrics = m;
-      setRunning(false);
-      line.textContent = '';
-      renderState();
-    }, fail);
+      finish();
+    }).then(null, fail);
   });
   grid.addEventListener('click', function() {
-    setRunning(true);
-    line.textContent = gettext('Testing parameter combinations…');
-    segUiEvalRun(undefined, null).then(function(m) {
+    if(!begin('parameter combinations')) {
+      return;
+    }
+    Promise.resolve().then(function() {
+      meter.set(gettext('Testing parameter combinations…'), 0);
+      return segUiEvalRun(undefined, null);
+    }).then(function(m) {
       SEG_UI.evalState.metrics = m;
       return segGridSearch(function(over) {
         return segUiEvalRun(over, null);
       }, null, 0.35, function(done, total) {
-        line.textContent = gettext('Testing parameter combinations: %(done)s/%(total)s',
-                                   {done: done, total: total});
+        meter.set(gettext('Testing parameter combinations: %(done)s/%(total)s',
+                          {done: done, total: total}),
+                  total ? (done + 1) / (total + 1) : undefined);
       });
     }).then(function(res) {
       console.log('Segmentation grid search', res);
       SEG_UI.evalState.grid = res;
-      setRunning(false);
-      line.textContent = '';
-      renderState();
-    }, fail);
+      finish();
+    }).then(null, fail);
   });
   renderState();
 }
@@ -2799,9 +3078,12 @@ function segUiSelfTest() {
     {id: 'u1', sectionId: 'sec1', start: 12, end: 20, tags: []}]};
   var cands = segUnitsAsCandidates(result, 0.6);
   assert(cands.length === 2, 'two candidates');
-  assert(Math.abs(cands[0].raw - 0.95) < 1e-9, 'raw = 0.5 + 0.5 * max conf');
+  assert(Math.abs(cands[0].raw - 0.9) < 1e-9, 'raw = max conf');
+  var st = segUnitsAsCandidates({units: [{id: 'u2', sectionId: 's', start: 0, end: 5,
+    smallTalk: 1, tags: [{id: 5, name: 'x', conf: 0.8}]}]}, 0.6);
+  assert(Math.abs(st[0].raw - 0.4) < 1e-9, 'raw = max conf * (1 - 0.5 * smallTalk)');
   eq(cands[0].ticked, [5], 'ticked by theta');
-  assert(cands[1].raw === 0.5 && cands[1].ticked.length === 0, 'no tags -> raw 0.5');
+  assert(cands[1].raw === 0 && cands[1].ticked.length === 0, 'no tags -> raw 0');
   assert(cands[0].start === 0 && cands[0].section_id === 'sec0', 'char offsets + section');
   eq(segUnitsAsCandidates(result, 0.2)[0].ticked, [5, 6], 'lower theta ticks more');
 

@@ -812,7 +812,7 @@ function sugTimedLabel(line) {
 // "[00:12] NAME:" — the label before the colon. Lines whose whole text is
 // just such a label are prefix lines (sugIsPrefixLine); this also matches
 // label + spoken text on one line ("John: hello there").
-function sugInlineLabel(line) {
+function sugInlineLabelMatch(line) {
   var m = new RegExp('^\\s*(?:[\\[]\\s*' + SUG_TS + '\\s*[\\]])?\\s*'
     + '([^\\n:()[\\]]{1,40}?)\\s*(?:[\\[]\\s*' + SUG_TS
     + '\\s*[\\]])?\\s*:(?!\\d{2})').exec(line);
@@ -820,7 +820,28 @@ function sugInlineLabel(line) {
     return null;
   }
   var lab = (m[1] || '').trim();
-  return (lab && /[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(lab)) ? lab : null;
+  return (lab && /[A-Za-z\u00c0-\u024f\u0370-\u1fff_]/.test(lab))
+    ? {label: lab, length: m[0].length} : null;
+}
+
+function sugInlineLabel(line) {
+  var m = sugInlineLabelMatch(line);
+  return m ? m.label : null;
+}
+
+// Timed inline label opening a line ("0:57 - Huw Evans: Wonderful.",
+// "[00:12] Maria Silva (Acme): ..."): the unbracketed/bracketed timestamp,
+// an optional dash and a name-like label up to the colon. Returns
+// {label, length} (length = chars up to and including the colon) or null.
+function sugTimedInlineMatch(line) {
+  var m = new RegExp('^\\s*[\\[(]?' + SUG_TS + '[\\])]?'
+    + '(?:\\s*[-\\u2013\\u2014|]\\s*|\\s+)([^\\n:]{1,60}?)\\s*:(?!\\d{2})')
+    .exec(line);
+  if(!m || !sugNameLike(m[1])) {
+    return null;
+  }
+  var lab = m[1].replace(/\([^()]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  return lab ? {label: lab, length: m[0].length} : null;
 }
 
 // Any speaker label a line carries, including the standalone forms
@@ -830,6 +851,10 @@ function sugPrefixLabel(line) {
   var lab = sugTimedLabel(line) || sugInlineLabel(line);
   if(lab) {
     return lab;
+  }
+  var tim = sugTimedInlineMatch(line);
+  if(tim) {
+    return tim.label;
   }
   var patterns = [
     new RegExp('^\\s*([^\\n:()[\\]]{1,40}?)\\s*[\\[(]\\s*' + SUG_TS
@@ -900,7 +925,8 @@ function sugAbsorbContinuations(blocks, plain) {
     var candidate = (b.contentStart !== undefined)
       || sugIsPrefixLine(b.text)
       || !!sugTimedLabel(first)
-      || !!sugInlineLabel(first);
+      || !!sugInlineLabel(first)
+      || !!sugTimedInlineMatch(first);
     if(!candidate) {
       return null;
     }
@@ -1077,6 +1103,115 @@ function sugSpeakerPrefix(b) {
 // capped — labels live at the start of a turn, never deep in the text
 function sugSpeakerTarget(b) {
   return b.text.split('\n', 1)[0].slice(0, 80);
+}
+
+// Where the spoken text of a turn starts (absolute char index in plainText):
+// after its merged prefix line, or after an inline label ("John: ...",
+// "0:57 - Huw Evans: Wonderful."), skipping the whitespace that follows. A
+// turn without a label returns turn.start; a turn that is only a prefix line
+// returns turn.end. Uses the same detection as the turn building above.
+function sugTurnLabelEnd(turn) {
+  var text = turn.text || '';
+  var rel = 0;
+  if(turn.contentStart !== undefined && turn.contentStart > turn.start) {
+    rel = turn.contentStart - turn.start;
+  } else {
+    var nl = text.indexOf('\n');
+    var first = nl < 0 ? text : text.slice(0, nl);
+    var m = sugTimedInlineMatch(first);
+    if(m) {
+      rel = m.length;
+    } else if(nl < 0 && sugIsPrefixLine(first)) {
+      rel = text.length; // a lone prefix line with no content after it
+    } else {
+      m = sugInlineLabelMatch(first);
+      if(m && m.label.split(/\s+/).length <= 4 && !/[,.;!?]/.test(m.label)
+         && sugNameLike(m.label)) {
+        rel = m.length;
+      }
+    }
+  }
+  while(rel < text.length && /\s/.test(text.charAt(rel))) {
+    ++rel;
+  }
+  return turn.start + Math.min(rel, text.length);
+}
+
+// Label ranges [{s, e}) of all turns (sorted, non-empty)
+function sugLabelRanges(turns) {
+  var out = [];
+  (turns || []).forEach(function(t) {
+    var e = sugTurnLabelEnd(t);
+    if(e > t.start) {
+      out.push({s: t.start, e: e});
+    }
+  });
+  return out.sort(function(a, b) { return a.s - b.s; });
+}
+
+// Speaker labels are never part of a suggestion (the Speakers popup already
+// shows them): char-offset candidates have their starts/ends moved out of the
+// label ranges, and a label strictly inside a candidate splits it in two.
+// Pieces keep the candidate's fields; changed pieces under 3 words are
+// dropped. No ranges: the candidates are returned untouched.
+function sugTrimToSpeech(cands, ranges, text) {
+  if(!ranges || !ranges.length) {
+    return cands;
+  }
+  var wordCount = function(a, b) {
+    return text.slice(a, b).split(/\s+/).filter(Boolean).length;
+  };
+  var out = [];
+  cands.forEach(function(c) {
+    var pieces = [[c.start, c.end]];
+    var changed = false;
+    for(var i = 0; i < ranges.length; ++i) {
+      var r = ranges[i];
+      if(r.s >= c.end) {
+        break;
+      }
+      if(r.e <= c.start) {
+        continue;
+      }
+      var next = [];
+      for(var j = 0; j < pieces.length; ++j) {
+        var a = pieces[j][0], b = pieces[j][1];
+        if(r.e <= a || r.s >= b) {
+          next.push([a, b]);
+          continue;
+        }
+        changed = true;
+        if(r.s > a) { // text before the label
+          var e1 = r.s;
+          while(e1 > a && /\s/.test(text.charAt(e1 - 1))) { --e1; }
+          if(e1 > a) { next.push([a, e1]); }
+        }
+        if(r.e < b) { // text after the label
+          var s2 = r.e;
+          while(s2 < b && /\s/.test(text.charAt(s2))) { ++s2; }
+          if(s2 < b) { next.push([s2, b]); }
+        }
+      }
+      pieces = next;
+    }
+    if(!changed) {
+      out.push(c);
+      return;
+    }
+    pieces.forEach(function(pc) {
+      if(wordCount(pc[0], pc[1]) < 3) {
+        return;
+      }
+      var o = {};
+      for(var k in c) { o[k] = c[k]; }
+      if(c.tags) { o.tags = c.tags.slice(); }
+      if(c.ticked) { o.ticked = c.ticked.slice(); }
+      o.start = pc[0];
+      o.end = pc[1];
+      out.push(o);
+    });
+  });
+  return out;
 }
 
 // Local pre-scan (no LLM): count repeated candidate speaker labels on the
@@ -2021,27 +2156,24 @@ function sugSpeakerPropose() {
  * Unlike the lexical algorithms, running it is asynchronous (embeddings and
  * decisions over the network, possibly tens of seconds the first time) and
  * the candidates carry extra fields: tags [{id, name, conf, source}],
- * section_id and ticked [tagId]. The slider maps to the unit granularity tau
- * and the tag-tick threshold theta.
+ * section_id and ticked [tagId]. The slider is a plain display filter, like
+ * in the other modes: units are ranked by a score (see segUnitsAsCandidates),
+ * lexPct is the percentile rank among the document's units and the cut-off
+ * keeps those at or above it. Moving it never re-runs the analysis.
  */
 
 var SUG_SEG_VERSION = 0; // bumped to invalidate the segmented candidates cache
 
-// Slider value v in [0, 100] -> {tau, theta}
-function sugSegParams(v) {
-  v = Math.max(0, Math.min(100, +v || 0));
-  return {
-    tau: Math.round((0.05 + 0.6 * v / 100) * 1000) / 1000,
-    theta: Math.round((0.8 - 0.4 * v / 100) * 1000) / 1000,
-  };
-}
-
 function sugSegCacheKey() {
-  var p = sugSegParams(sug_session ? sug_session.aggressiveness : 50);
   // segResultKey(): text, speakers, guide, section params, manual edits (the
   // cached units are only valid for the inputs they were computed from)
   var rk = (typeof segResultKey === 'function') ? segResultKey() : '';
-  return 'segmented|' + p.tau + '|' + p.theta + '|' + rk + '|v' + SUG_SEG_VERSION;
+  return 'segmented|' + rk + '|v' + SUG_SEG_VERSION;
+}
+
+// Pre-tick threshold of the configured segmentation parameters
+function sugSegTheta() {
+  return (typeof segParams === 'function') ? segParams().theta : 0.6;
 }
 
 // Does any pane of the current session use the segmented algorithm?
@@ -2051,6 +2183,16 @@ function sugHasSegmentedPane() {
   }
   return sugPaneKeys().some(function(k) {
     return sug_session.panes[k] && sug_session.panes[k].algo === 'segmented';
+  });
+}
+
+// Tags worth showing in the menu / picker: at or above the lower edge of the
+// uncertainty band (below it the tag is judged not to apply), plus any that
+// are pre-ticked. unit.tags itself stays complete.
+function sugSegShownTags(list, ticked) {
+  var low = (typeof segParams === 'function') ? segParams().band_low : 0.4;
+  return (list || []).filter(function(t) {
+    return t.conf >= low || (ticked || []).indexOf(t.id) !== -1;
   });
 }
 
@@ -2066,9 +2208,8 @@ function sugSegTagCount(s, theta) {
 }
 
 // Run (or reuse) the segmentation for the session and return the candidates
-// (char offsets) for the slider's current (tau, theta). Concurrent callers
-// with the same parameters share one run. Resolves with null when the session
-// moved on in the meantime.
+// (char offsets). Concurrent callers share one run. Resolves with null when
+// the session moved on in the meantime.
 function sugSegCandidates() {
   var sess = sug_session;
   if(!sess) {
@@ -2080,29 +2221,23 @@ function sugSegCandidates() {
       gettext('Segment-based coding is not available.')));
   }
   var gen = sess.editGen || 0;
-  var p = sugSegParams(sess.aggressiveness);
-  var key = p.tau + '|' + p.theta;
-  if(!sess.segPending || sess.segPending.key !== key
-     || sess.segPending.gen !== gen) {
+  if(!sess.segPending || sess.segPending.gen !== gen) {
     // Latest request wins: an older one never writes sess.segResult
     var seq = sess.segSeq = (sess.segSeq || 0) + 1;
     var prom;
-    if(sess.segResult && sess.segParams && sess.segParams.key === key) {
-      prom = Promise.resolve(sess.segResult);
-    } else if(sess.segResult && typeof segRefreshUnits === 'function') {
-      prom = segRefreshUnits({tau: p.tau, theta: p.theta});
-    } else {
-      prom = segAnalyzeDocument({tau: p.tau, theta: p.theta});
+    try {
+      prom = Promise.resolve(segAnalyzeDocument({}));
+    } catch(error) {
+      prom = Promise.reject(error);
     }
-    var pending = {key: key, gen: gen};
+    var pending = {gen: gen};
     pending.promise = prom.then(function(result) {
       if(sug_session !== sess || (sess.editGen || 0) !== gen
          || sess.segSeq !== seq) {
         return null;
       }
       sess.segResult = result;
-      sess.segParams = {key: key};
-      return {cands: segUnitsAsCandidates(result, p.theta), theta: p.theta};
+      return {cands: segUnitsAsCandidates(result, sugSegTheta())};
     }, function(err) {
       if(err && err.stale) {
         return null;   // superseded by a newer run (segments-ui.js)
@@ -2125,7 +2260,7 @@ function sugSegCandidates() {
       o.tags = (c.tags || []).slice();
       o.ticked = (c.ticked || []).slice();
       return o;
-    }), theta: out.theta};
+    })};
   });
 }
 
@@ -2137,7 +2272,6 @@ function sugRecomputeSegmented() {
   }
   ++SUG_SEG_VERSION;
   sug_session.segResult = null;
-  sug_session.segParams = null;
   sug_session.segPending = null;
   sug_session.segSeq = (sug_session.segSeq || 0) + 1;
   sugPaneKeys().forEach(function(k) {
@@ -2611,6 +2745,16 @@ function sugClearPane(pkey) {
 
 // Turn raw algorithm output (char offsets) into pane candidates
 function sugFinishCandidates(cands, text, boc) {
+  // Speaker labels are never highlighted, whatever the algorithm
+  var turns = null;
+  try {
+    turns = (sug_session && sug_session.turns) || sugSpeakerTurns();
+  } catch(error) {
+    console.error('Could not detect speaker labels:', error);
+  }
+  if(turns && turns.length) {
+    cands = sugTrimToSpeech(cands, sugLabelRanges(turns), text);
+  }
   cands = sugCandidatesToBytes(cands, text, boc);
   sugPercentiles(cands);
   return sugMergeOverlaps(cands);
@@ -2826,13 +2970,8 @@ function sugRefilterPane(pkey) {
   // percentile cut-off over effective centrality
   var entries; // [{c, sortPct, lexPct, embPct}]
   var groups = null;
-  if(pane.algo === 'segmented') {
-    // Segment units are all shown: the slider already shaped them (tau/theta)
-    entries = cands.map(function(c) {
-      return {c: c, sortPct: sugEffPct(c), lexPct: c.lexPct, embPct: null};
-    });
-    entries.sort(function(a, b) { return a.c.start - b.c.start; });
-  } else if(sug_session.rankMode === 'cluster'
+  var is_seg = pane.algo === 'segmented';
+  if(!is_seg && sug_session.rankMode === 'cluster'
      && pane.clusterLabels && Object.keys(pane.clusterLabels).length) {
     var per = sugClusterPer();
     groups = {};
@@ -2870,14 +3009,17 @@ function sugRefilterPane(pkey) {
     }
     entries.sort(function(a, b) { return a.c.start - b.c.start; });
   } else {
-    var cutoff = sugCutoff();
+    // Segment units: at 100 everything shows (coverage first), and there is
+    // no cap on the number of suggestions
+    var cutoff = (is_seg && sug_session.aggressiveness >= 100)
+      ? 0 : sugCutoff();
     entries = cands
       .map(function(c) {
         return {c: c, sortPct: sugEffPct(c), lexPct: c.lexPct,
                 embPct: (typeof c.embPct === 'number') ? c.embPct : null};
       })
       .filter(function(e) { return e.sortPct >= cutoff; });
-    if(entries.length > 80) {
+    if(!is_seg && entries.length > 80) {
       entries.sort(function(a, b) { return b.sortPct - a.sortPct; });
       entries = entries.slice(0, 80);
     }
@@ -3230,8 +3372,7 @@ function sugRenderPane(pkey) {
     }
     if(s.tags && s.tags.length && wrapped.first) {
       // Tag-count badge: CSS-generated content, like the theme badge
-      var n_tags = sugSegTagCount(
-        s, sugSegParams(sug_session.aggressiveness).theta);
+      var n_tags = sugSegTagCount(s, sugSegTheta());
       if(n_tags > 0) {
         wrapped.first.setAttribute('data-tag-count', n_tags);
       }
@@ -3325,7 +3466,7 @@ function sugAccept(sid) {
     // Segment-based suggestion: the ticked tags become the highlight's tags
     // (tags deleted meanwhile are skipped)
     st.tags = sugKnownTagIds(s.ticked);
-    st.suggestedTags = s.tags.filter(function(t) {
+    st.suggestedTags = sugSegShownTags(s.tags, s.ticked).filter(function(t) {
       return !!tags['' + t.id];
     });
     st.ticked = (s.ticked || []).slice();
@@ -3610,7 +3751,9 @@ function sugSegMenuHtml(s) {
     html += '<div class="sug-menu-section text-muted small">' +
       escapeHtml(sec.label || sec.name) + '</div>';
   }
-  var known = (s.tags || []).filter(function(t) { return !!tags['' + t.id]; });
+  var known = sugSegShownTags(s.tags, s.ticked).filter(function(t) {
+    return !!tags['' + t.id];
+  });
   if(known.length) {
     html += '<div class="sug-menu-suggtags">' +
       '<div class="sug-menu-subtitle">' + gettext('Suggested tags') + '</div>';
@@ -4443,7 +4586,6 @@ function sugRebuildAfterReload() {
   sug_session.sentences = sugSplitSentences(index.plainText);
   SUG_ALGO_CACHE[current_document] = {};
   sug_session.segResult = null;
-  sug_session.segParams = null;
   sug_session.segPending = null;
   // Before the panes recompute: the segmented run must see the invalidation
   if(typeof segOnRebuild === 'function') {
@@ -4833,11 +4975,17 @@ function sugUpdateSliderFeedback() {
     return;
   }
   var v = sug_session.aggressiveness;
-  if(sugHasSegmentedPane()) {
-    var sp = sugSegParams(v);
-    el.textContent = gettext(
-      'Granularity: %(tau)s · tick tags ≥ %(theta)s',
-      {tau: sp.tau, theta: sp.theta});
+  var seg_key = null;
+  sugPaneKeys().forEach(function(k) {
+    var pane = sug_session.panes[k];
+    if(seg_key === null && pane && pane.algo === 'segmented' && pane.candidates) {
+      seg_key = k;
+    }
+  });
+  if(seg_key !== null) {
+    var seg_pane = sug_session.panes[seg_key];
+    el.textContent = gettext('Showing %(n)s of %(total)s units',
+      {n: seg_pane.suggestions.length, total: seg_pane.candidates.length});
   } else if(sug_session.rankMode === 'cluster') {
     var n = ((sug_session.panes[''] || {}).candidates || []).length;
     el.textContent = gettext('%(k)s themes × %(m)s each',
@@ -4859,28 +5007,21 @@ function sugApplySlider() {
   }, 250);
 }
 
-// The slider settled: re-filter lexical panes; segmented panes recompute
-// their units for the new (tau, theta) (sections are not re-labelled)
+// The slider settled: re-filter every pane (segmented panes too: it is only
+// a display filter there, the analysis is not re-run)
 function sugSliderSettled() {
   if(!sug_session) {
     return;
   }
-  var seg = [];
   sugPaneKeys().forEach(function(k) {
     var pane = sug_session.panes[k];
-    if(pane.algo === 'segmented') {
-      seg.push(k);
-      return;
-    }
-    if(sug_session.rankMode === 'cluster') {
+    if(pane.algo !== 'segmented' && sug_session.rankMode === 'cluster') {
       sugReclusterPane(k);
     }
     sugRefilterPane(k);
   });
-  if(seg.length < sugPaneKeys().length) {
-    sugSetStatus(sugStatusText());
-  }
-  seg.forEach(sugComputePane);
+  sugSetStatus(sugStatusText());
+  sugUpdateSliderFeedback();
 }
 
 function sugInit() {
@@ -5634,13 +5775,7 @@ function sugSelfTest() {
   assert(sugCutoff() > 0.9, 'conservative slider raises cut-off');
   sug_session = saved;
 
-  // Segment-based suggestions: slider mapping, extra fields through the merge
-  var sp0 = sugSegParams(0), sp50 = sugSegParams(50), sp100 = sugSegParams(100);
-  assert(sp0.tau === 0.05 && sp0.theta === 0.8, 'slider 0 -> tau 0.05, theta 0.8');
-  assert(Math.abs(sp50.tau - 0.35) < 1e-9 && Math.abs(sp50.theta - 0.6) < 1e-9,
-         'slider 50 -> tau 0.35, theta 0.6');
-  assert(Math.abs(sp100.tau - 0.65) < 1e-9 && Math.abs(sp100.theta - 0.4) < 1e-9,
-         'slider 100 -> tau 0.65, theta 0.4');
+  // Segment-based suggestions: extra fields through the merge
   var mc = sugMergeOverlaps([
     {start: 0, end: 10, raw: 0.6, lexPct: 0.2, cStart: 0, cEnd: 10,
      tags: [{id: 1}], section_id: 'a', ticked: [1]},

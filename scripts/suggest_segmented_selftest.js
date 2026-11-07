@@ -60,23 +60,17 @@ vm.runInContext(`
   sugRenderPane = function() {}; sugRemoveSuggestionDom = function() {};
   sugRenderStaged = function() {}; sugUpdateCounts = function() {}; sugHideMenu = function() {};
   function mkSession() {
-    return {active: true, split: false, aggressiveness: 50, transcription: false,
+    return {active: true, split: false, aggressiveness: 100, transcription: false,
       expand: false, rankMode: 'lexical', useEmbeddings: false, plainText: text,
       byteOfChar: boc, totalBytes: 200, sentences: [],
       panes: {'': {algo: 'segmented', candidates: null, suggestions: [], clusterLabels: {}}},
-      staged: [], nextSid: 0, nextAid: 0, speakers: [], turns: null, editGen: 0};
+      staged: [], nextSid: 0, nextAid: 0, speakers: [], turns: [], editGen: 0};
   }
   sug_session = mkSession();
 `, sandbox);
 
 async function main() {
   const run = (code) => vm.runInContext(code, sandbox);
-
-  // slider mapping
-  const p = run('sugSegParams(0)');
-  assert(p.tau === 0.05 && p.theta === 0.8, 'slider 0');
-  const p100 = run('sugSegParams(100)');
-  assert(Math.abs(p100.tau - 0.65) < 1e-9 && Math.abs(p100.theta - 0.4) < 1e-9, 'slider 100');
 
   // merge keeps extras of the higher-raw candidate
   const m = run(`sugMergeOverlaps([{start:0,end:10,raw:.2,lexPct:.1,cStart:0,cEnd:10,section_id:'a',tags:[1]},
@@ -92,17 +86,19 @@ async function main() {
   assert(sugs.length === 2, 'two suggestions after async run: ' + sugs.length);
   assert(sugs[0].section_id === 's1' && sugs[0].tags.length === 2 && sugs[0].ticked.length === 2,
          'extras copied into suggestion objects');
-  assert(run('calls.analyze.length') === 1 && run('calls.analyze[0].tau') === 0.35, 'analyze with slider params');
+  assert(run('calls.analyze.length') === 1 && run('calls.analyze[0].tau') === undefined, 'analyze without slider params');
   assert(run("sug_session.panes[''].candidates[1].start") === 60, 'byte offsets');
   assert(run("document.getElementById('x').textContent") !== '', 'status set');
 
-  // slider -> refresh with new params only
-  run("sug_session.aggressiveness = 100; sugSliderSettled()");
-  await sleep(20);
-  const rc = run('calls.refresh');
-  assert(rc.length === 1 && Math.abs(rc[0].tau - 0.65) < 1e-9 && Math.abs(rc[0].theta - 0.4) < 1e-9,
-         'refresh params ' + JSON.stringify(rc));
-  assert(run('calls.analyze.length') === 1, 'slider does not re-analyze');
+  // slider is a display filter: no re-analysis, no refresh, fewer shown at low values
+  run(`sug_session.aggressiveness = 0; sugSliderSettled()`);
+  assert(run('calls.refresh.length') === 0 && run('calls.analyze.length') === 1, 'slider does not re-run units');
+  assert(run("sug_session.panes[''].suggestions.length") === 1, 'low slider drops the weaker unit');
+  assert(run("sug_session.panes[''].suggestions[0].section_id") === 's1', 'strongest unit kept');
+  run(`sug_session.aggressiveness = 100; sugSliderSettled()`);
+  assert(run("sug_session.panes[''].suggestions.length") === 2, 'slider 100 shows every unit');
+  assert(run("document.getElementById('x').textContent") !== undefined, 'status ok');
+  assert(run("sug_session.panes[''].suggestions[0].lexPct") > run("sug_session.panes[''].suggestions[1].lexPct"), 'stronger unit has higher pct (darker)');
 
   // stale result ignored: algo switched while running
   run(`sug_session = mkSession(); SUG_ALGO_CACHE = {}; SUG_SEG_VERSION++; calls.analyze = [];`);
@@ -143,14 +139,13 @@ async function main() {
 
   // stale sugSegCandidates: an older request never writes sess.segResult
   run(`sug_session = mkSession(); SUG_ALGO_CACHE = {};
-       var slow = {};
+       var slow = [];
        segAnalyzeDocument = function(o) {
-         return new Promise(function(r) { slow[o.tau] = r; });
+         return new Promise(function(r) { slow.push(r); });
        };
-       segRefreshUnits = function(o) { return Promise.resolve({id: 'x'}); };
-       sug_session.aggressiveness = 50; var pA = sugSegCandidates();
-       sug_session.aggressiveness = 0; var pB = sugSegCandidates();`);
-  run("slow[0.05]({id: 'B'}); slow[0.35]({id: 'A'});");
+       var pA = sugSegCandidates();
+       sug_session.editGen++; var pB = sugSegCandidates();`);
+  run("slow[1]({id: 'B'}); slow[0]({id: 'A'});");
   const outs = await Promise.all([run('pA'), run('pB')]);
   assert(outs[0] === null && outs[1] && outs[1].cands.length === 2, 'older candidates request dropped');
   assert(run('sug_session.segResult.id') === 'B', 'segResult is the newest');
@@ -197,6 +192,43 @@ async function main() {
   assert(run('sug_session.staged.length') === 0 && run('doneCalls') === 1, 'success: staged empty, done called');
   run(`posted = []; sugSaveStaged(function() { doneCalls++; });`);
   assert(run('posted.length') === 0 && run('doneCalls') === 2, 'nothing staged: done directly, no posts');
+
+  // speaker labels: label ends
+  const le = (t, o) => run(`sugTurnLabelEnd(${JSON.stringify(Object.assign({start: 10, end: 10 + t.length, text: t}, o || {}))})`) - 10;
+  assert(le('0:57 - Huw Evans: Wonderful.') === 'Wonderful.'.length ? false : le('0:57 - Huw Evans: Wonderful.') === '0:57 - Huw Evans: '.length, 'timed inline label: ' + le('0:57 - Huw Evans: Wonderful.'));
+  assert(le('1:02:03 - Huw Evans (kayaguides.com): Hello there') === '1:02:03 - Huw Evans (kayaguides.com): '.length, 'timed + affiliation');
+  assert(le('John: so I went there') === 'John: '.length, 'plain Name:');
+  assert(le('[00:12] Maria Silva: ok then') === '[00:12] Maria Silva: '.length, 'bracketed ts');
+  assert(le('Well, that is what I think: maybe') === 0, 'sentence is not a label');
+  assert(le('We went home and then slept') === 0, 'unlabelled turn');
+  assert(le('Interviewer:\nHow did it go?', {contentStart: 10 + 13}) === 13, 'prefix line');
+  assert(le('Interviewer:') === 'Interviewer:'.length, 'lone prefix line spans the turn');
+  // trim / split
+  const txt = 'Alpha beta gamma. John: delta epsilon zeta eta. Mary: theta iota kappa lambda mu.';
+  const lab = (w) => { const i = txt.indexOf(w); return {s: i, e: i + w.length + 1}; };
+  const ranges = JSON.stringify([lab('John:'), lab('Mary:')]);
+  const trim = (cs) => run(`sugTrimToSpeech(${JSON.stringify(cs)}, ${ranges}, ${JSON.stringify(txt)})`).map((c) => txt.slice(c.start, c.end));
+  assert(JSON.stringify(trim([{start: 0, end: txt.length, raw: 1, tags: [{id: 1}]}])) ===
+         JSON.stringify(['Alpha beta gamma.', 'delta epsilon zeta eta.', 'theta iota kappa lambda mu.']), 'split at both labels');
+  assert(JSON.stringify(trim([{start: txt.indexOf('John:'), end: txt.indexOf('Mary:') - 1}])) === JSON.stringify(['delta epsilon zeta eta.']), 'start moved to label end');
+  assert(JSON.stringify(trim([{start: 0, end: txt.indexOf('John:') + 3}])) === JSON.stringify(['Alpha beta gamma.']), 'end moved back before label');
+  assert(trim([{start: txt.indexOf('John:'), end: txt.indexOf('John:') + 4}]).length === 0, 'candidate inside label dropped');
+  assert(trim([{start: 0, end: 5}]).length === 1 && run(`sugTrimToSpeech([{start:0,end:5}], [], 'x')`).length === 1, 'untouched without overlap');
+  const pieces = run(`sugTrimToSpeech([{start: 0, end: ${txt.length}, raw: 0.7, tags: [{id: 1}], ticked: [1]}], ${ranges}, ${JSON.stringify(txt)})`);
+  assert(pieces.every((p) => p.raw === 0.7 && p.tags[0].id === 1 && p.ticked[0] === 1), 'pieces keep fields');
+  // finish step uses sug_session.turns
+  run(`sug_session = mkSession(); sug_session.plainText = ${JSON.stringify(txt)};
+       sug_session.byteOfChar = []; for(var bi = 0; bi <= ${txt.length}; ++bi) { sug_session.byteOfChar.push(bi); }
+       sug_session.turns = [{start: 0, end: 17, text: ${JSON.stringify(txt.slice(0, 17))}},
+         {start: ${txt.indexOf('John:')}, end: ${txt.indexOf('Mary:') - 1}, text: ${JSON.stringify(txt.slice(txt.indexOf('John:'), txt.indexOf('Mary:') - 1))}},
+         {start: ${txt.indexOf('Mary:')}, end: ${txt.length}, text: ${JSON.stringify(txt.slice(txt.indexOf('Mary:')))}}];`);
+  const fin = run(`sugFinishCandidates([{start: 0, end: ${txt.length}, raw: 1}], sug_session.plainText, sug_session.byteOfChar)`);
+  assert(fin.length === 3, 'finish step splits at labels: ' + fin.length);
+
+  // suggested-tags filter: below band_low hidden unless pre-ticked
+  const shown = run(`sugSegShownTags([{id: 1, conf: 0.9}, {id: 2, conf: 0.2}, {id: 3, conf: 0.1}], [3])`).map((t) => t.id);
+  assert(JSON.stringify(shown) === '[1,3]', 'weak tags hidden: ' + shown);
+  assert(run(`sugSegShownTags([{id: 2, conf: 0.2}], [])`).length === 0, 'no tag reaches band_low');
 
   console.log(failures ? 'SUGGEST SEGMENTED: ' + failures + ' failure(s)' : 'SUGGEST SEGMENTED SELFTEST OK');
   process.exit(failures);
