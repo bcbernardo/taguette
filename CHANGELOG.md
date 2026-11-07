@@ -36,9 +36,16 @@ New feature (coding guided by thematic segments):
   highlights are saved and the user confirms them (editable name,
   description and generic rephrased question; a "merge into" suggestion
   when they resemble an existing topic)
-* Segmentation tab evaluation shows precision (ticked tags that are right)
-  and recall (text coverage of the highlights); the parameter test marks
-  the combination with the best F1
+* Segmentation tab evaluation: consecutive highlights sharing a tag form
+  human segments; segments and suggested highlights are scored by boundary
+  precision and recall against them. "Test parameter combinations" picks
+  kappa/lambda by segment F1, then tau by suggested-highlight F1, and warns
+  when the winner is at the edge of the tested range
+* Suggest highlights: "Tune…" sweeps every algorithm and ranking over the
+  aggressiveness slider on the chosen coded documents (text-coverage
+  precision/recall, ROC curve and AUC); "Auto" applies the best-F1
+  combination and operating point. The bar shows Algorithm and
+  Aggressiveness, with the other options under "Advanced"
 * Settings, *Segmentation* tab: the segmentation parameters, each with
   a plain-language help text and a restore-default button, plus
   *Evaluate against existing highlights* and *Test parameter
