@@ -4,6 +4,7 @@ import json
 import logging
 import jinja2
 import prometheus_client
+from sqlalchemy import func
 from sqlalchemy.orm import aliased
 import time
 import tornado.locale
@@ -512,10 +513,22 @@ class Project(BaseHandler):
     @PROM_REQUESTS.sync('project')
     def get(self, project_id):
         project, privileges = self.get_project(project_id)
+        # Saved highlights per document (one grouped query), used by the
+        # highlight tuning to list the documents it can evaluate on
+        hl_counts = dict(
+            self.db.query(database.Highlight.document_id,
+                          func.count(database.Highlight.id))
+            .join(database.Document,
+                  database.Highlight.document_id == database.Document.id)
+            .filter(database.Document.project_id == project.id)
+            .group_by(database.Highlight.document_id)
+            .all()
+        )
         documents_json = script_json(
             {
                 str(doc.id): {'id': doc.id, 'name': doc.name,
-                              'description': doc.description}
+                              'description': doc.description,
+                              'highlights_count': hl_counts.get(doc.id, 0)}
                 for doc in project.documents
             },
             sort_keys=True,

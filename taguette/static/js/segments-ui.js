@@ -54,7 +54,8 @@ var SEG_UI = {
   script: {rows: [], dirty: false, docs: [], index: {}, open: false,
            busy: false, generating: false, allowClose: false},
   emergent: {proceed: null, groups: [], working: false},
-  evalState: {metrics: null, grid: null, running: false}
+  evalState: {metrics: null, grid: null, running: false},
+  evalSections: null
 };
 
 function segUiNewDoc(docId, textHash) {
@@ -2958,10 +2959,14 @@ function segUiPct(v) {
   return Math.round(100 * v) + '%';
 }
 
+// Rows of the metrics table: one per level, with precision and recall
 function segUiMetricRows(m) {
+  var seg = m.segments || {}, hl = m.highlights || {};
   return [
-    {label: gettext('Precision — ticked tags that are right'), value: segUiPct(m.precision)},
-    {label: gettext('Recall — text coverage of highlights'), value: segUiPct(m.recall)}
+    {label: gettext('Segments'), precision: segUiPct(seg.precision || 0),
+     recall: segUiPct(seg.recall || 0)},
+    {label: gettext('Suggested highlights'), precision: segUiPct(hl.precision || 0),
+     recall: segUiPct(hl.recall || 0)}
   ];
 }
 
@@ -3009,17 +3014,12 @@ function segUiEvalRun(overrides, progress) {
   if(ended()) {
     return Promise.reject(segUiStaleError());
   }
-  var hls, uses = {}, params;
+  var hls;
   try {
     hls = segUiRealHighlights();
-    for(var t in tags) {
-      uses[t] = tags[t].count || 0;
-    }
-    params = segParams(overrides);
   } catch(err) {
     return Promise.reject(err);
   }
-  var result;
   segUiRunBegin();   // breakers reset only when no analysis is in flight
   var p;
   try {
@@ -3033,21 +3033,37 @@ function segUiEvalRun(overrides, progress) {
     if(ended()) {
       throw segUiStaleError();
     }
-    return segRunAll(input, deps);
-  }).then(function(res) {
-    if(ended()) {
-      throw segUiStaleError();
+    // segmentation only: no tag calls at all
+    // within one grid run the sections stage is shared by every tau
+    var cache = SEG_UI.evalSections, key = null, srP;
+    if(cache) {
+      var kp = {};
+      for(var pk in input.params) {
+        if(pk !== 'tau' && pk !== 'theta') {
+          kp[pk] = input.params[pk];
+        }
+      }
+      key = JSON.stringify(kp);
     }
-    result = res;
-    function score(theta) {
-      return segEvaluate(result, hls, {tagUseCounts: uses, theta: theta,
-                                       plainText: sess.plainText});
+    if(cache && cache[key]) {
+      srP = Promise.resolve(cache[key]);
+    } else {
+      srP = segRunSections(input, deps).then(function(sr) {
+        if(cache) {
+          cache[key] = sr;
+        }
+        return sr;
+      });
     }
-    var m = score(params.theta);
-    m.rescore = function(theta) {
-      return score(theta);
-    };
-    return m;
+    return srP.then(function(sr) {
+      return segRunUnits(sr, input, deps, {tags: false});
+    }).then(function(res) {
+      if(ended()) {
+        throw segUiStaleError();
+      }
+      return segEvaluate(res, hls, {plainText: sess.plainText,
+                                    turns: input.turns});
+    });
   });
   return p.then(function(m) {
     segUiRunEnd();
@@ -3060,47 +3076,85 @@ function segUiEvalRun(overrides, progress) {
 
 function segUiEvalRenderMetrics(host, m) {
   var table = segUiEl('table', 'table table-sm seg-eval-table');
+  var head = segUiEl('tr');
+  ['', gettext('Precision'), gettext('Recall')].forEach(function(h) {
+    head.appendChild(segUiEl('th', null, h));
+  });
+  table.appendChild(head);
   segUiMetricRows(m).forEach(function(r) {
     var tr = segUiEl('tr');
     tr.appendChild(segUiEl('td', null, r.label));
-    tr.appendChild(segUiEl('td', null, r.value));
+    tr.appendChild(segUiEl('td', null, r.precision));
+    tr.appendChild(segUiEl('td', null, r.recall));
     table.appendChild(tr);
   });
   host.appendChild(table);
+  host.appendChild(segUiEl('p', 'text-muted small mb-1', gettext(
+    'Compared with %(n)s human segments built from %(m)s highlights.',
+    {n: m.nHumanSegments || 0, m: m.nHighlights || 0})));
+  host.appendChild(segUiEl('p', 'text-muted small', gettext(
+    'Consecutive highlights that share a tag form one human segment. A segment boundary is expected where the interviewer moves on (the turn change before the question that leads into the next segment). Precision ignores boundaries in text that has no highlights.')));
 }
 
 function segUiEvalRenderGrid(host, grid, onApply) {
+  var cur = segParams();
+  function same(a, b) {
+    return ['tau', 'kappa', 'lambda'].every(function(k) {
+      return Math.abs(a[k] - b[k]) < 1e-9;
+    });
+  }
+  function f1Of(r, level) {
+    var x = r.metrics && r.metrics[level];
+    return x && typeof x.f1 === 'number' ? x.f1 : 0;
+  }
   var order = grid.rows.map(function(r, i) {
     return {r: r, i: i};
   });
   order.sort(function(a, b) {
-    return ((b.r.metrics.f1 || 0) - (a.r.metrics.f1 || 0)) || (a.i - b.i);
+    return (f1Of(b.r, 'segments') - f1Of(a.r, 'segments'))
+      || (f1Of(b.r, 'highlights') - f1Of(a.r, 'highlights')) || (a.i - b.i);
   });
-  var rows = order.slice(0, 5).map(function(o) {
-    return o.r;
-  });
-  var cur = segParams();
-  function same(a, b) {
-    return ['tau', 'kappa', 'lambda', 'theta'].every(function(k) {
-      return Math.abs(a[k] - b[k]) < 1e-9;
+  var rows = [];
+  if(grid.best) {
+    rows.push(grid.best);
+    // rows sharing the best kappa/lambda (the tau sweep), by highlights F1
+    grid.rows.map(function(r, i) {
+      return {r: r, i: i};
+    }).filter(function(o) {
+      return o.r !== grid.best && grid.best.params
+        && o.r.params.kappa === grid.best.params.kappa
+        && o.r.params.lambda === grid.best.params.lambda;
+    }).sort(function(a, b) {
+      return (f1Of(b.r, 'highlights') - f1Of(a.r, 'highlights')) || (a.i - b.i);
+    }).forEach(function(o) {
+      rows.push(o.r);
     });
   }
+  order.forEach(function(o) {
+    if(rows.length < 6 && rows.indexOf(o.r) === -1) {
+      rows.push(o.r);
+    }
+  });
+  rows = rows.slice(0, 6);
   var table = segUiEl('table', 'table table-sm seg-eval-table');
   var head = segUiEl('tr');
-  ['tau', 'kappa', 'lambda', 'theta', gettext('Precision'), gettext('Recall'), '', ''].forEach(function(h) {
+  ['tau', 'kappa', 'lambda', gettext('Segments P'), gettext('Segments R'),
+   gettext('Highlights P'), gettext('Highlights R'), '', ''].forEach(function(h) {
     head.appendChild(segUiEl('th', null, h));
   });
   table.appendChild(head);
   function addRow(row, isCurrent) {
     var params = row.params, m = row.metrics;
+    var seg = m.segments || {}, hl = m.highlights || {};
     var tr = segUiEl('tr');
-    [params.tau, params.kappa, params.lambda, params.theta].forEach(function(v) {
+    [params.tau, params.kappa, params.lambda].forEach(function(v) {
       tr.appendChild(segUiEl('td', null, String(v)));
     });
-    tr.appendChild(segUiEl('td', null, segUiPct(m.precision || 0)));
-    tr.appendChild(segUiEl('td', null, segUiPct(m.recall || 0)));
+    [seg.precision, seg.recall, hl.precision, hl.recall].forEach(function(v) {
+      tr.appendChild(segUiEl('td', null, segUiPct(v || 0)));
+    });
     var note = segUiEl('td');
-    if(!isCurrent && grid.best && (row === grid.best || (grid.best.params && same(row.params, grid.best.params)))) {
+    if(!isCurrent && row === grid.best) {
       note.appendChild(segUiEl('span', 'badge badge-success', gettext('best')));
     }
     tr.appendChild(note);
@@ -3125,6 +3179,11 @@ function segUiEvalRenderGrid(host, grid, onApply) {
     addRow(r, false);
   });
   host.appendChild(table);
+  (grid.edge || []).forEach(function(k) {
+    host.appendChild(segUiEl('p', 'text-muted small mb-1', gettext(
+      'The best %(param)s is at the edge of the tested range; the optimum may lie beyond it.',
+      {param: k})));
+  });
 }
 
 function segEvalPanelBuild(box, opts) {
@@ -3134,7 +3193,7 @@ function segEvalPanelBuild(box, opts) {
   }
   segUiClear(box);
   box.appendChild(segUiEl('p', 'text-muted small', gettext(
-    'Compare what the segmentation would suggest with the highlights already made in this document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
+    'Compare the segments and suggested highlights the analysis would produce with the highlights already made in this document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
   var btn = segUiEl('button', 'btn btn-outline-primary btn-sm mr-2',
                     gettext('Evaluate against existing highlights'));
   btn.type = 'button';
@@ -3182,8 +3241,8 @@ function segEvalPanelBuild(box, opts) {
     segSaveParams(params);
     SEG_UI.evalState.metrics = row.metrics;
     segUiInputsChanged();
-    applied = gettext('Applied: tau %(tau)s, kappa %(kappa)s, lambda %(lambda)s, theta %(theta)s. Suggestions are being recomputed.',
-                      {tau: params.tau, kappa: params.kappa, lambda: params.lambda, theta: params.theta});
+    applied = gettext('Applied: tau %(tau)s, kappa %(kappa)s, lambda %(lambda)s. Suggestions are being recomputed.',
+                      {tau: params.tau, kappa: params.kappa, lambda: params.lambda});
     renderState();
     console.info('Segmentation parameters applied', params);
     if(opts.onParamsApplied) {
@@ -3267,17 +3326,22 @@ function segEvalPanelBuild(box, opts) {
       return segUiEvalRun(undefined, null);
     }).then(function(m) {
       SEG_UI.evalState.metrics = m;
+      SEG_UI.evalSections = {};
       return segGridSearch(function(over) {
         return segUiEvalRun(over, null);
-      }, null, function(done, total) {
+      }, {currentTau: segParams().tau}, function(done, total) {
         meter.set(gettext('Testing parameter combinations: %(done)s/%(total)s',
                           {done: done, total: total}),
                   total ? (done + 1) / (total + 1) : undefined);
       });
     }).then(function(res) {
+      SEG_UI.evalSections = null;
       console.log('Segmentation grid search', res);
       SEG_UI.evalState.grid = res;
       finish();
+    }, function(err) {
+      SEG_UI.evalSections = null;
+      throw err;
     }).then(null, fail);
   });
   renderState();
@@ -3522,9 +3586,12 @@ function segUiSelfTest() {
   assert(segUiProgressText('embed', 3, 10) === 'Segmenting: embedding windows 3/10', 'progress text');
 
   // metrics rows
-  var rows = segUiMetricRows({precision: 0.3, recall: 0.5});
-  assert(rows.length === 2 && rows[0].value === '30%' && rows[1].value === '50%'
-         && /Precision/.test(rows[0].label) && /Recall/.test(rows[1].label), 'metric rows');
+  var rows = segUiMetricRows({segments: {precision: 0.3, recall: 0.5},
+                              highlights: {precision: 0.7, recall: 0.9}});
+  assert(rows.length === 2 && rows[0].precision === '30%' && rows[0].recall === '50%'
+         && rows[1].precision === '70%' && rows[1].recall === '90%'
+         && rows[0].label === 'Segments' && rows[1].label === 'Suggested highlights', 'metric rows');
+  assert(segUiMetricRows({})[0].precision === '0%', 'metric rows tolerate missing scores');
 
   // rows <-> guide
   var rws = segUiGuideToRows(guide);
@@ -3856,5 +3923,65 @@ function segUiSelfTest() {
       console.log('SEG UI SELFTEST OK');
     }
     return f;
+  });
+}
+
+
+/*
+ * Segment-based candidates for any document (highlight tuning, suggest.js)
+ *
+ * Unlike segAnalyzeDocument() this never reads or writes the session, the
+ * open document's state or the per-document result cache: that cache was
+ * computed with the document's own highlights as exemplars, which a fair
+ * evaluation must not use.
+ */
+
+// Copies of turns carrying labelEnd (where the spoken text starts)
+function segUiLabelTurns(turns) {
+  return (turns || []).map(function(t) {
+    var o = {};
+    for(var k in t) {
+      o[k] = t[k];
+    }
+    o.labelEnd = (typeof sugTurnLabelEnd === 'function')
+      ? sugTurnLabelEnd(t) : Math.max(t.contentStart || t.start, t.start);
+    return o;
+  });
+}
+
+// Pipeline input for a document that need not be the open one. o: {docId,
+// plainText, turns, speakers, overrides?}. The document's own highlights are
+// left out of the exemplars and prototypes (excludeDocId); no manual edits.
+// Promise of the input (uses the current guide, tags and parameters).
+function segUiMakeInputFor(o) {
+  var docId = o.docId;
+  return Promise.all([
+    segUiTimeout(segUiExemplars(), SEG_UI_INPUT_TIMEOUT, []),
+    segUiTimeout(segUiExtras(docId), SEG_UI_INPUT_TIMEOUT,
+                 {protos: {}, cooc: {}})
+  ]).then(function(r) {
+    return {
+      plainText: o.plainText, turns: segUiLabelTurns(o.turns),
+      speakers: o.speakers || [], guide: segUiGuide(),
+      params: segParams(o.overrides), tags: segUiTagList(),
+      exemplars: r[0], docId: docId, excludeDocId: docId,
+      segPrototypeExtras: r[1].protos, tagSegmentCooc: r[1].cooc,
+      manual: null
+    };
+  });
+}
+
+// Segment units of a document as suggestion candidates (CHAR offsets), with
+// the system-1 tag confidences only (no model rechecks)
+function segUiCandidatesFor(o) {
+  segUiRunBegin();
+  return segUiMakeInputFor(o).then(function(input) {
+    return segRunAll(input, segMakeDeps({}), {tags: 'fast'});
+  }).then(function(result) {
+    segUiRunEnd();
+    return segUnitsAsCandidates(result);
+  }, function(err) {
+    segUiRunEnd();
+    throw err;
   });
 }

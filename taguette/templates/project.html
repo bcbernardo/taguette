@@ -180,21 +180,25 @@
           <input type="range" id="sug-slider" min="0" max="100" value="50" />
           <span id="sug-slider-feedback"></span>
         </label>
-        <label><input type="checkbox" id="sug-split" /> {% trans %}Compare two algorithms{% endtrans %}</label>
-        <label title="{% trans %}Filters spoken fillers (yeah, I think, you know) and speaker backchannels{% endtrans %}"><input type="checkbox" id="sug-trans" /> {% trans %}Transcription{% endtrans %}</label>
-        <label title="{% trans %}YAKE/RAKE: show the whole sentence containing each keyphrase{% endtrans %}"><input type="checkbox" id="sug-expand" /> {% trans %}Expand keyphrases{% endtrans %}</label>
-        <label title="{% trans %}How suggestions are picked{% endtrans %}">{% trans %}Ranking{% endtrans %}
-          <select id="sug-mode" class="form-control form-control-sm">
-            <option value="lexical">{% trans %}Lexical{% endtrans %}</option>
-            <option value="centroid">{% trans %}Semantic centrality{% endtrans %}</option>
-            <option value="cluster">{% trans %}Themes (clusters){% endtrans %}</option>
-          </select>
-        </label>
-        <button id="sug-config-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Embedding settings (opens the configuration screen){% endtrans %}">&#9881; {% trans %}Embeddings{% endtrans %}</button>
+        <button id="sug-advanced-toggle" class="btn btn-sm btn-link sug-advanced-toggle" type="button" aria-expanded="false" aria-controls="sug-advanced-box">{% trans %}Advanced{% endtrans %} &#9656;</button>
         <button id="sug-speakers-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Speakers: label who speaks in each turn (model settings open the configuration screen){% endtrans %}">{% trans %}Speakers{% endtrans %}</button>
         <button id="sug-stop" class="btn btn-sm btn-warning">{% trans %}Stop{% endtrans %}</button>
         <span id="sug-spinner" class="spinner-border spinner-border-sm text-muted d-none" role="status" aria-hidden="true"></span>
         <span id="sug-status"></span>
+        <div id="sug-advanced-box">
+          <label><input type="checkbox" id="sug-split" /> {% trans %}Compare two algorithms{% endtrans %}</label>
+          <label title="{% trans %}Filters spoken fillers (yeah, I think, you know) and speaker backchannels{% endtrans %}"><input type="checkbox" id="sug-trans" /> {% trans %}Transcription{% endtrans %}</label>
+          <label title="{% trans %}YAKE/RAKE: show the whole sentence containing each keyphrase{% endtrans %}"><input type="checkbox" id="sug-expand" /> {% trans %}Expand keyphrases{% endtrans %}</label>
+          <label title="{% trans %}How suggestions are picked{% endtrans %}">{% trans %}Ranking{% endtrans %}
+            <select id="sug-mode" class="form-control form-control-sm">
+              <option value="lexical">{% trans %}Lexical{% endtrans %}</option>
+              <option value="centroid">{% trans %}Semantic centrality{% endtrans %}</option>
+              <option value="cluster">{% trans %}Themes (clusters){% endtrans %}</option>
+            </select>
+          </label>
+          <button id="sug-config-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Embedding settings (opens the configuration screen){% endtrans %}">&#9881; {% trans %}Embeddings{% endtrans %}</button>
+          <button id="sug-tune-btn" class="btn btn-sm btn-outline-secondary" title="{% trans %}Compare the algorithms on the highlights you already saved and find the best settings{% endtrans %}">{% trans %}Tune{% endtrans %}&hellip;</button>
+        </div>
       </div>
       <div id="export-button" class="dropdown" style="display: none;">
         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdown-export" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -602,6 +606,52 @@
         <button type="button" class="btn btn-primary" id="sug-stop-save">{% trans %}Save highlights{% endtrans %}</button>
         <button type="button" class="btn btn-danger" id="sug-stop-discard">{% trans %}Discard all{% endtrans %}</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans %}Continue session{% endtrans %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tune suggestions modal: evaluates the highlighting algorithms on the
+     documents that already have saved highlights; its best combination is
+     what the "Auto" algorithm uses -->
+<div class="modal" id="suggest-tune-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans %}Tune suggested highlights{% endtrans %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="sug-tune-setup">
+          <p>{% trans %}Compare the algorithms on the highlights you already saved: how much of your highlighted text the suggestions cover (recall) and how much of the suggested text you highlighted (precision), as the aggressiveness grows. The combination with the best F1 is what Auto uses.{% endtrans %}</p>
+          <p class="mb-1"><strong>{% trans %}Documents{% endtrans %}</strong>
+            <button type="button" class="btn btn-link btn-sm" id="sug-tune-all">{% trans %}All{% endtrans %}</button>
+            <button type="button" class="btn btn-link btn-sm" id="sug-tune-none">{% trans %}None{% endtrans %}</button></p>
+          <div id="sug-tune-docs" class="mb-2"></div>
+          <p class="text-muted small">{% trans %}This may call the models you configured: embeddings, and for Segment-based coding also the decision model. While a document is evaluated, its own highlights are hidden from Segment-based coding.{% endtrans %}</p>
+        </div>
+        <div id="sug-tune-progress" style="display: none;">
+          <span class="spinner-border spinner-border-sm text-muted" role="status" aria-hidden="true"></span>
+          <span id="sug-tune-progress-text"></span>
+        </div>
+        <div id="sug-tune-errors" class="alert alert-warning small" style="display: none;"></div>
+        <div id="sug-tune-results" style="display: none;">
+          <hr>
+          <p class="text-muted small mb-1" id="sug-tune-info"></p>
+          <p class="text-warning small mb-1" id="sug-tune-stale" style="display: none;">{% trans %}The embedding model or the segmentation parameters changed since this evaluation; run it again for up-to-date results.{% endtrans %}</p>
+          <div class="row">
+            <div class="col-lg-7"><div class="table-responsive"><table class="table table-sm sug-tune-table" id="sug-tune-table"></table></div></div>
+            <div class="col-lg-5" id="sug-tune-chart"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="sug-tune-run">{% trans %}Run{% endtrans %}</button>
+        <button type="button" class="btn btn-outline-secondary" id="sug-tune-cancel" style="display: none;">{% trans %}Cancel{% endtrans %}</button>
+        <button type="button" class="btn btn-success" id="sug-tune-use" style="display: none;">{% trans %}Use Auto{% endtrans %}</button>
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal" id="sug-tune-close">{% trans %}Close{% endtrans %}</button>
       </div>
     </div>
   </div>

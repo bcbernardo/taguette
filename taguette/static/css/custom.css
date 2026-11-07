@@ -734,6 +734,128 @@ a.dropdown-item:hover {
   color: #666;
 }
 
+/* Advanced options: collapsed by default (state kept in localStorage) */
+#sug-advanced-box {
+  display: none;
+  margin-top: 0.25em;
+  padding-top: 0.25em;
+  border-top: 1px solid #dee2e6;
+}
+
+#suggest-panel.sug-advanced-open #sug-advanced-box {
+  display: block;
+}
+
+#suggest-panel .sug-advanced-toggle {
+  padding: 0 0.25rem;
+  font-size: inherit;
+}
+
+/* Tuning modal: results table and ROC chart. Colors are tokens: mid-tone
+   hues that read on light and dark backgrounds; text and frame follow
+   currentColor. */
+:root {
+  --sug-roc-c0: #0072b2;
+  --sug-roc-c1: #d55e00;
+  --sug-roc-c2: #009e73;
+  --sug-roc-c3: #cc79a7;
+  --sug-roc-c4: #e69f00;
+  --sug-roc-grid: rgba(128, 128, 128, 0.25);
+  --sug-roc-diag: rgba(128, 128, 128, 0.8);
+}
+
+.sug-tune-table {
+  font-size: 0.85em;
+}
+
+.sug-tune-table tr.sug-tune-best-row {
+  font-weight: 600;
+}
+
+.sug-tune-badge {
+  vertical-align: middle;
+}
+
+#sug-tune-progress {
+  padding: 0.5em 0;
+}
+
+.sug-roc {
+  max-width: 420px;
+  display: block;
+  color: inherit;
+}
+
+.sug-roc-frame {
+  fill: none;
+  stroke: currentColor;
+  stroke-opacity: 0.5;
+}
+
+.sug-roc-grid {
+  stroke: var(--sug-roc-grid);
+  stroke-width: 1;
+}
+
+.sug-roc-diag {
+  stroke: var(--sug-roc-diag);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.sug-roc-tick,
+.sug-roc-label {
+  fill: currentColor;
+  font-size: 11px;
+}
+
+polyline.sug-roc-line {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-opacity: 0.85;
+}
+
+polyline.sug-roc-line.sug-roc-best {
+  stroke-width: 3;
+  stroke-opacity: 1;
+}
+
+polyline.sug-roc-c0 { stroke: var(--sug-roc-c0); }
+polyline.sug-roc-c1 { stroke: var(--sug-roc-c1); }
+polyline.sug-roc-c2 { stroke: var(--sug-roc-c2); }
+polyline.sug-roc-c3 { stroke: var(--sug-roc-c3); }
+polyline.sug-roc-c4 { stroke: var(--sug-roc-c4); }
+
+circle.sug-roc-point {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+circle.sug-roc-c0 { fill: var(--sug-roc-c0); }
+circle.sug-roc-c1 { fill: var(--sug-roc-c1); }
+circle.sug-roc-c2 { fill: var(--sug-roc-c2); }
+circle.sug-roc-c3 { fill: var(--sug-roc-c3); }
+circle.sug-roc-c4 { fill: var(--sug-roc-c4); }
+
+.sug-roc-legend-item {
+  display: inline-block;
+  margin: 0 0.75em 0.25em 0;
+}
+
+.sug-roc-swatch {
+  display: inline-block;
+  width: 1.2em;
+  height: 0;
+  border-top: 3px solid;
+  vertical-align: middle;
+}
+
+.sug-roc-swatch.sug-roc-c0 { border-color: var(--sug-roc-c0); }
+.sug-roc-swatch.sug-roc-c1 { border-color: var(--sug-roc-c1); }
+.sug-roc-swatch.sug-roc-c2 { border-color: var(--sug-roc-c2); }
+.sug-roc-swatch.sug-roc-c3 { border-color: var(--sug-roc-c3); }
+.sug-roc-swatch.sug-roc-c4 { border-color: var(--sug-roc-c4); }
+
 /* Suggestion brackets: empty inline elements, glyphs drawn via CSS content
    so they don't appear in textContent (keeps text offsets stable) */
 .sug-bracket {

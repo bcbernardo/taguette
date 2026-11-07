@@ -2579,6 +2579,41 @@ class TestSupportAndSegments(MyHTTPTestCase):
         self.assertNotIn(evil, page)
         self.assertIn(
             '\\u003c/script\\u003e\\u003cscript\\u003ealert(1)', page)
+
+    @gen_test
+    async def test_project_page_highlights_count(self):
+        # The project page lists each document's number of saved highlights
+        # (the highlight tuning offers the documents that have some)
+        db = self.setup_db()
+        await self.login('admin')
+        docs = []
+        for name in ('a', 'b', 'c'):
+            doc = database.Document(
+                name=name, description='', filename=name + '.txt',
+                project_id=1, contents='some text %s' % name)
+            db.add(doc)
+            docs.append(doc)
+        other = database.Document(
+            name='o', description='', filename='o.txt', project_id=2,
+            contents='other project')
+        db.add(other)
+        db.flush()
+        for doc, n in ((docs[0], 2), (docs[2], 1), (other, 3)):
+            for i in range(n):
+                db.add(database.Highlight(
+                    document_id=doc.id, start_offset=i, end_offset=i + 2,
+                    snippet='so'))
+        db.commit()
+        ids = [d.id for d in docs]
+        async with self.aget('/project/1') as r:
+            self.assertEqual(r.status, 200)
+            page = await r.text()
+        line = [l for l in page.splitlines()
+                if l.strip().startswith('var documents = ')][0]
+        found = json.loads(line.strip()[len('var documents = '):-1])
+        self.assertEqual(
+            {k: v['highlights_count'] for k, v in found.items()},
+            {str(ids[0]): 2, str(ids[1]): 0, str(ids[2]): 1})
     @with_tempdir
     @gen_test
     async def test_copy_and_cascade(self, tmp):

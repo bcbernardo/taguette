@@ -2005,6 +2005,179 @@ function segIntersectLength(a, b) {
   return total;
 }
 
+// Human segments: consecutive highlights that overlap, or share a tag with the
+// immediately previous highlight, form one segment. highlights {cStart, cEnd,
+// tagIds}; returns [{start, end, tagIds, n}]
+function segHumanSegments(highlights) {
+  var hls = (highlights || []).filter(function(h) {
+    return h.cEnd > h.cStart;
+  }).sort(function(a, b) {
+    return (a.cStart - b.cStart) || (a.cEnd - b.cEnd);
+  });
+  var out = [], cur = null, prevTags = [];
+  hls.forEach(function(h) {
+    var tg = h.tagIds || [];
+    var joins = false;
+    if(cur) {
+      joins = h.cStart < cur.end;
+      for(var i = 0; !joins && i < tg.length; ++i) {
+        joins = prevTags.indexOf(tg[i]) !== -1;
+      }
+    }
+    if(joins) {
+      cur.end = Math.max(cur.end, h.cEnd);
+      cur.n += 1;
+      tg.forEach(function(t) {
+        if(cur.tagIds.indexOf(t) === -1) {
+          cur.tagIds.push(t);
+        }
+      });
+    } else {
+      cur = {start: h.cStart, end: h.cEnd, tagIds: tg.slice(), n: 1};
+      out.push(cur);
+    }
+    prevTags = tg;
+  });
+  return out;
+}
+
+// One boundary between each pair of consecutive human segments (A, B): the
+// first of turns[k-1].start, turns[k].start, B.start that is >= A.end, where
+// k is the turn containing B.start. Typically the start of the interviewer's
+// question that leads into B.
+function segHumanBoundaries(humanSegs, turns) {
+  var ts = (turns || []).slice().sort(function(a, b) {
+    return a.start - b.start;
+  });
+  var out = [];
+  for(var i = 0; i + 1 < humanSegs.length; ++i) {
+    var A = humanSegs[i], B = humanSegs[i + 1];
+    var k = ts.length ? segTurnAt(ts, B.start) : -1;
+    var cands = [];
+    if(k >= 1) {
+      cands.push(ts[k - 1].start);
+    }
+    if(k >= 0) {
+      cands.push(ts[k].start);
+    }
+    cands.push(B.start);
+    var pos = B.start;
+    for(var c = 0; c < cands.length; ++c) {
+      if(cands[c] >= A.end) {
+        pos = cands[c];
+        break;
+      }
+    }
+    out.push({pos: pos, prevEnd: A.end, nextStart: B.start});
+  }
+  return out;
+}
+
+// Character index n words before (dir < 0) or after (dir > 0) idx
+function segWordsFrom(text, idx, n, dir) {
+  var len = text.length, i = Math.max(0, Math.min(len, idx));
+  var isWs = function(ch) {
+    return /\s/.test(ch);
+  };
+  for(var w = 0; w < n; ++w) {
+    if(dir > 0) {
+      while(i < len && isWs(text.charAt(i))) {
+        ++i;
+      }
+      while(i < len && !isWs(text.charAt(i))) {
+        ++i;
+      }
+    } else {
+      while(i > 0 && isWs(text.charAt(i - 1))) {
+        --i;
+      }
+      while(i > 0 && !isWs(text.charAt(i - 1))) {
+        --i;
+      }
+    }
+  }
+  return i;
+}
+
+// Boundary precision/recall of automatic boundaries (intervals {a, b}) against
+// human segments and their boundaries (see segHumanBoundaries)
+function segBoundaryScore(auto, humanSegs, humanBounds, opts) {
+  opts = opts || {};
+  var text = opts.plainText || null;
+  var tolWords = opts.tolWords !== undefined ? opts.tolWords : 15;
+  function back(x) {
+    return text ? segWordsFrom(text, x, tolWords, -1) : x - tolWords * 6;
+  }
+  function fwd(x) {
+    return text ? segWordsFrom(text, x, tolWords, 1) : x + tolWords * 6;
+  }
+  auto = auto || [];
+  humanSegs = humanSegs || [];
+  humanBounds = humanBounds || [];
+  var pairs = [], hi, ai;
+  for(hi = 0; hi < humanBounds.length; ++hi) {
+    var pos = humanBounds[hi].pos;
+    for(ai = 0; ai < auto.length; ++ai) {
+      if(pos >= back(auto[ai].a) && pos <= fwd(auto[ai].b)) {
+        pairs.push({h: hi, a: ai,
+                    d: pos < auto[ai].a ? auto[ai].a - pos
+                      : pos > auto[ai].b ? pos - auto[ai].b : 0});
+      }
+    }
+  }
+  pairs.sort(function(p, q) {
+    return (p.d - q.d) || (p.h - q.h) || (p.a - q.a);
+  });
+  var hUsed = {}, aUsed = {}, tp = 0;
+  pairs.forEach(function(p) {
+    if(!hUsed[p.h] && !aUsed[p.a]) {
+      hUsed[p.h] = aUsed[p.a] = true;
+      ++tp;
+    }
+  });
+  var fp = 0;
+  for(ai = 0; ai < auto.length; ++ai) {
+    if(aUsed[ai]) {
+      continue;
+    }
+    for(var s = 0; s < humanSegs.length; ++s) {
+      if(auto[ai].a >= fwd(humanSegs[s].start) && auto[ai].b <= back(humanSegs[s].end)) {
+        ++fp;
+        break;
+      }
+    }
+  }
+  var precision = tp + fp ? tp / (tp + fp) : 0;
+  var recall = humanBounds.length ? tp / humanBounds.length : 0;
+  return {
+    precision: precision, recall: recall,
+    f1: precision + recall ? 2 * precision * recall / (precision + recall) : 0,
+    nHuman: humanBounds.length, nAuto: auto.length, tp: tp, fp: fp,
+    unjudged: auto.length - tp - fp
+  };
+}
+
+// Automatic boundaries at the segments level: every section start but the first
+function segAutoSegmentBoundaries(sections) {
+  return (sections || []).slice().sort(function(a, b) {
+    return a.start - b.start;
+  }).slice(1).map(function(s) {
+    return {a: s.start, b: s.start};
+  });
+}
+
+// ... and at the suggested-highlights level: the gap between consecutive units
+function segAutoUnitBoundaries(units) {
+  var u = (units || []).slice().sort(function(a, b) {
+    return a.start - b.start;
+  });
+  var out = [];
+  for(var i = 0; i + 1 < u.length; ++i) {
+    out.push({a: u[i].end, b: Math.max(u[i].end, u[i + 1].start)});
+  }
+  return out;
+}
+
 function segEvaluate(result, realHighlights, opts) {
   opts = opts || {};
   var units = (result.units || []).slice().sort(function(a, b) {
@@ -2165,11 +2338,13 @@ function segEvaluate(result, realHighlights, opts) {
     nUnits: units.length, nHighlights: hls.length
   };
   out.thetaF1 = tP + tR ? 2 * tP * tR / (tP + tR) : 0;
-  // headline metrics: precision of the ticked tags, text coverage of the
-  // highlights, and their harmonic mean
-  out.precision = out.thetaPrecision;
-  out.recall = out.charRecall;
-  out.f1 = out.precision + out.recall ? 2 * out.precision * out.recall / (out.precision + out.recall) : 0;
+  // boundary scores against the implicit human segmentation
+  var humanSegs = segHumanSegments(hls);
+  var humanBounds = segHumanBoundaries(humanSegs, opts.turns || []);
+  var sopts = {plainText: opts.plainText, tolWords: opts.tolWords};
+  out.segments = segBoundaryScore(segAutoSegmentBoundaries(result.sections), humanSegs, humanBounds, sopts);
+  out.highlights = segBoundaryScore(segAutoUnitBoundaries(units), humanSegs, humanBounds, sopts);
+  out.nHumanSegments = humanSegs.length;
   return out;
 }
 
@@ -2186,63 +2361,89 @@ function overlappingHighlightsOf(hls, unit) {
   return out;
 }
 
-// runFn(paramsOverride) -> Promise<metrics>. Theta never changes the units,
-// so each (tau, kappa, lambda) is run once; other thetas are re-scored with
-// `metrics.rescore(theta)` when the runner supplies it (else re-run).
+// Staged search. runFn({tau, kappa, lambda}) -> Promise<metrics from
+// segEvaluate>. Stage 1 (segments): sections depend only on kappa/lambda, so
+// sweep those with tau fixed at grid.currentTau and keep the (kappa, lambda)
+// with the highest segments.f1. Stage 2 (suggested highlights): sweep tau at
+// that (kappa, lambda); best = highest highlights.f1 (ties: the current tau
+// first, then grid order). Ties in stage 1 go to grid order. `edge` names the
+// searched params (kappa, lambda) whose winning value is an end of its range.
 function segGridSearch(runFn, grid, progress) {
   grid = grid || {};
   var g = {
-    tau: grid.tau || [0.15, 0.25, 0.35], kappa: grid.kappa || [0.1, 0.2],
-    lambda: grid.lambda || [1, 2, 3], theta: grid.theta || [0.5, 0.6, 0.7]
+    tau: grid.tau || [0.1, 0.15, 0.25, 0.35, 0.5],
+    kappa: grid.kappa || [0.05, 0.1, 0.2, 0.3],
+    lambda: grid.lambda || [1, 2, 3, 5, 8]
   };
-  var combos = [];
-  g.tau.forEach(function(tau) {
-    g.kappa.forEach(function(kappa) {
-      g.lambda.forEach(function(lambda) {
-        combos.push({tau: tau, kappa: kappa, lambda: lambda});
-      });
+  var tau0 = grid.currentTau !== undefined ? grid.currentTau : segParamDefaults().tau;
+  var combos = [], rows = [], total = g.kappa.length * g.lambda.length + g.tau.length;
+  g.kappa.forEach(function(kappa) {
+    g.lambda.forEach(function(lambda) {
+      combos.push({tau: tau0, kappa: kappa, lambda: lambda});
     });
   });
-  var rows = [];
-  function next(i) {
-    if(i >= combos.length) {
-      return Promise.resolve();
-    }
-    var base = combos[i];
-    var first = {tau: base.tau, kappa: base.kappa, lambda: base.lambda, theta: g.theta[0]};
-    return Promise.resolve(runFn(first)).then(function(m0) {
-      rows.push({params: first, metrics: m0});
-      var rest = g.theta.slice(1);
-      return segBatched(rest, 1, function(th) {
-        var p = {tau: base.tau, kappa: base.kappa, lambda: base.lambda, theta: th};
-        if(m0 && typeof m0.rescore === 'function') {
-          return Promise.resolve(m0.rescore(th)).then(function(m) {
-            rows.push({params: p, metrics: m});
-          });
-        }
-        return Promise.resolve(runFn(p)).then(function(m) {
-          rows.push({params: p, metrics: m});
-        });
-      });
-    }).then(function() {
-      if(progress) {
-        progress(i + 1, combos.length);
-      }
-      return next(i + 1);
-    });
+  function f1Of(r, level) {
+    var x = r.metrics && r.metrics[level];
+    return x && typeof x.f1 === 'number' ? x.f1 : 0;
   }
-  return next(0).then(function() {
-    // best = highest metrics.f1 (harmonic mean of tick precision and text
-    // recall) over ALL rows; ties go to the earliest row in grid order.
+  function pickBest(list, level) {
     var best = null;
-    rows.forEach(function(r) {
-      var f = r.metrics && typeof r.metrics.f1 === 'number' ? r.metrics.f1 : 0;
-      var bf = best && best.metrics && typeof best.metrics.f1 === 'number' ? best.metrics.f1 : 0;
-      if(!best || f > bf + 1e-12) {
+    list.forEach(function(r) {
+      if(!best || f1Of(r, level) > f1Of(best, level) + 1e-12) {
         best = r;
       }
     });
-    return {best: best, rows: rows};
+    return best;
+  }
+  var done = 0;
+  function runAll(list) {
+    var out = [];
+    return segBatched(list, 1, function(p) {
+      return Promise.resolve(runFn(p)).then(function(m) {
+        var row = {params: p, metrics: m};
+        rows.push(row);
+        out.push(row);
+        ++done;
+        if(progress) {
+          progress(done, total);
+        }
+      });
+    }).then(function() {
+      return out;
+    });
+  }
+  return runAll(combos).then(function(stage1) {
+    var top = pickBest(stage1, 'segments');
+    if(!top) {
+      return {best: null, rows: rows, edge: []};
+    }
+    var kp = {kappa: top.params.kappa, lambda: top.params.lambda};
+    // the stage-1 row already ran at the current tau
+    var cand = [top], todo = [];
+    g.tau.forEach(function(tau) {
+      if(Math.abs(tau - tau0) > 1e-9) {
+        todo.push({tau: tau, kappa: kp.kappa, lambda: kp.lambda});
+      }
+    });
+    return runAll(todo).then(function(stage2) {
+      var all = cand.concat(stage2);
+      // grid order within the tie-break, the current tau first
+      var best = pickBest(all, 'highlights');
+      var edge = [];
+      var won = {kappa: kp.kappa, lambda: kp.lambda,
+                 tau: best ? best.params.tau : null};
+      var tauVals = g.tau.slice();
+      if(tauVals.indexOf(tau0) === -1 && typeof tau0 === 'number') {
+        tauVals.push(tau0);
+      }
+      [['kappa', g.kappa], ['lambda', g.lambda], ['tau', tauVals]].forEach(function(e) {
+        var vals = e[1];
+        if(vals.length > 1 && (won[e[0]] === Math.min.apply(null, vals) || won[e[0]] === Math.max.apply(null, vals))) {
+          edge.push(e[0]);
+        }
+      });
+      return {best: best, rows: rows, edge: edge};
+    });
   });
 }
 
@@ -3194,34 +3395,95 @@ function segSelfTest() {
     var e = segEvaluate({units: []}, [], {});
     assert(e.unitRecall === 0 && e.nUnits === 0 && e.sizeMedian === 0, 'empty evaluation');
 
-    assert(near(m.precision, m.thetaPrecision) && near(m.recall, m.charRecall)
-           && near(m.f1, 2 * m.precision * m.recall / (m.precision + m.recall)), 'precision/recall/f1');
-    assert(e.f1 === 0 && e.precision === 0 && e.recall === 0, 'empty evaluation f1 = 0');
+    assert(m.precision === undefined && m.recall === undefined && m.f1 === undefined, 'no tag-based headline metrics');
+    assert(m.segments && m.highlights && e.segments.f1 === 0 && e.highlights.precision === 0
+           && e.nHumanSegments === 0, 'evaluation carries segment/highlight scores');
+
+    // human segments
+    function H(a, b, t) {
+      return {cStart: a, cEnd: b, tagIds: t};
+    }
+    var hs = segHumanSegments([H(0, 10, [1]), H(20, 30, [1, 2]), H(40, 50, [3]), H(55, 60, []),
+                               H(58, 70, []), H(80, 90, [3]), H(100, 110, [4])]);
+    assert(hs.length === 5 && hs[0].start === 0 && hs[0].end === 30 && hs[0].n === 2
+           && hs[0].tagIds.join() === '1,2', 'shared tag chains highlights');
+    assert(hs[1].start === 40 && hs[1].end === 50 && hs[2].start === 55 && hs[2].end === 70
+           && hs[2].n === 2, 'no shared tag breaks; overlap joins; untagged start new');
+    assert(hs[3].start === 80 && hs[4].start === 100, 'untagged never chains by tag');
+    assert(segHumanSegments([]).length === 0 && segHumanSegments(null).length === 0, 'no highlights');
+    assert(segHumanSegments([H(0, 10, [1]), H(5, 20, [2])]).length === 1, 'overlap joins without tag');
+
+    // human boundaries
+    var tt = [{start: 0, end: 100}, {start: 100, end: 150}, {start: 150, end: 300}, {start: 300, end: 400}];
+    var A = {start: 10, end: 90}, hb;
+    hb = segHumanBoundaries([A, {start: 350, end: 380}], tt);
+    assert(hb.length === 1 && hb[0].pos === 150 && hb[0].prevEnd === 90 && hb[0].nextStart === 350,
+           'boundary at the start of the question before B');
+    hb = segHumanBoundaries([A, {start: 120, end: 140}], tt);
+    assert(hb[0].pos === 100, 'B inside the interviewer turn -> its start');
+    hb = segHumanBoundaries([{start: 10, end: 60}, {start: 70, end: 90}], tt);
+    assert(hb[0].pos === 70, 'same turn -> B.start');
+    hb = segHumanBoundaries([A, {start: 200, end: 250}], []);
+    assert(hb[0].pos === 200 && segHumanBoundaries([A], tt).length === 0, 'no turns -> B.start');
+    hb = segHumanBoundaries([{start: 10, end: 120}, {start: 200, end: 250}], tt);
+    assert(hb[0].pos === 150, 'candidates before A.end are skipped');
+
+    // boundary score (plain text: 1 word per 10 chars, tolerance 2 words)
+    var words = [];
+    for(var wi = 0; wi < 100; ++wi) {
+      words.push('aaaaaaaaa');
+    }
+    var ptext = words.join(' ');
+    var hsegs = [{start: 0, end: 300}, {start: 500, end: 800}];
+    var hbs = [{pos: 400}];
+    var sc = segBoundaryScore([{a: 410, b: 410}], hsegs, hbs, {plainText: ptext, tolWords: 2});
+    assert(sc.tp === 1 && sc.fp === 0 && sc.precision === 1 && sc.recall === 1 && sc.f1 === 1, 'TP within tolerance');
+    sc = segBoundaryScore([{a: 450, b: 450}], hsegs, hbs, {plainText: ptext, tolWords: 2});
+    assert(sc.tp === 0 && sc.unjudged === 1 && sc.precision === 0 && sc.recall === 0, 'miss in uncoded text is unjudged');
+    sc = segBoundaryScore([{a: 410, b: 410}, {a: 650, b: 650}], hsegs, hbs, {plainText: ptext, tolWords: 2});
+    assert(sc.tp === 1 && sc.fp === 1 && near(sc.precision, 0.5) && sc.nAuto === 2, 'cutting a human segment is a FP');
+    sc = segBoundaryScore([{a: 405, b: 405}, {a: 410, b: 410}], hsegs, hbs, {plainText: ptext, tolWords: 2});
+    assert(sc.tp === 1 && sc.unjudged === 1 && sc.nHuman === 1, 'one-to-one matching; extra is unjudged');
+    sc = segBoundaryScore([{a: 380, b: 440}], hsegs, hbs, {plainText: ptext, tolWords: 2});
+    assert(sc.tp === 1 && sc.recall === 1, 'interval matches when the boundary lies inside it');
+    sc = segBoundaryScore([], [], [], {});
+    assert(sc.tp === 0 && sc.precision === 0 && sc.recall === 0 && sc.f1 === 0 && sc.nAuto === 0, 'empty -> zeros');
+    assert(segBoundaryScore([{a: 1, b: 1}], [], [], {}).precision === 0, 'no human boundaries -> zeros');
+    assert(segWordsFrom('ab cd ef', 3, 1, 1) === 5 && segWordsFrom('ab cd ef', 3, 1, -1) === 0, 'word window helper');
+    assert(segAutoSegmentBoundaries([{start: 50}, {start: 0}, {start: 90}]).map(function(x) {
+      return x.a + ':' + x.b;
+    }).join() === '50:50,90:90', 'section boundaries skip the first');
+    assert(segAutoUnitBoundaries([{start: 20, end: 30}, {start: 0, end: 10}]).map(function(x) {
+      return x.a + ':' + x.b;
+    }).join() === '10:20', 'unit gaps');
 
     var runs = 0;
-    function metricsFor(p) {
-      var f1 = (p.tau === 0.25 ? 0.6 : 0.4) + (p.kappa === 0.2 ? 0.05 : 0) + (p.theta === 0.7 ? 0.1 : 0);
-      var mm = {f1: f1};
-      mm.rescore = function(th) {
-        return {f1: f1 - (p.theta === 0.7 ? 0.1 : 0) + (th === 0.7 ? 0.1 : 0)};
-      };
-      return mm;
-    }
     return segGridSearch(function(p) {
       ++runs;
-      return Promise.resolve(metricsFor(p));
-    }, null).then(function(g) {
-      assert(g.best.params.tau === 0.25 && g.best.params.kappa === 0.2 && g.best.params.lambda === 1
-             && g.best.params.theta === 0.7 && g.fallback === undefined,
-             'grid best by f1 over all rows, ties in grid order ' + JSON.stringify(g.best.params));
-      assert(runs === 18 && g.rows.length === 54, 'theta-only re-scoring avoids re-runs (' + runs + ' runs)');
-      var runs2 = 0;
+      // segments best at kappa 0.2 / lambda 5 (interior); highlights best at tau 0.35
+      var sf = (p.kappa === 0.2 && p.lambda === 5) ? 0.7 : 0.3;
+      var hf = p.tau === 0.35 ? 0.6 : 0.2;
+      return Promise.resolve({segments: {f1: sf}, highlights: {f1: hf}});
+    }, {currentTau: 0.25}).then(function(g) {
+      assert(runs === 24 && g.rows.length === 24, 'staged runs: 20 + 4 (current tau reused) ' + runs);
+      assert(g.best.params.kappa === 0.2 && g.best.params.lambda === 5 && g.best.params.tau === 0.35,
+             'best: kappa/lambda by segments.f1, tau by highlights.f1 ' + JSON.stringify(g.best.params));
+      assert(g.edge.length === 0, 'interior optimum has no edge');
+      var progs = [];
       return segGridSearch(function(p) {
-        ++runs2;
-        return Promise.resolve({f1: p.lambda === 2 ? 0.9 : 0.4});
-      }, {tau: [0.25], kappa: [0.1], lambda: [1, 2], theta: [0.5, 0.6]}).then(function(g2) {
-        assert(g2.best.params.lambda === 2 && g2.best.params.theta === 0.5, 'tie -> earliest row');
-        assert(runs2 === 4, 'no rescore -> re-run per theta');
+        return Promise.resolve({segments: {f1: p.lambda / 10}, highlights: {f1: 0.5}});
+      }, {currentTau: 0.3}, function(d, t) {
+        progs.push(d + '/' + t);
+      }).then(function(g2) {
+        assert(g2.best.params.lambda === 8 && g2.edge.join() === 'kappa,lambda', 'lambda at the top edge reported (kappa tied at the first value)' + g2.edge);
+        assert(g2.best.params.tau === 0.3 && g2.rows.length === 25, 'tau tie -> current tau');
+        assert(progs.length === 25 && progs[24] === '25/25', 'progress counts all runs');
+        return segGridSearch(function() {
+          return Promise.resolve({segments: {f1: 0.5}, highlights: {f1: 0.5}});
+        }, {tau: [0.2, 0.4], kappa: [0.1, 0.2], lambda: [1, 2], currentTau: 0.9}).then(function(g3) {
+          assert(g3.best.params.tau === 0.9 && g3.best.params.kappa === 0.1, 'ties: stage-1 grid order, then current tau');
+          assert(g3.edge.join() === 'kappa,lambda,tau', 'ties at the first value are edges; the current tau at the top is one too');
+        });
       });
     });
   });

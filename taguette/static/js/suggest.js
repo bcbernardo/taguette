@@ -984,7 +984,13 @@ function sugTurnsOfText(plain) {
 // DOM-based blocks: walk the document chunks in order, break at
 // block-level elements and newlines, mirror sugBuildPlainIndex's text
 function sugBlocks() {
-  var plain = sug_session.plainText;
+  return sugBlocksFrom(document.getElementById('document-contents'),
+                       sug_session.plainText);
+}
+
+// The same walk over any root holding the document's chunks (the open
+// document, or a detached copy of another one)
+function sugBlocksFrom(root, plain) {
   var blocks = [];
   var pos = 0;
   var cur = null; // start of the block being accumulated
@@ -1031,7 +1037,6 @@ function sugBlocks() {
       close();
     }
   };
-  var root = document.getElementById('document-contents');
   var chunks = root.querySelectorAll('[id^="doc-offset-"]');
   for(var i = 0; i < chunks.length; ++i) {
     visit(chunks[i]);
@@ -1480,14 +1485,15 @@ function sugApplySpeakers(turns, speakers, inherited) {
 
 // >half of [start, end) lies in turns of speakers whose "include" flag is
 // off. Turns with no speaker count as included.
-function sugIsExcludedSpan(start, end) {
-  var turns = (sug_session && sug_session.turns) || null;
-  if(!turns || !sug_session.speakers) {
+function sugIsExcludedSpan(start, end, ctx) {
+  ctx = ctx || sug_session;
+  var turns = (ctx && ctx.turns) || null;
+  if(!turns || !ctx.speakers) {
     return false;
   }
   var excluded = {};
   var any = false;
-  sug_session.speakers.forEach(function(s) {
+  ctx.speakers.forEach(function(s) {
     if(s.include === false) {
       excluded[s.id] = true;
       any = true;
@@ -2314,15 +2320,19 @@ function sugPercentiles(cands) {
   return cands;
 }
 
-function sugCutoff(pct) {
-  var v = sug_session ? sug_session.aggressiveness : 50;
+// ctx: anything with the session's fields (the session itself, or a context
+// built by the highlight tuning); defaults to the session
+function sugCutoff(pct, ctx) {
+  ctx = ctx || sug_session;
+  var v = ctx ? ctx.aggressiveness : 50;
   // Full range: v=0 keeps only the single best candidate, v=100 keeps ~99%
   return 1.0 - 0.99 * (v / 100);
 }
 
 // Effective centrality used for cut-off and shading
-function sugEffPct(cand) {
-  if(sug_session && sug_session.useEmbeddings
+function sugEffPct(cand, ctx) {
+  ctx = ctx || sug_session;
+  if(ctx && ctx.useEmbeddings
      && typeof cand.embPct === 'number') {
     return (cand.lexPct + cand.embPct) / 2;
   }
@@ -2376,7 +2386,13 @@ function sugShade(pct) {
 // Builds plainText (JS string) and byteOfChar (cumulative UTF-8 byte offsets
 // anchored at chunk offsets), matching describePos()'s offset space.
 function sugBuildPlainIndex() {
-  var root = document.getElementById('document-contents');
+  return sugBuildPlainIndexOf(document.getElementById('document-contents'),
+                              chunk_offsets);
+}
+
+// Same, over any root holding the chunks (ids doc-offset-*), with the base
+// byte offset of each chunk in DOM order
+function sugBuildPlainIndexOf(root, offsets) {
   var parts = [];
   var byteOfChar = [0];
   var nodes = root.querySelectorAll('[id^="doc-offset-"]');
@@ -2385,7 +2401,7 @@ function sugBuildPlainIndex() {
     // Bases come from chunk_offsets (same DOM order) rather than the ids:
     // in-session transcript edits shift the virtual byte space, while the
     // ids keep the server's original anchors
-    var base = chunk_offsets[i] || 0;
+    var base = offsets[i] || 0;
     var t = node.textContent;
     var b = 0;
     for(var j = 0; j < t.length;) {
@@ -2648,18 +2664,20 @@ function sugKMeans(vecs, k) {
 
 // Number of themes from the aggressiveness slider: conservative = fewer,
 // bigger themes; aggressive = more, finer ones
-function sugClusterK(n) {
+function sugClusterK(n, ctx) {
   var kmax = Math.max(2, Math.min(16, Math.floor(n / 2)));
   if(kmax < 2) {
     return 1;
   }
-  var v = sug_session ? sug_session.aggressiveness : 50;
+  ctx = ctx || sug_session;
+  var v = ctx ? ctx.aggressiveness : 50;
   return Math.max(1, Math.min(kmax, Math.round(2 + (v / 100) * (kmax - 2))));
 }
 
 // Suggestions kept per theme from the aggressiveness slider
-function sugClusterPer() {
-  var v = sug_session ? sug_session.aggressiveness : 50;
+function sugClusterPer(ctx) {
+  ctx = ctx || sug_session;
+  var v = ctx ? ctx.aggressiveness : 50;
   return Math.min(4, 1 + Math.floor(v / 25));
 }
 
@@ -2667,9 +2685,15 @@ function sugClusterPer() {
 // clusters (T1 = theme with the most representative passage)
 function sugReclusterPane(pkey) {
   var pane = sug_session.panes[pkey];
-  pane.clusterLabels = {};
+  pane.clusterLabels = sugClusterCands(pane.candidates, sug_session);
+}
+
+// Cluster candidates (those with vectors) in place (c.cluster, c.clSim) and
+// return their labels {cluster: 'T1', ...}; ctx.aggressiveness sets k
+function sugClusterCands(cands, ctx) {
+  var labels = {};
   var clustered = [];
-  (pane.candidates || []).forEach(function(c) {
+  (cands || []).forEach(function(c) {
     delete c.cluster;
     delete c.clSim;
     if(c._vec) {
@@ -2677,10 +2701,10 @@ function sugReclusterPane(pkey) {
     }
   });
   if(clustered.length < 3) {
-    return; // too few vectors to cluster meaningfully
+    return labels; // too few vectors to cluster meaningfully
   }
   var vecs = clustered.map(function(c) { return sugNormalize(c._vec); });
-  var result = sugKMeans(vecs, sugClusterK(clustered.length));
+  var result = sugKMeans(vecs, sugClusterK(clustered.length, ctx));
   var best = {};
   for(var i = 0; i < clustered.length; ++i) {
     var cl = result.assignments[i];
@@ -2692,8 +2716,9 @@ function sugReclusterPane(pkey) {
   }
   var order = Object.keys(best).sort(function(a, b) { return best[b] - best[a]; });
   for(i = 0; i < order.length; ++i) {
-    pane.clusterLabels[order[i]] = 'T' + (i + 1);
+    labels[order[i]] = 'T' + (i + 1);
   }
+  return labels;
 }
 
 
@@ -2744,11 +2769,12 @@ function sugClearPane(pkey) {
 }
 
 // Turn raw algorithm output (char offsets) into pane candidates
-function sugFinishCandidates(cands, text, boc) {
+function sugFinishCandidates(cands, text, boc, ctx) {
   // Speaker labels are never highlighted, whatever the algorithm
+  ctx = ctx || sug_session;
   var turns = null;
   try {
-    turns = (sug_session && sug_session.turns) || sugSpeakerTurns();
+    turns = (ctx && ctx.turns) || sugSpeakerTurns();
   } catch(error) {
     console.error('Could not detect speaker labels:', error);
   }
@@ -2758,6 +2784,25 @@ function sugFinishCandidates(cands, text, boc) {
   cands = sugCandidatesToBytes(cands, text, boc);
   sugPercentiles(cands);
   return sugMergeOverlaps(cands);
+}
+
+// Run a synchronous algorithm over ctx.plainText (char-offset candidates);
+// ctx supplies the transcription mode and sentences, so this never reads
+// the session. YAKE/RAKE keyphrases optionally expand to their sentence.
+function sugRunAlgoCands(algo_name, ctx, expand) {
+  var saved = SUG_TRANSCRIPTION;
+  SUG_TRANSCRIPTION = !!ctx.transcription;
+  var cands;
+  try {
+    cands = SUG_ALGOS[algo_name].run(ctx.plainText);
+  } finally {
+    SUG_TRANSCRIPTION = saved;
+  }
+  if((algo_name === 'yake' || algo_name === 'rake') && expand) {
+    // Show the whole sentence/turn containing each keyphrase
+    cands = sugExpandToSentences(cands, ctx.sentences);
+  }
+  return cands;
 }
 
 // Compute (or load from cache) the suggestions for one pane. Algorithms may
@@ -2855,18 +2900,13 @@ function sugComputePane(pkey) {
     if(!live()) {
       return; // session ended or algorithm switched while computing
     }
-    var text = sess.plainText;
     var cands;
     try {
-      cands = algo.run(text);
+      cands = sugRunAlgoCands(algo_name, sess, sess.expand);
     } catch(error) {
       console.error('Suggestion algorithm failed:', error);
       sugSetStatus(gettext('Algorithm failed (see console)'));
       return;
-    }
-    if((algo_name === 'yake' || algo_name === 'rake') && sess.expand) {
-      // Show the whole sentence/turn containing each keyphrase
-      cands = sugExpandToSentences(cands, sess.sentences);
     }
     store(cands);
   }, 10);
@@ -2916,8 +2956,8 @@ function sugRefilter() {
 
 // Drop the candidates (byte offsets) of which at least half lies inside
 // accepted (staged) highlights
-function sugDropStagedOverlaps(cands) {
-  var staged = sug_session.staged || [];
+function sugDropStagedOverlaps(cands, staged) {
+  staged = staged || [];
   if(!staged.length) {
     return cands;
   }
@@ -2934,46 +2974,32 @@ function sugDropStagedOverlaps(cands) {
   });
 }
 
-function sugRefilterPane(pkey) {
-  var pane = sug_session.panes[pkey];
-  var akey = sugAlgoCacheKey(pane.algo);
-  // Keep this algorithm's suggestion state (including the user's edits) for
-  // when they switch algorithms and back
-  var stash = function() {
-    pane.savedSuggestions = pane.savedSuggestions || {};
-    pane.savedSuggestions[akey] = pane.suggestions;
-  };
-  if(!pane.candidates) {
-    pane.suggestions = [];
-    stash();
-    sugRenderPane(pkey);
-    return;
-  }
-  // Speaker filter: drop candidates that mostly sit inside the turns of
-  // speakers excluded from the suggestions (turns with no speaker count
-  // as included)
-  var cands = pane.candidates;
-  var any_excluded = false;
-  (sug_session.speakers || []).forEach(function(s) {
-    if(s.include === false) {
-      any_excluded = true;
-    }
-  });
-  if(any_excluded) {
+// The slider's selection, as a pure function of the candidates and the
+// settings (so the UI and the highlight tuning share one implementation).
+// all_cands: pane candidates (byte + char offsets, scores). opts:
+//   algo, rankMode, aggressiveness, useEmbeddings,
+//   clusterLabels (cluster mode: the labels from sugClusterCands),
+//   isExcluded(c) -> true to drop (speakers hidden), staged (accepted spans).
+// Returns [{c, sortPct, lexPct, embPct}] ordered by position.
+function sugSelectShown(all_cands, opts) {
+  var cands = all_cands;
+  if(opts.isExcluded) {
     cands = cands.filter(function(c) {
-      return !sugIsExcludedSpan(c.cStart, c.cEnd);
+      return !opts.isExcluded(c);
     });
   }
   // Passages the user already accepted do not come back as suggestions
-  cands = sugDropStagedOverlaps(cands);
+  cands = sugDropStagedOverlaps(cands, opts.staged);
   // Selection: either per-theme top-m (cluster mode with vectors), or the
   // percentile cut-off over effective centrality
   var entries; // [{c, sortPct, lexPct, embPct}]
+  var ctx = {aggressiveness: opts.aggressiveness,
+             useEmbeddings: opts.useEmbeddings};
   var groups = null;
-  var is_seg = pane.algo === 'segmented';
-  if(!is_seg && sug_session.rankMode === 'cluster'
-     && pane.clusterLabels && Object.keys(pane.clusterLabels).length) {
-    var per = sugClusterPer();
+  var is_seg = opts.algo === 'segmented';
+  if(!is_seg && opts.rankMode === 'cluster'
+     && opts.clusterLabels && Object.keys(opts.clusterLabels).length) {
+    var per = sugClusterPer(ctx);
     groups = {};
     cands.forEach(function(c) {
       if(c.cluster === undefined) {
@@ -3011,11 +3037,11 @@ function sugRefilterPane(pkey) {
   } else {
     // Segment units: at 100 everything shows (coverage first), and there is
     // no cap on the number of suggestions
-    var cutoff = (is_seg && sug_session.aggressiveness >= 100)
-      ? 0 : sugCutoff();
+    var cutoff = (is_seg && opts.aggressiveness >= 100)
+      ? 0 : sugCutoff(undefined, ctx);
     entries = cands
       .map(function(c) {
-        return {c: c, sortPct: sugEffPct(c), lexPct: c.lexPct,
+        return {c: c, sortPct: sugEffPct(c, ctx), lexPct: c.lexPct,
                 embPct: (typeof c.embPct === 'number') ? c.embPct : null};
       })
       .filter(function(e) { return e.sortPct >= cutoff; });
@@ -3025,6 +3051,44 @@ function sugRefilterPane(pkey) {
     }
     entries.sort(function(a, b) { return a.c.start - b.c.start; });
   }
+  return entries;
+}
+
+function sugRefilterPane(pkey) {
+  var pane = sug_session.panes[pkey];
+  var akey = sugAlgoCacheKey(pane.algo);
+  // Keep this algorithm's suggestion state (including the user's edits) for
+  // when they switch algorithms and back
+  var stash = function() {
+    pane.savedSuggestions = pane.savedSuggestions || {};
+    pane.savedSuggestions[akey] = pane.suggestions;
+  };
+  if(!pane.candidates) {
+    pane.suggestions = [];
+    stash();
+    sugRenderPane(pkey);
+    return;
+  }
+  // Speaker filter: drop candidates that mostly sit inside the turns of
+  // speakers excluded from the suggestions (turns with no speaker count
+  // as included)
+  var any_excluded = false;
+  (sug_session.speakers || []).forEach(function(s) {
+    if(s.include === false) {
+      any_excluded = true;
+    }
+  });
+  var entries = sugSelectShown(pane.candidates, {
+    algo: pane.algo,
+    rankMode: sug_session.rankMode,
+    aggressiveness: sug_session.aggressiveness,
+    useEmbeddings: sug_session.useEmbeddings,
+    clusterLabels: pane.clusterLabels,
+    isExcluded: any_excluded ? function(c) {
+      return sugIsExcludedSpan(c.cStart, c.cEnd);
+    } : null,
+    staged: sug_session.staged || [],
+  });
   // Preserve "modified" flags and ids of suggestions that are unchanged
   var old = {};
   pane.suggestions.forEach(function(s) { old[s.sid] = s; });
@@ -3091,6 +3155,82 @@ function sugSegPanelRefresh() {
   }
 }
 
+// Plan the embedding scoring of candidates (char offsets cStart/cEnd into
+// ctx.plainText): which texts still need a vector (`missing`, the candidates'
+// plus up to 200 sentences for the document centroid), fill(vectors) to
+// store what was fetched, and score() to set _vec and the centroid percentile
+// embPct on every candidate (they are normalized over all of them together).
+// Needs only ctx.plainText and ctx.sentences, never the session. doc_key
+// identifies the document for the centroid cache.
+function sugEmbedPlan(all_c, ctx, emb_key, doc_key) {
+  var emb_cache = SUG_EMB_CACHE[emb_key] || (SUG_EMB_CACHE[emb_key] = {});
+  var cand_texts = all_c.map(function(c) {
+    return ctx.plainText.substring(c.cStart, c.cEnd);
+  });
+
+  // Centroid from up to 200 sentences (their vectors are cached too, so this
+  // is a network no-op after the first time)
+  var cent_key = doc_key + '|' + emb_key;
+  var centroid = SUG_CENTROID_CACHE[cent_key];
+  var cent_texts = [];
+  if(!centroid) {
+    var sentences = ctx.sentences;
+    var step = Math.max(1, Math.ceil(sentences.length / 200));
+    for(var i = 0; i < sentences.length; i += step) {
+      cent_texts.push(sentences[i].text);
+    }
+  }
+
+  var missing = [];
+  var seen = Object.create(null);
+  var add_missing = function(t) {
+    if(!emb_cache[t] && !seen[t]) {
+      seen[t] = true;
+      missing.push(t);
+    }
+  };
+  cand_texts.forEach(add_missing);
+  cent_texts.forEach(add_missing);
+
+  return {
+    missing: missing,
+    fill: function(embs) {
+      for(var i = 0; i < missing.length; ++i) {
+        emb_cache[missing[i]] = embs[i];
+      }
+    },
+    score: function() {
+      if(!centroid) {
+        var vecs = cent_texts.map(function(t) { return emb_cache[t]; });
+        var dim = vecs[0].length;
+        centroid = [];
+        for(var d = 0; d < dim; ++d) {
+          centroid.push(0);
+        }
+        vecs.forEach(function(v) {
+          for(d = 0; d < v.length; ++d) {
+            centroid[d] += v[d] / vecs.length;
+          }
+        });
+        SUG_CENTROID_CACHE[cent_key] = centroid;
+      }
+      // Keep the vectors on the candidates for theme clustering, and the
+      // document-centroid percentiles for the centrality blend
+      var cents = [];
+      for(var i = 0; i < cand_texts.length; ++i) {
+        all_c[i]._vec = emb_cache[cand_texts[i]];
+        cents.push(sugCosine(emb_cache[cand_texts[i]], centroid));
+      }
+      var idx = cents.map(function(c, i) { return i; })
+        .sort(function(a, b) { return cents[a] - cents[b]; });
+      var n = cents.length;
+      idx.forEach(function(ci, rank) {
+        all_c[ci].embPct = n > 1 ? rank / (n - 1) : 1;
+      });
+    },
+  };
+}
+
 // Optional embedding re-scoring: centrality = cosine to document centroid.
 // Vectors are cached per text and per endpoint/model, so switching algorithms
 // or restarting the session only embeds texts never seen before; switching
@@ -3121,8 +3261,6 @@ function sugEnhanceEmbeddings() {
     });
     sug_session.embKey = emb_key;
   }
-  var emb_cache = SUG_EMB_CACHE[emb_key] || (SUG_EMB_CACHE[emb_key] = {});
-
   // All candidates across panes; percentiles are normalized over all of them
   // so the two split-screen panes stay comparable
   var all_c = [];
@@ -3138,60 +3276,11 @@ function sugEnhanceEmbeddings() {
     sugRefilter(); // only segment-based panes: nothing to score
     return;
   }
-  var cand_texts = all_c.map(function(c) {
-    return sug_session.plainText.substring(c.cStart, c.cEnd);
-  });
-
-  // Centroid from up to 200 sentences (their vectors are cached too, so this
-  // is a network no-op after the first time)
-  var cent_key = current_document + '|' + emb_key;
-  var centroid = SUG_CENTROID_CACHE[cent_key];
-  var cent_texts = [];
-  if(!centroid) {
-    var sentences = sug_session.sentences;
-    var step = Math.max(1, Math.ceil(sentences.length / 200));
-    for(var i = 0; i < sentences.length; i += step) {
-      cent_texts.push(sentences[i].text);
-    }
-  }
-
-  var missing = [];
-  var add_missing = function(t) {
-    if(!emb_cache[t] && missing.indexOf(t) === -1) {
-      missing.push(t);
-    }
-  };
-  cand_texts.forEach(add_missing);
-  cent_texts.forEach(add_missing);
+  var plan = sugEmbedPlan(all_c, sug_session, emb_key, current_document);
+  var missing = plan.missing;
 
   var score = function() {
-    if(!centroid) {
-      var vecs = cent_texts.map(function(t) { return emb_cache[t]; });
-      var dim = vecs[0].length;
-      centroid = [];
-      for(var d = 0; d < dim; ++d) {
-        centroid.push(0);
-      }
-      vecs.forEach(function(v) {
-        for(d = 0; d < v.length; ++d) {
-          centroid[d] += v[d] / vecs.length;
-        }
-      });
-      SUG_CENTROID_CACHE[cent_key] = centroid;
-    }
-    // Keep the vectors on the candidates for theme clustering, and the
-    // document-centroid percentiles for the centrality blend
-    var cents = [];
-    for(var i = 0; i < cand_texts.length; ++i) {
-      all_c[i]._vec = emb_cache[cand_texts[i]];
-      cents.push(sugCosine(emb_cache[cand_texts[i]], centroid));
-    }
-    var idx = cents.map(function(c, i) { return i; })
-      .sort(function(a, b) { return cents[a] - cents[b]; });
-    var n = cents.length;
-    idx.forEach(function(ci, rank) {
-      all_c[ci].embPct = n > 1 ? rank / (n - 1) : 1;
-    });
+    plan.score();
     if(sug_session.rankMode === 'cluster') {
       sugPaneKeys().forEach(sugReclusterPane);
     }
@@ -3207,9 +3296,7 @@ function sugEnhanceEmbeddings() {
   showSpinner();
   sugEmbed(missing, cfg)
   .then(function(embs) {
-    for(var i = 0; i < missing.length; ++i) {
-      emb_cache[missing[i]] = embs[i];
-    }
+    plan.fill(embs);
     hideSpinner();
     score();
   })
@@ -4667,6 +4754,17 @@ function sugStart() {
   document.getElementById('sug-expand').checked = trans;
   document.getElementById('sug-expand').disabled = false;
   document.getElementById('sug-mode').value = mode;
+  // Auto (the combination tuned on this project's highlights) is remembered
+  // like the algorithm choice, as long as there are results to apply
+  var stored_tune = sugTuneStored();
+  var saved_algo = null;
+  try {
+    saved_algo = window.localStorage.getItem(SUG_TUNE_ALGO_STORE);
+  } catch(e) { /* private mode */ }
+  if(saved_algo === 'auto' && stored_tune && sugAutoAvailable()) {
+    sugAutoApplySettings('', stored_tune.best);
+    sugUpdateSliderFeedback();
+  }
   sugSyncAlgoSelects();
   if(trans) {
     sugSetStatus(gettext('Transcription mode detected'));
@@ -4945,6 +5043,1150 @@ taguConfigRegisterTab({
 
 
 /*
+ * Highlight tuning: how well do the highlighting algorithms reproduce the
+ * highlights the user already saved?
+ *
+ * Aggressiveness is an operating point: more aggressive shows more
+ * suggested text (fewer false negatives, more false positives). For every
+ * combination (algorithm, ranking, keyphrase expansion) the slider is swept
+ * over 0..100 on every chosen document and the char-level metrics are summed
+ * over the documents (micro average):
+ *   H = union of the document's highlights, S = union of the shown
+ *   suggestions, E = eligible text (the speech of included speakers).
+ *   recall = |S∩H|/|H|, precision = |S∩H|/|S|, FPR = |S∩E \ H| / |E \ H|.
+ * The ROC curve is (FPR, recall) over the sweep, AUC its trapezoid area, and
+ * the best operating point maximizes F1. The combination with the highest F1
+ * is what the "Auto" algorithm uses.
+ *
+ * Candidates are computed through the same pure functions as the session
+ * (sugRunAlgoCands, sugFinishCandidates, sugEmbedPlan, sugSelectShown) with
+ * a context object per document: sug_session is only read, never swapped.
+ */
+
+var SUG_TUNE_STEPS = [];
+(function() {
+  for(var v = 0; v <= 100; v += 5) {
+    SUG_TUNE_STEPS.push(v);
+  }
+})();
+var SUG_TUNE_STORE = 'sug|tune|';              // + project id
+var SUG_TUNE_ALGO_STORE = 'taguette_suggest_algo';
+var SUG_TUNE_ADV_STORE = 'taguette_suggest_advanced';
+var SUG_TUNE_TOP = 5;                          // curves drawn / stored
+
+var SUG_TUNE = {
+  running: false,
+  token: null,        // {cancelled} of the run in flight
+  results: null,      // {rows, best, ...} shown in the modal
+  pending: null,      // {pkey} when the modal was opened by choosing Auto
+  timer: null,
+  startedAt: 0,
+  wired: false,
+};
+
+function sugRankLabel(mode) {
+  return {
+    lexical: gettext('Lexical'),
+    centroid: gettext('Semantic centrality'),
+    cluster: gettext('Themes (clusters)'),
+  }[mode] || mode;
+}
+
+// ---- spans ----------------------------------------------------------------
+
+// Union of [s, e) spans -> sorted, disjoint [{s, e}]
+function sugSpansUnion(spans) {
+  var sorted = spans.filter(function(x) { return x.e > x.s; })
+    .sort(function(a, b) { return a.s - b.s || a.e - b.e; });
+  var out = [];
+  for(var i = 0; i < sorted.length; ++i) {
+    var last = out.length ? out[out.length - 1] : null;
+    if(last && sorted[i].s <= last.e) {
+      last.e = Math.max(last.e, sorted[i].e);
+    } else {
+      out.push({s: sorted[i].s, e: sorted[i].e});
+    }
+  }
+  return out;
+}
+
+function sugSpansLen(u) {
+  var n = 0;
+  for(var i = 0; i < u.length; ++i) {
+    n += u[i].e - u[i].s;
+  }
+  return n;
+}
+
+// Intersection of two unions
+function sugSpansInter(a, b) {
+  var out = [], i = 0, j = 0;
+  while(i < a.length && j < b.length) {
+    var s = Math.max(a[i].s, b[j].s), e = Math.min(a[i].e, b[j].e);
+    if(e > s) {
+      out.push({s: s, e: e});
+    }
+    if(a[i].e < b[j].e) {
+      ++i;
+    } else {
+      ++j;
+    }
+  }
+  return out;
+}
+
+// Eligible text: what suggestions could cover. With a speaker profile, the
+// speech (after the label) of turns whose speaker is not excluded (turns
+// with no speaker count as included); the whole text otherwise.
+function sugTuneEligible(ctx) {
+  var len = ctx.plainText.length;
+  var speakers = ctx.speakers || [];
+  if(!speakers.length || !ctx.turns || !ctx.turns.length) {
+    return [{s: 0, e: len}];
+  }
+  var excluded = {};
+  speakers.forEach(function(s) {
+    if(s.include === false) {
+      excluded[s.id] = true;
+    }
+  });
+  var spans = [];
+  ctx.turns.forEach(function(t) {
+    if(t.speaker && excluded[t.speaker]) {
+      return;
+    }
+    var s = sugTurnLabelEnd(t);
+    if(t.end > s) {
+      spans.push({s: s, e: t.end});
+    }
+  });
+  return sugSpansUnion(spans);
+}
+
+// Saved highlights ([{start_offset, end_offset}] in bytes) -> union of char
+// spans of the document
+function sugTuneHighlightSpans(hls, boc) {
+  return sugSpansUnion(hls.map(function(h) {
+    return {s: sugByteToChar(boc, h.start_offset),
+            e: sugByteToChar(boc, h.end_offset)};
+  }));
+}
+
+// Smallest char index c with boc[c] >= byte
+function sugByteToChar(boc, byte) {
+  var lo = 0, hi = boc.length - 1;
+  if(hi < 0) {
+    return 0;
+  }
+  while(lo < hi) {
+    var mid = (lo + hi) >> 1;
+    if(boc[mid] < byte) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
+  }
+  return lo;
+}
+
+// ---- metrics --------------------------------------------------------------
+
+// Char counts of one document at one operating point
+function sugTuneCounts(H, S, E) {
+  var SE = sugSpansInter(S, E);
+  return {
+    h: sugSpansLen(H),
+    s: sugSpansLen(S),
+    tp: sugSpansLen(sugSpansInter(S, H)),
+    fp: sugSpansLen(SE) - sugSpansLen(sugSpansInter(SE, H)),
+    neg: sugSpansLen(E) - sugSpansLen(sugSpansInter(E, H)),
+  };
+}
+
+function sugTuneNewTotals() {
+  return {h: 0, s: 0, tp: 0, fp: 0, neg: 0};
+}
+
+function sugTuneAddCounts(tot, c) {
+  for(var k in tot) {
+    tot[k] += c[k];
+  }
+  return tot;
+}
+
+// Aggregated counts at slider value v -> {v, precision, recall, fpr, f1}
+function sugTunePoint(v, t) {
+  var recall = t.h > 0 ? t.tp / t.h : 0;
+  var precision = t.s > 0 ? t.tp / t.s : 0;
+  var fpr = t.neg > 0 ? t.fp / t.neg : 0;
+  var f1 = (precision + recall) > 0
+    ? 2 * precision * recall / (precision + recall) : 0;
+  return {v: v, precision: precision, recall: recall, fpr: fpr, f1: f1};
+}
+
+// Area under the ROC curve: trapezoids over (FPR, recall), with (0, 0)
+// prepended and (1, 1) appended
+function sugTuneAuc(points) {
+  var pts = points.map(function(p) { return [p.fpr, p.recall]; })
+    .sort(function(a, b) { return a[0] - b[0] || a[1] - b[1]; });
+  pts.unshift([0, 0]);
+  pts.push([1, 1]);
+  var area = 0;
+  for(var i = 1; i < pts.length; ++i) {
+    area += (pts[i][0] - pts[i - 1][0]) * (pts[i][1] + pts[i - 1][1]) / 2;
+  }
+  return area;
+}
+
+// Highest F1; ties go to the lower aggressiveness
+function sugTuneBestPoint(points) {
+  var best = null;
+  points.forEach(function(p) {
+    if(!best || p.f1 > best.f1 + 1e-12
+       || (Math.abs(p.f1 - best.f1) <= 1e-12 && p.v < best.v)) {
+      best = p;
+    }
+  });
+  return best;
+}
+
+// Combination + its curve -> table row
+function sugTuneRow(combo, points) {
+  var best = sugTuneBestPoint(points);
+  return {
+    algo: combo.algo, rankMode: combo.rankMode, expand: !!combo.expand,
+    auc: sugTuneAuc(points), f1: best.f1, precision: best.precision,
+    recall: best.recall, fpr: best.fpr, v: best.v, curve: points,
+  };
+}
+
+// Highest F1 first (even when not strictly dominant), ties by AUC, then by
+// the order of the list
+function sugTuneSortRows(rows) {
+  return rows.map(function(r, i) { return {r: r, i: i}; })
+    .sort(function(a, b) {
+      if(Math.abs(b.r.f1 - a.r.f1) > 1e-12) {
+        return b.r.f1 - a.r.f1;
+      }
+      if(Math.abs(b.r.auc - a.r.auc) > 1e-12) {
+        return b.r.auc - a.r.auc;
+      }
+      return a.i - b.i;
+    }).map(function(x) { return x.r; });
+}
+
+// What Auto applies
+function sugTuneBestOf(row) {
+  return {algo: row.algo, rankMode: row.rankMode, expand: !!row.expand,
+          aggressiveness: row.v};
+}
+
+// The combinations to evaluate. opts: {emb: embedding service configured,
+// seg: Segment-based coding can run}
+function sugTuneCombos(opts) {
+  var out = [];
+  ['textrank', 'lexrank', 'yake', 'rake'].forEach(function(algo) {
+    var keyphrase = algo === 'yake' || algo === 'rake';
+    var modes = opts.emb ? ['lexical', 'centroid', 'cluster'] : ['lexical'];
+    (keyphrase ? [false, true] : [false]).forEach(function(expand) {
+      modes.forEach(function(mode) {
+        out.push({algo: algo, rankMode: mode, expand: expand});
+      });
+    });
+  });
+  if(opts.seg) {
+    out.push({algo: 'segmented', rankMode: 'lexical', expand: false});
+  }
+  return out;
+}
+
+function sugTuneComboLabel(c) {
+  var algo = SUG_ALGOS[c.algo] ? SUG_ALGOS[c.algo].label : c.algo;
+  if(c.algo === 'segmented') {
+    return algo;
+  }
+  return algo + ' · ' + sugRankLabel(c.rankMode)
+    + (c.expand ? ' · ' + gettext('expanded') : '');
+}
+
+// ---- per-document evaluation ----------------------------------------------
+
+function sugTuneCancelled(token) {
+  return !!(token && token.cancelled);
+}
+
+function sugTuneCancelError() {
+  var e = new Error(gettext('Cancelled'));
+  e.cancelled = true;
+  return e;
+}
+
+// Let the page paint (progress text, spinner) between heavy steps
+function sugTuneYield() {
+  return new Promise(function(resolve) {
+    setTimeout(resolve, 0);
+  });
+}
+
+// Candidates of one (algorithm, expand) on one document context, scored and
+// merged exactly as the session does. Promise of the candidate list.
+function sugTuneCandidates(ctx, algo, expand) {
+  if(algo === 'segmented') {
+    return segUiCandidatesFor({
+      docId: ctx.docId, plainText: ctx.plainText, turns: ctx.turns,
+      speakers: ctx.speakers,
+    }).then(function(cands) {
+      return sugFinishCandidates(cands, ctx.plainText, ctx.byteOfChar, ctx);
+    });
+  }
+  return sugTuneYield().then(function() {
+    var cands = sugRunAlgoCands(algo, ctx, expand);
+    return sugFinishCandidates(cands, ctx.plainText, ctx.byteOfChar, ctx);
+  });
+}
+
+// Embed the candidates (cache first, then the endpoint) and score them
+function sugTuneEmbed(ctx, cands, cfg) {
+  var plan = sugEmbedPlan(cands, ctx, sugEmbKey(cfg), 'tune|' + ctx.docId);
+  var fetch = plan.missing.length
+    ? sugEmbed(plan.missing, cfg) : Promise.resolve([]);
+  return fetch.then(function(embs) {
+    plan.fill(embs);
+    plan.score();
+  });
+}
+
+// Counts at every slider step for one combination, given its candidates
+function sugTuneSweep(ctx, cands, combo, H, E) {
+  var excluded = null;
+  if((ctx.speakers || []).some(function(s) { return s.include === false; })) {
+    excluded = function(c) {
+      return sugIsExcludedSpan(c.cStart, c.cEnd, ctx);
+    };
+  }
+  var embedded = combo.rankMode !== 'lexical';
+  return SUG_TUNE_STEPS.map(function(v) {
+    var labels = null;
+    if(combo.rankMode === 'cluster') {
+      labels = sugClusterCands(cands, {aggressiveness: v});
+    }
+    var shown = sugSelectShown(cands, {
+      algo: combo.algo, rankMode: combo.rankMode, aggressiveness: v,
+      useEmbeddings: embedded, clusterLabels: labels, isExcluded: excluded,
+      staged: [],
+    });
+    var S = sugSpansUnion(shown.map(function(e) {
+      return {s: e.c.cStart, e: e.c.cEnd};
+    }));
+    return sugTuneCounts(H, S, E);
+  });
+}
+
+// One document: counts[i][step] for every combination i. hooks:
+// {token, progress(j)}. Promise.
+function sugTuneEvalDoc(ctx, hls, combos, cfg, hooks) {
+  var H = sugTuneHighlightSpans(hls, ctx.byteOfChar);
+  if(!sugSpansLen(H)) {
+    return Promise.reject(new Error(gettext('No saved highlights')));
+  }
+  var E = sugTuneEligible(ctx);
+  var bases = {};   // algo|expand -> Promise<{cands, embedded}>
+  var counts = [];
+  var p = Promise.resolve();
+  combos.forEach(function(combo, j) {
+    p = p.then(function() {
+      if(sugTuneCancelled(hooks.token)) {
+        throw sugTuneCancelError();
+      }
+      if(hooks.progress) {
+        hooks.progress(j);
+      }
+      var key = combo.algo + '|' + (combo.expand ? 'x' : '');
+      if(!bases[key]) {
+        bases[key] = sugTuneCandidates(ctx, combo.algo, combo.expand)
+          .then(function(cands) { return {cands: cands, embedded: false}; });
+      }
+      return bases[key].then(function(base) {
+        if(combo.rankMode !== 'lexical' && !base.embedded) {
+          return sugTuneEmbed(ctx, base.cands, cfg).then(function() {
+            base.embedded = true;
+            return base;
+          });
+        }
+        return base;
+      });
+    }).then(function(base) {
+      if(sugTuneCancelled(hooks.token)) {
+        throw sugTuneCancelError();
+      }
+      return sugTuneYield().then(function() {
+        counts[j] = sugTuneSweep(ctx, base.cands, combo, H, E);
+      });
+    });
+  });
+  return p.then(function() { return counts; });
+}
+
+// ---- document contexts ----------------------------------------------------
+
+// The open document, from the session (nothing is recomputed or mutated)
+function sugTuneOpenCtx() {
+  var s = sug_session;
+  return {
+    docId: parseInt(current_document, 10), plainText: s.plainText,
+    byteOfChar: s.byteOfChar, sentences: s.sentences,
+    turns: s.turns || sugSpeakerTurns(), speakers: s.speakers || [],
+    transcription: s.transcription, staged: [],
+  };
+}
+
+function sugTuneOpenHighlights() {
+  var out = [];
+  var hls = (typeof highlights !== 'undefined' && highlights) ? highlights : {};
+  for(var id in hls) {
+    out.push({start_offset: hls[id].start_offset,
+              end_offset: hls[id].end_offset});
+  }
+  return out;
+}
+
+// Another document, from the API, built like the session builds the open one
+// (rendered chunks -> plain text, byte index, speaker turns, saved speaker
+// profile). Promise of {ctx, highlights}.
+function sugTuneLoadDoc(docId, transcription) {
+  return getJSON(
+    '/api/project/' + project_id + '/document/' + docId + '/content'
+  ).then(function(result) {
+    var inert = document.implementation.createHTMLDocument('');
+    var root = inert.createElement('div');
+    var offsets = [];
+    result.contents.forEach(function(chunk) {
+      var el = inert.createElement('div');
+      el.setAttribute('id', 'doc-offset-' + chunk.offset);
+      el.innerHTML = chunk.contents;
+      root.appendChild(el);
+      offsets.push(chunk.offset);
+    });
+    var index = sugBuildPlainIndexOf(root, offsets);
+    var turns = sugAbsorbContinuations(
+      sugBlocksFrom(root, index.plainText), index.plainText);
+    var speakers = sugSpeakerProfileLoad(docId);
+    if(speakers.length) {
+      sugApplySpeakers(turns, speakers);
+    }
+    return {
+      ctx: {docId: parseInt(docId, 10), plainText: index.plainText,
+            byteOfChar: index.byteOfChar,
+            sentences: sugSplitSentences(index.plainText), turns: turns,
+            speakers: speakers, transcription: transcription, staged: []},
+      highlights: result.highlights,
+    };
+  });
+}
+
+// Documents the tuning can use: saved highlights (the open one counts its
+// live highlights). [{id, name, count}]
+function sugTuneDocs() {
+  var docs = (typeof documents !== 'undefined' && documents) ? documents : {};
+  var open = (typeof current_document !== 'undefined')
+    ? current_document : null;
+  var live = (open !== null && sug_session)
+    ? sugTuneOpenHighlights().length : 0;
+  var out = [];
+  Object.keys(docs).sort(function(a, b) { return a - b; }).forEach(function(id) {
+    var d = docs[id];
+    var n = (open !== null && String(open) === String(id) && sug_session)
+      ? live : (d.highlights_count || 0);
+    if(n > 0) {
+      out.push({id: parseInt(id, 10), name: d.name, count: n});
+    }
+  });
+  return out;
+}
+
+// ---- the run --------------------------------------------------------------
+
+// Evaluate every combination on the given documents. hooks: {token,
+// progress({doc, docs, combo, combos}), error({id, message})}. Resolves with
+// {rows (sorted), best, docIds (evaluated), combos}; rejects with a
+// `cancelled` error when the token is cancelled.
+function sugTuneRun(docIds, hooks) {
+  var sess = sug_session;
+  if(!sess) {
+    return Promise.reject(new Error(gettext('Start a suggestion session first.')));
+  }
+  var cfg = sugLoadConfig();
+  var combos = sugTuneCombos({
+    emb: !!cfg,
+    seg: !!cfg && typeof segUiCandidatesFor === 'function',
+  });
+  var totals = combos.map(function() {
+    return SUG_TUNE_STEPS.map(sugTuneNewTotals);
+  });
+  var done = [];
+  var transcription = sess.transcription;
+  var p = Promise.resolve();
+  docIds.forEach(function(docId, di) {
+    p = p.then(function() {
+      if(sugTuneCancelled(hooks.token)) {
+        throw sugTuneCancelError();
+      }
+      var report = function(j) {
+        if(hooks.progress) {
+          hooks.progress({doc: di, docs: docIds.length, combo: j,
+                          combos: combos.length});
+        }
+      };
+      report(0);
+      var open = String(docId) === String(current_document);
+      var loaded = open
+        ? Promise.resolve({ctx: sugTuneOpenCtx(),
+                           highlights: sugTuneOpenHighlights()})
+        : sugTuneLoadDoc(docId, transcription);
+      return loaded.then(function(doc) {
+        if(sugTuneCancelled(hooks.token)) {
+          throw sugTuneCancelError();
+        }
+        return sugTuneEvalDoc(doc.ctx, doc.highlights, combos, cfg,
+                              {token: hooks.token, progress: report});
+      }).then(function(counts) {
+        counts.forEach(function(per_step, i) {
+          per_step.forEach(function(c, k) {
+            sugTuneAddCounts(totals[i][k], c);
+          });
+        });
+        done.push(docId);
+      }, function(err) {
+        if(err && err.cancelled) {
+          throw err;
+        }
+        console.error('Tuning: document ' + docId + ' failed:', err);
+        if(hooks.error) {
+          hooks.error({id: docId,
+                       message: (err && err.message) || String(err)});
+        }
+      });
+    });
+  });
+  return p.then(function() {
+    if(!done.length) {
+      throw new Error(gettext('No document could be evaluated.'));
+    }
+    var rows = sugTuneSortRows(combos.map(function(combo, i) {
+      return sugTuneRow(combo, SUG_TUNE_STEPS.map(function(v, k) {
+        return sugTunePoint(v, totals[i][k]);
+      }));
+    }));
+    return {rows: rows, best: sugTuneBestOf(rows[0]), docIds: done,
+            combos: combos.length, transcription: transcription,
+            embKey: cfg ? sugEmbKey(cfg) : '',
+            segParamsKey: (typeof segParams === 'function'
+                           && typeof segUiParamsHash === 'function')
+              ? segUiParamsHash(segParams()) : ''};
+  });
+}
+
+// ---- persistence ------------------------------------------------------------
+
+function sugTuneStoreKey() {
+  return SUG_TUNE_STORE + project_id;
+}
+
+function sugTuneRound(x) {
+  return Math.round(x * 10000) / 10000;
+}
+
+// Rows without curves, except the top few as [v, fpr, recall] triples
+function sugTuneSerialize(res) {
+  return {
+    version: 1, savedAt: Date.now(), docIds: res.docIds,
+    transcription: res.transcription, embKey: res.embKey,
+    segParamsKey: res.segParamsKey,
+    rows: res.rows.map(function(r, i) {
+      var o = {algo: r.algo, rankMode: r.rankMode, expand: !!r.expand,
+               auc: sugTuneRound(r.auc), f1: sugTuneRound(r.f1),
+               precision: sugTuneRound(r.precision),
+               recall: sugTuneRound(r.recall), fpr: sugTuneRound(r.fpr),
+               v: r.v};
+      if(i < SUG_TUNE_TOP && r.curve) {
+        o.curve = r.curve.map(function(p) {
+          return [p.v, sugTuneRound(p.fpr), sugTuneRound(p.recall)];
+        });
+      }
+      return o;
+    }),
+    best: res.best,
+  };
+}
+
+function sugTuneNum(x) {
+  return (typeof x === 'number' && isFinite(x)) ? x : 0;
+}
+
+// Stored results of this project, or null (absent or unusable)
+function sugTuneStored() {
+  try {
+    var raw = window.localStorage.getItem(sugTuneStoreKey());
+    var o = raw ? JSON.parse(raw) : null;
+    if(!o || o.version !== 1 || !o.best || !o.rows || !o.rows.length
+       || !SUG_ALGOS[o.best.algo]
+       || !(typeof o.best.aggressiveness === 'number')) {
+      return null;
+    }
+    o.rows = o.rows.map(function(r) {
+      var out = {algo: r.algo, rankMode: r.rankMode, expand: !!r.expand,
+                 auc: sugTuneNum(r.auc), f1: sugTuneNum(r.f1),
+                 precision: sugTuneNum(r.precision),
+                 recall: sugTuneNum(r.recall), fpr: sugTuneNum(r.fpr),
+                 v: sugTuneNum(r.v)};
+      if(r.curve && r.curve.map) {
+        out.curve = r.curve.map(function(t) {
+          return {v: t[0], fpr: sugTuneNum(t[1]), recall: sugTuneNum(t[2])};
+        });
+      }
+      return out;
+    });
+    return o;
+  } catch(e) {
+    return null;
+  }
+}
+
+function sugTuneStoreSave(res) {
+  try {
+    window.localStorage.setItem(sugTuneStoreKey(),
+                                JSON.stringify(sugTuneSerialize(res)));
+  } catch(e) { /* private mode: the results just won't persist */ }
+}
+
+// ---- Auto -----------------------------------------------------------------
+
+// Auto is offered when the project has saved highlights to learn from
+function sugAutoAvailable() {
+  return sugTuneDocs().length > 0;
+}
+
+function sugAutoLabel(stored) {
+  if(!stored) {
+    return gettext('Auto');
+  }
+  var b = stored.best;
+  return gettext('Auto (%(what)s)', {what: sugTuneComboLabel(b)});
+}
+
+// "Auto" first in both algorithm selects when available (else removed)
+function sugRefreshAutoOptions() {
+  var avail = sugAutoAvailable();
+  var label = sugAutoLabel(sugTuneStored());
+  ['sug-algo-a', 'sug-algo-b'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if(!sel) {
+      return;
+    }
+    var opt = null;
+    for(var i = 0; i < sel.options.length; ++i) {
+      if(sel.options[i].value === 'auto') {
+        opt = sel.options[i];
+      }
+    }
+    if(avail && !opt) {
+      opt = document.createElement('option');
+      opt.value = 'auto';
+      sel.insertBefore(opt, sel.firstChild);
+    } else if(!avail && opt) {
+      sel.removeChild(opt);
+      opt = null;
+    }
+    if(opt) {
+      opt.textContent = label;
+    }
+  });
+}
+
+function sugAutoSaveChoice() {
+  try {
+    if(sug_session && sug_session.panes[''].auto) {
+      window.localStorage.setItem(SUG_TUNE_ALGO_STORE, 'auto');
+    } else {
+      window.localStorage.removeItem(SUG_TUNE_ALGO_STORE);
+    }
+  } catch(e) { /* best effort */ }
+}
+
+// Set the session (and the controls) to the tuned combination, without
+// recomputing: algorithm of the pane, ranking, expansion, slider at v*
+function sugAutoApplySettings(pkey, best) {
+  var s = sug_session;
+  var pane = s.panes[pkey];
+  pane.auto = true;
+  pane.algo = best.algo;
+  if(best.algo === 'yake' || best.algo === 'rake') {
+    s.expand = !!best.expand;
+    document.getElementById('sug-expand').checked = s.expand;
+  }
+  if(best.algo !== 'segmented') {
+    var mode = best.rankMode;
+    if(mode !== 'lexical' && !sugLoadConfig()) {
+      mode = 'lexical';
+    }
+    s.rankMode = mode;
+    s.useEmbeddings = mode !== 'lexical';
+    document.getElementById('sug-mode').value = mode;
+  }
+  s.aggressiveness = Math.max(0, Math.min(100, Math.round(best.aggressiveness)));
+  document.getElementById('sug-slider').value = String(s.aggressiveness);
+}
+
+function sugAutoApply(pkey) {
+  var stored = sugTuneStored();
+  if(!sug_session || !stored || !sug_session.panes[pkey]) {
+    return false;
+  }
+  sugAutoApplySettings(pkey, stored.best);
+  sugSyncAlgoSelects();
+  sugAutoSaveChoice();
+  // Ranking, expansion and slider are session-wide: recompute every pane
+  sugPaneKeys().forEach(sugComputePane);
+  return true;
+}
+
+// The user chose Auto in a select: use the stored tuning, or tune first
+function sugAutoChosen(pkey) {
+  if(sugTuneStored()) {
+    sugAutoApply(pkey);
+    return;
+  }
+  SUG_TUNE.pending = {pkey: pkey};
+  sugTuneOpen();
+}
+
+// Ranking / expansion changed by hand: Auto means "the tuned combination",
+// so the selects fall back to the concrete algorithm
+function sugAutoLeave() {
+  if(!sug_session) {
+    return;
+  }
+  var any = false;
+  sugPaneKeys().forEach(function(k) {
+    if(sug_session.panes[k].auto) {
+      sug_session.panes[k].auto = false;
+      any = true;
+    }
+  });
+  if(any) {
+    sugSyncAlgoSelects();
+    sugAutoSaveChoice();
+  }
+}
+
+// ---- the modal ----------------------------------------------------------------
+
+function sugTuneEl(tag, cls, text) {
+  var el = document.createElement(tag);
+  if(cls) {
+    el.className = cls;
+  }
+  if(text !== undefined) {
+    el.textContent = text;
+  }
+  return el;
+}
+
+function sugTuneFmtElapsed(ms) {
+  var secs = Math.max(0, Math.floor(ms / 1000));
+  var s = secs % 60;
+  return Math.floor(secs / 60) + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function sugTuneShow(id, on) {
+  var el = document.getElementById(id);
+  if(el) {
+    el.style.display = on ? '' : 'none';
+  }
+}
+
+function sugTuneRenderDocs() {
+  var box = document.getElementById('sug-tune-docs');
+  var before = {};
+  var had = box.children.length > 0;
+  Array.prototype.forEach.call(box.querySelectorAll('input'), function(i) {
+    before[i.value] = i.checked;
+  });
+  while(box.firstChild) {
+    box.removeChild(box.firstChild);
+  }
+  sugTuneDocs().forEach(function(d) {
+    var label = sugTuneEl('label', 'sug-tune-doc d-block mb-1');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = String(d.id);
+    cb.checked = had && (d.id in before) ? before[d.id] : true;
+    cb.className = 'mr-2';
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(d.name + ' '));
+    label.appendChild(sugTuneEl('span', 'text-muted', gettext(
+      '(%(n)s highlight(s))', {n: d.count})));
+    box.appendChild(label);
+  });
+  sugTuneUpdateRunButton();
+}
+
+function sugTuneChosenDocs() {
+  var ids = [];
+  Array.prototype.forEach.call(
+    document.querySelectorAll('#sug-tune-docs input'), function(i) {
+      if(i.checked) {
+        ids.push(parseInt(i.value, 10));
+      }
+    });
+  return ids;
+}
+
+function sugTuneUpdateRunButton() {
+  var run = document.getElementById('sug-tune-run');
+  if(run) {
+    run.disabled = SUG_TUNE.running || !sugTuneChosenDocs().length
+      || !sug_session;
+  }
+}
+
+function sugTuneSvg(tag, attrs) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for(var k in (attrs || {})) {
+    el.setAttribute(k, String(attrs[k]));
+  }
+  return el;
+}
+
+// ROC chart: FPR on x, recall on y, both 0..1; one polyline per combination
+// of the top few, the winner emphasized with its operating point marked.
+// Colors come from CSS custom properties (custom.css).
+function sugTuneChart(rows) {
+  var W = 360, H = 320, L = 46, R = 12, T = 12, B = 42;
+  var pw = W - L - R, ph = H - T - B;
+  var X = function(v) { return L + sugTuneNum(v) * pw; };
+  var Y = function(v) { return T + (1 - sugTuneNum(v)) * ph; };
+  var svg = sugTuneSvg('svg', {viewBox: '0 0 ' + W + ' ' + H, width: '100%',
+                               'class': 'sug-roc', role: 'img',
+                               'aria-label': gettext('ROC curves')});
+  [0, 0.25, 0.5, 0.75, 1].forEach(function(t) {
+    svg.appendChild(sugTuneSvg('line', {x1: X(t), y1: Y(0), x2: X(t), y2: Y(1),
+                                        'class': 'sug-roc-grid'}));
+    svg.appendChild(sugTuneSvg('line', {x1: X(0), y1: Y(t), x2: X(1), y2: Y(t),
+                                        'class': 'sug-roc-grid'}));
+  });
+  [0, 0.5, 1].forEach(function(t) {
+    var tx = sugTuneSvg('text', {x: X(t), y: Y(0) + 14, 'class': 'sug-roc-tick',
+                                 'text-anchor': 'middle'});
+    tx.textContent = String(t);
+    svg.appendChild(tx);
+    var ty = sugTuneSvg('text', {x: X(0) - 6, y: Y(t) + 4,
+                                 'class': 'sug-roc-tick', 'text-anchor': 'end'});
+    ty.textContent = String(t);
+    svg.appendChild(ty);
+  });
+  svg.appendChild(sugTuneSvg('rect', {x: X(0), y: Y(1), width: pw, height: ph,
+                                      'class': 'sug-roc-frame'}));
+  svg.appendChild(sugTuneSvg('line', {x1: X(0), y1: Y(0), x2: X(1), y2: Y(1),
+                                      'class': 'sug-roc-diag'}));
+  var xl = sugTuneSvg('text', {x: X(0.5), y: H - 6, 'class': 'sug-roc-label',
+                               'text-anchor': 'middle'});
+  xl.textContent = gettext('False positive rate');
+  svg.appendChild(xl);
+  var yl = sugTuneSvg('text', {x: 12, y: Y(0.5), 'class': 'sug-roc-label',
+                               'text-anchor': 'middle',
+                               transform: 'rotate(-90 12 ' + Y(0.5) + ')'});
+  yl.textContent = gettext('Recall');
+  svg.appendChild(yl);
+  var top = rows.slice(0, SUG_TUNE_TOP).filter(function(r) { return r.curve; });
+  // Draw the winner last so it sits on top
+  for(var i = top.length - 1; i >= 0; --i) {
+    var r = top[i];
+    var pts = r.curve.map(function(p) { return [p.fpr, p.recall]; })
+      .sort(function(a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    pts.unshift([0, 0]);
+    pts.push([1, 1]);
+    svg.appendChild(sugTuneSvg('polyline', {
+      points: pts.map(function(p) {
+        return X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1);
+      }).join(' '),
+      'class': 'sug-roc-line sug-roc-c' + i + (i === 0 ? ' sug-roc-best' : ''),
+    }));
+    svg.appendChild(sugTuneSvg('circle', {
+      cx: X(r.fpr), cy: Y(r.recall), r: i === 0 ? 5.5 : 3.5,
+      'class': 'sug-roc-point sug-roc-c' + i,
+    }));
+  }
+  return svg;
+}
+
+function sugTuneRenderResults() {
+  var res = SUG_TUNE.results;
+  var box = document.getElementById('sug-tune-results');
+  if(!res) {
+    sugTuneShow('sug-tune-results', false);
+    sugTuneShow('sug-tune-use', false);
+    return;
+  }
+  sugTuneShow('sug-tune-results', true);
+  var info = document.getElementById('sug-tune-info');
+  var when = res.savedAt ? new Date(res.savedAt).toLocaleString() : '';
+  info.textContent = gettext('%(n)s document(s) evaluated', {n: res.docIds.length})
+    + (when ? ' · ' + when : '');
+  var table = document.getElementById('sug-tune-table');
+  while(table.firstChild) {
+    table.removeChild(table.firstChild);
+  }
+  var head = sugTuneEl('tr');
+  [gettext('Algorithm'), gettext('Ranking'), gettext('AUC'),
+   gettext('Best F1'), gettext('Precision'), gettext('Recall'),
+   gettext('Aggressiveness at best F1')].forEach(function(h) {
+    head.appendChild(sugTuneEl('th', '', h));
+  });
+  var thead = sugTuneEl('thead');
+  thead.appendChild(head);
+  table.appendChild(thead);
+  var tbody = sugTuneEl('tbody');
+  res.rows.forEach(function(r, i) {
+    var tr = sugTuneEl('tr');
+    tr.setAttribute('data-algo', r.algo);
+    tr.setAttribute('data-rank', r.rankMode);
+    if(i === 0) {
+      tr.className = 'sug-tune-best-row';
+    }
+    var algo = sugTuneEl('td', '', (SUG_ALGOS[r.algo] || {}).label || r.algo);
+    if(i === 0) {
+      algo.appendChild(document.createTextNode(' '));
+      algo.appendChild(sugTuneEl('span', 'badge badge-success sug-tune-badge',
+                                 gettext('best')));
+    }
+    tr.appendChild(algo);
+    tr.appendChild(sugTuneEl('td', '', r.algo === 'segmented' ? '—'
+      : sugRankLabel(r.rankMode) + (r.expand ? ' · ' + gettext('expanded') : '')));
+    [r.auc, r.f1, r.precision, r.recall].forEach(function(x) {
+      tr.appendChild(sugTuneEl('td', 'text-right', sugTuneNum(x).toFixed(3)));
+    });
+    tr.appendChild(sugTuneEl('td', 'text-right', String(r.v)));
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  var chart = document.getElementById('sug-tune-chart');
+  while(chart.firstChild) {
+    chart.removeChild(chart.firstChild);
+  }
+  chart.appendChild(sugTuneChart(res.rows));
+  var legend = sugTuneEl('div', 'sug-roc-legend small');
+  res.rows.slice(0, SUG_TUNE_TOP).forEach(function(r, i) {
+    var item = sugTuneEl('span', 'sug-roc-legend-item');
+    item.appendChild(sugTuneEl('span', 'sug-roc-swatch sug-roc-c' + i));
+    item.appendChild(document.createTextNode(' ' + sugTuneComboLabel(r)));
+    legend.appendChild(item);
+  });
+  chart.appendChild(legend);
+  var stale = document.getElementById('sug-tune-stale');
+  var cfg = sugLoadConfig();
+  var changed = res.embKey !== undefined && (cfg ? sugEmbKey(cfg) : '') !== res.embKey;
+  // Segment-based coding was scored with the segmentation parameters of the
+  // time; changed parameters make its row (and maybe the winner) outdated
+  if(!changed && res.segParamsKey && typeof segParams === 'function'
+     && typeof segUiParamsHash === 'function') {
+    changed = segUiParamsHash(segParams()) !== res.segParamsKey;
+  }
+  stale.style.display = changed ? '' : 'none';
+  sugTuneShow('sug-tune-use', true);
+}
+
+function sugTuneSetBusy(busy) {
+  SUG_TUNE.running = busy;
+  sugTuneShow('sug-tune-progress', busy);
+  sugTuneShow('sug-tune-setup', !busy);
+  sugTuneShow('sug-tune-cancel', busy);
+  sugTuneShow('sug-tune-run', !busy);
+  if(busy) {
+    sugTuneShow('sug-tune-use', false);
+  } else if(SUG_TUNE.results) {
+    sugTuneShow('sug-tune-use', true);
+  }
+  sugTuneUpdateRunButton();
+}
+
+function sugTuneProgressText(p, startedAt) {
+  var el = document.getElementById('sug-tune-progress-text');
+  if(!el) {
+    return;
+  }
+  el.textContent = gettext('document %(i)s/%(n)s · combination %(j)s/%(m)s',
+    {i: p.doc + 1, n: p.docs, j: p.combo + 1, m: p.combos})
+    + ' · ' + sugTuneFmtElapsed(Date.now() - startedAt);
+}
+
+function sugTuneAddError(msg) {
+  var box = document.getElementById('sug-tune-errors');
+  box.style.display = '';
+  box.appendChild(sugTuneEl('div', '', msg));
+}
+
+function sugTuneRunClicked() {
+  if(SUG_TUNE.running || !sug_session) {
+    return;
+  }
+  var ids = sugTuneChosenDocs();
+  if(!ids.length) {
+    return;
+  }
+  var names = {};
+  sugTuneDocs().forEach(function(d) { names[d.id] = d.name; });
+  var errors = document.getElementById('sug-tune-errors');
+  while(errors.firstChild) {
+    errors.removeChild(errors.firstChild);
+  }
+  errors.style.display = 'none';
+  var token = {cancelled: false};
+  SUG_TUNE.token = token;
+  SUG_TUNE.startedAt = Date.now();
+  sugTuneSetBusy(true);
+  var last = {doc: 0, docs: ids.length, combo: 0, combos: 1};
+  sugTuneProgressText(last, SUG_TUNE.startedAt);
+  SUG_TUNE.timer = setInterval(function() {
+    sugTuneProgressText(last, SUG_TUNE.startedAt);
+  }, 1000);
+  var finish = function() {
+    clearInterval(SUG_TUNE.timer);
+    SUG_TUNE.timer = null;
+    SUG_TUNE.token = null;
+    sugTuneSetBusy(false);
+  };
+  sugTuneRun(ids, {
+    token: token,
+    progress: function(p) {
+      last = p;
+      sugTuneProgressText(p, SUG_TUNE.startedAt);
+    },
+    error: function(e) {
+      sugTuneAddError(gettext('%(doc)s: %(msg)s',
+        {doc: names[e.id] || e.id, msg: e.message}));
+    },
+  }).then(function(res) {
+    res.savedAt = Date.now();
+    SUG_TUNE.results = res;
+    sugTuneStoreSave(res);
+    finish();
+    sugRefreshAutoOptions();
+    sugTuneRenderResults();
+  }, function(err) {
+    finish();
+    if(err && err.cancelled) {
+      return; // partial results are discarded
+    }
+    console.error('Tuning failed:', err);
+    sugTuneAddError((err && err.message) || String(err));
+  });
+}
+
+function sugTuneCancelClicked() {
+  if(SUG_TUNE.token) {
+    SUG_TUNE.token.cancelled = true;
+  }
+}
+
+function sugTuneOpen() {
+  if(!sug_session) {
+    return;
+  }
+  SUG_TUNE.results = sugTuneStored();
+  var modal = document.getElementById('suggest-tune-modal');
+  sugTuneRenderDocs();
+  sugTuneSetBusy(false);
+  sugTuneRenderResults();
+  var errors = document.getElementById('sug-tune-errors');
+  errors.style.display = 'none';
+  while(errors.firstChild) {
+    errors.removeChild(errors.firstChild);
+  }
+  $(modal).modal('show');
+}
+
+// The modal is gone (closed, Escape, or Use Auto): stop a run in flight and
+// settle a pending "Auto" choice
+function sugTuneClosed() {
+  sugTuneCancelClicked();
+  var pending = SUG_TUNE.pending;
+  SUG_TUNE.pending = null;
+  if(!sug_session) {
+    return;
+  }
+  if(pending && sugTuneStored() && !sug_session.panes[pending.pkey].auto) {
+    sugAutoApply(pending.pkey);
+  } else if(pending) {
+    sugSyncAlgoSelects(); // no results: back to the previous algorithm
+  }
+}
+
+function sugTuneUseAuto() {
+  var pkey = SUG_TUNE.pending ? SUG_TUNE.pending.pkey : '';
+  SUG_TUNE.pending = null;
+  if(sug_session && SUG_TUNE.results) {
+    sugAutoApply(pkey);
+  }
+  $(document.getElementById('suggest-tune-modal')).modal('hide');
+}
+
+function sugTuneInit() {
+  if(SUG_TUNE.wired || !document.getElementById('suggest-tune-modal')) {
+    return;
+  }
+  SUG_TUNE.wired = true;
+  var on = function(id, fn) {
+    document.getElementById(id).addEventListener('click', fn);
+  };
+  on('sug-tune-btn', function(e) {
+    e.preventDefault();
+    sugTuneOpen();
+  });
+  on('sug-tune-run', sugTuneRunClicked);
+  on('sug-tune-cancel', sugTuneCancelClicked);
+  on('sug-tune-use', sugTuneUseAuto);
+  on('sug-tune-all', function() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#sug-tune-docs input'),
+      function(i) { i.checked = true; });
+    sugTuneUpdateRunButton();
+  });
+  on('sug-tune-none', function() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#sug-tune-docs input'),
+      function(i) { i.checked = false; });
+    sugTuneUpdateRunButton();
+  });
+  document.getElementById('sug-tune-docs').addEventListener(
+    'change', sugTuneUpdateRunButton);
+  $(document.getElementById('suggest-tune-modal'))
+    .on('hidden.bs.modal', sugTuneClosed);
+  // Advanced options: collapsed by default, remembered per viewer
+  var panel = document.getElementById('suggest-panel');
+  var toggle = document.getElementById('sug-advanced-toggle');
+  var setAdvanced = function(open, save) {
+    panel.classList.toggle('sug-advanced-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.textContent = gettext('Advanced') + (open ? ' \u25BE' : ' \u25B8');
+    if(save) {
+      try {
+        window.localStorage.setItem(SUG_TUNE_ADV_STORE, open ? '1' : '0');
+      } catch(e) { /* best effort */ }
+    }
+  };
+  var saved = false;
+  try {
+    saved = window.localStorage.getItem(SUG_TUNE_ADV_STORE) === '1';
+  } catch(e) { /* private mode: collapsed */ }
+  setAdvanced(saved, false);
+  toggle.addEventListener('click', function(e) {
+    e.preventDefault();
+    setAdvanced(!panel.classList.contains('sug-advanced-open'), true);
+  });
+}
+
+/*
  * Init
  */
 
@@ -4952,11 +6194,15 @@ function sugSyncAlgoSelects() {
   var b_wrap = document.getElementById('sug-algo-b-wrap');
   var split = document.getElementById('sug-split');
   if(sug_session) {
-    document.getElementById('sug-algo-a').value = sug_session.panes[''].algo;
+    sugRefreshAutoOptions();
+    var shown = function(pane) {
+      return (pane.auto && sugAutoAvailable()) ? 'auto' : pane.algo;
+    };
+    document.getElementById('sug-algo-a').value = shown(sug_session.panes['']);
     b_wrap.style.display = sug_session.split ? '' : 'none';
     if(sug_session.panes['R']) {
       sug_session.panes['R'].clusterLabels = sug_session.panes['R'].clusterLabels || {};
-      document.getElementById('sug-algo-b').value = sug_session.panes['R'].algo;
+      document.getElementById('sug-algo-b').value = shown(sug_session.panes['R']);
     }
     split.checked = sug_session.split;
     sugUpdateSliderFeedback();
@@ -5040,6 +6286,12 @@ function sugInit() {
     if(!sug_session) {
       return;
     }
+    if(e.target.value === 'auto') {
+      sugAutoChosen('');
+      return;
+    }
+    sug_session.panes[''].auto = false;
+    sugAutoSaveChoice();
     sug_session.panes[''].algo = e.target.value;
     sugComputePane('');
   });
@@ -5047,6 +6299,11 @@ function sugInit() {
     if(!sug_session || !sug_session.panes['R']) {
       return;
     }
+    if(e.target.value === 'auto') {
+      sugAutoChosen('R');
+      return;
+    }
+    sug_session.panes['R'].auto = false;
     sug_session.panes['R'].algo = e.target.value;
     sugComputePane('R');
   });
@@ -5084,6 +6341,7 @@ function sugInit() {
     if(!sug_session) {
       return;
     }
+    sugAutoLeave();
     sug_session.expand = e.target.checked;
     sugComputePane('');
     if(sug_session.split) {
@@ -5100,6 +6358,7 @@ function sugInit() {
       sugOpenConfig();
       return;
     }
+    sugAutoLeave();
     sug_session.rankMode = mode;
     sug_session.useEmbeddings = mode !== 'lexical';
     window.localStorage.setItem('taguette_suggest_mode', mode);
@@ -5144,6 +6403,7 @@ function sugInit() {
     e.preventDefault();
     sugStopButton();
   });
+  sugTuneInit();
 
   // Delegated events over re-rendered spans and brackets
   document.addEventListener('mousedown', sugOnBracketMouseDown, true);
@@ -5216,6 +6476,220 @@ if(window.addEventListener) {
   };
 })();
 
+
+/*
+ * Self-test of the highlight tuning (metrics, selection, combinations). Pure:
+ * no DOM, no session. Returns the number of failures.
+ */
+
+function sugTuneSelfTest() {
+  var failures = 0;
+  function assert(cond, msg) {
+    if(!cond) {
+      console.error('TUNE SELFTEST FAIL:', msg);
+      ++failures;
+    }
+  }
+  function near(a, b) {
+    return Math.abs(a - b) < 1e-9;
+  }
+  function ids(entries) {
+    return entries.map(function(e) { return e.c.id; }).join(',');
+  }
+
+  // Spans
+  var u = sugSpansUnion([{s: 10, e: 12}, {s: 0, e: 5}, {s: 3, e: 8}, {s: 8, e: 9}]);
+  assert(JSON.stringify(u) === '[{"s":0,"e":9},{"s":10,"e":12}]',
+         'union merges overlapping and touching spans: ' + JSON.stringify(u));
+  assert(sugSpansLen(u) === 11, 'union length');
+  var it = sugSpansInter([{s: 0, e: 10}, {s: 20, e: 30}],
+                         [{s: 5, e: 25}, {s: 28, e: 40}]);
+  assert(JSON.stringify(it) === '[{"s":5,"e":10},{"s":20,"e":25},{"s":28,"e":30}]',
+         'intersection of unions: ' + JSON.stringify(it));
+  assert(sugSpansLen(sugSpansInter([], [{s: 0, e: 5}])) === 0, 'empty intersection');
+
+  // Counts and rates on hand-made spans: H=[0,10), S=[5,15), E=[0,20)
+  var c = sugTuneCounts([{s: 0, e: 10}], [{s: 5, e: 15}], [{s: 0, e: 20}]);
+  assert(c.h === 10 && c.s === 10 && c.tp === 5 && c.fp === 5 && c.neg === 10,
+         'counts: ' + JSON.stringify(c));
+  var pt = sugTunePoint(40, c);
+  assert(near(pt.recall, 0.5) && near(pt.precision, 0.5) && near(pt.fpr, 0.5)
+         && near(pt.f1, 0.5) && pt.v === 40, 'rates');
+  // Suggestions outside the eligible text are not false positives
+  c = sugTuneCounts([{s: 0, e: 10}], [{s: 5, e: 30}], [{s: 0, e: 20}]);
+  assert(c.s === 25 && c.tp === 5 && c.fp === 10 && c.neg === 10,
+         'FPR only counts eligible text: ' + JSON.stringify(c));
+  // Micro average: totals are summed over documents
+  var tot = sugTuneNewTotals();
+  sugTuneAddCounts(tot, sugTuneCounts([{s: 0, e: 10}], [{s: 0, e: 10}], [{s: 0, e: 20}]));
+  sugTuneAddCounts(tot, sugTuneCounts([{s: 0, e: 30}], [{s: 0, e: 10}], [{s: 0, e: 40}]));
+  pt = sugTunePoint(0, tot);
+  assert(near(pt.recall, 20 / 40) && near(pt.precision, 1) && near(pt.fpr, 0),
+         'micro aggregation sums lengths');
+  pt = sugTunePoint(0, sugTuneNewTotals());
+  assert(pt.recall === 0 && pt.precision === 0 && pt.fpr === 0 && pt.f1 === 0
+         && isFinite(pt.f1), 'empty totals give zeros, not NaN');
+
+  // AUC (the diagonal is 0.5, a perfect point 1, a known point 0.85)
+  assert(near(sugTuneAuc([{fpr: 0.5, recall: 0.5}]), 0.5), 'AUC of the diagonal');
+  assert(near(sugTuneAuc([{fpr: 0, recall: 1}]), 1), 'AUC of a perfect point');
+  assert(near(sugTuneAuc([{fpr: 0.1, recall: 0.8}]), 0.85), 'AUC of (0.1, 0.8)');
+  assert(near(sugTuneAuc([{fpr: 0.5, recall: 0.9}, {fpr: 0.1, recall: 0.5}]),
+              0.1 * 0.25 + 0.4 * 0.7 + 0.5 * 0.95), 'AUC sorts by FPR');
+
+  // Best F1 point: ties go to the lower aggressiveness
+  var pts = [{v: 0, f1: 0.2}, {v: 20, f1: 0.6}, {v: 40, f1: 0.5},
+             {v: 60, f1: 0.6}, {v: 80, f1: 0.1}];
+  assert(sugTuneBestPoint(pts).v === 20, 'best F1 tie -> lower v');
+  assert(sugTuneBestPoint([{v: 5, f1: 0}, {v: 10, f1: 0}]).v === 5, 'all-zero F1');
+
+  // Best combination: highest F1 (even when not dominant), ties -> AUC -> order
+  var rows = sugTuneSortRows([
+    {algo: 'a', f1: 0.5, auc: 0.9}, {algo: 'b', f1: 0.6, auc: 0.6},
+    {algo: 'c', f1: 0.6, auc: 0.7}, {algo: 'd', f1: 0.6, auc: 0.7},
+    {algo: 'e', f1: 0.1, auc: 0.99}]);
+  assert(rows.map(function(r) { return r.algo; }).join('') === 'cdbae',
+         'sort by F1, then AUC, then order: ' + rows.map(function(r) { return r.algo; }).join(''));
+  var best = sugTuneBestOf({algo: 'yake', rankMode: 'centroid', expand: 1, v: 35});
+  assert(best.algo === 'yake' && best.rankMode === 'centroid' && best.expand === true
+         && best.aggressiveness === 35, 'best of a row');
+
+  // Combinations
+  var combos = sugTuneCombos({emb: true, seg: true});
+  assert(combos.length === 3 + 3 + 6 + 6 + 1, 'all combinations: ' + combos.length);
+  assert(combos[combos.length - 1].algo === 'segmented', 'segmented last, once');
+  combos = sugTuneCombos({emb: false, seg: false});
+  assert(combos.length === 1 + 1 + 2 + 2 && combos.every(function(x) {
+    return x.rankMode === 'lexical';
+  }), 'lexical only without embeddings or segmentation: ' + combos.length);
+  assert(combos.filter(function(x) { return x.expand; }).length === 2
+         && combos.every(function(x) {
+    return !x.expand || x.algo === 'yake' || x.algo === 'rake';
+  }), 'expand variants only for yake and rake');
+
+  // Eligible text
+  var ctx = {plainText: 'x'.repeat(100), speakers: [], turns: []};
+  assert(sugSpansLen(sugTuneEligible(ctx)) === 100, 'no profile: whole text');
+  ctx = {
+    plainText: 'I: question here?\nP: the answer goes here.\n?: unlabelled text',
+    speakers: [{id: 'I', include: false}, {id: 'P', include: true}],
+    turns: [{start: 0, end: 18, text: 'I: question here?\n', speaker: 'I'},
+            {start: 18, end: 43, text: 'P: the answer goes here.\n', speaker: 'P'},
+            {start: 43, end: 62, text: '?: unlabelled text', speaker: null}],
+  };
+  var el = sugTuneEligible(ctx);
+  assert(el.length === 1 && el[0].s === 21 && el[0].e === 62,
+         'eligible: included speakers after their labels, unlabelled turns too, '
+         + 'the excluded speaker\'s turn left out: '
+         + JSON.stringify(el));
+
+  // Selection parity with the slider behaviour of the session
+  var base = [];
+  for(var i = 0; i < 6; ++i) {
+    base.push({id: i, start: i * 100, end: i * 100 + 50, cStart: i * 100,
+               cEnd: i * 100 + 50, lexPct: i / 5, raw: i});
+  }
+  var sel = function(extra) {
+    var o = {algo: 'textrank', rankMode: 'lexical', aggressiveness: 50,
+             useEmbeddings: false, clusterLabels: null, isExcluded: null,
+             staged: []};
+    for(var k in extra) { o[k] = extra[k]; }
+    return sugSelectShown(base, o);
+  };
+  assert(ids(sel({})) === '3,4,5', 'v=50 keeps those at or above 0.505');
+  assert(ids(sel({aggressiveness: 0})) === '5', 'v=0 keeps only the best');
+  assert(ids(sel({aggressiveness: 100})) === '1,2,3,4,5', 'v=100 keeps ~99%');
+  assert(ids(sel({algo: 'segmented', aggressiveness: 100})) === '0,1,2,3,4,5',
+         'segment units: at 100 everything shows');
+  assert(ids(sel({algo: 'segmented', aggressiveness: 99})) === '1,2,3,4,5',
+         'segment units: below 100 the cut-off applies');
+  var emb = base.map(function(b) {
+    var o = {}; for(var k in b) { o[k] = b[k]; }
+    o.embPct = 1 - b.lexPct;
+    return o;
+  });
+  var blended = sugSelectShown(emb, {algo: 'textrank', rankMode: 'centroid',
+    aggressiveness: 50, useEmbeddings: true, staged: []});
+  assert(blended.length === 0,
+         'blend (lex+emb)/2 = 0.5 is below the 0.505 cut-off');
+  var blended_hi = sugSelectShown(emb, {algo: 'textrank', rankMode: 'centroid',
+    aggressiveness: 60, useEmbeddings: true, staged: []});
+  assert(blended_hi.length === 6, 'blend passes a lower cut-off');
+  var lexical_only = sugSelectShown(emb, {algo: 'textrank', rankMode: 'lexical',
+    aggressiveness: 50, useEmbeddings: false, staged: []});
+  assert(ids(lexical_only) === '3,4,5', 'embeddings ignored when not used');
+  assert(ids(sel({isExcluded: function(c) { return c.id === 3; },
+                  staged: [{start: 400, end: 450}]})) === '5',
+         'excluded speakers and accepted passages are dropped');
+  var many = [];
+  for(i = 0; i < 100; ++i) {
+    many.push({id: i, start: i * 10, end: i * 10 + 5, cStart: i * 10,
+               cEnd: i * 10 + 5, lexPct: i / 99, raw: i});
+  }
+  var capped = sugSelectShown(many, {algo: 'textrank', rankMode: 'lexical',
+    aggressiveness: 100, useEmbeddings: false, staged: []});
+  assert(capped.length === 80 && capped[0].c.id === 20 && capped[79].c.id === 99,
+         'at most 80 suggestions, the best ones, in text order');
+
+  // Themes: the top passages per cluster, near-duplicates skipped
+  var cl = [
+    {id: 0, start: 0, end: 10, cStart: 0, cEnd: 10, lexPct: 0.1, cluster: 0, clSim: 0.9, _vec: [1, 0]},
+    {id: 1, start: 20, end: 30, cStart: 20, cEnd: 30, lexPct: 0.2, cluster: 0, clSim: 0.8, _vec: [1, 0.01]},
+    {id: 2, start: 40, end: 50, cStart: 40, cEnd: 50, lexPct: 0.3, cluster: 0, clSim: 0.7, _vec: [0, 1]},
+    {id: 3, start: 60, end: 70, cStart: 60, cEnd: 70, lexPct: 0.4, cluster: 1, clSim: 0.95, _vec: [0.7, 0.7]},
+    {id: 4, start: 80, end: 90, cStart: 80, cEnd: 90, lexPct: 0.5, _vec: [0.7, 0.7]},
+  ];
+  var themed = function(v) {
+    return ids(sugSelectShown(cl, {algo: 'textrank', rankMode: 'cluster',
+      aggressiveness: v, useEmbeddings: true,
+      clusterLabels: {0: 'T1', 1: 'T2'}, staged: []}));
+  };
+  assert(themed(0) === '0,3', 'v=0: one passage per theme: ' + themed(0));
+  assert(themed(50) === '0,2,3', 'v=50: three per theme, the duplicate skipped: '
+         + themed(50));
+  assert(ids(sugSelectShown(cl, {algo: 'textrank', rankMode: 'cluster',
+    aggressiveness: 100, useEmbeddings: true, clusterLabels: {}, staged: []}))
+         === '0,1,2,3,4', 'cluster mode without labels falls back to the cut-off');
+
+  // Clustering through a context (no session)
+  var vecs = [];
+  for(i = 0; i < 6; ++i) {
+    vecs.push({id: i, _vec: i < 3 ? [1, 0.01 * i] : [0.01 * i, 1]});
+  }
+  var labels = sugClusterCands(vecs, {aggressiveness: 50});
+  assert(Object.keys(labels).length >= 2 && vecs[0].cluster !== undefined
+         && vecs[0].cluster === vecs[1].cluster
+         && vecs[0].cluster !== vecs[5].cluster,
+         'clusters separate two groups: ' + JSON.stringify(labels));
+  assert(sugClusterCands([{_vec: [1]}], {aggressiveness: 50}) !== null
+         && Object.keys(sugClusterCands([{_vec: [1]}], {aggressiveness: 50})).length === 0,
+         'too few vectors: no clusters');
+
+  // Algorithms through a context object (transcription mode comes from it)
+  var text = 'The housing policy failed. The housing policy failed badly in the city. '
+    + 'People moved away because the rent was too high. Yeah. Right.';
+  var saved_tr = SUG_TRANSCRIPTION;
+  var out = sugRunAlgoCands('textrank', {plainText: text, transcription: true,
+                                          sentences: sugSplitSentences(text)}, false);
+  assert(out.length > 0 && SUG_TRANSCRIPTION === saved_tr,
+         'sugRunAlgoCands runs from a context and restores the global');
+
+  // Curve serialization round trip keeps the numbers finite
+  var res = {docIds: [1], rows: [{algo: 'textrank', rankMode: 'lexical',
+    expand: false, auc: 0.7, f1: 0.4, precision: 0.3, recall: 0.6, fpr: 0.2,
+    v: 45, curve: [{v: 45, precision: 0.3, recall: 0.6, fpr: 0.2}]}],
+    best: {algo: 'textrank', rankMode: 'lexical', expand: false,
+           aggressiveness: 45}, transcription: false, embKey: '', segParamsKey: ''};
+  var ser = sugTuneSerialize(res);
+  assert(ser.version === 1 && ser.rows[0].curve[0][2] === 0.6
+         && JSON.parse(JSON.stringify(ser)).best.aggressiveness === 45,
+         'serialization');
+
+  console.log(failures === 0
+    ? 'TUNE SELFTEST OK'
+    : 'TUNE SELFTEST: ' + failures + ' failure(s)');
+  return failures;
+}
 
 /*
  * Self-test: append ?suggest_selftest=1 to the project URL to run it.
@@ -5792,6 +7266,8 @@ function sugSelfTest() {
   assert(typeof SUG_ALGOS.segmented.run === 'function'
          && SUG_MARKER_SELECTOR.indexOf('.seg-separator') !== -1,
          'segmented algorithm and marker selector registered');
+
+  failures += sugTuneSelfTest();
 
   if(typeof segAiSelfTest === 'function') {
     segAiSelfTest().then(function(n) {

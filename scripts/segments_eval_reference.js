@@ -32,6 +32,7 @@ if(pos.length < 2 || !opt('interviewer') || !opt('interviewee')) {
 const fx = JSON.parse(fs.readFileSync(pos[0], 'utf8'));
 const guide = JSON.parse(fs.readFileSync(pos[1], 'utf8'));
 const DIM = parseInt(opt('dim', '128'), 10);
+const FAKE = argv.indexOf('--fake-decide') >= 0;
 const BIGRAMS = argv.indexOf('--bigrams') >= 0;
 const RE_I = new RegExp(opt('interviewer'), 'i');
 const RE_P = new RegExp(opt('interviewee'), 'i');
@@ -315,12 +316,18 @@ async function run(label, variant, mode, params, emb, verbose) {
   const t0 = Date.now();
   const sr = await S.segRunSections(input, deps);
   const t1 = Date.now();
-  const res = await S.segRunUnits(sr, input, deps);
+  const res = await S.segRunUnits(sr, input, deps, {tags: false});
   const t2 = Date.now();
-  const m = S.segEvaluate(res, hls, {tagUseCounts: uses, theta: input.params.theta});
+  const m = S.segEvaluate(res, hls, {tagUseCounts: uses, theta: input.params.theta,
+                                     plainText: plain, turns});
   const out = {label, m, res, k: k.c, tSections: t1 - t0, tUnits: t2 - t1};
   if(verbose) { report(out, input); }
   return out;
+}
+
+function fmtP(x) {
+  return 'P ' + x.precision.toFixed(3) + ' R ' + x.recall.toFixed(3) + ' F1 ' + x.f1.toFixed(3)
+    + '  (tp ' + x.tp + ' fp ' + x.fp + ' unjudged ' + x.unjudged + ', auto ' + x.nAuto + ', human ' + x.nHuman + ')';
 }
 
 function report(o, input) {
@@ -329,8 +336,9 @@ function report(o, input) {
   console.log('unitRecall %s  charRecall %s  charPrec %s  median %s words (Q1 %s, Q3 %s)',
     m.unitRecall.toFixed(3), m.charRecall.toFixed(3), m.charPrecision.toFixed(3),
     m.sizeMedian, m.sizeQ1, m.sizeQ3);
-  console.log('PRECISION %s  RECALL %s  F1 %s (ticked tags right / text coverage)',
-    m.precision.toFixed(3), m.recall.toFixed(3), m.f1.toFixed(3));
+  console.log('human segments %d (from %d highlights); boundaries %d', m.nHumanSegments, m.nHighlights, m.segments.nHuman);
+  console.log('SEGMENTS     ' + fmtP(m.segments));
+  console.log('HIGHLIGHTS    ' + fmtP(m.highlights));
   console.log('iou R/P/F1 %s/%s/%s  thetaRecall %s thetaF1 %s\nhit@1/3/5 %s/%s/%s  thetaPrec %s (n=%d)  units %d  sections %d  other%% %s  coverage present/missing %d/%d',
     m.iouRecall.toFixed(3), m.iouPrecision.toFixed(3), m.iouF1.toFixed(3), m.thetaRecall.toFixed(3), m.thetaF1.toFixed(3),
     m.hitAt[1].toFixed(3), m.hitAt[3].toFixed(3), m.hitAt[5].toFixed(3), m.thetaPrecision.toFixed(3),
@@ -401,27 +409,25 @@ function report(o, input) {
     results.push(await run(variants[i][0], variants[i][1], variants[i][2], {}, emb, true));
   }
   if(argv.indexOf('--grid') >= 0) {
-    console.log('\n=== grid (leave-one-out exemplars, embedding-only) ===');
+    console.log('\n=== grid (leave-one-out exemplars, ' + (FAKE ? 'fake decide' : 'embedding-only') + ') ===');
     const cache = {};
     const sections = {};
     const runFn = async (p) => {
       const key = [p.kappa, p.lambda].join('|');
-      const input = mkInput({kappa: p.kappa, lambda: p.lambda, tau: p.tau, theta: p.theta}, 'loo');
-      const deps = counters().deps(emb, null);
+      const input = mkInput({kappa: p.kappa, lambda: p.lambda, tau: p.tau}, 'loo');
+      const deps = counters().deps(emb, FAKE ? 'fake' : null);
       if(!sections[key]) { sections[key] = await S.segRunSections(input, deps); }
-      const res = await S.segRunUnits(sections[key], input, deps);
-      const m = S.segEvaluate(res, hls, {tagUseCounts: uses, theta: p.theta});
-      m.rescore = (th) => S.segEvaluate(res, hls, {tagUseCounts: uses, theta: th});
-      return m;
+      const res = await S.segRunUnits(sections[key], input, deps, {tags: false});
+      return S.segEvaluate(res, hls, {plainText: plain, turns});
     };
-    const g = await S.segGridSearch(runFn, {
-      tau: [0.15, 0.25, 0.35, 0.5], kappa: [0.05, 0.15, 0.25], lambda: [1, 2, 4], theta: [0.5, 0.6, 0.7]});
-    g.rows.forEach((r) => console.log('tau %s kappa %s lambda %s theta %s -> recall %s cP %s size %s units %d secs %d hit3 %s thP %s iouF1 %s thF1 %s | P %s R %s F1 %s',
-      r.params.tau, r.params.kappa, r.params.lambda, r.params.theta, r.metrics.unitRecall.toFixed(3),
-      r.metrics.charPrecision.toFixed(3), r.metrics.sizeMedian, r.metrics.nUnits, r.metrics.sections,
-      r.metrics.hitAt[3].toFixed(3), r.metrics.thetaPrecision.toFixed(3), r.metrics.iouF1.toFixed(3), r.metrics.thetaF1.toFixed(3),
-      r.metrics.precision.toFixed(3), r.metrics.recall.toFixed(3), r.metrics.f1.toFixed(3)));
-    console.log('BEST (max F1) %j precision %s recall %s f1 %s', g.best.params,
-      g.best.metrics.precision.toFixed(3), g.best.metrics.recall.toFixed(3), g.best.metrics.f1.toFixed(3));
+    let nRuns = 0;
+    const g = await S.segGridSearch((p) => { ++nRuns; return runFn(p); }, {currentTau: S.segParams({}).tau});
+    console.log('grid runs: %d', nRuns);
+    g.rows.forEach((r) => console.log('tau %s kappa %s lambda %s -> units %d secs %d | SEG %s | HL %s',
+      r.params.tau, r.params.kappa, r.params.lambda, r.metrics.nUnits, r.metrics.sections,
+      fmtP(r.metrics.segments), fmtP(r.metrics.highlights)));
+    console.log('edge: %j', g.edge);
+    console.log('BEST %j\n  SEGMENTS %s\n  HIGHLIGHTS %s', g.best.params,
+      fmtP(g.best.metrics.segments), fmtP(g.best.metrics.highlights));
   }
 })().catch((e) => { console.error(e); process.exit(1); });
