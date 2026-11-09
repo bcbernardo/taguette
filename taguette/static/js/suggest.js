@@ -3714,8 +3714,12 @@ function sugCaretByte(clientX, clientY) {
 
 function sugOnBracketMouseDown(e) {
   var bracket = e.target.closest ? e.target.closest('.sug-bracket') : null;
+  if(bracket && bracket.hasAttribute('data-aid')) {
+    sugStartStagedDrag(e, bracket);
+    return;
+  }
   if(!bracket || !bracket.hasAttribute('data-sid')) {
-    return; // staged brackets are fixed
+    return;
   }
   var sid = parseInt(bracket.getAttribute('data-sid'));
   var found = sugFindSuggestion(sid);
@@ -3788,6 +3792,143 @@ function sugOnBracketMouseDown(e) {
     sugUpdateCounts();
   }
 
+  document.addEventListener('mousemove', onMove, true);
+  document.addEventListener('mouseup', onUp, true);
+}
+
+
+// Index of the character boundary nearest to `byte` (byteOfChar is the
+// cumulative UTF-8 byte offset of every character boundary)
+function sugCharOfByte(boc, byte) {
+  var lo = 0, hi = boc.length - 1;
+  if(byte <= boc[0]) {
+    return 0;
+  }
+  if(byte >= boc[hi]) {
+    return hi;
+  }
+  while(hi - lo > 1) {
+    var mid = (lo + hi) >> 1;
+    if(boc[mid] <= byte) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return (byte - boc[lo] <= boc[hi] - byte) ? lo : hi;
+}
+
+// Move one boundary of an accepted highlight to the byte offset `byte`.
+// range: {cStart, cEnd} (character offsets); others: [{start, end}] in bytes
+// (other accepted highlights and saved ones); boc: byteOfChar. The boundary
+// snaps to a character boundary, keeps at least `min_gap` characters in the
+// range and never enters another highlight that lies on its side of the
+// range. Returns {cStart, cEnd, start, end} (byte offsets from boc).
+function sugResizeRange(range, which, byte, others, boc, min_gap) {
+  min_gap = min_gap === undefined ? 3 : min_gap;
+  var c = sugCharOfByte(boc, byte);
+  var cs = range.cStart, ce = range.cEnd;
+  var i, o, os, oe;
+  if(which === 'start') {
+    var lo = 0;
+    for(i = 0; i < others.length; ++i) {
+      oe = sugCharOfByte(boc, others[i].end);
+      if(oe <= cs) {
+        lo = Math.max(lo, oe);
+      }
+    }
+    var hi = Math.max(lo, ce - min_gap);
+    cs = Math.max(lo, Math.min(c, hi));
+  } else {
+    var top = boc.length - 1;
+    for(i = 0; i < others.length; ++i) {
+      os = sugCharOfByte(boc, others[i].start);
+      if(os >= ce) {
+        top = Math.min(top, os);
+      }
+    }
+    var low = Math.min(top, cs + min_gap);
+    ce = Math.min(top, Math.max(c, low));
+  }
+  return {cStart: cs, cEnd: ce, start: boc[cs], end: boc[ce]};
+}
+
+// Highlights an accepted highlight must not overlap: the other accepted
+// ones and the saved ones (byte offsets)
+function sugStagedObstacles(aid) {
+  var out = [];
+  sug_session.staged.forEach(function(o) {
+    if(o.aid !== aid) {
+      out.push({start: o.start, end: o.end});
+    }
+  });
+  Object.keys(highlights).forEach(function(id) {
+    out.push({start: highlights[id].start_offset,
+              end: highlights[id].end_offset});
+  });
+  return out;
+}
+
+// Dragging a bracket of an accepted highlight moves that boundary
+function sugStartStagedDrag(e, bracket) {
+  var aid = parseInt(bracket.getAttribute('data-aid'), 10);
+  var which = bracket.getAttribute('data-which');
+  var st = null;
+  sug_session.staged.forEach(function(x) { if(x.aid === aid) { st = x; } });
+  if(!st || !sug_session.byteOfChar) {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  sugHideMenu();
+  var others = sugStagedObstacles(aid);
+  var boc = sug_session.byteOfChar;
+  sug_drag = {aid: aid, which: which, st: st, lastRender: 0};
+
+  function mark() {
+    var els = document.querySelectorAll(
+      '.sug-bracket[data-aid="' + aid + '"][data-which="' + which + '"]');
+    for(var i = 0; i < els.length; ++i) {
+      els[i].classList.add('sug-dragging');
+    }
+  }
+
+  function apply(b) {
+    var r = sugResizeRange(st, which, b, others, boc);
+    if(r.cStart === st.cStart && r.cEnd === st.cEnd) {
+      return false;
+    }
+    st.cStart = r.cStart;
+    st.cEnd = r.cEnd;
+    st.start = r.start;
+    st.end = r.end;
+    return true;
+  }
+
+  function onMove(e2) {
+    var b = sugCaretByte(e2.clientX, e2.clientY);
+    if(b === null || !apply(b)) {
+      return;
+    }
+    var now = Date.now();
+    if(now - sug_drag.lastRender > 150) {
+      sug_drag.lastRender = now;
+      sugRenderStaged(st);
+      mark();
+    }
+  }
+
+  function onUp() {
+    document.removeEventListener('mousemove', onMove, true);
+    document.removeEventListener('mouseup', onUp, true);
+    sug_drag = null;
+    sugRenderStaged(st);
+    // Suggestions now covered by the highlight drop; uncovered ones return
+    sugRefilter();
+    sugUpdateCounts();
+  }
+
+  mark();
   document.addEventListener('mousemove', onMove, true);
   document.addEventListener('mouseup', onUp, true);
 }
@@ -4048,6 +4189,21 @@ function sugShowTagPicker(aid) {
                       window.parseInt(menu.style.left) || 100,
                       window.parseInt(menu.style.top) || 100, true);
   });
+}
+
+// True when a click on `t` is outside the menu and the highlights. A menu
+// button's handler may re-render the menu (innerHTML) while the click is still
+// bubbling: its target is then detached, closest() finds no #sug-menu, and the
+// click must not count as an outside click.
+function sugClickIsOutsideMenu(t) {
+  if(!t || !t.closest) {
+    return false;
+  }
+  if(!document.documentElement.contains(t)) {
+    return false; // removed from the DOM by a handler: it was inside the menu
+  }
+  return !(t.closest('#sug-menu') || t.closest('.sug-span')
+           || t.closest('.hl-staged'));
 }
 
 // Hover/click wiring (delegated, survives re-rendering)
@@ -6423,12 +6579,8 @@ function sugInit() {
       return;
     }
     // Dismiss a pinned menu on any click outside the session UI
-    if(sug_menu_pinned) {
-      var t = e.target;
-      if(!(t.closest && (t.closest('#sug-menu')
-                         || t.closest('.sug-span') || t.closest('.hl-staged')))) {
-        sugHideMenu();
-      }
+    if(sug_menu_pinned && sugClickIsOutsideMenu(e.target)) {
+      sugHideMenu();
     }
   });
   document.addEventListener('keydown', function(e) {
@@ -6684,6 +6836,39 @@ function sugTuneSelfTest() {
   assert(ser.version === 1 && ser.rows[0].curve[0][2] === 0.6
          && JSON.parse(JSON.stringify(ser)).best.aggressiveness === 45,
          'serialization');
+
+  // Resizing accepted highlights with the brackets (UTF-8: 'é' is 2 bytes)
+  var rtext = 'ab cd éf gh ij kl mn op';
+  var boc = [0], rb = 0;
+  for(var ri = 0; ri < rtext.length; ++ri) {
+    rb += rtext.charCodeAt(ri) > 127 ? 2 : 1;
+    boc.push(rb);
+  }
+  var cob = function(c) { return boc[c]; };
+  assert(sugCharOfByte(boc, 0) === 0 && sugCharOfByte(boc, 5) === 5
+         && sugCharOfByte(boc, 99) === rtext.length && sugCharOfByte(boc, -4) === 0,
+         'sugCharOfByte: exact and clamped');
+  assert(sugCharOfByte(boc, 7) === 6 || sugCharOfByte(boc, 7) === 7,
+         'sugCharOfByte: a byte inside a 2-byte char snaps to a boundary');
+  var rng = {cStart: 6, cEnd: 14};
+  var r1 = sugResizeRange(rng, 'end', cob(10) + 1, [], boc);
+  assert(r1.cStart === 6 && r1.cEnd === sugCharOfByte(boc, cob(10) + 1)
+         && r1.start === boc[6] && r1.end === boc[r1.cEnd], 'shrink the end');
+  var r2 = sugResizeRange(rng, 'end', cob(7), [], boc);
+  assert(r2.cEnd === 9, 'end keeps min gap of 3 characters: ' + r2.cEnd);
+  var r3 = sugResizeRange(rng, 'start', cob(20), [], boc);
+  assert(r3.cStart === 11 && r3.cEnd === 14, 'start cannot pass the end: ' + r3.cStart);
+  var r4 = sugResizeRange(rng, 'start', cob(2),
+                          [{start: cob(0), end: cob(4)}], boc);
+  assert(r4.cStart === 4, 'start clamps at the previous highlight: ' + r4.cStart);
+  var r5 = sugResizeRange(rng, 'end', cob(22),
+                          [{start: cob(17), end: cob(19)}, {start: cob(0), end: cob(3)}], boc);
+  assert(r5.cEnd === 17, 'end clamps at the next highlight: ' + r5.cEnd);
+  var r6 = sugResizeRange(rng, 'end', cob(22), [], boc);
+  assert(r6.cEnd === 22 && r6.end === boc[22], 'end can extend freely');
+  var r7 = sugResizeRange(rng, 'start', cob(0),
+                          [{start: cob(8), end: cob(10)}], boc);
+  assert(r7.cStart === 0, 'a highlight inside the range does not block growing');
 
   console.log(failures === 0
     ? 'TUNE SELFTEST OK'

@@ -54,7 +54,8 @@ var SEG_UI = {
   script: {rows: [], dirty: false, docs: [], index: {}, open: false,
            busy: false, generating: false, allowClose: false},
   emergent: {proceed: null, groups: [], working: false},
-  evalState: {metrics: null, grid: null, running: false},
+  evalState: {metrics: null, baseline: null, grid: null, running: false,
+              docId: null, docName: '', token: 0},
   evalSections: null
 };
 
@@ -2975,64 +2976,127 @@ function segUiHasHighlights() {
     && Object.keys(highlights).length > 0;
 }
 
+// Documents an evaluation can use: those with saved highlights (the open
+// one also when its live highlights exist). docs: the `documents` object.
+// [{id, name, count}] sorted by id
+function segUiEvalDocList(docs, openId, liveCount) {
+  var out = [];
+  Object.keys(docs || {}).sort(function(a, b) {
+    return a - b;
+  }).forEach(function(id) {
+    var d = docs[id] || {};
+    var isOpen = openId !== null && openId !== undefined
+      && String(openId) === String(id);
+    var n = Math.max(d.highlights_count || 0, isOpen ? (liveCount || 0) : 0);
+    if(n > 0) {
+      out.push({id: parseInt(id, 10), name: d.name || String(id), count: n});
+    }
+  });
+  return out;
+}
+
+// The document the select shows: the previous choice while it still
+// qualifies, else the open document, else the first
+function segUiEvalPickDoc(list, openId, prevId) {
+  function has(id) {
+    return id !== null && id !== undefined && list.some(function(d) {
+      return String(d.id) === String(id);
+    });
+  }
+  if(has(prevId)) {
+    return parseInt(prevId, 10);
+  }
+  if(has(openId)) {
+    return parseInt(openId, 10);
+  }
+  return list.length ? list[0].id : null;
+}
+
+function segUiEvalDocs() {
+  var docs = (typeof documents !== 'undefined' && documents) ? documents : {};
+  var open = (typeof current_document !== 'undefined') ? current_document : null;
+  return segUiEvalDocList(docs, open, segUiHasHighlights()
+    ? Object.keys(highlights).length : 0);
+}
+
 // Why an evaluation cannot start right now (null when it can)
-function segUiEvalBlocker() {
-  if(!sug_session) {
-    return gettext('Start a suggestion session on a document first.');
-  }
-  if(!segUiHasHighlights()) {
-    return gettext('This document has no highlights to compare with.');
-  }
-  if(!segUiEnsureDoc()) {
-    return gettext('The segmentation data isn\'t ready yet; start a session again.');
+function segUiEvalBlocker(docId) {
+  if(docId === null || docId === undefined) {
+    return gettext('No document has saved highlights yet.');
   }
   return null;
 }
 
-function segUiRealHighlights() {
-  var boc = sug_session.byteOfChar, out = [];
-  for(var id in highlights) {
-    var h = highlights[id];
-    out.push({id: h.id, cStart: segByteToChar(boc, h.start_offset),
-              cEnd: segByteToChar(boc, h.end_offset),
-              tagIds: (h.tags || []).map(function(t) {
-                return parseInt(t, 10);
-              })});
+// Highlights in char offsets; hls: array or object of {id, start_offset,
+// end_offset, tags}
+function segUiHighlightsToChars(hls, boc) {
+  var list = [];
+  if(Array.isArray(hls)) {
+    list = hls;
+  } else {
+    for(var id in hls) {
+      list.push(hls[id]);
+    }
   }
-  return out;
+  return list.map(function(h) {
+    return {id: h.id, cStart: segByteToChar(boc, h.start_offset),
+            cEnd: segByteToChar(boc, h.end_offset),
+            tagIds: (h.tags || []).map(function(t) {
+              return parseInt(t, 10);
+            })};
+  });
 }
 
-// One evaluation run on the open document with its own highlights hidden
-// from the pipeline; the session's suggestions are not touched
-function segUiEvalRun(overrides, progress) {
+// Everything one evaluation needs about a document: Promise of {docId, name,
+// hls (chars), plainText, makeInput(overrides)}. The open document with a
+// running session uses the session; any other document is loaded without
+// one.
+function segUiEvalLoad(docId) {
+  var docs = (typeof documents !== 'undefined' && documents) ? documents : {};
+  var name = (docs[docId] && docs[docId].name) || String(docId);
+  var open = (typeof current_document !== 'undefined') ? current_document : null;
+  if(sug_session && open !== null && String(open) === String(docId)
+     && segUiEnsureDoc()) {
+    var sess = sug_session;
+    return Promise.resolve({
+      docId: docId, name: name, plainText: sess.plainText,
+      hls: segUiHighlightsToChars(highlights, sess.byteOfChar),
+      makeInput: function(overrides) {
+        return segUiMakeInput({overrides: overrides, excludeDocId: docId,
+                               manual: null});
+      }
+    });
+  }
+  if(typeof sugTuneLoadDoc !== 'function') {
+    return Promise.reject(new Error(gettext('Suggested highlights are not available.')));
+  }
+  return sugTuneLoadDoc(docId, false).then(function(d) {
+    var ctx = d.ctx;
+    return {
+      docId: docId, name: name, plainText: ctx.plainText,
+      hls: segUiHighlightsToChars(d.highlights, ctx.byteOfChar),
+      makeInput: function(overrides) {
+        return segUiMakeInputFor({docId: docId, plainText: ctx.plainText,
+                                  turns: ctx.turns, speakers: ctx.speakers,
+                                  overrides: overrides});
+      }
+    };
+  });
+}
+
+// One evaluation run on a document with its own highlights hidden from the
+// pipeline; the session's suggestions are not touched. data: segUiEvalLoad()
+function segUiEvalRun(data, overrides, progress) {
   var deps = segMakeDeps({progress: progress});
-  var sess = sug_session, edit = sess ? (sess.editGen || 0) : 0;
-  function ended() {
-    return !sug_session || sug_session !== sess
-      || (sess.editGen || 0) !== edit;
-  }
-  if(ended()) {
-    return Promise.reject(segUiStaleError());
-  }
-  var hls;
-  try {
-    hls = segUiRealHighlights();
-  } catch(err) {
-    return Promise.reject(err);
-  }
   segUiRunBegin();   // breakers reset only when no analysis is in flight
   var p;
   try {
-    p = segUiMakeInput({overrides: overrides, excludeDocId: current_document,
-                        manual: null});
+    p = data.makeInput(overrides);
   } catch(err) {
     segUiRunEnd();
     return Promise.reject(err);
   }
   p = p.then(function(input) {
-    if(ended()) {
-      throw segUiStaleError();
-    }
     // segmentation only: no tag calls at all
     // within one grid run the sections stage is shared by every tau
     var cache = SEG_UI.evalSections, key = null, srP;
@@ -3043,7 +3107,7 @@ function segUiEvalRun(overrides, progress) {
           kp[pk] = input.params[pk];
         }
       }
-      key = JSON.stringify(kp);
+      key = data.docId + '|' + JSON.stringify(kp);
     }
     if(cache && cache[key]) {
       srP = Promise.resolve(cache[key]);
@@ -3058,11 +3122,8 @@ function segUiEvalRun(overrides, progress) {
     return srP.then(function(sr) {
       return segRunUnits(sr, input, deps, {tags: false});
     }).then(function(res) {
-      if(ended()) {
-        throw segUiStaleError();
-      }
-      return segEvaluate(res, hls, {plainText: sess.plainText,
-                                    turns: input.turns});
+      return segEvaluate(res, data.hls, {plainText: data.plainText,
+                                         turns: input.turns});
     });
   });
   return p.then(function(m) {
@@ -3074,7 +3135,42 @@ function segUiEvalRun(overrides, progress) {
   });
 }
 
-function segUiEvalRenderMetrics(host, m) {
+// ---- rows of the grid table (pure) ----
+
+function segUiSameParams(a, b) {
+  return !!a && !!b && ['tau', 'kappa', 'lambda'].every(function(k) {
+    return Math.abs(a[k] - b[k]) < 1e-9;
+  });
+}
+
+// Baseline row first, then the other rows; rows with identical parameters
+// appear once (the first one wins)
+function segUiEvalTableRows(baseline, rows) {
+  var out = [];
+  (baseline ? [baseline] : []).concat(rows || []).forEach(function(r) {
+    if(!out.some(function(o) { return segUiSameParams(o.params, r.params); })) {
+      out.push(r);
+    }
+  });
+  return out;
+}
+
+// Index of the row whose parameters are the current ones (-1 when none)
+function segUiEvalCurrentIndex(rows, cur) {
+  for(var i = 0; i < rows.length; ++i) {
+    if(segUiSameParams(rows[i].params, cur)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function segUiEvalRenderMetrics(host, m, params) {
+  if(params) {
+    host.appendChild(segUiEl('p', 'small mb-1', gettext(
+      'Evaluated settings: tau %(tau)s, kappa %(kappa)s, lambda %(lambda)s',
+      {tau: params.tau, kappa: params.kappa, lambda: params.lambda})));
+  }
   var table = segUiEl('table', 'table table-sm seg-eval-table');
   var head = segUiEl('tr');
   ['', gettext('Precision'), gettext('Recall')].forEach(function(h) {
@@ -3098,11 +3194,6 @@ function segUiEvalRenderMetrics(host, m) {
 
 function segUiEvalRenderGrid(host, grid, onApply) {
   var cur = segParams();
-  function same(a, b) {
-    return ['tau', 'kappa', 'lambda'].every(function(k) {
-      return Math.abs(a[k] - b[k]) < 1e-9;
-    });
-  }
   function f1Of(r, level) {
     var x = r.metrics && r.metrics[level];
     return x && typeof x.f1 === 'number' ? x.f1 : 0;
@@ -3143,6 +3234,9 @@ function segUiEvalRenderGrid(host, grid, onApply) {
     head.appendChild(segUiEl('th', null, h));
   });
   table.appendChild(head);
+  var baseline = SEG_UI.evalState.baseline;
+  var allRows = segUiEvalTableRows(baseline, rows);
+  var curIdx = segUiEvalCurrentIndex(allRows, cur);
   function addRow(row, isCurrent) {
     var params = row.params, m = row.metrics;
     var seg = m.segments || {}, hl = m.highlights || {};
@@ -3154,12 +3248,12 @@ function segUiEvalRenderGrid(host, grid, onApply) {
       tr.appendChild(segUiEl('td', null, segUiPct(v || 0)));
     });
     var note = segUiEl('td');
-    if(!isCurrent && row === grid.best) {
+    if(grid.best && segUiSameParams(row.params, grid.best.params)) {
       note.appendChild(segUiEl('span', 'badge badge-success', gettext('best')));
     }
     tr.appendChild(note);
     var td = segUiEl('td');
-    if(isCurrent || same(params, cur)) {
+    if(isCurrent) {
       td.appendChild(segUiEl('em', 'text-muted', gettext('current')));
     } else {
       var b = segUiEl('button', 'btn btn-outline-primary btn-sm py-0', gettext('Apply'));
@@ -3172,11 +3266,8 @@ function segUiEvalRenderGrid(host, grid, onApply) {
     tr.appendChild(td);
     table.appendChild(tr);
   }
-  if(SEG_UI.evalState.metrics) {
-    addRow({params: cur, metrics: SEG_UI.evalState.metrics}, true);
-  }
-  rows.forEach(function(r) {
-    addRow(r, false);
+  allRows.forEach(function(r, i) {
+    addRow(r, i === curIdx);
   });
   host.appendChild(table);
   (grid.edge || []).forEach(function(k) {
@@ -3193,7 +3284,31 @@ function segEvalPanelBuild(box, opts) {
   }
   segUiClear(box);
   box.appendChild(segUiEl('p', 'text-muted small', gettext(
-    'Compare the segments and suggested highlights the analysis would produce with the highlights already made in this document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
+    'Compare the segments and suggested highlights the analysis would produce with the highlights already made in a document. The document\'s own highlights are hidden from the analysis, and the current suggestions are not changed.')));
+  var docs = segUiEvalDocs();
+  var open = (typeof current_document !== 'undefined') ? current_document : null;
+  var st = SEG_UI.evalState;
+  st.docId = segUiEvalPickDoc(docs, open, st.docId);
+  var docRow = segUiEl('div', 'form-inline mb-2');
+  var docSel = segUiEl('select', 'custom-select custom-select-sm');
+  docSel.setAttribute('aria-label', gettext('Document'));
+  if(docs.length) {
+    docRow.appendChild(segUiEl('label', 'small mr-2', gettext('Document')));
+    docs.forEach(function(d) {
+      var o = segUiEl('option', null, d.name);
+      o.value = String(d.id);
+      docSel.appendChild(o);
+    });
+    docSel.value = String(st.docId);
+    docSel.addEventListener('change', function() {
+      st.docId = parseInt(docSel.value, 10);
+    });
+    docRow.appendChild(docSel);
+    box.appendChild(docRow);
+  } else {
+    box.appendChild(segUiEl('p', 'text-muted small', gettext(
+      'No document has saved highlights yet.')));
+  }
   var btn = segUiEl('button', 'btn btn-outline-primary btn-sm mr-2',
                     gettext('Evaluate against existing highlights'));
   btn.type = 'button';
@@ -3230,16 +3345,16 @@ function segEvalPanelBuild(box, opts) {
     current: function() { return lineText.textContent; }
   });
   function setRunning(on) {
-    SEG_UI.evalState.running = on;
+    st.running = on;
     btn.disabled = on;
     grid.disabled = on;
+    docSel.disabled = on;
   }
-  setRunning(SEG_UI.evalState.running);
+  setRunning(st.running);
   var applied = '';
   function onApply(row) {
     var params = segParams(row.params);
     segSaveParams(params);
-    SEG_UI.evalState.metrics = row.metrics;
     segUiInputsChanged();
     applied = gettext('Applied: tau %(tau)s, kappa %(kappa)s, lambda %(lambda)s. Suggestions are being recomputed.',
                       {tau: params.tau, kappa: params.kappa, lambda: params.lambda});
@@ -3252,12 +3367,13 @@ function segEvalPanelBuild(box, opts) {
   function renderState() {
     segUiClear(out);
     segUiClear(gridOut);
-    if(SEG_UI.evalState.metrics) {
-      segUiEvalRenderMetrics(out, SEG_UI.evalState.metrics);
+    if(st.metrics) {
+      segUiEvalRenderMetrics(out, st.metrics,
+                             st.baseline && st.baseline.params);
     }
-    if(SEG_UI.evalState.grid) {
+    if(st.grid) {
       gridOut.appendChild(segUiEl('h6', 'mt-3', gettext('Best parameter combinations')));
-      segUiEvalRenderGrid(gridOut, SEG_UI.evalState.grid, onApply);
+      segUiEvalRenderGrid(gridOut, st.grid, onApply);
       if(applied) {
         gridOut.appendChild(segUiEl('p', 'small text-success', applied));
       }
@@ -3266,38 +3382,28 @@ function segEvalPanelBuild(box, opts) {
   function fail(err) {
     meter.abort();
     setRunning(false);
-    if(err && err.stale) {
-      console.info('Segmentation evaluation stopped: the session ended or the text changed');
-      message(gettext('Evaluation stopped: the suggestion session ended.'), 'warn');
-    } else {
-      console.error('Segmentation evaluation failed:', err);
-      message(segUiErrText(err), 'error');
-    }
+    console.error('Segmentation evaluation failed:', err);
+    message(segUiErrText(err), 'error');
   }
-  function finish() {
+  function finish(name) {
     meter.abort();
     setRunning(false);
-    message('');
+    message(gettext('Evaluated on «%(name)s».', {name: name}));
     renderState();
   }
   // Checks readiness at click time; shows why it cannot start otherwise
   function begin(label) {
-    if(SEG_UI.evalState.running) {
+    if(st.running) {
       return false;
     }
-    var why;
-    try {
-      why = segUiEvalBlocker();
-    } catch(err) {
-      fail(err);
-      return false;
-    }
+    var why = segUiEvalBlocker(st.docId);
     if(why) {
       console.info('Segmentation evaluation: not started. ' + why);
       message(why, 'warn');
       return false;
     }
     console.info('Segmentation evaluation: starting' + (label ? ' (' + label + ')' : ''));
+    ++st.token;
     setRunning(true);
     meter.start(gettext('Evaluating…'));
     return true;
@@ -3306,39 +3412,58 @@ function segEvalPanelBuild(box, opts) {
     if(!begin()) {
       return;
     }
+    var token = st.token, params = segParams();
     // Promise.resolve().then: a synchronous throw becomes a visible failure
     Promise.resolve().then(function() {
-      return segUiEvalRun(undefined, function(stage, done, total) {
+      return segUiEvalLoad(st.docId);
+    }).then(function(data) {
+      return segUiEvalRun(data, undefined, function(stage, done, total) {
         meter.progress(stage, done, total);
+      }).then(function(m) {
+        return {m: m, name: data.name};
       });
-    }).then(function(m) {
-      console.log('Segmentation evaluation', m);
-      SEG_UI.evalState.metrics = m;
-      finish();
+    }).then(function(r) {
+      console.log('Segmentation evaluation', r.m);
+      if(token === st.token) {
+        st.metrics = r.m;
+        st.baseline = {params: {tau: params.tau, kappa: params.kappa,
+                                lambda: params.lambda}, metrics: r.m};
+        st.docName = r.name;
+        finish(r.name);
+      }
     }).then(null, fail);
   });
   grid.addEventListener('click', function() {
     if(!begin('parameter combinations')) {
       return;
     }
+    var token = st.token, params = segParams(), name = '';
     Promise.resolve().then(function() {
       meter.set(gettext('Testing parameter combinations…'), 0);
-      return segUiEvalRun(undefined, null);
-    }).then(function(m) {
-      SEG_UI.evalState.metrics = m;
-      SEG_UI.evalSections = {};
-      return segGridSearch(function(over) {
-        return segUiEvalRun(over, null);
-      }, {currentTau: segParams().tau}, function(done, total) {
-        meter.set(gettext('Testing parameter combinations: %(done)s/%(total)s',
-                          {done: done, total: total}),
-                  total ? (done + 1) / (total + 1) : undefined);
+      return segUiEvalLoad(st.docId);
+    }).then(function(data) {
+      name = data.name;
+      return segUiEvalRun(data, undefined, null).then(function(m) {
+        st.metrics = m;
+        st.baseline = {params: {tau: params.tau, kappa: params.kappa,
+                                lambda: params.lambda}, metrics: m};
+        SEG_UI.evalSections = {};
+        return segGridSearch(function(over) {
+          return segUiEvalRun(data, over, null);
+        }, {currentTau: params.tau}, function(done, total) {
+          meter.set(gettext('Testing parameter combinations: %(done)s/%(total)s',
+                            {done: done, total: total}),
+                    total ? (done + 1) / (total + 1) : undefined);
+        });
       });
     }).then(function(res) {
       SEG_UI.evalSections = null;
       console.log('Segmentation grid search', res);
-      SEG_UI.evalState.grid = res;
-      finish();
+      if(token === st.token) {
+        st.grid = res;
+        st.docName = name;
+        finish(name);
+      }
     }, function(err) {
       SEG_UI.evalSections = null;
       throw err;
@@ -3592,6 +3717,36 @@ function segUiSelfTest() {
          && rows[1].precision === '70%' && rows[1].recall === '90%'
          && rows[0].label === 'Segments' && rows[1].label === 'Suggested highlights', 'metric rows');
   assert(segUiMetricRows({})[0].precision === '0%', 'metric rows tolerate missing scores');
+
+  // evaluation: documents, grid rows and the current row
+  var edocs = {1: {name: 'A', highlights_count: 0}, 2: {name: 'B', highlights_count: 3},
+               3: {name: 'C', highlights_count: 0}, 4: {name: 'D', highlights_count: 1}};
+  eq(segUiEvalDocList(edocs, null, 0).map(function(d) { return d.id; }), [2, 4],
+     'eval docs: only documents with saved highlights');
+  eq(segUiEvalDocList(edocs, 3, 2).map(function(d) { return d.id; }), [2, 3, 4],
+     'eval docs: the open document counts its live highlights');
+  eq(segUiEvalDocList({}, 1, 0), [], 'eval docs: none');
+  var elist = segUiEvalDocList(edocs, null, 0);
+  eq(segUiEvalPickDoc(elist, 4, null), 4, 'eval doc: default is the open one');
+  eq(segUiEvalPickDoc(elist, 1, null), 2, 'eval doc: else the first');
+  eq(segUiEvalPickDoc(elist, 4, 2), 2, 'eval doc: earlier choice kept');
+  eq(segUiEvalPickDoc(elist, 4, 9), 4, 'eval doc: stale choice dropped');
+  eq(segUiEvalPickDoc([], 4, null), null, 'eval doc: none qualifies');
+  var pa = {tau: 0.5, kappa: 1, lambda: 2}, pb = {tau: 0.6, kappa: 1, lambda: 2};
+  var base = {params: pa, metrics: {}};
+  var grows = segUiEvalTableRows(base, [{params: pb}, {params: {tau: 0.5, kappa: 1, lambda: 2}}]);
+  eq(grows.length, 2, 'eval rows: identical params appear once');
+  assert(grows[0] === base, 'eval rows: baseline first');
+  eq(segUiEvalCurrentIndex(grows, pa), 0, 'eval rows: baseline is current at first');
+  eq(segUiEvalCurrentIndex(grows, pb), 1, 'eval rows: applied row is current, baseline is not');
+  eq(segUiEvalCurrentIndex(grows, {tau: 0.7, kappa: 1, lambda: 2}), -1,
+     'eval rows: nothing current for other params');
+  eq(segUiEvalCurrentIndex(grows, {tau: 0.5 + 1e-12, kappa: 1, lambda: 2}), 0,
+     'eval rows: tolerance');
+  eq(segUiEvalBlocker(null), 'No document has saved highlights yet.', 'eval blocker without documents');
+  assert(segUiEvalBlocker(2) === null, 'eval blocker: no session needed');
+  eq(segUiHighlightsToChars([{id: 1, start_offset: 0, end_offset: 2, tags: ['3']}], [0, 1, 2, 3]),
+     [{id: 1, cStart: 0, cEnd: 2, tagIds: [3]}], 'highlights to chars');
 
   // rows <-> guide
   var rws = segUiGuideToRows(guide);
