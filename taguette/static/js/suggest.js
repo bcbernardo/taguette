@@ -4130,64 +4130,25 @@ function sugShowStagedMenu(aid, clientX, clientY, pinned) {
 }
 
 function sugShowTagPicker(aid) {
-  var entries = Object.entries(tags);
-  sortByKey(entries, function(e) { return e[1].path; });
   var st = null;
   sug_session.staged.forEach(function(s) { if(s.aid === aid) { st = s; } });
   if(!st) {
     return;
   }
-  var html = '<div class="sug-menu-title">' + gettext('Add tag') + '</div><div class="sug-menu-taglist">';
-  var tagLabel = function(id, path, extra) {
-    return (
-      '<label><input type="checkbox" value="' + id + '"' +
-      (st.tags.indexOf(parseInt(id)) !== -1 ? ' checked' : '') + '> ' +
-      escapeHtml(path) + (extra || '') + '</label>'
-    );
-  };
-  // Tags suggested for this unit first (best confidence first), then the rest
-  var suggested = {};
-  (st.suggestedTags || []).slice().sort(function(a, b) {
-    return (b.conf || 0) - (a.conf || 0);
-  }).forEach(function(t) {
-    if(tags['' + t.id]) {
-      suggested['' + t.id] = true;
-      html += tagLabel(t.id, tags['' + t.id].path,
-        ' <span class="text-muted">' + Math.round((t.conf || 0) * 100) + '%</span>');
-    }
-  });
-  if(Object.keys(suggested).length) {
-    html += '<hr class="sug-menu-divider"/>';
-  }
-  entries.forEach(function(e) {
-    if(!suggested[e[0]]) {
-      html += tagLabel(e[0], e[1].path);
-    }
-  });
-  html += (
-    '</div><button type="button" class="btn btn-sm btn-primary" id="sug-menu-tagapply">' +
-    gettext('Apply') + '</button>'
-  );
-  // Position near the existing menu
-  var menu = sugMenuEl();
-  sugShowMenu(html, window.parseInt(menu.style.left) || 100,
-              window.parseInt(menu.style.top) || 100, true);
-  document.getElementById('sug-menu-tagapply').addEventListener('click', function() {
-    var checked = [];
-    var boxes = menu.querySelectorAll('.sug-menu-taglist input[type="checkbox"]');
-    for(var i = 0; i < boxes.length; ++i) {
-      if(boxes[i].checked) {
-        checked.push(parseInt(boxes[i].value));
+  sugHideMenu();
+  var sess = sug_session;
+  openStagedHighlightTags({
+    tags: st.tags.slice(),
+    text: sess.plainText.slice(st.cStart, st.cEnd),
+    suggestedTags: st.suggestedTags || [],
+    apply: function(ids) {
+      // The suggestion may have been reverted or saved meanwhile
+      var cur = null;
+      sess.staged.forEach(function(s) { if(s.aid === aid) { cur = s; } });
+      if(cur) {
+        cur.tags = ids;
       }
     }
-    var st2 = null;
-    sug_session.staged.forEach(function(s) { if(s.aid === aid) { st2 = s; } });
-    if(st2) {
-      st2.tags = checked;
-    }
-    sugShowStagedMenu(aid,
-                      window.parseInt(menu.style.left) || 100,
-                      window.parseInt(menu.style.top) || 100, true);
   });
 }
 

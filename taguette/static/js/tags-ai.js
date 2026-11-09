@@ -395,6 +395,9 @@ var tag_ai_last_selection_text = '';
 })();
 
 function tagAiHighlightText() {
+  if(typeof highlight_add_staged !== 'undefined' && highlight_add_staged) {
+    return (highlight_add_staged.text || '').trim();
+  }
   var id = document.getElementById('highlight-add-id').value;
   if(id && typeof highlights !== 'undefined') {
     var elements = document.getElementsByClassName('highlight-' + id);
@@ -544,6 +547,28 @@ function tagAiSyncShowAll() {
     : gettext('Show all tags');
 }
 
+// In staged mode (tags of an accepted suggestion), the tags proposed for it
+// come first, best confidence first, then the text ranking of the others
+function tagAiStagedFirst(ranked) {
+  var sug = (typeof highlight_add_staged !== 'undefined' && highlight_add_staged)
+    ? (highlight_add_staged.suggestedTags || []) : [];
+  if(!sug.length) {
+    return ranked;
+  }
+  var picked = {}, head = [];
+  sug.slice().sort(function(a, b) {
+    return (b.conf || 0) - (a.conf || 0);
+  }).forEach(function(t) {
+    if(tags['' + t.id] && !picked['' + t.id]) {
+      picked['' + t.id] = true;
+      head.push({tag: tags['' + t.id], score: t.conf || 0});
+    }
+  });
+  return head.concat(ranked.filter(function(r) {
+    return !picked['' + r.tag.id];
+  }));
+}
+
 function tagAiRankHighlightModal() {
   var seq = ++tag_ai_modal.seq;
   var text = tagAiHighlightText();
@@ -556,7 +581,7 @@ function tagAiRankHighlightModal() {
   tag_ai_modal.search_semantic = 0;
 
   var entries = Object.entries(tags);
-  if(!text || !entries.length) {
+  if((!text && tagAiStagedFirst([]).length === 0) || !entries.length) {
     tagAiSyncShowAll();
     tagAiModalRefreshStatus();
     updateTagsList();
@@ -565,13 +590,14 @@ function tagAiRankHighlightModal() {
 
   // Lexical ranking is instant; the semantic one replaces it when the
   // configured embedding service answers
-  tag_ai_modal.ranked = tagAiLexicalRank(text, entries);
+  tag_ai_modal.ranked = tagAiStagedFirst(
+    text ? tagAiLexicalRank(text, entries) : []);
   tagAiSyncShowAll();
   tagAiModalRefreshStatus();
   updateTagsList();
 
   var emb = (typeof sugLoadConfig === 'function') ? sugLoadConfig() : null;
-  if(!emb) {
+  if(!emb || !text) {
     return;
   }
   tag_ai_modal.pending = true;
@@ -588,7 +614,7 @@ function tagAiRankHighlightModal() {
                    score: sugCosine(vectors[0], vectors[i + 1])});
     }
     scored.sort(function(a, b) { return b.score - a.score; });
-    tag_ai_modal.ranked = scored;
+    tag_ai_modal.ranked = tagAiStagedFirst(scored);
     tag_ai_modal.semantic = true;
     tag_ai_modal.pending = false;
     tagAiSyncShowAll();
@@ -2199,6 +2225,25 @@ function tagAiSelfTest() {
       && view.order[view.order.length - 1].id === 25,
       'checked tags appended beyond the suggestions');
     window.highlight_add_tag_state = {};
+    // Staged mode: tags suggested for the unit first, best confidence first
+    var saved_staged = window.highlight_add_staged;
+    window.tags = {};
+    for(var q = 1; q <= 30; ++q) {
+      window.tags['' + q] = {id: q, path: 'tag' + q};
+    }
+    window.highlight_add_staged = {
+      tags: [], text: 'staged text',
+      suggestedTags: [{id: 5, conf: 0.4}, {id: 9, conf: 0.9}, {id: 999, conf: 1}],
+      apply: function() {}};
+    assert(tagAiHighlightText() === 'staged text', 'staged text used');
+    var st_ranked = tagAiStagedFirst(big.slice());
+    assert(st_ranked[0].tag.id === 9 && st_ranked[0].score === 0.9
+      && st_ranked[1].tag.id === 5 && st_ranked[2].tag.id === 30
+      && st_ranked.length === 30, 'staged: suggested tags first by confidence');
+    window.highlight_add_staged = null;
+    assert(tagAiStagedFirst(big).length === 30 && tagAiStagedFirst(big)[0].tag.id === 30,
+      'not staged: ranking untouched');
+    window.highlight_add_staged = saved_staged;
     if(typeof taguConfigSave === 'function') {
       taguConfigSave(saved_cfg);
     } else {

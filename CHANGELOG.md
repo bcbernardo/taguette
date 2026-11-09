@@ -24,7 +24,8 @@ New feature (coding guided by thematic segments):
   re-checked automatically by the fast LLM when one is configured
 * Suggestion menu: a *Suggested tags* section with confidences; tags
   above the configured confidence come pre-ticked and are saved with
-  the highlight; the tag picker lists the suggested tags first. In this
+  the highlight; *Add tag* on an accepted suggestion opens the usual
+  highlight dialog, with the suggested tags ranked first. In this
   mode the slider sets the suggested highlight granularity and the tick threshold
 * New *Segments* tab next to the document: script coverage, the list of
   segments (topic name and the interviewer's opening question), with

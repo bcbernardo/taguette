@@ -148,7 +148,7 @@ The number of sections is **neither fixed nor estimated** from interviewee word 
 5. **Layout**:
    - suggestions keep today's brackets; the badge shows the number of proposed tags;
    - clicking a suggestion opens the context menu (`sugShowSuggestionMenu`), which gets a **"Suggested tags"** section: checkboxes with name and confidence. Tags with confidence ≥ θ come ticked; the other candidates appear unticked, in grey;
-   - "Save as highlight" stores the unit with the ticked tags (`staged.tags`), and the tag picker for staged highlights (`sugShowTagPicker`) lists the suggested tags first;
+   - "Save as highlight" stores the unit with the ticked tags (`staged.tags`), and "Add tag" on a staged highlight (`sugShowTagPicker`) opens the standard highlight modal in staged mode (`openStagedHighlightTags`: no POST until the bar's Save; Delete hidden), with the suggested tags ranked first;
    - **a unit with no tag above θ**: the section simply does not appear. To create a new tag, the flow is today's (the highlight modal with AI name suggestions).
 
 ## 7. Separate decision clients per feature

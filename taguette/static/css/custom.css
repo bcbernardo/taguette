@@ -943,18 +943,6 @@ circle.sug-roc-c4 { fill: var(--sug-roc-c4); }
   margin-top: 0.15em;
 }
 
-#sug-menu .sug-menu-taglist {
-  max-height: 200px;
-  overflow-y: auto;
-  margin-bottom: 0.3em;
-}
-
-#sug-menu .sug-menu-taglist label {
-  display: block;
-  font-size: 0.85em;
-  margin-bottom: 0;
-}
-
 /* Split screen: two algorithm panes with common (page) scrolling */
 .document-view.split {
   display: flex;
@@ -1222,9 +1210,6 @@ textarea.tag-ai-prompt {
 }
 #sug-menu .sug-tag-off {
   color: #8a8f94;
-}
-#sug-menu .sug-menu-divider {
-  margin: 0.25em 0;
 }
 
 /* Thematic segments */

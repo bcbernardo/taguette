@@ -1321,6 +1321,10 @@ function mergeTags(tag_src, tag_dest) {
 // re-renders (ranked suggestions, search) never lose the selection.
 // Owned by updateTagsList(); seeded by createHighlight()/editHighlight().
 var highlight_add_tag_state = {};
+// Non-null while the highlight modal edits the tags of a staged (accepted,
+// unsaved) suggestion: {tags: [ids], text, suggestedTags: [{id, conf}],
+// apply: function(tagIds)}. Submitting then calls apply() instead of posting.
+var highlight_add_staged = null;
 
 function updateTagsList() {
   var entries = Object.entries(tags);
@@ -3215,6 +3219,7 @@ function selectionChanged() {
 document.addEventListener('selectionchange', selectionChanged);
 
 function createHighlight(selection) {
+  highlight_add_staged = null;
   document.getElementById('highlight-add-id').value = '';
   document.getElementById('highlight-add-start').value = selection[0];
   document.getElementById('highlight-add-end').value = selection[1];
@@ -3228,6 +3233,7 @@ function openHighlightTags(id) {
   if(!highlights[id]) {
     return;
   }
+  highlight_add_staged = null;
   document.getElementById('highlight-add-form').reset();
   document.getElementById('highlight-add-id').value = id;
   document.getElementById('highlight-add-start').value = highlights[id].start_offset;
@@ -3241,6 +3247,33 @@ function openHighlightTags(id) {
   $(highlight_add_modal).modal().drags({handle: '.modal-header'});
 }
 
+// Edit the tags of a staged suggestion in the standard highlight modal
+function openStagedHighlightTags(staged) {
+  document.getElementById('highlight-add-form').reset();
+  document.getElementById('highlight-add-id').value = '';
+  document.getElementById('highlight-add-start').value = '';
+  document.getElementById('highlight-add-end').value = '';
+  highlight_add_staged = staged;
+  highlight_add_tag_state = {};
+  for(var i = 0; i < staged.tags.length; ++i) {
+    highlight_add_tag_state['' + staged.tags[i]] = true;
+    var box = document.getElementById('highlight-add-tags-' + staged.tags[i]);
+    if(box) {
+      box.checked = true;
+    }
+  }
+  document.getElementById('highlight-delete').style.display = 'none';
+  $(highlight_add_modal).modal().drags({handle: '.modal-header'});
+}
+
+// jQuery is loaded after this script: wire on window load
+window.addEventListener('load', function() {
+  $(highlight_add_modal).on('hidden.bs.modal', function() {
+    highlight_add_staged = null;
+    document.getElementById('highlight-delete').style.display = '';
+  });
+});
+
 // Save highlight button
 document.getElementById('highlight-add-form').addEventListener('submit', function(e) {
   e.preventDefault();
@@ -3250,8 +3283,9 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
     parseInt(document.getElementById('highlight-add-end').value)
   ];
   var hl_tags = [];
-  var edited_tags = highlight_id
-    ? highlights['' + highlight_id].tags : [];
+  var edited_tags = highlight_add_staged
+    ? highlight_add_staged.tags
+    : highlight_id ? highlights['' + highlight_id].tags : [];
   var entries = Object.entries(tags);
   for(var i = 0; i < entries.length; ++i) {
     var id = entries[i][1].id;
@@ -3263,6 +3297,15 @@ document.getElementById('highlight-add-form').addEventListener('submit', functio
                 : edited_tags.indexOf(id) !== -1) {
       hl_tags.push(id);
     }
+  }
+  if(highlight_add_staged) {
+    // Accepted suggestion: the suggestion bar's Save posts it later
+    var staged = highlight_add_staged;
+    highlight_add_staged = null;
+    staged.apply(hl_tags);
+    $(highlight_add_modal).modal('hide');
+    document.getElementById('highlight-add-form').reset();
+    return;
   }
   var req;
   if(highlight_id) {
