@@ -105,6 +105,38 @@ New feature (tag AI helpers):
 * The tag form now places the *Parent tag* picker below the description
   field, next to the similar-tags list
 
+New feature (speaker segmentation):
+* The suggested-highlights tool now labels WHO speaks in each turn of a
+  transcript, for any number of speakers, replacing the binary
+  interviewer/interviewee ("Q / A") classification: a chat model (the new
+  *Segmentation* tab of the configuration screen — any OpenAI-compatible
+  endpoint, or a local Ollama/llama.cpp server) receives a few random
+  excerpts of the document and proposes, in a single call, the speakers it
+  recognizes as label patterns; the patterns are validated (regex safety
+  checks, grounding in real turns) and reviewed by the user before
+  anything is applied
+* The *Speakers* review dialog lists the proposed speakers with name,
+  color, editable patterns, live match counts and real examples; speakers
+  can be renamed, recolored, merged, removed and added, turns with no
+  speaker stay visible, and *Confirm* applies the rules deterministically
+  to every turn (the first matching speaker wins)
+* Every turn is outlined in the speaker's color with a clickable name
+  badge; clicking it re-assigns that turn by hand, and manual assignments
+  survive re-proposals and transcript edits. The confirmed speaker profile
+  is stored in the browser per document and re-applies for free (no model
+  call) when the document is reopened
+* A speaker turn spans every paragraph from its label to the next
+  speaker/timestamp prefix (or the next inline label like "John: …"), so
+  continuation paragraphs are labelled with their speaker instead of
+  becoming separate unlabelled turns; text before the first label stays
+  standalone. Timestamped labels without brackets ("0:00 - Name
+  (affiliation)", "Speaker 1  0:03") are recognized, and only labels that
+  carry a timestamp or recur in the document open multi-paragraph turns,
+  so a one-off header ending in a colon can no longer swallow a transcript
+* The suggestion filter now chooses which speakers are included (one
+  checkbox per speaker) instead of the old answers-only switch; turns with
+  no speaker stay included
+
 New feature (configuration screen):
 * New dedicated configuration screen (⚙ *Configure* in the document toolbar)
   with a tabbed, extensible layout: any feature can register a tab, and the
@@ -113,15 +145,16 @@ New feature (configuration screen):
   MiniMax, OpenAI, OpenRouter, Qwen, Z.ai, or custom providers with their own
   base URL and header format (Authorization: Bearer by default, x-api-key
   and x-goog-api-key supported)
-* *Embeddings* and *Decisions* tabs (ported from the suggested-highlights
-  feature): pick a service per task — one of the saved keys, a supported
-  local service (Ollama, llama.cpp, text-embeddings-inference, Laya), or a
-  custom endpoint — plus model and endpoint override; selecting a local
-  service checks whether it is running and shows install instructions when
-  it is not. A *Test connection* button validates the setup
-* The suggest toolbar's *Embeddings* and *Q / A* buttons still work, but now
-  open the configuration screen on their tab (existing settings are
-  migrated automatically)
+* *Embeddings*, *Segmentation* and the other feature tabs (ported from the
+  suggested-highlights feature): pick a service per task — one of the saved
+  keys, a supported local service (Ollama and llama.cpp for chat or
+  embeddings, text-embeddings-inference), or a custom endpoint — plus model
+  and endpoint override; selecting a local service checks whether it is
+  running and shows install instructions when it is not. A *Test
+  connection* button validates the setup
+* The suggest toolbar's *Embeddings* button opens the configuration screen
+  on its tab; the *Speakers* button opens the speaker review dialog during
+  a suggestion session, or the *Segmentation* model settings otherwise
 
 New feature (tag hierarchy):
 * Tags can be nested: drag a tag onto another in the Highlights panel (top

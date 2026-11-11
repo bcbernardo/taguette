@@ -861,18 +861,22 @@ a.dropdown-item:hover {
   padding-right: 1px;
 }
 
-/* Suggest Q/A (interviewer vs interviewee) in-transcript markers: colored
-   outline, no fill, so they never read as highlights */
-.sug-qa-block {
-  border: 2px solid;
+/* Suggest speaker segmentation in-transcript markers: a colored outline
+   per speaker turn (border only, no fill, so it never reads as a
+   highlight) plus a clickable badge with the speaker's name. The color is
+   per speaker, passed as the inline --sug-speaker-color custom property
+   from the profile's palette. */
+.sug-speaker-block {
+  border: 2px solid var(--sug-speaker-color, #ced4da);
   border-radius: 4px;
   padding: 0 1px;
 }
-.sug-qa-block[data-role="Q"] { border-color: #6c757d; }
-.sug-qa-block[data-role="A"] { border-color: #28a745; }
-.sug-qa-block[data-role="\2026"] { border-color: #ced4da; }
-.sug-qa-badge {
+.sug-speaker-badge {
   display: inline-block;
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   min-width: 1.4em;
   margin-right: 4px;
   padding: 0 3px;
@@ -884,11 +888,52 @@ a.dropdown-item:hover {
   text-align: center;
   cursor: pointer;
   user-select: none;
+  background: var(--sug-speaker-color, #ced4da);
+  color: #fff;
 }
-.sug-qa-badge::before { content: attr(data-role); }
-.sug-qa-badge[data-role="Q"] { background: #6c757d; color: #fff; }
-.sug-qa-badge[data-role="A"] { background: #28a745; color: #fff; }
-.sug-qa-badge[data-role="\2026"] { background: #ced4da; color: #495057; }
+.sug-speaker-badge::before { content: attr(data-speaker); }
+.sug-speaker-badge[data-speaker="?"] { background: #ced4da; color: #495057; }
+
+/* Speakers review modal */
+#suggest-speakers-modal .modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.sug-speaker-row {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.sug-speaker-color {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.sug-speaker-rule {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.sug-speaker-rule select {
+  width: 5.5rem;
+  flex: 0 0 auto;
+  margin-right: 0.25rem;
+}
+.sug-speaker-rule input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sug-speaker-rule button {
+  flex: 0 0 auto;
+  margin-left: 0.25rem;
+}
+.sug-speaker-rule .sug-speaker-bad {
+  border-color: #dc3545;
+}
 
 /* Suggest transcript edit mode (double-click a paragraph to fix glitches) */
 .sug-editing {

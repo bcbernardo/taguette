@@ -299,8 +299,8 @@ function tagAiPrompt(cfg, key, vars) {
  * LLM client (OpenAI-compatible /chat/completions endpoint)
  */
 
-function tagAiLLMConfig() {
-  var task = taguConfig().tasks.llm;
+function tagAiLLMConfig(task_id) {
+  var task = taguConfig().tasks[task_id || 'llm'];
   var resolved = taguResolveTask(task, '/chat/completions');
   if(!resolved || !resolved.url) {
     return null;
